@@ -1,0 +1,28 @@
+version: 1
+frontend:
+  phases:
+    preBuild:
+      commands:
+        - nvm install 22
+        - nvm use 22
+        - npm install -g pnpm@12.14.0
+        - pnpm install --frozen-lockfile
+        - echo "NEXT_PUBLIC_SUPABASE_URL=$NEXT_PUBLIC_SUPABASE_URL" >> .env.production
+        - echo "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=$NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY" >> .env.production
+        - echo "SUPABASE_SECRET_KEY=$SUPABASE_SECRET_KEY" >> .env.production
+        - echo "RESEND_API_KEY=$RESEND_API_KEY" >> .env.production
+        - echo "EMAIL_FROM=\"$EMAIL_FROM\"" >> .env.production
+        - echo "APP_BASE_URL=$APP_BASE_URL" >> .env.production
+        - echo "CRON_SECRET=$CRON_SECRET" >> .env.production
+        - echo "MONDAY_WEBHOOK_SECRET=$MONDAY_WEBHOOK_SECRET" >> .env.production
+    build:
+      commands:
+        - pnpm run build
+  artifacts:
+    baseDirectory: .next
+    files:
+      - '**/*'
+  cache:
+    paths:
+      - .next/cache/**/*
+      - node_modules/**/*
