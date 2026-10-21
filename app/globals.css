@@ -1,0 +1,56 @@
+/* Tailwind theme and utilities only. Preflight is left out on purpose: the board's styles come
+   from the design canvas, which assumes browser defaults (inline SVG, list bullets, heading margins). */
+@layer theme, base, components, utilities;
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/utilities.css" layer(utilities);
+
+/* ---------- From the design canvas <helmet> ---------- */
+:root {
+  --font-main: "Söhne", "Inter", system-ui, sans-serif;
+  --font-title: "Montserrat", "Söhne", "Inter", system-ui, sans-serif;
+  --text-display: 48px; --text-h1: 32px; --text-h2: 28px; --text-h3: 24px; --text-h4: 20px; --text-h5: 18px; --text-h6: 16px;
+  --text-body-lg: 18px; --text-body: 16px; --text-body-sm: 14px; --text-caption: 12px;
+  --weight-regular: 400; --weight-semibold: 600; --weight-black: 900;
+}
+body { margin: 0; font-family: var(--font-main); font-size: var(--text-body); font-weight: var(--weight-regular); line-height: 1.5; background: #EBEBEB; }
+@media (prefers-color-scheme: dark) { body { background: #000000; } }
+body[data-theme="light"] { background: #EBEBEB; }
+body[data-theme="dark"] { background: #000000; }
+button { font-family: inherit; font-size: 14px; font-weight: 600; line-height: 1; letter-spacing: -0.01em }
+input, textarea { font-family: inherit; color: inherit }
+input::placeholder, textarea::placeholder { color: var(--faint) }
+a { color: var(--link) } a:hover { color: var(--link-hover) }
+.row { background: var(--surface) }
+.row:hover { background: var(--surface-2) }
+.mitem:hover { background: var(--hover) !important }
+.fb-radio:hover { border-color: var(--border-strong) }
+.fb-radio:has(input:focus-visible) { outline: 2px solid var(--ink); outline-offset: 2px }
+.fb-ni:hover { background: var(--hover) !important; color: var(--ink) !important }
+@media (max-width: 720px) { .fb-side { display: none !important } .fb-mobile { display: flex !important } }
+button:focus-visible, a:focus-visible, input:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px }
+.fb-title:hover span { text-decoration: underline; text-underline-offset: 3px }
+.fb-stretch::after { content: ""; position: absolute; inset: 0 }
+.fb-card a, .fb-lrow a { position: relative; z-index: 1 }
+.fb-card:hover { border-color: var(--border-strong) !important }
+.row-on, .row-on:hover { background: var(--hover) }
+.fb-tab:hover { color: var(--ink) !important }
+.fb-composer:focus-within { border-color: var(--ink) !important }
+.fb-chatin:focus-visible { outline: none }
+.fb-qa:hover { border-color: var(--border-strong) !important }
+.fb-cell:hover { outline: 2px solid var(--border-strong); outline-offset: -2px }
+.fb-cell:focus-visible { outline-offset: -2px }
+.fb-plus { opacity: 0; transition: opacity .12s ease }
+.fb-cell:hover .fb-plus, .fb-cell:focus-visible .fb-plus { opacity: 1 }
+.fb-day:hover { background: var(--hover) }
+.fb-yt:hover .fb-yt-thumb { transform: translateY(-2px); box-shadow: 0 12px 28px rgba(0,0,0,0.16) }
+.fb-yt-thumb { transition: transform .18s ease, box-shadow .18s ease }
+@media (prefers-reduced-motion: reduce) { .fb-yt-thumb { transition: none } }
+@keyframes fbIn { from { opacity: 0; transform: translateY(8px) } to { opacity: 1; transform: none } }
+.fb-float { animation: fbIn .4s ease both }
+@media (prefers-reduced-motion: reduce) { .fb-float { animation: none } }
+@media (max-width: 960px) { .fb-chathist { display: none !important } }
+
+/* ---------- App additions ---------- */
+@keyframes fbToast { from { opacity: 0; transform: translate(-50%, 8px) } to { opacity: 1; transform: translate(-50%, 0) } }
+.fb-toast { animation: fbToast .2s ease both }
+input[type="date"]::-webkit-calendar-picker-indicator { opacity: 0.6; cursor: pointer }
