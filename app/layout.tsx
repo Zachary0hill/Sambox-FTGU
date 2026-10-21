@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'YouTube Studio · Production board',
+  title: 'FTGU Studio · Production board',
   description: 'FTGU production board: projects, edits, thumbnails, sponsors and publishing in one place.',
 };
 

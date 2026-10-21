@@ -1,7 +1,7 @@
 import 'server-only';
 import { Resend } from 'resend';
 
-const DEFAULT_FROM = 'YouTube Studio <onboarding@resend.dev>';
+const DEFAULT_FROM = 'FTGU Studio <onboarding@resend.dev>';
 
 export type SendResult = { sent: true; id: string } | { sent: false; error: string };
 
