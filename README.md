@@ -13,7 +13,8 @@ pnpm dev
 ```
 
 `.env.local` needs `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` (see `.env.example`).
-Dev test logins for every role are listed at the top of `supabase/seed.sql`. Remove them before launch.
+Dev test logins for every role are listed at the top of `supabase/seed.sql`. Their shared password lives in the
+git-ignored `.env.dev-logins` file, never in the repo. Remove these logins before launch.
 
 ## How it fits together
 

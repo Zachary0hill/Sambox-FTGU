@@ -1,7 +1,10 @@
 -- Dev seed for the FTGU production board. Mirrors the prototype data.
 -- Dev only: remove these test logins before launch (build plan, Phase 12).
 --
--- Test logins (all share one password): ftgu-ba62ca524f9b
+-- Test logins all share one password, which is never committed. Keep it in .env.dev-logins (git-ignored)
+-- and pass it in before running this file:
+--   set app.dev_password = '<FTGU_DEV_PASSWORD from .env.dev-logins>';
+--
 --   sam@ftgu.test       Super Admin (workspace owner)
 --   juan@ftgu.test      Editor
 --   himanshu@ftgu.test  Editor
@@ -29,7 +32,7 @@ $$;
 
 do $$
 declare
-  pw text := 'ftgu-ba62ca524f9b';
+  pw text := nullif(current_setting('app.dev_password', true), '');
   ws uuid := gen_random_uuid();
   u_sam uuid := gen_random_uuid(); u_juan uuid := gen_random_uuid(); u_him uuid := gen_random_uuid();
   u_maya uuid := gen_random_uuid(); u_leo uuid := gen_random_uuid(); u_dana uuid := gen_random_uuid();
@@ -39,6 +42,9 @@ declare
   ch_john uuid; ch_c1 uuid; ch_c2 uuid;
   now_ts timestamptz := now();
 begin
+  if pw is null then
+    raise exception 'Set app.dev_password before running the seed (see the header of this file).';
+  end if;
   perform pg_temp.mkuser(u_sam, 'sam@ftgu.test', 'Sam Rivera', pw);
   perform pg_temp.mkuser(u_juan, 'juan@ftgu.test', 'Juan Morales', pw);
   perform pg_temp.mkuser(u_him, 'himanshu@ftgu.test', 'Himanshu Rao', pw);
