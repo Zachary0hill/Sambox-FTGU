@@ -117,7 +117,7 @@ export default function Studio({ initialPath, initialProject }) {
     let t = null;
     const bump = () => { clearTimeout(t); t = setTimeout(() => reload(), 350); };
     const ch = sb.channel('board-' + ctx.workspace_id);
-    ['projects', 'project_edits', 'project_thumbnails', 'sponsorships', 'comments', 'distribution_tasks'].forEach((table) =>
+    ['projects', 'project_edits', 'project_thumbnails', 'sponsorships', 'comments', 'distribution_tasks', 'inbox_items', 'research_runs'].forEach((table) =>
       ch.on('postgres_changes', { event: '*', schema: 'public', table }, bump));
     ch.on('postgres_changes', { event: '*', schema: 'public', table: 'notifications', filter: 'user_id=eq.' + ctx.user_id }, bump);
     ch.subscribe();

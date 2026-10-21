@@ -117,35 +117,6 @@ export default function StudioView({ V }) {
               </>
             ) : null}
             {" "}
-            {V.panelOpen ? (
-              <>
-                <p style={css("margin: 0; padding: 20px 24px 8px; font-size: 13px; font-weight: 600; color: var(--muted-2)")}>Saved views</p>
-              </>
-            ) : null}
-            {" "}
-            {V.panelClosed ? (
-              <>
-                <div style={css("height: 1px; margin: 8px 16px; background: var(--line); flex: none")}></div>
-              </>
-            ) : null}
-            {" "}
-            <div role="group" aria-label="Saved views" style={css("display: flex; flex-direction: column; gap: 4px; padding: 0 12px 16px")}>
-              {(V.savedViews || []).map((v, v__i) => (
-                <Fragment key={v__i}>
-                  <button type="button" className={v.cls} aria-label={v.aria} aria-pressed={v.pressed} onClick={v.pick} style={css(v.style)}>
-                    <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" style={css("flex: none")}>
-                      <path d={v.icon}></path>
-                      <path d={v.dots} strokeWidth="2.4"></path>
-                    </svg>
-                    {" "}
-                    <span style={css(V.navLabel)}>{v.label}</span>
-                    {" "}
-                    <span aria-hidden="true" style={css(v.badgeStyle)}>{v.count}</span>
-                  </button>
-                </Fragment>
-              ))}
-            </div>
-            {" "}
             <div style={css("margin-top: auto; padding: 12px; border-top: 1px solid var(--line)")}>
               <button type="button" className="fb-ni" aria-label="Account settings" aria-current={V.acctCurrent} onClick={V.openSettings} style={css(V.acctStyle)}>
                 <span aria-hidden="true" style={css("width: 28px; height: 28px; flex: none; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; background: var(--chip-2); color: var(--ink-2)")}>{V.acctInitial}</span>
@@ -1877,21 +1848,67 @@ export default function StudioView({ V }) {
                         {" "}
                         {V.adm.wsInteg ? (
                           <>
-                            <section aria-labelledby="ws-in" style={css(V.ui.panel)}>
-                              <h2 id="ws-in" style={css(V.ui.h3)}>Integrations</h2>
-                              {" "}
-                              <p style={css("margin: 0; font-size: 13px; color: var(--muted)")}>{V.adm.ws.integNote}</p>
-                              {" "}
-                              <div style={css("display: flex; flex-wrap: wrap; gap: 6px")}>
-                                {(V.adm.integrations || []).map((ig2, ig2__i) => (
-                                  <Fragment key={ig2__i}>
-                                    <span style={css(ig2.statusStyle)}>{ig2.name}</span>
-                                  </Fragment>
-                                ))}
-                              </div>
-                              {" "}
-                              <button type="button" onClick={V.adm.ws.goAuto} style={css(V.ui.btnGhostStart)}>Manage in Automations</button>
-                            </section>
+                            {/* app: integration keys, one card per provider grouped by purpose. Super Admin only. */}
+                            <div style={css("display: flex; flex-direction: column; gap: 24px; min-width: 0")}>
+                              <section aria-labelledby="ws-in" style={css(V.ui.panel)}>
+                                <h2 id="ws-in" style={css(V.ui.h3)}>Integrations</h2>
+                                <p style={css("margin: 0; font-size: 13px; color: var(--muted)")}>{V.adm.ws.integNote}</p>
+                                <button type="button" onClick={V.adm.ws.goAuto} style={css(V.ui.btnGhostStart)}>Use them in Automations</button>
+                              </section>
+                              {(V.adm.ws.integGroups || []).map((igg) => (
+                                <section key={igg.id} aria-labelledby={igg.hid} style={css("display: flex; flex-direction: column; gap: 12px; min-width: 0")}>
+                                  <div style={css("display: flex; flex-direction: column; gap: 4px")}>
+                                    <h2 id={igg.hid} style={css(V.ui.h3)}>{igg.title}</h2>
+                                    <p style={css("margin: 0; font-size: 13px; color: var(--muted)")}>{igg.desc}</p>
+                                  </div>
+                                  <div style={css("display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr)); gap: 16px; align-items: start")}>
+                                    {igg.cards.map((ic) => (
+                                      <article key={ic.id} style={css("display: flex; flex-direction: column; gap: 14px; padding: 18px; box-sizing: border-box; border: 1px solid var(--line); border-radius: 18px; background: var(--surface); min-width: 0")}>
+                                        <div style={css("display: flex; align-items: center; gap: 12px")}>
+                                          <span aria-hidden="true" style={css(ic.tileStyle)}>{ic.initials}</span>
+                                          <span style={css("flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px")}>
+                                            <span style={css("font-size: 15px; font-weight: 600; color: var(--ink)")}>{ic.name}</span>
+                                            <span style={css("font-size: 12px; color: var(--muted-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap")}>{ic.keyNote}</span>
+                                          </span>
+                                          <span style={css(ic.statusStyle)}>{ic.status}</span>
+                                        </div>
+                                        <p style={css("margin: 0; font-size: 13px; line-height: 1.45; color: var(--muted)")}>{ic.desc}</p>
+                                        {ic.hasErr ? (
+                                          <p role="alert" style={css("margin: 0; font-size: 13px; line-height: 1.45; color: var(--red-ink)")}>{ic.err}</p>
+                                        ) : null}
+                                        {ic.isAi ? (
+                                          <button type="button" aria-pressed={ic.aiOn} onClick={ic.aiPick} style={css(ic.aiStyle)}>{ic.aiLabel}</button>
+                                        ) : null}
+                                        <form onSubmit={(e) => { e.preventDefault(); ic.save(); }} style={css("display: flex; flex-direction: column; gap: 12px; margin: 0")}>
+                                          {ic.fields.map((fl) => (
+                                            <div key={fl.id} style={css("display: flex; flex-direction: column; gap: 6px")}>
+                                              <label htmlFor={fl.id} style={css(V.fieldLabel)}>{fl.label}</label>
+                                              <input id={fl.id} type={fl.type} value={fl.value} onChange={fl.onInput} placeholder={fl.placeholder} autoComplete={fl.auto} spellCheck={false} style={css(V.fieldInput)} />
+                                              {fl.hasHelp ? (
+                                                <span style={css("font-size: 12px; line-height: 1.4; color: var(--muted-2)")}>{fl.help}</span>
+                                              ) : null}
+                                            </div>
+                                          ))}
+                                          <div style={css("display: flex; flex-wrap: wrap; gap: 8px")}>
+                                            <button type="submit" aria-label={ic.saveAria} style={css(V.ui.btnPrimary)}>{ic.saveLabel}</button>
+                                            {ic.canSync ? (
+                                              <button type="button" aria-label={ic.syncAria} onClick={ic.sync} style={css(V.ui.btnGhost)}>{ic.syncLabel}</button>
+                                            ) : null}
+                                            {ic.canDisconnect ? (
+                                              <button type="button" aria-label={ic.disconnectAria} onClick={ic.disconnect} style={css(V.ui.btnDanger)}>Disconnect</button>
+                                            ) : null}
+                                          </div>
+                                        </form>
+                                        <div style={css("display: flex; flex-wrap: wrap; gap: 16px; font-size: 13px")}>
+                                          <a href={ic.keyUrl} target="_blank" rel="noreferrer" style={css("color: var(--link); text-decoration: underline; text-underline-offset: 3px")}>Get a key</a>
+                                          <a href={ic.docs} target="_blank" rel="noreferrer" style={css("color: var(--link); text-decoration: underline; text-underline-offset: 3px")}>API docs</a>
+                                        </div>
+                                      </article>
+                                    ))}
+                                  </div>
+                                </section>
+                              ))}
+                            </div>
                           </>
                         ) : null}
                       </div>
@@ -2063,7 +2080,7 @@ export default function StudioView({ V }) {
                               </svg>
                             </button>
                             {" "}
-                            <span style={css(V.chat.scopeChip)}>
+                            <span title={V.chat.scopeTitle} style={css(V.chat.scopeChip)}>
                               <span aria-hidden="true" style={css(V.chat.scopeDot)}></span>
                               {V.chat.scope}
                             </span>
@@ -2130,7 +2147,7 @@ export default function StudioView({ V }) {
                   {V.chat.hasMsgs ? (
                     <>
                       <div style={css("flex: 1 1 auto; min-height: 0; max-height: calc(100vh - 290px); overflow-y: auto; padding: 28px 24px 12px; box-sizing: border-box")}>
-                        <ol aria-label="Conversation" style={css("max-width: 760px; margin: 0 auto; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 24px")}>
+                        <ol aria-label="Conversation" aria-live="polite" aria-busy={V.chat.busy ? 'true' : 'false'} style={css("max-width: 760px; margin: 0 auto; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 24px")}>
                           {(V.chat.msgs || []).map((mg, mg__i) => (
                             <Fragment key={mg__i}>
                               <li style={css(mg.wrapStyle)}>
@@ -2149,7 +2166,45 @@ export default function StudioView({ V }) {
                                     </span>
                                     {" "}
                                     <div style={css("flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 12px")}>
-                                      <p style={css("margin: 0; font-size: 15px; line-height: 1.6; color: var(--ink-2)")}>{mg.text}</p>
+                                      {/* app: AI replies render as paragraphs and lists of plain text; rule-based replies keep the single paragraph */}
+                                      {mg.text ? <p style={css("margin: 0; font-size: 15px; line-height: 1.6; color: var(--ink-2)")}>{mg.text}</p> : null}
+                                      {(mg.blocks || []).map((bk, bk__i) => (
+                                        <Fragment key={'bk' + bk__i}>
+                                          {bk.isList ? (
+                                            <ul style={css(bk.style)}>
+                                              {(bk.items || []).map((li, li__i) => (<li key={li__i}>{li}</li>))}
+                                            </ul>
+                                          ) : (
+                                            <p style={css(bk.style)}>{bk.text}</p>
+                                          )}
+                                        </Fragment>
+                                      ))}
+                                      {/* app: assistant proposals; only the member's click on the button creates anything */}
+                                      {(mg.cards || []).map((pc, pc__i) => (
+                                        <section key={'pc' + pc__i} aria-label={pc.kindLabel + ': ' + pc.title} style={css(pc.cardStyle)}>
+                                          <span style={css("font-size: 12px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted-2)")}>{pc.kindLabel}</span>
+                                          <span style={css("font-size: 15px; font-weight: 600; line-height: 1.4; color: var(--ink); overflow-wrap: anywhere")}>{pc.title}</span>
+                                          {pc.fields.length ? (
+                                            <dl style={css("margin: 0; display: grid; grid-template-columns: max-content 1fr; gap: 4px 14px; font-size: 13px; line-height: 1.4")}>
+                                              {pc.fields.map((f, f__i) => (
+                                                <Fragment key={f__i}>
+                                                  <dt style={css("color: var(--muted-2)")}>{f.label}</dt>
+                                                  <dd style={css("margin: 0; color: var(--ink-2); overflow-wrap: anywhere")}>{f.value}</dd>
+                                                </Fragment>
+                                              ))}
+                                            </dl>
+                                          ) : null}
+                                          {pc.hasLines ? (
+                                            <ul style={css("margin: 0; padding: 0 0 0 18px; display: flex; flex-direction: column; gap: 4px; font-size: 13px; line-height: 1.45; color: var(--ink-2); overflow-wrap: anywhere")}>
+                                              {pc.lines.map((ln, ln__i) => (<li key={ln__i}>{ln}</li>))}
+                                            </ul>
+                                          ) : null}
+                                          <div style={css("display: flex; align-items: center; gap: 12px; flex-wrap: wrap")}>
+                                            <button type="button" onClick={pc.act} disabled={pc.disabled} aria-disabled={pc.disabled ? 'true' : 'false'} style={css(pc.btnStyle)}>{pc.btnLabel}</button>
+                                            <span style={css("font-size: 12px; color: var(--muted-2)")}>{pc.note}</span>
+                                          </div>
+                                        </section>
+                                      ))}
                                       {" "}
                                       {mg.hasItems ? (
                                         <>
@@ -2214,7 +2269,7 @@ export default function StudioView({ V }) {
                               </svg>
                             </button>
                             {" "}
-                            <span style={css(V.chat.scopeChip)}>
+                            <span title={V.chat.scopeTitle} style={css(V.chat.scopeChip)}>
                               <span aria-hidden="true" style={css(V.chat.scopeDot)}></span>
                               {V.chat.scope}
                             </span>
@@ -2336,6 +2391,20 @@ export default function StudioView({ V }) {
                             ))}
                           </div>
                         </>
+                      ) : null}
+                      {/* app: Messages mode filter chips (Slack, later Buffer) */}
+                      {V.inbox.isMsgs ? (
+                        <div role="group" aria-label="Message filter" style={css("display: flex; flex-wrap: wrap; gap: 4px")}>
+                          {(V.inbox.msg.tabs || []).map((mtb, mtb__i) => (
+                            <Fragment key={mtb__i}>
+                              <button type="button" className="fb-ni" aria-pressed={mtb.pressed} onClick={mtb.pick} style={css(mtb.style)}>
+                                <span>{mtb.label}</span>
+                                {" "}
+                                <span style={css(mtb.badge)}>{mtb.count}</span>
+                              </button>
+                            </Fragment>
+                          ))}
+                        </div>
                       ) : null}
                     </div>
                     {" "}
@@ -2465,11 +2534,76 @@ export default function StudioView({ V }) {
                         ) : null}
                       </>
                     ) : null}
+                    {/* app: Messages mode, inbox_items from Slack (later Buffer); internal roles only */}
+                    {V.inbox.isMsgs ? (
+                      <>
+                        {(V.inbox.msg.groups || []).map((mg, mg__i) => (
+                          <Fragment key={mg__i}>
+                            <section aria-label={mg.title} style={css("display: flex; flex-direction: column; gap: 10px")}>
+                              <h2 style={css(V.ui.h3)}>{mg.title}</h2>
+                              <ul style={css("margin: 0; padding: 0; list-style: none; border: 1px solid var(--line); border-radius: 16px; background: var(--surface); overflow: hidden")}>
+                                {(mg.items || []).map((mi, mi__i) => (
+                                  <li key={mi__i} style={css(mi.liStyle)}>
+                                    <span aria-hidden="true" style={css(mi.dotStyle)}></span>
+                                    <span aria-hidden="true" style={css(mi.avatarStyle)}>{mi.initials}</span>
+                                    <span style={css("flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px")}>
+                                      <span style={css("display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 8px; font-size: 14px; line-height: 1.45")}>
+                                        <span style={css("font-weight: 600; color: var(--ink)")}>{mi.who}</span>
+                                        <span style={css("font-size: 13px; color: var(--muted)")}>{mi.chan}</span>
+                                        {mi.unread ? <span style={css("position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap")}>Unread</span> : null}
+                                      </span>
+                                      <span style={css("font-size: 14px; line-height: 1.45; color: var(--ink-3); white-space: pre-wrap; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden")}>{mi.text}</span>
+                                      <span style={css("display: flex; flex-wrap: wrap; align-items: center; gap: 8px")}>
+                                        <span style={css(mi.srcStyle)}>{mi.srcLabel}</span>
+                                        {mi.hasKind ? <span style={css(mi.kindStyle)}>{mi.kindLabel}</span> : null}
+                                        <span style={css("font-size: 12px; color: var(--muted-2)")}>{mi.time}</span>
+                                      </span>
+                                    </span>
+                                    <span style={css("flex: none; display: flex; flex-direction: column; align-items: flex-end; gap: 6px")}>
+                                      {mi.hasUrl ? (
+                                        <a href={mi.url} target="_blank" rel="noopener noreferrer" onClick={mi.open} style={css(mi.linkStyle)}>
+                                          {mi.openLabel}
+                                          <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                            <path d="M15 3h6v6M10 14L21 3M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                                          </svg>
+                                        </a>
+                                      ) : null}
+                                      {mi.unread ? <button type="button" onClick={mi.markRead} style={css(mi.readStyle)}>Mark read</button> : null}
+                                    </span>
+                                  </li>
+                                ))}
+                              </ul>
+                            </section>
+                          </Fragment>
+                        ))}
+                        {V.inbox.msg.empty ? (
+                          <div style={css("display: flex; flex-wrap: wrap; align-items: center; gap: 12px 16px; padding: 24px 0")}>
+                            <p style={css("margin: 0; flex: 1 1 260px; font-size: var(--text-body-sm); color: var(--muted)")}>{V.inbox.msg.emptyText}</p>
+                            {V.inbox.msg.canConnect ? <button type="button" onClick={V.inbox.msg.goConnect} style={css(V.ui.btnGhost)}>Open Integrations</button> : null}
+                          </div>
+                        ) : null}
+                        {/* app: Buffer gap note for Super Admins (no comments/DMs in Buffer's API) */}
+                        {V.inbox.msg.hasNote ? <p style={css("margin: 0; font-size: 13px; color: var(--muted)")}>{V.inbox.msg.note}</p> : null}
+                      </>
+                    ) : null}
                   </>
                 ) : null}
                 {" "}
                 {V.pg.isContent ? (
                   <>
+                    {/* app: Videos / Social switch; Social shows Buffer posts */}
+                    {V.lib.hasViews ? (
+                      <div role="tablist" aria-label="Content views" style={css("display: flex; align-self: flex-start; gap: 4px; padding: 4px; background: var(--track); border-radius: 14px")}>
+                        {(V.lib.views || []).map((cvw, cvw__i) => (
+                          <button key={cvw__i} type="button" role="tab" aria-selected={cvw.selected} onClick={cvw.pick} style={css(cvw.style)}>
+                            <span>{cvw.label}</span>
+                            <span style={css(cvw.badge)}>{cvw.count}</span>
+                          </button>
+                        ))}
+                      </div>
+                    ) : null}
+                    {V.lib.isVideos ? (
+                    <>
                     <div style={css("display: flex; flex-wrap: wrap; gap: 4px; align-items: center; padding-bottom: 20px; border-bottom: 1px solid var(--line)")}>
                       {(V.lib.tabs || []).map((ctb, ctb__i) => (
                         <Fragment key={ctb__i}>
@@ -2525,6 +2659,10 @@ export default function StudioView({ V }) {
                         <Fragment key={cv__i}>
                           <article style={css("display: flex; flex-direction: column; border: 1px solid var(--line); border-radius: 18px; background: var(--surface); overflow: hidden")}>
                             <div style={css(cv.thumbStyle)}>
+                              {/* app: YouTube thumbnail and duration from the sync */}
+                              {/* eslint-disable-next-line @next/next/no-img-element -- remote YouTube thumbnail, sized by CSS */}
+                              {cv.hasImg ? <img src={cv.img} alt="" loading="lazy" decoding="async" referrerPolicy="no-referrer" style={css(V.lib.imgStyle)} /> : null}
+                              {cv.hasDur ? <span style={css(cv.durStyle)}>{cv.dur}</span> : null}
                               <span style={css(cv.typeStyle)}>{cv.type}</span>
                               {" "}
                               <span style={css("font-family: var(--font-title); font-size: 20px; font-weight: var(--weight-black); line-height: 1.1; letter-spacing: -0.02em; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden")}>{cv.thumbText}</span>
@@ -2574,12 +2712,15 @@ export default function StudioView({ V }) {
                               </div>
                               {" "}
                               <div style={css("display: flex; flex-wrap: wrap; gap: 8px; margin-top: auto")}>
-                                <a href={cv.href || "#"} target={cv.href ? "_blank" : undefined} rel="noopener noreferrer" style={css(V.lib.linkStyle)}>
+                                {/* app: only link out when the project has a real URL */}
+                                {cv.hasLink ? (
+                                <a href={cv.href} target="_blank" rel="noopener noreferrer" style={css(V.lib.linkStyle)}>
                                   <span>{cv.linkText}</span>
                                   <svg aria-hidden="true" width="12" height="12" viewBox="0 0 16 16">
                                     <path d="M6 3h7v7M13 3L4 12" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"></path>
                                   </svg>
                                 </a>
+                                ) : null}
                                 {" "}
                                 {cv.hasProject ? (
                                   <>
@@ -2595,7 +2736,97 @@ export default function StudioView({ V }) {
                     {" "}
                     {V.lib.empty ? (
                       <>
-                        <p style={css("margin: 0; padding: 24px 0; font-size: var(--text-body-sm); color: var(--muted)")}>Nothing published in this view yet.</p>
+                        <p style={css("margin: 0; padding: 24px 0; font-size: var(--text-body-sm); color: var(--muted)")}>{V.lib.emptyText /* app: says how to get YouTube videos in */}</p>
+                      </>
+                    ) : null}
+                    </>
+                    ) : null}
+                    {/* app: Social view, Buffer channels and sent posts with their metrics */}
+                    {V.lib.isSocial ? (
+                      <>
+                        {V.lib.social.hasTabs ? (
+                          <div role="group" aria-label="Social channel filter" style={css("display: flex; flex-wrap: wrap; gap: 4px; padding-bottom: 20px; border-bottom: 1px solid var(--line)")}>
+                            {(V.lib.social.tabs || []).map((stb, stb__i) => (
+                              <button key={stb__i} type="button" className="fb-ni" aria-pressed={stb.pressed} onClick={stb.pick} style={css(stb.style)}>
+                                <span>{stb.label}</span>
+                                <span style={css(stb.badge)}>{stb.count}</span>
+                              </button>
+                            ))}
+                          </div>
+                        ) : null}
+                        {V.lib.social.hasChannels ? (
+                          <section aria-label="Channels, last 30 days" style={css("display: flex; flex-direction: column; gap: 10px")}>
+                            <h2 style={css(V.ui.h3)}>Channels, last 30 days</h2>
+                            <div style={css("display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 16px")}>
+                              {(V.lib.social.channels || []).map((sc, sc__i) => (
+                                <button key={sc__i} type="button" aria-pressed={sc.pressed} onClick={sc.pick} style={css(sc.style)}>
+                                  <span style={css("display: flex; align-items: center; gap: 10px; min-width: 0")}>
+                                    <span aria-hidden="true" style={css(sc.avatarStyle)}>{sc.initials}</span>
+                                    <span style={css("flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px")}>
+                                      <span style={css("font-size: 15px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap")}>{sc.name}</span>
+                                      <span style={css("font-size: 12px; color: var(--muted-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap")}>{sc.sub}</span>
+                                    </span>
+                                  </span>
+                                  {sc.hasWarn ? <span style={css(sc.warnStyle)}>{sc.warn}</span> : null}
+                                  <span style={css("display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; padding-top: 12px; border-top: 1px solid var(--line)")}>
+                                    {(sc.stats || []).map((ss, ss__i) => (
+                                      <span key={ss__i} style={css("display: flex; flex-direction: column; gap: 2px; min-width: 0")}>
+                                        <span style={css("font-size: 11px; font-weight: 600; color: var(--muted-2)")}>{ss.label}</span>
+                                        <span style={css("font-size: 15px; font-weight: 700; font-variant-numeric: tabular-nums")}>{ss.value}</span>
+                                      </span>
+                                    ))}
+                                  </span>
+                                </button>
+                              ))}
+                            </div>
+                          </section>
+                        ) : null}
+                        {V.lib.social.hasItems ? (
+                          <section aria-label="Sent posts" style={css("display: flex; flex-direction: column; gap: 10px")}>
+                            <h2 style={css(V.ui.h3)}>Sent posts</h2>
+                            <ul style={css("margin: 0; padding: 0; list-style: none; border: 1px solid var(--line); border-radius: 16px; background: var(--surface); overflow: hidden")}>
+                              {(V.lib.social.items || []).map((sp, sp__i) => (
+                                <li key={sp__i} style={css(sp.liStyle)}>
+                                  {/* eslint-disable-next-line @next/next/no-img-element -- remote post thumbnail from Buffer, sized by CSS */}
+                                  {sp.hasImg ? <img src={sp.img} alt="" loading="lazy" decoding="async" referrerPolicy="no-referrer" style={css(V.lib.social.imgStyle)} /> : null}
+                                  <span style={css("flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px")}>
+                                    <span style={css("font-size: 14px; line-height: 1.45; color: var(--ink); white-space: pre-wrap; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden")}>{sp.text}</span>
+                                    <span style={css("font-size: 12px; color: var(--muted-2)")}>{sp.meta}</span>
+                                    {sp.hasMetrics ? (
+                                      <span style={css("display: flex; flex-wrap: wrap; gap: 4px 14px")}>
+                                        {(sp.metrics || []).map((pm, pm__i) => (
+                                          <span key={pm__i} style={css(V.lib.social.mStyle)}>
+                                            <strong style={css("font-size: 14px; font-weight: 700; color: var(--ink); font-variant-numeric: tabular-nums")}>{pm.value}</strong>
+                                            {pm.label}
+                                          </span>
+                                        ))}
+                                      </span>
+                                    ) : <span style={css("font-size: 13px; color: var(--muted)")}>{sp.pendingText}</span>}
+                                  </span>
+                                  <span style={css("flex: none; display: flex; flex-direction: column; align-items: flex-end; gap: 6px")}>
+                                    {sp.hasUrl ? (
+                                      <a href={sp.url} target="_blank" rel="noopener noreferrer" style={css(V.lib.linkStyle)}>
+                                        <span>{sp.openLabel}</span>
+                                        <svg aria-hidden="true" width="12" height="12" viewBox="0 0 16 16">
+                                          <path d="M6 3h7v7M13 3L4 12" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"></path>
+                                        </svg>
+                                      </a>
+                                    ) : null}
+                                    <span style={css("font-size: 11px; color: var(--muted-2)")}>{sp.fresh}</span>
+                                  </span>
+                                </li>
+                              ))}
+                            </ul>
+                            {V.lib.social.more ? <p style={css("margin: 0; font-size: 13px; color: var(--muted)")}>{V.lib.social.more}</p> : null}
+                          </section>
+                        ) : null}
+                        {V.lib.social.empty ? (
+                          <div style={css("display: flex; flex-wrap: wrap; align-items: center; gap: 12px 16px; padding: 24px 0")}>
+                            <p style={css("margin: 0; flex: 1 1 260px; font-size: var(--text-body-sm); color: var(--muted)")}>{V.lib.social.emptyText}</p>
+                            {V.lib.social.canConnect ? <button type="button" onClick={V.lib.social.goConnect} style={css(V.ui.btnGhost)}>Open Integrations</button> : null}
+                          </div>
+                        ) : null}
+                        {V.lib.social.gap ? <p style={css("margin: 0; font-size: 13px; color: var(--muted)")}>{V.lib.social.gap}</p> : null}
                       </>
                     ) : null}
                   </>
@@ -2670,6 +2901,10 @@ export default function StudioView({ V }) {
                           {" "}
                           <section aria-labelledby="br-type" style={css(V.ui.panel)}>
                             <h3 id="br-type" style={css(V.ui.h3)}>Typography</h3>
+                            {/* app: empty state when the brand has nothing saved */}
+                            {V.br.fontsNote ? (
+                              <p style={css("margin: 0; font-size: 13px; color: var(--muted)")}>{V.br.fontsNote}</p>
+                            ) : null}
                             {" "}
                             {(V.br.fonts || []).map((fo, fo__i) => (
                               <Fragment key={fo__i}>
@@ -2688,6 +2923,10 @@ export default function StudioView({ V }) {
                         {" "}
                         <section aria-labelledby="br-color" style={css(V.ui.panel)}>
                           <h3 id="br-color" style={css(V.ui.h3)}>Colors</h3>
+                          {/* app: empty state when the brand has nothing saved */}
+                          {V.br.colorsNote ? (
+                            <p style={css("margin: 0; font-size: 13px; color: var(--muted)")}>{V.br.colorsNote}</p>
+                          ) : null}
                           {" "}
                           <div style={css("display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px")}>
                             {(V.br.colors || []).map((co, co__i) => (
@@ -2745,6 +2984,10 @@ export default function StudioView({ V }) {
                         <div style={css("display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; align-items: start")}>
                           <section aria-labelledby="br-refs" style={css(V.ui.panel)}>
                             <h3 id="br-refs" style={css(V.ui.h3)}>References</h3>
+                            {/* app: empty state when the brand has nothing saved */}
+                            {V.br.refsNote ? (
+                              <p style={css("margin: 0; font-size: 13px; color: var(--muted)")}>{V.br.refsNote}</p>
+                            ) : null}
                             {" "}
                             <div style={css("display: flex; flex-direction: column; margin: 0 -20px -20px; border-top: 1px solid var(--line)")}>
                               {(V.br.refs || []).map((rf2, rf2__i) => (
@@ -2774,6 +3017,10 @@ export default function StudioView({ V }) {
                           {" "}
                           <section aria-labelledby="br-assets" style={css(V.ui.panel)}>
                             <h3 id="br-assets" style={css(V.ui.h3)}>Downloads</h3>
+                            {/* app: empty state when the brand has nothing saved */}
+                            {V.br.assetsNote ? (
+                              <p style={css("margin: 0; font-size: 13px; color: var(--muted)")}>{V.br.assetsNote}</p>
+                            ) : null}
                             {" "}
                             <div style={css("display: flex; flex-direction: column; margin: 0 -20px -20px; border-top: 1px solid var(--line)")}>
                               {(V.br.assets || []).map((ba, ba__i) => (
@@ -2804,6 +3051,69 @@ export default function StudioView({ V }) {
                 {" "}
                 {V.pg.isIdeas ? (
                   <>
+                    {/* app: research agent run status (Super Admin) */}
+                    {V.ids.rs.hasPanel ? (
+                      <>
+                        <section aria-labelledby="rs-panel-title" aria-live="polite" style={css(V.ui.panel + " gap: 12px")}>
+                          <div style={css("display: flex; flex-wrap: wrap; align-items: center; gap: 8px")}>
+                            <h2 id="rs-panel-title" style={css(V.ui.h3)}>Research for {V.ids.rs.panel.brand}</h2>
+                            {" "}
+                            <span style={css(V.ids.rs.panel.statusStyle)}>{V.ids.rs.panel.status}</span>
+                            {" "}
+                            <span style={css("font-size: 13px; color: var(--muted-2)")}>{V.ids.rs.panel.when}</span>
+                            {" "}
+                            <span style={css("flex: 1")}></span>
+                            {" "}
+                            {V.ids.rs.panel.canShow ? (
+                              <>
+                                <button type="button" onClick={V.ids.rs.panel.show} style={css(V.ui.btnPrimary)}>Show new ideas</button>
+                              </>
+                            ) : null}
+                            {" "}
+                            {V.ids.rs.panel.active ? (
+                              <>
+                                <button type="button" onClick={V.ids.rs.panel.cancel} style={css(V.ui.btnGhost)}>Cancel</button>
+                              </>
+                            ) : null}
+                            {" "}
+                            {V.ids.rs.panel.canDismiss ? (
+                              <>
+                                <button type="button" aria-label="Dismiss" onClick={V.ids.rs.panel.dismiss} style={css(V.ui.iconBtn)}>
+                                  <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                                    <path d="M18 6 6 18M6 6l12 12"></path>
+                                  </svg>
+                                </button>
+                              </>
+                            ) : null}
+                          </div>
+                          {" "}
+                          <p style={css("margin: 0; font-size: 13px; color: var(--muted)")}>{V.ids.rs.panel.topics}  ·  {V.ids.rs.panel.summary}</p>
+                          {" "}
+                          <ul style={css("margin: 0; padding: 0; list-style: none; display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 8px")}>
+                            {(V.ids.rs.panel.sources || []).map((rsx, rsx__i) => (
+                              <Fragment key={rsx__i}>
+                                <li style={css("display: flex; flex-direction: column; gap: 6px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; min-width: 0")}>
+                                  <span style={css("display: flex; align-items: center; gap: 8px")}>
+                                    <span style={css("flex: 1; min-width: 0; font-size: 14px; font-weight: 600; color: var(--ink)")}>{rsx.label}</span>
+                                    {" "}
+                                    <span style={css(rsx.stateStyle)}>{rsx.state}</span>
+                                  </span>
+                                  {" "}
+                                  <span style={css(rsx.detailStyle)}>{rsx.via}{rsx.detail ? '  ·  ' + rsx.detail : ''}</span>
+                                </li>
+                              </Fragment>
+                            ))}
+                          </ul>
+                          {" "}
+                          {V.ids.rs.panel.hasError ? (
+                            <>
+                              <p role="alert" style={css("margin: 0; padding: 10px 12px; border-radius: 10px; background: var(--red-soft); color: var(--red-ink); font-size: 13px; font-weight: 600")}>{V.ids.rs.panel.error}</p>
+                            </>
+                          ) : null}
+                        </section>
+                      </>
+                    ) : null}
+                    {" "}
                     <div style={css("display: flex; flex-wrap: wrap; align-items: center; gap: 10px")}>
                       <div style={css("position: relative; display: flex; align-items: center; flex: 1 1 320px; max-width: 560px")}>
                         <label htmlFor="idea-search" style={css("position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap")}>Search ideas</label>
@@ -3017,7 +3327,8 @@ export default function StudioView({ V }) {
                                       {" "}
                                       {(V.ids.sel.refs || []).map((rr, rr__i) => (
                                         <Fragment key={rr__i}>
-                                          <a href="#" style={css(V.lib.linkStyle)}>{rr}</a>
+                                          {/* app: references open their source page */}
+                                          <a href={rr.href} target="_blank" rel="noopener noreferrer" style={css(V.lib.linkStyle + " white-space: normal; overflow-wrap: anywhere")}>{rr.text}</a>
                                         </Fragment>
                                       ))}
                                     </div>
@@ -3335,6 +3646,132 @@ export default function StudioView({ V }) {
                             {" "}
                             <button type="button" onClick={V.ids.create} style={css(V.ui.btnPrimary)}>Create idea</button>
                           </div>
+                        </dialog>
+                      </>
+                    ) : null}
+                    {" "}
+                    {/* app: research agent dialog (Super Admin) */}
+                    {V.ids.rs.open ? (
+                      <>
+                        <button type="button" aria-label="Close dialog" onClick={V.ids.rs.close} style={css("position: fixed; inset: 0; z-index: 40; border: 0; background: rgba(17,17,17,0.32); cursor: default")}></button>
+                        {" "}
+                        <dialog open aria-modal="true" aria-labelledby="rs-title" style={css(V.ui.dialog + " width: 620px")}>
+                          <div style={css("display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 20px")}>
+                            <div>
+                              <h2 id="rs-title" style={css("margin: 0; font-family: var(--font-title); font-size: var(--text-h4); font-weight: var(--weight-black); letter-spacing: -0.02em")}>Research ideas</h2>
+                              {" "}
+                              <p style={css("margin: 6px 0 0; font-size: var(--text-body-sm); color: var(--muted)")}>Find what is working in a brand&apos;s niche and turn it into Research drafts.</p>
+                            </div>
+                            {" "}
+                            <button type="button" className="fb-ni" aria-label="Close" onClick={V.ids.rs.close} style={css(V.ui.iconBtn)}>
+                              <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                                <path d="M18 6 6 18M6 6l12 12"></path>
+                              </svg>
+                            </button>
+                          </div>
+                          {" "}
+                          <div style={css("display: flex; flex-direction: column; gap: 18px")}>
+                            <div role="group" aria-labelledby="rs-brand-l" style={css("display: flex; flex-direction: column; gap: 8px")}>
+                              <span id="rs-brand-l" style={css(V.fieldLabel)}>Brand</span>
+                              {" "}
+                              <div style={css("display: flex; flex-wrap: wrap; gap: 8px")}>
+                                {(V.ids.rs.brands || []).map((rsb, rsb__i) => (
+                                  <Fragment key={rsb__i}>
+                                    <button type="button" aria-pressed={rsb.pressed} onClick={rsb.pick} style={css(rsb.style)}>{rsb.label}</button>
+                                  </Fragment>
+                                ))}
+                              </div>
+                            </div>
+                            {" "}
+                            <div style={css("display: flex; flex-direction: column; gap: 6px")}>
+                              <label htmlFor="rs-topics" style={css(V.fieldLabel)}>Niche or seed topics</label>
+                              {" "}
+                              <textarea id="rs-topics" rows="2" placeholder="home renovation, deck building, power tools" value={V.ids.rs.topics ?? ''} onChange={V.ids.rs.onTopics} style={css(V.ids.textarea)} />
+                              {" "}
+                              <span style={css("font-size: 12px; color: var(--muted-2)")}>{V.ids.rs.topicsHelp}</span>
+                            </div>
+                            {" "}
+                            <div role="group" aria-labelledby="rs-src-l" style={css("display: flex; flex-direction: column; gap: 8px")}>
+                              <span id="rs-src-l" style={css(V.fieldLabel)}>Sources</span>
+                              {" "}
+                              <div style={css("display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 8px")}>
+                                {(V.ids.rs.sources || []).map((rss, rss__i) => (
+                                  <Fragment key={rss__i}>
+                                    <button type="button" aria-pressed={rss.pressed} aria-disabled={rss.disabled} onClick={rss.pick} style={css(rss.style)}>
+                                      <span aria-hidden="true" style={css(rss.tickStyle)}>✓</span>
+                                      {" "}
+                                      <span style={css("display: flex; flex-direction: column; gap: 2px; min-width: 0")}>
+                                        <span style={css("font-size: 14px; font-weight: 600")}>{rss.label}</span>
+                                        <span style={css("font-size: 12px; color: var(--muted)")}>{rss.sub}</span>
+                                      </span>
+                                    </button>
+                                  </Fragment>
+                                ))}
+                              </div>
+                            </div>
+                            {" "}
+                            <div role="group" aria-labelledby="rs-count-l" style={css("display: flex; flex-wrap: wrap; align-items: center; gap: 8px")}>
+                              <span id="rs-count-l" style={css(V.fieldLabel + " margin-right: 4px")}>Ideas to draft</span>
+                              {" "}
+                              {(V.ids.rs.counts || []).map((rsc, rsc__i) => (
+                                <Fragment key={rsc__i}>
+                                  <button type="button" aria-pressed={rsc.pressed} onClick={rsc.pick} style={css(rsc.style)}>{rsc.label}</button>
+                                </Fragment>
+                              ))}
+                            </div>
+                            {" "}
+                            <p style={css("margin: 0; font-size: 12px; line-height: 1.5; color: var(--muted-2)")}>{V.ids.rs.note}</p>
+                            {" "}
+                            {V.ids.rs.hasErr ? (
+                              <>
+                                <p role="alert" style={css("margin: 0; padding: 10px 12px; border-radius: 10px; background: var(--red-soft); color: var(--red-ink); font-size: 13px; font-weight: 600")}>{V.ids.rs.err}</p>
+                              </>
+                            ) : null}
+                          </div>
+                          {" "}
+                          <div style={css("display: flex; justify-content: flex-end; gap: 8px; margin-top: 24px")}>
+                            <button type="button" className="fb-ni" onClick={V.ids.rs.close} style={css("min-height: 44px; padding: 0 18px; border: 0; border-radius: 14px; background: transparent; color: var(--ink-3); cursor: pointer")}>Cancel</button>
+                            {" "}
+                            <button type="button" disabled={V.ids.rs.busy} onClick={V.ids.rs.start} style={css(V.ui.btnPrimary)}>{V.ids.rs.startLabel}</button>
+                          </div>
+                          {" "}
+                          {V.ids.rs.hasRecent ? (
+                            <>
+                              <section aria-labelledby="rs-recent" style={css("display: flex; flex-direction: column; gap: 6px; margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--line)")}>
+                                <h3 id="rs-recent" style={css(V.ui.h3)}>Recent runs</h3>
+                                {" "}
+                                <ol style={css("margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column")}>
+                                  {(V.ids.rs.recent || []).map((rsr, rsr__i) => (
+                                    <Fragment key={rsr__i}>
+                                      <li style={css("display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; padding: 10px 0; border-bottom: 1px solid var(--line); font-size: 13px; color: var(--ink-3)")}>
+                                        <span style={css(rsr.statusStyle)}>{rsr.status}</span>
+                                        {" "}
+                                        <span style={css("flex: 1; min-width: 160px")}>
+                                          <span style={css("font-weight: 600; color: var(--ink)")}>{rsr.brand}</span>
+                                          {"  ·  "}{rsr.summary}
+                                          <span style={css("display: block; color: var(--muted-2)")}>{rsr.topics}</span>
+                                        </span>
+                                        {" "}
+                                        <span style={css("font-size: 12px; color: var(--muted-2)")}>{rsr.when}</span>
+                                        {" "}
+                                        {rsr.canShow ? (
+                                          <>
+                                            <button type="button" onClick={rsr.show} style={css(V.ui.ghostSm)}>Show ideas</button>
+                                          </>
+                                        ) : null}
+                                        {" "}
+                                        {rsr.active ? (
+                                          <>
+                                            <button type="button" onClick={rsr.cancel} style={css(V.ui.ghostSm)}>Cancel</button>
+                                          </>
+                                        ) : null}
+                                      </li>
+                                    </Fragment>
+                                  ))}
+                                </ol>
+                              </section>
+                            </>
+                          ) : null}
                         </dialog>
                       </>
                     ) : null}

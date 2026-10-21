@@ -13,15 +13,14 @@ pnpm dev
 ```
 
 `.env.local` needs `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` (see `.env.example`).
-Dev test logins for every role are listed at the top of `supabase/seed.sql`. Their shared password lives in the
-git-ignored `.env.dev-logins` file, never in the repo. Remove these logins before launch.
+There is no demo data. Every page reads the live workspace, and pages with nothing saved yet show an empty state.
+New people join through Users > Add user (see Invites below).
 
 ## How it fits together
 
 | Path | What it holds |
 |---|---|
 | `supabase/migrations/` | Schema, RLS, helper functions, guard and workflow triggers, portal RPCs, defaults |
-| `supabase/seed.sql` | Dev data mirroring the prototype (projects, people, sponsors, ideas, finance, inbox) |
 | `components/studio/StudioView.jsx` | The design markup, converted mechanically to JSX. Hand edits are marked `app:` |
 | `lib/studio/vals*.js` | The design's view logic, ported to live data |
 | `lib/studio/load.js` | Reads everything the member may see. Sponsors and clients read through `portal_*` RPCs |
@@ -39,17 +38,61 @@ Access control lives in Postgres. The UI mirrors the rules for usability only:
 - Workflow rules from the Workload page (sponsor approval before Scheduled, lock after Live, editors may
   change Status, distribution tasks on Live) are enforced by triggers.
 - Roles & Permissions writes `role_permissions`, which RLS reads through `app.has_perm()`.
+- A workspace can have any number of Super Admins. Invite someone as Super Admin, or use Make Super Admin on an
+  active editor or designer in Users. Only a Super Admin can grant or remove the role, the workspace owner cannot be
+  demoted, and the last active Super Admin cannot be removed (`protect_super_admin` trigger).
 
 ## Invites
 
-Users > Add user saves an invitation. The person signs up at `/login` ("New here") with that email; once the
-email is confirmed, the invite is applied (role, views, client or sponsor account). Invite emails are not sent
-yet: that needs SMTP or an Edge Function with the secret key.
+Users > Add user and Resend invite call `/api/invites` and `/api/invites/resend`, the same pattern as
+ZZMEDIA-DASHBOARD:
+
+1. The invitation row is saved through `invite_member` on the admin's own session, so RLS checks it.
+2. The Supabase admin API mints a one-time token (`generateLink`, type `invite`, or `magiclink` for people who
+   already have an account). This needs `SUPABASE_SECRET_KEY` on the server.
+3. Resend emails a link to `/auth/setup?token_hash=...`, built from the token hash, never Supabase's own
+   action link, so email link scanners cannot use the token up. Template: `lib/email/invite-template.ts`.
+4. On `/auth/setup` the person sets a password. Verifying the token confirms their email, and the
+   `on_auth_user_confirmed` trigger applies the invite (role, views, client or sponsor account).
+
+Server env: `RESEND_API_KEY`, `EMAIL_FROM` (a sender on a domain verified in Resend; `onboarding@resend.dev`
+only delivers to the Resend account owner), `SUPABASE_SECRET_KEY`, and optionally `APP_BASE_URL` for the link.
+If the email fails, the invite is still saved and the toast shows Resend's error.
+
+## Integrations
+
+Only a Super Admin connects integrations, in Workspace Settings > Integrations. The plan and decisions are in
+`docs/integrations-plan.md`.
+
+- Keys go to Supabase Vault through `set_integration_secret`, which checks `app.is_admin` itself. They are never
+  stored in table columns or sent back to the browser, which only sees `config.keyHint` (last 4 characters). Only the
+  server reads keys (`integration_secret` is granted to `service_role` alone), and each key is checked with a live
+  call before it is saved. Disconnect deletes the Vault secret.
+- Status and keys change only through those RPCs (`guard_integration` trigger), so the Automations > Connectors tab
+  links to Settings instead of toggling.
+- Provider code lives in `lib/integrations/providers/<id>.ts` (`verify`, optional `sync`). Every sync is
+  `POST /api/integrations/<id>/sync`: the Settings "Sync now" button, or a scheduler sending
+  `Authorization: Bearer $CRON_SECRET` to sync every workspace with that provider connected.
+- `proxy.ts` lets `/api/*` skip the sign-in redirect; every route authenticates its caller itself.
+
+| Integration | Where it shows | Notes |
+|---|---|---|
+| Claude, OpenAI, Gemini | Daily | The assistant (`/api/assistant`, AI SDK tool calling) runs its tools on the member's own session, so answers and writes stay within their RLS scope. It searches projects and ideas, plans, answers help questions, and creates projects and ideas after the user confirms. Pick the model per provider and which provider answers. Without a model, Daily keeps the rule-based replies. |
+| Firecrawl | Daily, Ideas | Web search and page reading for the assistant and the research agent. |
+| monday.com | Projects | Personal API token and board ID; optional status column, status mapping (`monday label=board status`) and job number column. Sync now pulls items into projects (matched by link, then job number), never deletes, and lists unmatched statuses and missing items. Board status changes push to the linked item. With a public `APP_BASE_URL`, Sync now also subscribes monday webhooks (`/api/webhooks/monday`) so monday edits arrive live. |
+| Apify, Browserbase | Ideas & Research | Research button (Super Admin): pick a brand, topics, sources and how many ideas. Capped Apify actors (YouTube, TikTok, Reddit, Google), a Browserbase browser on YouTube search, and Firecrawl search gather findings; the workspace's AI model drafts ideas grounded in them, saved as Research drafts with source links. Runs live in `research_runs`, survive a reload and can be cancelled. Needs an AI provider plus at least one source. |
+| Slack | Inbox > Messages | Create a Slack app, add bot scopes `channels:read`, `groups:read`, `channels:history`, `groups:history`, `users:read`, `app_mentions:read` (plus `im:history` for DMs, `chat:write` for future alerts), install it, and paste the bot token (`xoxb-`) and signing secret. Invite the bot to channels, then Sync now (first sync: 7 days, 100 messages per channel). For live messages once deployed, enable Event Subscriptions with Request URL `https://<domain>/api/webhooks/slack` and bot events `message.channels`, `message.groups`, `app_mention` (and `message.im`). Messages are visible to Super Admins, editors and designers only. |
+| YouTube | Content > Videos | A Google Cloud API key with YouTube Data API v3 enabled (Application restrictions: None or IP addresses) and channel IDs or @handles. Pulls the 200 most recent uploads, then only new ones, with views, likes, comments, duration and thumbnails. Projects whose link matches a video get a metrics snapshot. About 1 quota unit per 50 videos. Retention and impressions need YouTube Analytics OAuth and are not pulled. |
+| Buffer | Content > Social | A personal API key (Buffer Settings > API). Pulls channels and sent posts with Buffer's daily post metrics. Buffer's API has no query for comments, mentions or DMs, so none reach the Inbox; `inbox_items` already accepts `source = 'buffer'` for when it does. A sync uses 2 to 6 of the key's API calls (Free plan: 250 a day). |
+
+Server env: `CRON_SECRET` for scheduled syncs, optional `MONDAY_WEBHOOK_SECRET` (signs monday webhook URLs; falls back
+to `SUPABASE_SECRET_KEY`), and `APP_BASE_URL` as a public https URL for monday webhooks.
 
 ## Not built yet
 
-- Automation runner (pg_cron + pgmq + Edge Function), integration OAuth, YouTube metrics sync. The
-  Automations and Connectors pages store configuration only.
-- The Daily assistant answers from board data with the design's rule-based replies, not an LLM.
+- Automation runner (pg_cron + pgmq + Edge Function) and a cron schedule for the integration syncs. The Automations
+  page stores workflow configuration only.
+- Integration OAuth (YouTube Analytics retention and impressions, Slack app install), and the Google Drive, Gmail,
+  Frame.io and n8n connectors.
 - Two-step sign in is saved as a preference; TOTP enrollment is not wired.
 - Brand kit and template editing, pgTAP and Playwright suites, Vercel deployment.

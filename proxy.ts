@@ -1,7 +1,9 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
 
-const PUBLIC = ['/login', '/auth'];
+// API routes authenticate the caller themselves (member session, CRON_SECRET, webhook signatures or URL tokens) and
+// answer with JSON errors, so they skip the sign-in redirect.
+const PUBLIC = ['/login', '/auth', '/api'];
 
 // Refreshes the Supabase session cookie and sends signed-out visitors to /login.
 // This is an optimistic check only: every read and write is enforced by Postgres RLS.
