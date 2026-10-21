@@ -1,8 +1,9 @@
 import 'server-only';
 import type { ProviderModule } from './types';
+import { modelsError } from './models-error';
 
 // Docs used:
-//   https://ai.google.dev/api/models (models.get: GET /v1beta/models/{model}; supportedGenerationMethods)
+//   https://ai.google.dev/api/models (models.get: GET /v1beta/models/{model}; models.list; supportedGenerationMethods)
 //   https://ai.google.dev/gemini-api/docs/api-key (key in the x-goog-api-key header)
 //   https://ai.google.dev/gemini-api/docs/models (current model codes)
 
@@ -27,6 +28,29 @@ const provider: ProviderModule = {
     if (res.status === 404) return 'The model "' + model + '" was not found. Check the model ID.';
     if (res.status === 401 || res.status === 403 || /api key/i.test(msg)) return 'The API key was not accepted.';
     return msg || 'Gemini returned HTTP ' + res.status + '.';
+  },
+
+  // Models the key can use that generate text. Embedding, image and speech-only models are left out.
+  async listModels(secret) {
+    const out: { id: string; label: string }[] = [];
+    let page = '';
+    for (let i = 0; i < 5; i++) {
+      const res = await fetch(API + '/models?pageSize=1000' + (page ? '&pageToken=' + encodeURIComponent(page) : ''), {
+        headers: { 'x-goog-api-key': secret.apiKey },
+        signal: AbortSignal.timeout(15000),
+      });
+      if (!res.ok) throw new Error(await modelsError(res, 'Gemini'));
+      const j = await res.json().catch(() => ({}));
+      const models: { name: string; displayName?: string; supportedGenerationMethods?: string[] }[] = Array.isArray(j.models) ? j.models : [];
+      for (const m of models) {
+        const id = String(m.name || '').replace(/^models\//, '');
+        if (!id || !(m.supportedGenerationMethods || []).includes('generateContent') || /(embedding|imagen|image|tts|aqa)/.test(id)) continue;
+        out.push({ id, label: m.displayName && m.displayName !== id ? m.displayName + ' (' + id + ')' : id });
+      }
+      page = j.nextPageToken || '';
+      if (!page) break;
+    }
+    return out;
   },
 };
 

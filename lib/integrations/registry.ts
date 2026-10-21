@@ -15,6 +15,8 @@ export type ProviderField = {
   placeholder?: string;
   help?: string;
   defaultValue?: string;
+  // 'models': picked from a dropdown of the models the key can use (the provider module's listModels).
+  choices?: 'models';
 };
 
 export type ProviderDef = {
@@ -43,7 +45,7 @@ export const PROVIDERS: ProviderDef[] = [
     docs: 'https://docs.claude.com/en/api/overview', keyUrl: 'https://console.anthropic.com/settings/keys',
     fields: [
       { key: 'apiKey', label: 'API key', secret: true, placeholder: 'sk-ant-...' },
-      { key: 'model', label: 'Model', defaultValue: 'claude-sonnet-5-5', help: 'Model ID from Anthropic\'s models list.' },
+      { key: 'model', label: 'Model', defaultValue: 'claude-sonnet-5-5', choices: 'models', help: 'Models this key can use, newest first.' },
     ],
   },
   {
@@ -51,7 +53,7 @@ export const PROVIDERS: ProviderDef[] = [
     docs: 'https://platform.openai.com/docs/api-reference', keyUrl: 'https://platform.openai.com/api-keys',
     fields: [
       { key: 'apiKey', label: 'API key', secret: true, placeholder: 'sk-...' },
-      { key: 'model', label: 'Model', defaultValue: 'gpt-6.1-sol', help: 'Model ID from OpenAI\'s models list.' },
+      { key: 'model', label: 'Model', defaultValue: 'gpt-6.1-sol', choices: 'models', help: 'Chat models this key can use, newest first.' },
     ],
   },
   {
@@ -59,7 +61,7 @@ export const PROVIDERS: ProviderDef[] = [
     docs: 'https://ai.google.dev/gemini-api/docs', keyUrl: 'https://aistudio.google.com/apikey',
     fields: [
       { key: 'apiKey', label: 'API key', secret: true, placeholder: 'AIza...' },
-      { key: 'model', label: 'Model', defaultValue: 'gemini-3.8-flash', help: 'Model ID from the Gemini API models list.' },
+      { key: 'model', label: 'Model', defaultValue: 'gemini-3.8-flash', choices: 'models', help: 'Text models this key can use.' },
     ],
   },
   {

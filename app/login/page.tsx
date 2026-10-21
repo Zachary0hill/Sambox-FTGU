@@ -1,6 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { supabaseBrowser } from '@/lib/supabase/client';
+import Link from 'next/link';
 import { css } from '@/lib/studio/css';
 
 // Invite only: new people join through the /auth/setup link in their invite email, so there's no sign up here.
@@ -80,6 +81,7 @@ export default function LoginPage() {
                 )}
               </button>
             </div>
+            <Link href="/auth/setup?type=recovery" style={css('align-self: flex-end; font-size: 13px; font-weight: 600; color: var(--muted); text-decoration: underline; text-underline-offset: 3px;')}>Forgot password?</Link>
           </div>
         ) : null}
         {mode === 'link' ? <p style={css('margin: 0; font-size: 13px; color: var(--muted);')}>FTGU Studio is invite only. Use the email your invite was sent to.</p> : null}
