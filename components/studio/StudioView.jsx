@@ -1304,11 +1304,19 @@ export default function StudioView({ V }) {
                                       {(nt.cells || []).map((nc, nc__i) => (
                                         <Fragment key={nc__i}>
                                           <div role="cell" style={css("display: flex; justify-content: center")}>
+                                            {/* app: events with no email show a dash instead of a checkbox */}
+                                            {nc.na ? (
+                                              <span title="Not available" style={css("width: 44px; height: 44px; display: inline-flex; align-items: center; justify-content: center; color: var(--muted-2)")}>
+                                                <span aria-hidden="true">–</span>
+                                                <span style={css("position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap")}>{nc.aria}</span>
+                                              </span>
+                                            ) : (
                                             <label style={css("width: 44px; height: 44px; display: inline-flex; align-items: center; justify-content: center; cursor: pointer")}>
                                               <input type="checkbox" checked={!!nc.on} onChange={nc.pick} style={css("width: 18px; height: 18px; margin: 0; accent-color: var(--ink); cursor: pointer")} />
                                               {" "}
                                               <span style={css("position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap")}>{nc.aria}</span>
                                             </label>
+                                            )}
                                           </div>
                                         </Fragment>
                                       ))}

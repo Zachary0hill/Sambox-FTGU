@@ -144,6 +144,12 @@ export default function Studio({ initialPath, initialProject }) {
     sb, getD: () => dRef.current, setD, getMe: () => meRef.current, toast, reload, reloadPortal, switchAccount,
   }), [sb, setD, toast, reload, reloadPortal, switchAccount]);
 
+  // Once per visit: send emails still waiting and queue tomorrow's deadline reminders.
+  const mailed = useRef(false);
+  useEffect(() => {
+    if (ctx && !mailed.current) { mailed.current = true; A.sendEmails(); }
+  }, [ctx, A]);
+
   if (error === 'no-access') return <Gate title="No workspace access yet" body="Your account is signed in but is not an active member of a workspace. Ask a Super Admin to invite this email, then sign in again." action={() => A.signOut('local')} actionLabel="Sign out" />;
   if (error) return <Gate title="Could not load the board" body={error} action={() => { setError(''); reload(); }} actionLabel="Try again" />;
   if (!ctx || !D || !s || !me) return <Loading />;

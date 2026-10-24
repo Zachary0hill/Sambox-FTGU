@@ -59,6 +59,29 @@ Server env: `RESEND_API_KEY`, `EMAIL_FROM` (a sender on a domain verified in Res
 only delivers to the Resend account owner), `SUPABASE_SECRET_KEY`, and optionally `APP_BASE_URL` for the link.
 If the email fails, the invite is still saved and the toast shows Resend's error.
 
+## Email notifications
+
+Database triggers queue emails in `email_outbox` (`supabase/migrations/20261023000200_email_notifications.sql`), one
+per recipient, and never for the person who made the change:
+
+| Event | Who gets it |
+|---|---|
+| Assigned (editor or designer set) | The person assigned |
+| Revision (Editor Status or Thumbnail becomes Needs Revision, or a sponsor requests changes) | The editor or designer |
+| Review and approval (edit or thumbnail In Review; project moves to Sponsor Review; sponsor decides; edit Approved or thumbnail Done) | Super Admins for reviews and sponsor decisions, the sponsor's approvers for Sponsor Review, the editor or designer when theirs is approved |
+| Deadline (edit or thumbnail due tomorrow in the workspace time zone, not finished, project not Live) | The editor or designer, plus an in-app Deadline notification |
+
+`POST /api/notifications/send` (`lib/email/notifications.ts`) queues tomorrow's deadline reminders, then sends what is
+waiting through Resend with `lib/email/notification-template.ts`. The board calls it after a change and once per
+visit, for the member's own workspace. A scheduler sending `Authorization: Bearer $CRON_SECRET` (POST, or GET for
+Vercel Cron) covers every workspace, so reminders and changes made by monday sync go out with nobody signed in: run
+it every 15 minutes. Emails older than 48 hours are skipped, failed sends are retried up to 3 times, and each row
+keeps its status and error.
+
+People turn their emails off in Settings > My notifications (Email alerts). A Super Admin turns an event off for the
+whole workspace in Automations > Settings > Notifications (the Email column). Same env as invites: `RESEND_API_KEY`,
+`EMAIL_FROM` on a verified domain, `SUPABASE_SECRET_KEY`, and `APP_BASE_URL` for the links.
+
 ## Integrations
 
 Only a Super Admin connects integrations, in Workspace Settings > Integrations. The plan and decisions are in
@@ -90,8 +113,9 @@ to `SUPABASE_SECRET_KEY`), and `APP_BASE_URL` as a public https URL for monday w
 
 ## Not built yet
 
-- Automation runner (pg_cron + pgmq + Edge Function) and a cron schedule for the integration syncs. The Automations
-  page stores workflow configuration only.
+- Automation runner (pg_cron + pgmq + Edge Function) and a cron schedule for the integration syncs and
+  `/api/notifications/send`. The Automations page stores workflow configuration only.
+- Slack alerts, the daily email digest, desktop push and quiet hours: saved as preferences, not sent.
 - Integration OAuth (YouTube Analytics retention and impressions, Slack app install), and the Google Drive, Gmail,
   Frame.io and n8n connectors.
 - Two-step sign in is saved as a preference; TOTP enrollment is not wired.
