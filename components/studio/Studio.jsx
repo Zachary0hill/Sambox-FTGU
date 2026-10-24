@@ -52,10 +52,11 @@ export default function Studio({ initialPath, initialProject }) {
   const set = useCallback((o) => setS((prev) => ({ ...prev, ...(typeof o === 'function' ? o(prev) : o) })), []);
 
   const toastTimer = useRef(null);
-  const toast = useCallback((msg) => {
-    set({ toast: msg });
+  // An action ({ label, run, ms }) adds a button, such as Undo, and keeps the toast up for ms (default 10 seconds).
+  const toast = useCallback((msg, action) => {
+    set({ toast: msg, toastAction: action || null });
     clearTimeout(toastTimer.current);
-    toastTimer.current = setTimeout(() => set({ toast: '' }), 4200);
+    toastTimer.current = setTimeout(() => set({ toast: '', toastAction: null }), action ? (action.ms || 10000) : 4200);
   }, [set]);
 
   const reload = useCallback(async () => {
@@ -117,7 +118,7 @@ export default function Studio({ initialPath, initialProject }) {
     let t = null;
     const bump = () => { clearTimeout(t); t = setTimeout(() => reload(), 350); };
     const ch = sb.channel('board-' + ctx.workspace_id);
-    ['projects', 'project_edits', 'project_thumbnails', 'sponsorships', 'comments', 'distribution_tasks', 'inbox_items', 'research_runs'].forEach((table) =>
+    ['projects', 'project_edits', 'project_thumbnails', 'sponsorships', 'comments', 'project_assets', 'distribution_tasks', 'inbox_items', 'research_runs'].forEach((table) =>
       ch.on('postgres_changes', { event: '*', schema: 'public', table }, bump));
     ch.on('postgres_changes', { event: '*', schema: 'public', table: 'notifications', filter: 'user_id=eq.' + ctx.user_id }, bump);
     ch.subscribe();

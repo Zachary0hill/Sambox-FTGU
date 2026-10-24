@@ -59,3 +59,20 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 2px solid 
 .fb-colnew { animation: fbColIn .32s cubic-bezier(.2, .8, .2, 1) both, fbColTint 2.4s ease-out both }
 @media (prefers-reduced-motion: reduce) { .fb-colnew { animation: fbColTint 2.4s ease-out both } }
 input[type="date"]::-webkit-calendar-picker-indicator { opacity: 0.6; cursor: pointer }
+/* Column system primitives (components/studio/Prims.jsx). Inline styles set the resting state, so states need !important. */
+.fb-mr:hover:not(:disabled) { background: var(--hover) !important }
+.fb-mr:focus-visible, .fb-seg:focus-visible { outline: 2px solid var(--ink); outline-offset: -2px }
+.fb-field:focus-within { border-color: var(--ink) !important; box-shadow: inset 0 0 0 1px var(--ink); background: var(--surface) !important }
+.fb-field input:focus-visible, .fb-field textarea:focus-visible { outline: none }
+.fb-chipx:hover { opacity: 1 !important; background: rgba(0,0,0,0.08) !important }
+/* Column headers (components/studio/HeaderCell.jsx): hover fills the cell and shows the more button and resize edge. */
+.fb-th:hover .fb-th-btn[aria-expanded="false"] { background: var(--surface-2) !important }
+.fb-th-btn:focus-visible { outline: 2px solid var(--ink); outline-offset: -2px }
+.fb-th-more { opacity: 0; transition: opacity .12s ease }
+.fb-th:hover .fb-th-more, .fb-th-btn:focus-visible .fb-th-more { opacity: 1 }
+.fb-th-rs::after { content: ""; position: absolute; top: 8px; bottom: 8px; left: 2px; width: 3px; border-radius: 2px; background: var(--ink); opacity: 0; transition: opacity .12s ease }
+.fb-th:hover .fb-th-rs::after, .fb-th-rs:focus-visible::after, .fb-th-rs:active::after { opacity: 1 }
+.fb-th-rs:focus-visible { outline: none }
+/* Select picker rows (components/studio/SelectPicker.jsx): the option menu button shows on hover or highlight. */
+.fb-opt .fb-opt-more { opacity: 0 }
+.fb-opt:hover .fb-opt-more, .fb-opt[data-active] .fb-opt-more, .fb-opt-more:focus-visible { opacity: 1 }

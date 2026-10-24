@@ -82,6 +82,21 @@ People turn their emails off in Settings > My notifications (Email alerts). A Su
 whole workspace in Automations > Settings > Notifications (the Email column). Same env as invites: `RESEND_API_KEY`,
 `EMAIL_FROM` on a verified domain, `SUPABASE_SECRET_KEY`, and `APP_BASE_URL` for the links.
 
+## Project files and comments
+
+The project drawer has Overview, Comments, Files and Activity tabs (Widen panel makes it wider). Files and comment
+attachments live in the `project-assets` bucket under `<workspace>/<project>/<kind>/` and as `project_assets` rows that
+keep the file's `mime_type` and `size_bytes`.
+
+- Files shows every file the role may see as a grid (image previews, type badges for PDF, Word, PowerPoint and
+  Markdown) or a list, with search and an All / Images / Documents / Video filter. Add file takes images, video, PDF,
+  Markdown, Word and PowerPoint; editors and designers also keep Upload cut and Upload thumbnail. Files dropped on the
+  drawer upload. Remove deletes the row and the stored file (the uploader, or anyone with assets delete).
+- Comments show the author's name and role. Attach (or drop files on the Comments tab) adds images and documents to
+  the next comment; they are saved with `comment_id` and also appear in Files. Attachments on a comment the client can
+  see are shared (`external_visible`), and `portal_comments` returns them so sponsors and clients see them too.
+- Image previews use signed URLs made at load time (`lib/studio/load.js`), reused for 50 minutes.
+
 ## Integrations
 
 Only a Super Admin connects integrations, in Workspace Settings > Integrations. The plan and decisions are in
