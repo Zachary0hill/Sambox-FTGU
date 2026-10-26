@@ -43,3 +43,6 @@ next-env.d.ts
 
 # Supabase CLI
 supabase/.temp/
+
+# zz-qa
+qa-report/
