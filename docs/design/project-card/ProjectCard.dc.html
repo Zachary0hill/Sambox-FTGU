@@ -1,0 +1,433 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Project card</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Montserrat:wght@800;900&display=swap" rel="stylesheet">
+<style>
+/* Tokens: the light set from lib/studio/vals.js (TK). */
+:root {
+  --page: #EBEBEB; --surface: #FFFFFF; --surface-2: #FAFAFA; --panel: #F6F6F6; --hover: #F3F3F3; --chip: #F1F1F1; --chip-2: #EEEEEE; --track: #F0F0F0;
+  --line: #F0F0F0; --line-2: #EFEFEF; --line-4: #ECECEC; --border: #E6E6E6; --border-2: #DCDCDC; --border-strong: #BDBDBD;
+  --ink: #111111; --ink-2: #2A2A2A; --ink-2b: #3A3A3A; --ink-3: #4A4A4A; --muted: #666666; --muted-2: #707070; --faint: #8A8A8A;
+  --inv: #111111; --inv-ink: #FFFFFF; --link: #0B6E62;
+  --red-soft: #FDE8E5; --red-ink: #9B1C13; --amber-soft: #FFF4D9; --amber-ink: #774F00; --green-soft: #E6F5EC; --green-ink: #1B653B;
+  --blue-soft: #E9F0FE; --blue-ink: #1E46A8; --violet-soft: #F2EBFB; --violet-ink: #5B2A9E; --coral-soft: #FDEDE5; --coral-ink: #933612;
+  --font-main: "Inter", system-ui, sans-serif; --font-title: "Montserrat", "Inter", system-ui, sans-serif;
+}
+* { box-sizing: border-box }
+body { margin: 0; background: var(--page); font-family: var(--font-main); color: var(--ink); -webkit-font-smoothing: antialiased }
+button { font-family: inherit }
+button:focus-visible, a:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px }
+
+/* ---------- Page chrome for the comp ---------- */
+.doc { max-width: 1240px; margin: 0 auto; padding: 40px 16px 80px; display: flex; flex-direction: column; gap: 40px }
+.doc h1 { margin: 0; font-family: var(--font-title); font-weight: 900; font-size: 32px; letter-spacing: -0.02em }
+.doc .lede { margin: 8px 0 0; max-width: 720px; font-size: 15px; line-height: 1.55; color: var(--muted) }
+.sec-h { margin: 0 0 14px; font-family: var(--font-title); font-weight: 900; font-size: 18px; letter-spacing: -0.01em }
+.note { margin: 10px 0 0; font-size: 12.5px; line-height: 1.5; color: var(--muted) }
+
+/* ---------- Board column (unchanged shell, for context) ---------- */
+.board { display: flex; gap: 16px; align-items: flex-start; overflow-x: auto; padding-bottom: 8px }
+.col { flex: 1 1 320px; min-width: 300px; max-width: 400px; background: var(--panel); border: 1px solid var(--line-2); border-top: 3px solid var(--c); border-radius: 24px; padding: 10px; display: flex; flex-direction: column; gap: 10px }
+.col-h { display: flex; align-items: center; gap: 10px; padding: 4px 4px 4px 8px }
+.col-h .dot { width: 10px; height: 10px; border-radius: 999px; background: var(--c) }
+.col-h h2 { margin: 0; flex: 1; font-family: var(--font-title); font-size: 16px; font-weight: 900; letter-spacing: -0.01em }
+.count { display: inline-flex; align-items: center; height: 24px; padding: 0 10px; border-radius: 999px; background: var(--surface); font-size: 12px; font-weight: 600; color: var(--ink-3) }
+.icon-btn { width: 36px; height: 36px; border: 0; border-radius: 12px; background: transparent; color: var(--ink-3); display: inline-flex; align-items: center; justify-content: center; cursor: pointer }
+.icon-btn:hover { background: var(--hover); color: var(--ink) }
+.add-card { display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; border: 0; border-radius: 14px; background: transparent; color: var(--muted); font-size: 14px; font-weight: 600; cursor: pointer }
+.add-card:hover { background: var(--surface); color: var(--ink) }
+
+/* ---------- THE CARD ---------- */
+.card { position: relative; background: var(--surface); border: 1px solid var(--line-4); border-radius: 18px; box-shadow: 0 1px 2px rgba(0,0,0,0.04); padding: 12px 14px 12px; display: flex; flex-direction: column; gap: 10px; cursor: grab; transition: border-color .12s ease, box-shadow .12s ease, transform .12s ease }
+.card:hover { border-color: var(--border-strong); box-shadow: 0 1px 2px rgba(0,0,0,0.04), 0 8px 24px rgba(0,0,0,0.06) }
+.card:focus-within { border-color: var(--border-strong) }
+.card.is-open { border-color: var(--ink); box-shadow: 0 0 0 1px var(--ink) }
+.card.is-drag { transform: rotate(2deg); box-shadow: 0 2px 4px rgba(0,0,0,0.06), 0 24px 48px rgba(0,0,0,0.18); border-color: var(--border-strong); cursor: grabbing }
+.card.is-done { background: var(--surface-2) }
+.card.is-done .ttl { color: var(--ink-3) }
+
+/* Row 1: type block + job number + more button */
+.c-top { display: flex; align-items: center; gap: 8px; min-height: 24px }
+.type { display: inline-flex; align-items: center; height: 22px; padding: 0 8px; font-size: 11.5px; font-weight: 700; letter-spacing: 0.01em; white-space: nowrap; background: var(--tf); color: var(--ti) }
+.job { font-size: 11.5px; font-weight: 600; letter-spacing: 0.04em; color: var(--faint); font-variant-numeric: tabular-nums }
+.more { position: relative; z-index: 2; margin-left: auto; width: 28px; height: 28px; margin-right: -6px; border: 0; border-radius: 8px; background: transparent; color: var(--muted-2); display: inline-flex; align-items: center; justify-content: center; cursor: pointer; opacity: 0; transition: opacity .12s ease }
+.card:hover .more, .card:focus-within .more, .more[aria-expanded="true"] { opacity: 1 }
+.more:hover { background: var(--hover); color: var(--ink) }
+
+/* Optional cover: the latest thumbnail file */
+.cover { position: relative; margin: 0 -6px; aspect-ratio: 16 / 9; border-radius: 10px; overflow: hidden; background: #2C2C2C }
+.cover img, .cover .ph { position: absolute; inset: 0; width: 100%; height: 100% }
+.cover .ph { display: flex; align-items: flex-end; padding: 10px 12px; font-family: var(--font-title); font-weight: 900; font-size: 22px; line-height: 1; letter-spacing: -0.02em; text-transform: uppercase; color: #FFFFFF }
+.cover .tag { position: absolute; top: 8px; right: 8px; display: inline-flex; align-items: center; height: 20px; padding: 0 7px; border-radius: 6px; background: rgba(17,17,17,0.72); color: #FFFFFF; font-size: 11px; font-weight: 600 }
+
+/* Title: the whole card is the click target (stretched link), title underlines on hover */
+.ttl { margin: 0; font-size: 15px; font-weight: 600; line-height: 1.35; letter-spacing: -0.005em; color: var(--ink); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden }
+.ttl a { color: inherit; text-decoration: none }
+.ttl a::after { content: ""; position: absolute; inset: 0; border-radius: 18px }
+.card:hover .ttl a { text-decoration: underline; text-underline-offset: 3px; text-decoration-thickness: 1px }
+
+/* Row 3: status + attention flags. Status is the soft tone, not the solid fill, so the type block stays the loudest thing. */
+.flags { display: flex; flex-wrap: wrap; gap: 6px }
+.st { display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 8px; font-size: 12px; font-weight: 600; white-space: nowrap; background: var(--sb); color: var(--si) }
+.st::before { content: ""; width: 7px; height: 7px; border-radius: 999px; background: var(--sd) }
+.flag { display: inline-flex; align-items: center; gap: 5px; height: 24px; padding: 0 8px; font-size: 12px; font-weight: 600; white-space: nowrap }
+.flag.red { background: var(--red-soft); color: var(--red-ink) }
+.flag.amber { background: var(--amber-soft); color: var(--amber-ink) }
+.flag.gray { background: var(--chip); color: var(--ink-3) }
+
+/* Row 4: pipeline. One segment per production step, same colors as the stepper in the detail modal. */
+.pipe { display: flex; gap: 3px; align-items: center }
+.pipe i { flex: 1; height: 4px; border-radius: 2px; background: var(--track) }
+.pipe i.done { background: #22844C }
+.pipe i.now { background: #2F5BD3 }
+.pipe i.warn { background: #C42B2F }
+.pipe-l { display: flex; justify-content: space-between; margin-top: -4px; font-size: 11px; font-weight: 600; color: var(--muted-2) }
+.pipe-l b { color: var(--ink-2); font-weight: 600 }
+
+/* Row 5: footer. Only rendered when there is something in it. */
+.foot { display: flex; align-items: center; gap: 10px; padding-top: 10px; border-top: 1px solid var(--line) }
+.avs { display: flex; align-items: center }
+.av { width: 24px; height: 24px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; font-size: 10.5px; font-weight: 700; color: #FFFFFF; box-shadow: 0 0 0 2px var(--surface) }
+.av + .av { margin-left: -6px }
+.av.empty { background: var(--surface); color: var(--faint); box-shadow: inset 0 0 0 1.5px var(--border-2) }
+.meta { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 600; color: var(--muted-2); font-variant-numeric: tabular-nums }
+.meta.hot { color: var(--ink) }
+.meta.hot::after { content: ""; width: 6px; height: 6px; margin-left: 1px; border-radius: 999px; background: #E5484D }
+.meta.ok { color: var(--green-ink) }
+.sp { flex: 1 }
+.due { display: inline-flex; align-items: center; gap: 5px; height: 24px; padding: 0 9px; border-radius: 999px; font-size: 12px; font-weight: 600; white-space: nowrap; font-variant-numeric: tabular-nums; background: var(--hover); color: var(--ink-2b) }
+.due.late { background: var(--red-soft); color: var(--red-ink) }
+.due.today { background: var(--amber-soft); color: var(--amber-ink) }
+.due .k { font-weight: 500; opacity: 0.8 }
+.live { position: relative; z-index: 2; display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 600; color: var(--link); text-decoration: underline; text-underline-offset: 3px }
+
+/* Drop slot shown while dragging over a column */
+.slot { height: 92px; border: 1.5px dashed var(--border-strong); border-radius: 18px; background: color-mix(in srgb, var(--surface) 60%, transparent) }
+
+/* Quick menu (the ... button) */
+.menu { position: absolute; z-index: 5; top: 40px; right: 8px; width: 220px; padding: 6px; background: var(--surface); border: 1px solid var(--line-4); border-radius: 14px; box-shadow: 0 16px 48px rgba(0,0,0,0.16) }
+.menu button { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 36px; padding: 0 10px; border: 0; border-radius: 9px; background: transparent; color: var(--ink); font-size: 13.5px; font-weight: 500; text-align: left; cursor: pointer }
+.menu button:hover { background: var(--hover) }
+.menu hr { margin: 6px 4px; border: 0; border-top: 1px solid var(--line) }
+.menu .kbd { margin-left: auto; font-size: 11.5px; color: var(--faint) }
+.menu .danger { color: var(--red-ink) }
+
+/* ---------- Anatomy + states grid ---------- */
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 24px 20px; align-items: start }
+.cell > .lbl { display: block; margin-bottom: 8px; font-size: 12px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted-2) }
+.anat { display: grid; grid-template-columns: minmax(300px, 360px) 1fr; gap: 32px; align-items: start; background: var(--surface); border-radius: 24px; padding: 28px }
+.anat ol { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 10px; font-size: 14px; line-height: 1.5; color: var(--ink-3) }
+.anat ol b { color: var(--ink) }
+.pin { position: absolute; z-index: 3; width: 20px; height: 20px; border-radius: 999px; background: #16FFDE; color: #111; font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 0 2px var(--surface) }
+.compact .card { padding: 10px 12px; gap: 8px }
+.compact .ttl { font-size: 14px; -webkit-line-clamp: 1 }
+@media (max-width: 760px) { .anat { grid-template-columns: 1fr } }
+@media (prefers-reduced-motion: reduce) { .card, .more { transition: none } }
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-more" viewBox="0 0 16 16"><circle cx="3.5" cy="8" r="1.3" fill="currentColor"/><circle cx="8" cy="8" r="1.3" fill="currentColor"/><circle cx="12.5" cy="8" r="1.3" fill="currentColor"/></symbol>
+  <symbol id="i-cmt" viewBox="0 0 16 16"><path d="M2.5 3.5h11v7h-6l-3 2.5v-2.5h-2z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></symbol>
+  <symbol id="i-clip" viewBox="0 0 16 16"><path d="M13 7.5l-5.25 5.25a3 3 0 0 1-4.25-4.25L9 3a2 2 0 0 1 2.83 2.83L6.5 11.17a1 1 0 0 1-1.42-1.42L10 4.83" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></symbol>
+  <symbol id="i-check" viewBox="0 0 16 16"><rect x="2.5" y="2.5" width="11" height="11" rx="2" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M5 8l2 2 4-4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-cal" viewBox="0 0 16 16"><path d="M2.5 3.5h11v10h-11zM2.5 6.5h11M5.5 2v3M10.5 2v3" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></symbol>
+  <symbol id="i-warn" viewBox="0 0 16 16"><path d="M8 2.5l6 10.5H2z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M8 6.5v3M8 11.2v.1" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></symbol>
+  <symbol id="i-out" viewBox="0 0 16 16"><path d="M6 3h7v7M13 3L4 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 16 16"><path d="M8 3v10M3 8h10" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+</svg>
+
+<main class="doc">
+  <header>
+    <h1>Project card</h1>
+    <p class="lede">Kanban card for the Projects board. One loud element (content type), one status, a production pipeline you can read at a glance, and a footer that only shows what needs attention. Click any card title to open the detail modal (<a href="CardDetail.dc.html">CardDetail.dc.html</a>).</p>
+  </header>
+
+  <!-- ===================== IN CONTEXT ===================== -->
+  <section>
+    <h2 class="sec-h">On the board</h2>
+    <div class="board">
+      <!-- In Production -->
+      <section class="col" style="--c:#F08A5D" aria-label="In Production">
+        <div class="col-h"><span class="dot"></span><h2>In Production</h2><span class="count">3</span><button class="icon-btn" aria-label="Add a project to In Production"><svg width="14" height="14"><use href="#i-plus"/></svg></button></div>
+
+        <article class="card is-open">
+          <div class="c-top">
+            <span class="type" style="--tf:#FF6A3D;--ti:#1A0A04">YouTube Video</span>
+            <span class="job">FTGU-0142</span>
+            <button class="more" aria-label="Actions for I tried living on $10 a day" aria-haspopup="menu" aria-expanded="false"><svg width="16" height="16"><use href="#i-more"/></svg></button>
+          </div>
+          <h3 class="ttl"><a href="CardDetail.dc.html">I tried living on $10 a day for a week</a></h3>
+          <div class="flags">
+            <span class="st" style="--sb:var(--coral-soft);--si:var(--coral-ink);--sd:#F08A5D">Filming</span>
+          </div>
+          <div>
+            <div class="pipe" role="img" aria-label="Script done, Film in progress, Edit, Thumbnail and Publish not started"><i class="done"></i><i class="now"></i><i></i><i></i><i></i></div>
+          </div>
+          <div class="foot">
+            <div class="avs" aria-label="Editor Zach Hill, Designer Mia Torres"><span class="av" style="background:#4C7CF0">Z</span><span class="av" style="background:#E0567F">M</span></div>
+            <span class="meta hot" title="3 comments, 1 new"><svg width="14" height="14"><use href="#i-cmt"/></svg>3</span>
+            <span class="meta" title="2 of 6 checklist steps done"><svg width="14" height="14"><use href="#i-check"/></svg>2/6</span>
+            <span class="sp"></span>
+            <span class="due today"><span class="k">Film</span> Today</span>
+          </div>
+        </article>
+
+        <article class="card">
+          <div class="c-top">
+            <span class="type" style="--tf:#FF3F8E;--ti:#1A0510">Short</span>
+            <span class="job">FTGU-0145</span>
+            <button class="more" aria-label="Actions" aria-haspopup="menu" aria-expanded="false"><svg width="16" height="16"><use href="#i-more"/></svg></button>
+          </div>
+          <h3 class="ttl"><a href="CardDetail.dc.html">3 budgeting apps that actually work</a></h3>
+          <div class="flags">
+            <span class="st" style="--sb:var(--chip);--si:var(--ink-3);--sd:#B0B0B0">Scripting</span>
+          </div>
+          <div class="pipe" role="img" aria-label="Script in progress"><i class="now"></i><i></i><i></i><i></i><i></i></div>
+          <div class="foot">
+            <div class="avs"><span class="av empty" title="No editor">+</span></div>
+            <span class="sp"></span>
+            <span class="due"><span class="k">Pub</span> Nov 4</span>
+          </div>
+        </article>
+
+        <div class="slot" aria-hidden="true"></div>
+
+        <button class="add-card"><svg width="12" height="12"><use href="#i-plus"/></svg> Add a card</button>
+      </section>
+
+      <!-- Post Production -->
+      <section class="col" style="--c:#E0567F" aria-label="Post Production">
+        <div class="col-h"><span class="dot"></span><h2>Post Production</h2><span class="count">2</span><button class="icon-btn" aria-label="Add a project to Post Production"><svg width="14" height="14"><use href="#i-plus"/></svg></button></div>
+
+        <article class="card">
+          <div class="c-top">
+            <span class="type" style="--tf:#FF6A3D;--ti:#1A0A04">YouTube Video</span>
+            <span class="job">FTGU-0138</span>
+            <button class="more" aria-label="Actions" aria-haspopup="menu" aria-expanded="false"><svg width="16" height="16"><use href="#i-more"/></svg></button>
+          </div>
+          <div class="cover"><div class="ph" style="background:linear-gradient(135deg,#1E3A2F,#0E1A15)"><span><span style="background:#16FFDE;color:#111;padding:0 6px">Debt</span><br>free at 27</span></div><span class="tag">Thumb v3</span></div>
+          <h3 class="ttl"><a href="CardDetail.dc.html">How I paid off $48k of debt in 18 months</a></h3>
+          <div class="flags">
+            <span class="st" style="--sb:var(--blue-soft);--si:var(--blue-ink);--sd:#4C7CF0">Editing</span>
+            <span class="flag red"><svg width="13" height="13"><use href="#i-warn"/></svg>Edit needs revision</span>
+          </div>
+          <div class="pipe" role="img" aria-label="Script and Film done, Edit needs revision, Thumbnail in review"><i class="done"></i><i class="done"></i><i class="warn"></i><i class="now"></i><i></i></div>
+          <div class="foot">
+            <div class="avs"><span class="av" style="background:#4C7CF0">Z</span><span class="av" style="background:#E0567F">M</span></div>
+            <span class="meta hot"><svg width="14" height="14"><use href="#i-cmt"/></svg>7</span>
+            <span class="meta"><svg width="14" height="14"><use href="#i-clip"/></svg>12</span>
+            <span class="sp"></span>
+            <span class="due late"><span class="k">Edit</span> Oct 24</span>
+          </div>
+        </article>
+
+        <article class="card">
+          <div class="c-top">
+            <span class="type" style="--tf:#9B7BFF;--ti:#120A2B">Podcast</span>
+            <span class="job">FTGU-0131</span>
+            <button class="more" aria-label="Actions" aria-haspopup="menu" aria-expanded="false"><svg width="16" height="16"><use href="#i-more"/></svg></button>
+          </div>
+          <h3 class="ttl"><a href="CardDetail.dc.html">Ep. 42 with Ramit: the rich life checklist</a></h3>
+          <div class="flags">
+            <span class="st" style="--sb:var(--violet-soft);--si:var(--violet-ink);--sd:#A66BD6">Sponsor Review</span>
+            <span class="flag amber">Acme · Pending</span>
+          </div>
+          <div class="pipe" role="img" aria-label="Script, Film, Edit and Thumbnail done, Sponsor approval in progress"><i class="done"></i><i class="done"></i><i class="done"></i><i class="done"></i><i class="now"></i><i></i></div>
+          <div class="foot">
+            <div class="avs"><span class="av" style="background:#3DB46D">J</span></div>
+            <span class="meta ok"><svg width="14" height="14"><use href="#i-check"/></svg>6/6</span>
+            <span class="sp"></span>
+            <span class="due"><span class="k">Pub</span> Oct 30</span>
+          </div>
+        </article>
+
+        <button class="add-card"><svg width="12" height="12"><use href="#i-plus"/></svg> Add a card</button>
+      </section>
+
+      <!-- Publishing -->
+      <section class="col" style="--c:#A66BD6" aria-label="Publishing">
+        <div class="col-h"><span class="dot"></span><h2>Publishing</h2><span class="count">1</span><button class="icon-btn" aria-label="Add a project to Publishing"><svg width="14" height="14"><use href="#i-plus"/></svg></button></div>
+        <article class="card is-done">
+          <div class="c-top">
+            <span class="type" style="--tf:#FF6A3D;--ti:#1A0A04">YouTube Video</span>
+            <span class="job">FTGU-0127</span>
+            <button class="more" aria-label="Actions" aria-haspopup="menu" aria-expanded="false"><svg width="16" height="16"><use href="#i-more"/></svg></button>
+          </div>
+          <h3 class="ttl"><a href="CardDetail.dc.html">Why your 401k match is free money</a></h3>
+          <div class="flags">
+            <span class="st" style="--sb:var(--green-soft);--si:var(--green-ink);--sd:#3DB46D">Live</span>
+          </div>
+          <div class="pipe" role="img" aria-label="All steps done"><i class="done"></i><i class="done"></i><i class="done"></i><i class="done"></i><i class="done"></i></div>
+          <div class="foot">
+            <a class="live" href="#">youtu.be/x8Kq2 <svg width="12" height="12"><use href="#i-out"/></svg></a>
+            <span class="sp"></span>
+            <span class="due"><span class="k">Pub</span> Oct 21</span>
+          </div>
+        </article>
+        <button class="add-card"><svg width="12" height="12"><use href="#i-plus"/></svg> Add a card</button>
+      </section>
+    </div>
+  </section>
+
+  <!-- ===================== ANATOMY ===================== -->
+  <section>
+    <h2 class="sec-h">Anatomy</h2>
+    <div class="anat">
+      <div style="position:relative">
+        <span class="pin" style="top:-8px;left:-8px">1</span>
+        <span class="pin" style="top:-8px;right:30px">2</span>
+        <span class="pin" style="top:44px;left:-8px">3</span>
+        <span class="pin" style="top:76px;left:-8px">4</span>
+        <span class="pin" style="top:100px;left:-8px">5</span>
+        <span class="pin" style="bottom:12px;left:-8px">6</span>
+        <span class="pin" style="bottom:12px;right:-8px">7</span>
+        <article class="card">
+          <div class="c-top">
+            <span class="type" style="--tf:#FF6A3D;--ti:#1A0A04">YouTube Video</span>
+            <span class="job">FTGU-0142</span>
+            <button class="more" style="opacity:1" aria-label="Actions"><svg width="16" height="16"><use href="#i-more"/></svg></button>
+          </div>
+          <h3 class="ttl"><a href="CardDetail.dc.html">I tried living on $10 a day for a week</a></h3>
+          <div class="flags"><span class="st" style="--sb:var(--coral-soft);--si:var(--coral-ink);--sd:#F08A5D">Filming</span></div>
+          <div class="pipe" role="img" aria-label="Script done, Film in progress"><i class="done"></i><i class="now"></i><i></i><i></i><i></i></div>
+          <div class="foot">
+            <div class="avs"><span class="av" style="background:#4C7CF0">Z</span><span class="av" style="background:#E0567F">M</span></div>
+            <span class="meta hot"><svg width="14" height="14"><use href="#i-cmt"/></svg>3</span>
+            <span class="meta"><svg width="14" height="14"><use href="#i-check"/></svg>2/6</span>
+            <span class="sp"></span>
+            <span class="due today"><span class="k">Film</span> Today</span>
+          </div>
+        </article>
+      </div>
+      <ol>
+        <li><b>Content type</b>: the only solid block on the card (TYPEFILL). It is how people scan a column, so nothing else competes with it.</li>
+        <li><b>Job # and actions</b>: job number in faint tabular figures. The <b>⋯</b> button appears on hover or focus and opens the quick menu.</li>
+        <li><b>Title</b>: 15 / 600, clamped to two lines. The whole card is the click target (stretched link); Enter opens it from the keyboard.</li>
+        <li><b>Status + flags</b>: status uses the soft tone with a dot, no “Status:” prefix. Flags only appear when something needs a person: a revision, a sponsor waiting, a blocked step.</li>
+        <li><b>Pipeline</b>: one segment per step (Script, Film, Edit, Thumbnail, Sponsor when there is one, Publish). Green done, blue in progress, red needs revision, gray not started. Same data and colors as the stepper in the modal.</li>
+        <li><b>People and counts</b>: editor and designer avatars (an empty + ring when a role is unassigned), comments with a red dot when there are unread ones, files, checklist progress. Zero counts are hidden.</li>
+        <li><b>Next date</b>: the single date that matters next for this viewer's role (Film, Edit due, Thumb due, then Pub). Red when late, amber when today. The footer is not drawn at all when it would be empty.</li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- ===================== STATES ===================== -->
+  <section>
+    <h2 class="sec-h">States</h2>
+    <div class="grid">
+      <div class="cell"><span class="lbl">Minimal (new project)</span>
+        <article class="card">
+          <div class="c-top"><span class="type" style="--tf:#FF6A3D;--ti:#1A0A04">YouTube Video</span><span class="job">FTGU-0150</span><button class="more" aria-label="Actions"><svg width="16" height="16"><use href="#i-more"/></svg></button></div>
+          <h3 class="ttl"><a href="CardDetail.dc.html">Test project</a></h3>
+          <div class="flags"><span class="st" style="--sb:var(--chip);--si:var(--ink-3);--sd:#B0B0B0">Scripting</span></div>
+          <div class="pipe" role="img" aria-label="Script in progress"><i class="now"></i><i></i><i></i><i></i><i></i></div>
+        </article>
+        <p class="note">No people, dates or counts yet, so no footer and no empty divider (today's card draws a stray line here).</p>
+      </div>
+
+      <div class="cell"><span class="lbl">Hover / focus</span>
+        <article class="card" style="border-color:var(--border-strong);box-shadow:0 1px 2px rgba(0,0,0,0.04),0 8px 24px rgba(0,0,0,0.06)">
+          <div class="c-top"><span class="type" style="--tf:#FF3F8E;--ti:#1A0510">Short</span><span class="job">FTGU-0145</span><button class="more" style="opacity:1" aria-label="Actions"><svg width="16" height="16"><use href="#i-more"/></svg></button></div>
+          <h3 class="ttl"><a href="CardDetail.dc.html" style="text-decoration:underline;text-underline-offset:3px">3 budgeting apps that actually work</a></h3>
+          <div class="flags"><span class="st" style="--sb:var(--chip);--si:var(--ink-3);--sd:#B0B0B0">Scripting</span></div>
+          <div class="pipe"><i class="now"></i><i></i><i></i><i></i><i></i></div>
+          <div class="foot"><div class="avs"><span class="av empty">+</span></div><span class="sp"></span><span class="due"><span class="k">Pub</span> Nov 4</span></div>
+        </article>
+        <p class="note">Border goes to border-strong, soft lift, title underlines, ⋯ appears.</p>
+      </div>
+
+      <div class="cell"><span class="lbl">Quick menu open</span>
+        <article class="card" style="border-color:var(--border-strong)">
+          <div class="c-top"><span class="type" style="--tf:#FF3F8E;--ti:#1A0510">Short</span><span class="job">FTGU-0145</span><button class="more" aria-expanded="true" aria-label="Actions" style="background:var(--hover);color:var(--ink)"><svg width="16" height="16"><use href="#i-more"/></svg></button></div>
+          <h3 class="ttl"><a href="CardDetail.dc.html">3 budgeting apps that actually work</a></h3>
+          <div class="flags"><span class="st" style="--sb:var(--chip);--si:var(--ink-3);--sd:#B0B0B0">Scripting</span></div>
+          <div class="pipe"><i class="now"></i><i></i><i></i><i></i><i></i></div>
+          <div class="foot"><div class="avs"><span class="av empty">+</span></div><span class="sp"></span><span class="due"><span class="k">Pub</span> Nov 4</span></div>
+          <div class="menu" role="menu">
+            <button role="menuitem">Open<span class="kbd">↵</span></button>
+            <button role="menuitem">Change status…</button>
+            <button role="menuitem">Assign editor…</button>
+            <button role="menuitem">Move to Post Production</button>
+            <button role="menuitem">Copy link</button>
+            <hr>
+            <button role="menuitem">Duplicate</button>
+            <button role="menuitem" class="danger">Archive</button>
+          </div>
+        </article>
+        <div style="height:150px"></div>
+      </div>
+
+      <div class="cell"><span class="lbl">Open in modal (selected)</span>
+        <article class="card is-open">
+          <div class="c-top"><span class="type" style="--tf:#FF6A3D;--ti:#1A0A04">YouTube Video</span><span class="job">FTGU-0142</span></div>
+          <h3 class="ttl"><a href="CardDetail.dc.html">I tried living on $10 a day for a week</a></h3>
+          <div class="flags"><span class="st" style="--sb:var(--coral-soft);--si:var(--coral-ink);--sd:#F08A5D">Filming</span></div>
+          <div class="pipe"><i class="done"></i><i class="now"></i><i></i><i></i><i></i></div>
+        </article>
+        <p class="note">Ink ring while its modal is open, so closing the modal lands you back where you were.</p>
+      </div>
+
+      <div class="cell"><span class="lbl">Dragging</span>
+        <div style="padding:6px 6px 14px">
+        <article class="card is-drag">
+          <div class="c-top"><span class="type" style="--tf:#9B7BFF;--ti:#120A2B">Podcast</span><span class="job">FTGU-0131</span></div>
+          <h3 class="ttl"><a href="CardDetail.dc.html">Ep. 42 with Ramit: the rich life checklist</a></h3>
+          <div class="flags"><span class="st" style="--sb:var(--violet-soft);--si:var(--violet-ink);--sd:#A66BD6">Sponsor Review</span></div>
+          <div class="pipe"><i class="done"></i><i class="done"></i><i class="done"></i><i class="done"></i><i class="now"></i><i></i></div>
+        </article>
+        </div>
+        <div class="slot"></div>
+        <p class="note">Lifted copy tilts 2°, the column shows a dashed slot where it will land. Dropping into another stage sets that stage's first status.</p>
+      </div>
+
+      <div class="cell"><span class="lbl">Overdue + needs revision</span>
+        <article class="card">
+          <div class="c-top"><span class="type" style="--tf:#FF6A3D;--ti:#1A0A04">YouTube Video</span><span class="job">FTGU-0138</span><button class="more" aria-label="Actions"><svg width="16" height="16"><use href="#i-more"/></svg></button></div>
+          <h3 class="ttl"><a href="CardDetail.dc.html">How I paid off $48k of debt in 18 months</a></h3>
+          <div class="flags"><span class="st" style="--sb:var(--blue-soft);--si:var(--blue-ink);--sd:#4C7CF0">Editing</span><span class="flag red"><svg width="13" height="13"><use href="#i-warn"/></svg>Edit needs revision</span></div>
+          <div class="pipe"><i class="done"></i><i class="done"></i><i class="warn"></i><i class="now"></i><i></i></div>
+          <div class="foot"><div class="avs"><span class="av" style="background:#4C7CF0">Z</span></div><span class="meta hot"><svg width="14" height="14"><use href="#i-cmt"/></svg>7</span><span class="sp"></span><span class="due late"><span class="k">Edit</span> 2d late</span></div>
+        </article>
+        <p class="note">Late dates can read relative (“2d late”) so nobody does date math.</p>
+      </div>
+
+      <div class="cell"><span class="lbl">Editor's view (role card config)</span>
+        <article class="card">
+          <div class="c-top"><span class="type" style="--tf:#FF6A3D;--ti:#1A0A04">YouTube Video</span><span class="job">FTGU-0138</span></div>
+          <h3 class="ttl"><a href="CardDetail.dc.html">How I paid off $48k of debt in 18 months</a></h3>
+          <div class="flags"><span class="st" style="--sb:var(--red-soft);--si:var(--red-ink);--sd:#E5484D">Needs Revision</span></div>
+          <div class="pipe"><i class="done"></i><i class="done"></i><i class="warn"></i><i class="now"></i><i></i></div>
+          <div class="foot"><span class="meta hot"><svg width="14" height="14"><use href="#i-cmt"/></svg>2 new notes</span><span class="sp"></span><span class="due late"><span class="k">Edit due</span> Oct 24</span></div>
+        </article>
+        <p class="note">Status shows the role's own column (editStatus for editors, thumb for designers), and the date is their deadline. Same layout, driven by role.card.</p>
+      </div>
+
+      <div class="cell"><span class="lbl">Sponsor / client view</span>
+        <article class="card">
+          <div class="c-top"><span class="type" style="--tf:#9B7BFF;--ti:#120A2B">Podcast</span></div>
+          <h3 class="ttl"><a href="CardDetail.dc.html">Ep. 42 with Ramit: the rich life checklist</a></h3>
+          <div class="flags"><span class="st" style="--sb:var(--violet-soft);--si:var(--violet-ink);--sd:#A66BD6">Sponsor Review</span><span class="flag amber">Your approval needed</span></div>
+          <div class="foot"><span class="sp"></span><span class="due"><span class="k">Pub</span> Oct 30</span></div>
+        </article>
+        <p class="note">No job #, people, pipeline or menu. The one thing they can act on is called out.</p>
+      </div>
+
+      <div class="cell compact"><span class="lbl">Compact density</span>
+        <article class="card">
+          <div class="c-top"><span class="type" style="--tf:#FF3F8E;--ti:#1A0510">Short</span><span class="job">FTGU-0145</span></div>
+          <h3 class="ttl"><a href="CardDetail.dc.html">3 budgeting apps that actually work</a></h3>
+          <div class="pipe"><i class="now"></i><i></i><i></i><i></i><i></i></div>
+          <div class="foot" style="padding-top:8px"><span class="st" style="--sb:var(--chip);--si:var(--ink-3);--sd:#B0B0B0">Scripting</span><span class="sp"></span><span class="due"><span class="k">Pub</span> Nov 4</span></div>
+        </article>
+        <p class="note">Density: Compact. One-line title, status moves into the footer, cover hidden.</p>
+      </div>
+    </div>
+  </section>
+</main>
+</body>
+</html>

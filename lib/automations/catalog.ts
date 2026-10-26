@@ -5,7 +5,7 @@
 export type Choice = [string, string];
 
 export type TriggerDef = { key: string; label: string; values?: Choice[] | 'statuses'; valueLabel?: string };
-export type ActionDef = { key: string; label: string; app: string; needs?: 'slack' | 'n8n'; message?: string };
+export type ActionDef = { key: string; label: string; app: string; needs?: 'slack' | 'n8n' | 'buffer'; message?: string };
 
 export const TRIGGERS: TriggerDef[] = [
   { key: 'status', label: 'Status becomes', values: 'statuses', valueLabel: 'Status' },
@@ -27,6 +27,8 @@ export const ACTIONS: ActionDef[] = [
   { key: 'status_next', label: 'Move Status to the next step', app: 'Board' },
   { key: 'todo_admin', label: 'Create a To-Do for Super Admin', app: 'In-app', message: 'To-Do text' },
   { key: 'webhook_n8n', label: 'Send a webhook to n8n', app: 'n8n', needs: 'n8n' },
+  // Posts the project's Social post (caption, cut, chosen Buffer channels); see lib/integrations/buffer-publish.ts.
+  { key: 'buffer_publish', label: 'Publish to Buffer', app: 'Buffer', needs: 'buffer' },
 ];
 
 export const triggerById = (k: string) => TRIGGERS.find((t) => t.key === k);

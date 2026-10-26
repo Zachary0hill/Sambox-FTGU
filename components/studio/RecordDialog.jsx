@@ -131,7 +131,7 @@ export default function RecordDialog({ d }) {
         {d.err ? <p role="alert" style={css('margin: 16px 0 0; padding: 10px 12px; border-radius: 10px; background: var(--red-soft); color: var(--red-ink); font-size: 13px; font-weight: 600; line-height: 1.45')}>{d.err}</p> : null}
         {d.note ? <p role="status" style={css('margin: 16px 0 0; padding: 10px 12px; border-radius: 10px; background: var(--surface-2); color: var(--ink-3); font-size: 13px; line-height: 1.5; white-space: pre-line')}>{d.note}</p> : null}
         <div style={css('display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 24px')}>
-          {d.remove ? <button type="button" onClick={d.remove.pick} disabled={!!d.busy} style={css(KIND.danger + (d.remove.confirm ? ' background: var(--red-soft); border-color: transparent;' : ''))}>{d.remove.label}</button> : null}
+          {d.remove ? <button type="button" onClick={d.remove.pick} disabled={!!d.busy} style={css(KIND.danger + (d.remove.confirm ? ' background: var(--red-soft); border: 1px solid transparent;' : ''))}>{d.remove.label}</button> : null}
           {(d.extra || []).map((x) => <button key={x.label} type="button" onClick={x.pick} disabled={!!d.busy || !!x.disabled} style={css(KIND[x.kind || 'ghost'] + (x.disabled ? ' opacity: 0.5; cursor: default;' : ''))}>{x.label}</button>)}
           <span style={css('flex: 1')}></span>
           <button type="button" className="fb-ni" onClick={d.close} style={css(KIND.quiet)}>Cancel</button>

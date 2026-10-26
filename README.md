@@ -121,7 +121,7 @@ Only a Super Admin connects integrations, in Workspace Settings > Integrations. 
 | Apify, Browserbase | Ideas & Research | Research button (Super Admin): pick a brand, topics, sources and how many ideas. Capped Apify actors (YouTube, TikTok, Reddit, Google), a Browserbase browser on YouTube search, and Firecrawl search gather findings; the workspace's AI model drafts ideas grounded in them, saved as Research drafts with source links. Runs live in `research_runs`, survive a reload and can be cancelled. Needs an AI provider plus at least one source. |
 | Slack | Inbox > Messages | Create a Slack app, add bot scopes `channels:read`, `groups:read`, `channels:history`, `groups:history`, `users:read`, `app_mentions:read` (plus `im:history` for DMs, `chat:write` for future alerts), install it, and paste the bot token (`xoxb-`) and signing secret. Invite the bot to channels, then Sync now (first sync: 7 days, 100 messages per channel). For live messages once deployed, enable Event Subscriptions with Request URL `https://<domain>/api/webhooks/slack` and bot events `message.channels`, `message.groups`, `app_mention` (and `message.im`). Messages are visible to Super Admins, editors and designers only. |
 | YouTube | Content > Videos | A Google Cloud API key with YouTube Data API v3 enabled (Application restrictions: None or IP addresses) and channel IDs or @handles. Pulls the 200 most recent uploads, then only new ones, with views, likes, comments, duration and thumbnails. Projects whose link matches a video get a metrics snapshot. About 1 quota unit per 50 videos. Retention and impressions need YouTube Analytics OAuth and are not pulled. |
-| Buffer | Content > Social | A personal API key (Buffer Settings > API). Pulls channels and sent posts with Buffer's daily post metrics. Buffer's API has no query for comments, mentions or DMs, so none reach the Inbox; `inbox_items` already accepts `source = 'buffer'` for when it does. A sync uses 2 to 6 of the key's API calls (Free plan: 250 a day). |
+| Buffer | Content > Social | A personal API key (Buffer Settings > API). Pulls channels and sent posts with Buffer's daily post metrics. Buffer's API has no query for comments, mentions or DMs, so none reach the Inbox; `inbox_items` already accepts `source = 'buffer'` for when it does. A sync uses 2 to 6 of the key's API calls (Free plan: 250 a day). **Publishing:** fill in a project's Social post (caption, Buffer channels, queue / right away / Publishing date at a time) in the drawer, and add a workflow with the action Publish to Buffer, for example Status becomes Ready. It posts the newest Final video, else the latest cut, else a Final image, copied to the public `buffer-media` bucket because Buffer fetches media by URL when the post goes out; the copy is removed after Buffer reports the post sent. Each channel posts once per project (`buffer_publications`); a Super Admin can allow it again from the drawer. Instagram, TikTok and YouTube need a video or image (YouTube a video); Pinterest and Google Business are not supported from here. |
 
 Server env: `CRON_SECRET` for scheduled syncs, optional `MONDAY_WEBHOOK_SECRET` (signs monday webhook URLs; falls back
 to `SUPABASE_SECRET_KEY`), and `APP_BASE_URL` as a public https URL for monday webhooks.
@@ -185,10 +185,15 @@ Nothing runs on a timer by itself. Point a scheduler (Railway cron, Vercel Cron,
 The board also calls the first two after each change and on load, so a workspace with people signed in keeps moving
 without the scheduler; unattended reminders, digests and retries need it.
 
+Production runs these with pg_cron + pg_net in Supabase (`supabase/migrations/20261026000200_scheduler.sql`): automations
+every 5 minutes, notifications every 15, and the monday, Slack, YouTube and Buffer syncs hourly at :07, :17, :27 and :37.
+The jobs read the app URL and `CRON_SECRET` from Vault (`app_base_url`, `cron_secret`); if `CRON_SECRET` changes on
+Railway, update the Vault entry too or every tick gets a 401 (`select * from net._http_response` shows them).
+
 ## Not built yet
 
 - Google Drive, Gmail and Frame.io connectors (they need OAuth apps), YouTube Analytics retention and impressions,
-  publishing or scheduling to YouTube or Buffer, and replying to Slack or Buffer from the Inbox.
+  uploading straight to YouTube (Buffer can post to a connected YouTube channel), and replying to Slack or Buffer from the Inbox.
 - Payment collection and payout transfers (Finance records them; a billing provider would move the money).
 - Background desktop push (needs a service worker and push subscription); today's push works while the board is open.
 - Research runs still execute inside the request's `after()`; an interrupted run is marked failed (and can be run

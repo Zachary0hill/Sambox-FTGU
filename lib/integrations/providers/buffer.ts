@@ -107,6 +107,29 @@ const POSTS_PAGE = `query FtguPosts($org: OrganizationId!, $first: Int, $after: 
 }
 ${POST_FIELDS}`;
 
+// createPost answers with PostActionSuccess or one of the MutationError types (NotFoundError, InvalidInputError,
+// LimitReachedError, ...); all of them carry `message`. https://developers.buffer.com/types/PostActionPayload.md
+const CREATE_POST = `mutation FtguCreatePost($input: CreatePostInput!) {
+  createPost(input: $input) {
+    __typename
+    ... on PostActionSuccess { post { id status dueAt externalLink } }
+    ... on MutationError { message }
+  }
+}`;
+
+export type CreatedPost = { id: string; status: string; dueAt: string | null; externalLink: string | null };
+
+// Creates one post. A MutationError comes back as a thrown BufferError with Buffer's own message.
+export async function createBufferPost(key: string, input: Json): Promise<CreatedPost> {
+  const { data } = await gql<{ createPost: Json }>(key, CREATE_POST, { input });
+  const r = (data && data.createPost) || {};
+  const post = r.post as Json | undefined;
+  if (r.__typename !== 'PostActionSuccess' || !post || !post.id) {
+    throw new BufferError('Buffer did not create the post: ' + String(r.message || r.__typename || 'no answer') + '.', String(r.__typename || ''));
+  }
+  return { id: String(post.id), status: String(post.status || ''), dueAt: (post.dueAt as string) || null, externalLink: (post.externalLink as string) || null };
+}
+
 type Org = { id: string; name: string };
 type PostsPage = { edges: { node: Json }[] | null; pageInfo: { hasNextPage: boolean; endCursor: string | null } };
 

@@ -13,6 +13,7 @@ import { FilterBy, SortEditor, FilterChips, NoMatch } from './FilterBar';
 import { PropertiesPanel, GroupPanel, LayoutPanel } from './ViewPanels';
 import { AddColumnStep2, QuickAdd } from './AddColumn';
 import RecordDialog from './RecordDialog';
+import { RichText, Thinking, Steps, MsgActions, ModelPicker, ModeToggle, GearButton, AiSettings, ChatScroll } from './ChatKit';
 
 export default function StudioView({ V }) {
   return (
@@ -1965,7 +1966,10 @@ export default function StudioView({ V }) {
                     <span style={css("flex: 1")}></span>
                     {" "}
                     <span style={css("font-size: 13px; color: var(--muted-2); white-space: nowrap")}>{V.todayLong}</span>
+                    {/* app: AI settings (models, API keys, answer mode, instructions) */}
+                    <GearButton onClick={V.chat.settings.show} />
                   </header>
+                  {V.chat.settings.open ? <AiSettings d={V.chat.settings} /> : null}
                   {" "}
                   {V.chat.isEmpty ? (
                     <>
@@ -2047,13 +2051,18 @@ export default function StudioView({ V }) {
                         <div className="fb-composer" style={css(V.chat.composerStyle)}>
                           <label htmlFor="chat-input" style={css("position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap")}>Message the assistant</label>
                           {" "}
-                          <input id="chat-input" className="fb-chatin" type="text" autoComplete="off" placeholder={V.chat.placeholder} value={V.chat.draft ?? ''} onChange={V.chat.onDraft} onKeyDown={V.chat.onKey} style={css(V.chat.inputStyle)} />
+                          {/* app: multi-line composer; Enter sends, Shift+Enter adds a line */}
+                          <textarea id="chat-input" className="fb-chatin" rows={V.chat.rows} autoComplete="off" placeholder={V.chat.placeholder} value={V.chat.draft ?? ''} onChange={V.chat.onDraft} onKeyDown={V.chat.onKey} style={css(V.chat.inputStyle)} />
                           {" "}
                           <div style={css("display: flex; align-items: center; gap: 6px")}>
-                            <span title={V.chat.scopeTitle} style={css(V.chat.scopeChip)}>
-                              <span aria-hidden="true" style={css(V.chat.scopeDot)}></span>
-                              {V.chat.scope}
-                            </span>
+                            {/* app: model picker and Fast / Think toggle; the scope chip when no model is connected */}
+                            {V.chat.hasPicker ? <ModelPicker p={V.chat.picker} /> : (
+                              <span title={V.chat.scopeTitle} style={css(V.chat.scopeChip)}>
+                                <span aria-hidden="true" style={css(V.chat.scopeDot)}></span>
+                                {V.chat.scope}
+                              </span>
+                            )}
+                            {V.chat.hasMode ? <ModeToggle m={V.chat.modeCtl} /> : null}
                             {" "}
                             <span style={css("flex: 1")}></span>
                             {" "}
@@ -2063,11 +2072,18 @@ export default function StudioView({ V }) {
                               </svg>
                             </button>
                             {" "}
-                            <button type="button" aria-label="Send message" onClick={V.chat.send} style={css(V.chat.sendBtn)}>
-                              <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                <path d="M12 19V5M5 12l7-7 7 7"></path>
-                              </svg>
-                            </button>
+                            {/* app: Stop replaces Send while an answer is generating */}
+                            {V.chat.busy ? (
+                              <button type="button" aria-label="Stop generating" title="Stop" onClick={V.chat.stop} style={css(V.chat.stopBtn)}>
+                                <svg aria-hidden="true" width="14" height="14" viewBox="0 0 14 14"><rect x="2" y="2" width="10" height="10" rx="2" fill="currentColor"></rect></svg>
+                              </button>
+                            ) : (
+                              <button type="button" aria-label="Send message" onClick={V.chat.send} style={css(V.chat.sendBtn)}>
+                                <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                  <path d="M12 19V5M5 12l7-7 7 7"></path>
+                                </svg>
+                              </button>
+                            )}
                           </div>
                         </div>
                         {" "}
@@ -2116,7 +2132,8 @@ export default function StudioView({ V }) {
                   {" "}
                   {V.chat.hasMsgs ? (
                     <>
-                      <div style={css("flex: 1 1 auto; min-height: 0; max-height: calc(100vh - 290px); overflow-y: auto; padding: 28px 24px 12px; box-sizing: border-box")}>
+                      {/* app: ChatScroll follows the newest text unless the member scrolled up */}
+                      <ChatScroll chatKey={V.chat.subtitle} style={css("flex: 1 1 auto; min-height: 0; max-height: calc(100vh - 290px); overflow-y: auto; padding: 28px 24px 12px; box-sizing: border-box")}>
                         <ol aria-label="Conversation" aria-live="polite" aria-busy={V.chat.busy ? 'true' : 'false'} style={css("max-width: 760px; margin: 0 auto; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 24px")}>
                           {(V.chat.msgs || []).map((mg, mg__i) => (
                             <Fragment key={mg__i}>
@@ -2135,8 +2152,13 @@ export default function StudioView({ V }) {
                                       </svg>
                                     </span>
                                     {" "}
-                                    <div style={css("flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 12px")}>
-                                      {/* app: AI replies render as paragraphs and lists of plain text; rule-based replies keep the single paragraph */}
+                                    <div className={mg.isLast ? 'fb-aimsg fb-aimsg-last' : 'fb-aimsg'} style={css("flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 12px")}>
+                                      {/* app: model replies: Thinking block, tool steps, then the reply as light markdown (ChatKit.jsx) */}
+                                      {mg.thinking ? <Thinking t={mg.thinking} /> : null}
+                                      {mg.steps.length ? <Steps steps={mg.steps} /> : null}
+                                      {mg.waiting ? <p className="fb-shimmer" style={css("margin: 6px 0 0; font-size: 15px; font-weight: 600")}>{mg.waiting}</p> : null}
+                                      {mg.rich ? <RichText text={mg.rich} live={mg.live} /> : null}
+                                      {/* app: rule-based replies keep the single paragraph */}
                                       {mg.text ? <p style={css("margin: 0; font-size: 15px; line-height: 1.6; color: var(--ink-2)")}>{mg.text}</p> : null}
                                       {(mg.blocks || []).map((bk, bk__i) => (
                                         <Fragment key={'bk' + bk__i}>
@@ -2217,6 +2239,7 @@ export default function StudioView({ V }) {
                                           <p style={css("margin: 0; font-size: 14px; color: var(--muted)")}>{mg.foot}</p>
                                         </>
                                       ) : null}
+                                      {mg.actions ? <MsgActions a={mg.actions} /> : null}
                                     </div>
                                   </>
                                 ) : null}
@@ -2224,19 +2247,24 @@ export default function StudioView({ V }) {
                             </Fragment>
                           ))}
                         </ol>
-                      </div>
+                      </ChatScroll>
                       {" "}
                       <div style={css("flex: none; padding: 12px 24px 24px; display: flex; flex-direction: column; align-items: center; gap: 8px")}>
                         <div className="fb-composer" style={css(V.chat.composerStyle)}>
                           <label htmlFor="chat-input" style={css("position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap")}>Message the assistant</label>
                           {" "}
-                          <input id="chat-input" className="fb-chatin" type="text" autoComplete="off" placeholder="Reply to the assistant" value={V.chat.draft ?? ''} onChange={V.chat.onDraft} onKeyDown={V.chat.onKey} style={css(V.chat.inputStyle)} />
+                          {/* app: multi-line composer; Enter sends, Shift+Enter adds a line */}
+                          <textarea id="chat-input" className="fb-chatin" rows={V.chat.rows} autoComplete="off" placeholder="Reply to the assistant" value={V.chat.draft ?? ''} onChange={V.chat.onDraft} onKeyDown={V.chat.onKey} style={css(V.chat.inputStyle)} />
                           {" "}
                           <div style={css("display: flex; align-items: center; gap: 6px")}>
-                            <span title={V.chat.scopeTitle} style={css(V.chat.scopeChip)}>
-                              <span aria-hidden="true" style={css(V.chat.scopeDot)}></span>
-                              {V.chat.scope}
-                            </span>
+                            {/* app: model picker and Fast / Think toggle; the scope chip when no model is connected */}
+                            {V.chat.hasPicker ? <ModelPicker p={V.chat.picker} /> : (
+                              <span title={V.chat.scopeTitle} style={css(V.chat.scopeChip)}>
+                                <span aria-hidden="true" style={css(V.chat.scopeDot)}></span>
+                                {V.chat.scope}
+                              </span>
+                            )}
+                            {V.chat.hasMode ? <ModeToggle m={V.chat.modeCtl} /> : null}
                             {" "}
                             <span style={css("flex: 1")}></span>
                             {" "}
@@ -2246,11 +2274,18 @@ export default function StudioView({ V }) {
                               </svg>
                             </button>
                             {" "}
-                            <button type="button" aria-label="Send message" onClick={V.chat.send} style={css(V.chat.sendBtn)}>
-                              <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                <path d="M12 19V5M5 12l7-7 7 7"></path>
-                              </svg>
-                            </button>
+                            {/* app: Stop replaces Send while an answer is generating */}
+                            {V.chat.busy ? (
+                              <button type="button" aria-label="Stop generating" title="Stop" onClick={V.chat.stop} style={css(V.chat.stopBtn)}>
+                                <svg aria-hidden="true" width="14" height="14" viewBox="0 0 14 14"><rect x="2" y="2" width="10" height="10" rx="2" fill="currentColor"></rect></svg>
+                              </button>
+                            ) : (
+                              <button type="button" aria-label="Send message" onClick={V.chat.send} style={css(V.chat.sendBtn)}>
+                                <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                  <path d="M12 19V5M5 12l7-7 7 7"></path>
+                                </svg>
+                              </button>
+                            )}
                           </div>
                         </div>
                         {" "}
@@ -2617,6 +2652,13 @@ export default function StudioView({ V }) {
                           </>
                         ) : null}
                       </div>
+                      {/* app: hand-added cards for posts no sync brings in (content_entries) */}
+                      {V.lib.canAdd ? (
+                        <button type="button" onClick={V.lib.add} style={css(V.ui.btnPrimary + " min-height: 40px; margin-left: 8px;")}>
+                          <svg aria-hidden="true" width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M8 3v10M3 8h10"></path></svg>
+                          <span>Add content</span>
+                        </button>
+                      ) : null}
                     </div>
                     {" "}
                     <div style={css("display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px")}>
@@ -2631,6 +2673,8 @@ export default function StudioView({ V }) {
                               <span style={css(cv.typeStyle)}>{cv.type}</span>
                               {" "}
                               <span style={css("font-family: var(--font-title); font-size: 20px; font-weight: var(--weight-black); line-height: 1.1; letter-spacing: -0.02em; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden")}>{cv.thumbText}</span>
+                              {/* app: banner hook on hand-added cards */}
+                              <Hook b={{ showHook: cv.hasHook, hookStyle: cv.hookStyle, hiStyle: cv.hiStyle, hookHi: cv.hookHi, hookRest: cv.hookRest }} />
                               {" "}
                               <span style={css(cv.stateStyle)}>{cv.state}</span>
                             </div>
@@ -2692,6 +2736,7 @@ export default function StudioView({ V }) {
                                     <button type="button" className="fb-ni" aria-label={cv.aria} onClick={cv.open} style={css(V.lib.openBtn)}>Open project</button>
                                   </>
                                 ) : null}
+                                {cv.canEdit ? <button type="button" className="fb-ni" aria-label={cv.editAria} onClick={cv.edit} style={css(V.lib.openBtn + (cv.hasProject ? " margin-left: 0;" : ""))}>Edit</button> : null}
                               </div>
                             </div>
                           </article>
@@ -2705,6 +2750,143 @@ export default function StudioView({ V }) {
                       </>
                     ) : null}
                     </>
+                    ) : null}
+                    {/* app: add or edit a hand-added content card; same layout and parts as New idea */}
+                    {V.lib.cm ? (
+                      <>
+                        <button type="button" aria-label="Close dialog" onClick={V.lib.cm.close} style={css("position: fixed; inset: 0; z-index: 40; border: 0; background: rgba(17,17,17,0.45); cursor: default")}></button>
+                        <dialog open aria-modal="true" aria-labelledby="cm-h" onKeyDown={V.lib.cm.onKey} style={css("position: fixed; z-index: 41; top: 50%; left: 50%; transform: translate(-50%, -50%); margin: 0; width: 1120px; max-width: calc(100vw - 32px); max-height: calc(100vh - 48px); overflow-y: auto; box-sizing: border-box; padding: 0; background: var(--surface); border: 1px solid var(--line-4); border-radius: 28px; box-shadow: 0 24px 80px rgba(0,0,0,0.28); color: var(--ink); font-family: var(--font-main)")}>
+                          <header style={css("display: flex; flex-wrap: wrap; align-items: flex-start; gap: 16px; padding: 28px clamp(16px, 3vw, 28px) 20px; border-bottom: 1px solid var(--line)")}>
+                            <div style={css("flex: 1 1 300px; display: flex; flex-direction: column; gap: 6px; min-width: 0")}>
+                              <h2 id="cm-h" style={css("margin: 0; font-family: var(--font-title); font-weight: 900; font-size: 24px; letter-spacing: -0.02em")}>{V.lib.cm.heading}</h2>
+                              <p style={css("margin: 0; font-size: 14px; color: var(--muted)")}>{V.lib.cm.sub}</p>
+                            </div>
+                            <button type="button" className="fb-ni" aria-label="Close" onClick={V.lib.cm.close} style={css("width: 44px; height: 44px; display: inline-flex; align-items: center; justify-content: center; padding: 0; border: 0; border-radius: 12px; background: transparent; color: var(--ink); cursor: pointer")}>
+                              <svg aria-hidden="true" width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><path d="M4 4l8 8M12 4l-8 8"></path></svg>
+                            </button>
+                          </header>
+                          <div style={css("display: flex; flex-wrap: wrap; align-items: flex-start")}>
+                            <div style={css("flex: 999 1 520px; min-width: 0; box-sizing: border-box; padding: 24px clamp(16px, 3vw, 28px) 28px; display: flex; flex-direction: column; gap: 28px; border-right: 1px solid var(--line)")}>
+                              <fieldset style={css("margin: 0; padding: 0; border: 0; min-width: 0; display: flex; flex-direction: column; gap: 12px")}>
+                                <legend style={css(V.ids.legend)}>Banner</legend>
+                                <div role="group" aria-label="Banner style" style={css("display: flex; flex-wrap: wrap; gap: 8px")}>
+                                  {(V.lib.cm.covers || []).map((x) => <button key={x.label} type="button" aria-pressed={x.pressed} onClick={x.pick} style={css(x.style)}>{x.label}</button>)}
+                                </div>
+                                {V.lib.cm.canUseYt ? <p style={css("margin: 0; font-size: 13px; color: var(--muted)")}>The link is a YouTube video. <button type="button" onClick={V.lib.cm.useYt} style={css("padding: 0; border: 0; background: transparent; font-size: 13px; font-weight: 600; color: var(--link); text-decoration: underline; text-underline-offset: 3px; cursor: pointer")}>Use its thumbnail</button></p> : null}
+                                {V.lib.cm.showDrop ? (
+                                  <div onDragOver={V.lib.cm.onDragOver} onDragLeave={V.lib.cm.onDragLeave} onDrop={V.lib.cm.onDrop} style={css(V.lib.cm.dropStyle)}>
+                                    <span aria-hidden="true" style={css("width: 48px; height: 48px; border-radius: 14px; background: var(--surface); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; color: var(--ink)")}><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 16V4M7 9l5-5 5 5M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"></path></svg></span>
+                                    <p style={css("margin: 0; font-size: 15px; font-weight: 600")}>{V.lib.cm.dropTitle}</p>
+                                    <p style={css("margin: 0; font-size: 13px; color: var(--muted)")}>JPG, PNG or WebP up to 10 MB. 16:9 works best, 1920×1080 or larger.</p>
+                                    {V.lib.cm.ytNote ? <p style={css("margin: 0; font-size: 13px; color: var(--muted)")}>{V.lib.cm.ytNote}</p> : null}
+                                    <label htmlFor="cm-file" className="fb-ni fb-filelabel" style={css("position: relative; display: inline-flex; align-items: center; min-height: 40px; margin-top: 4px; padding: 0 14px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); font-size: 13px; font-weight: 600; cursor: pointer")}>Browse files<input id="cm-file" type="file" accept="image/*" onChange={V.lib.cm.onFile} style={css("position: absolute; width: 1px; height: 1px; opacity: 0")} /></label>
+                                  </div>
+                                ) : null}
+                                {V.lib.cm.hasImg ? (
+                                  <div style={css("display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding: 10px; border: 1px solid var(--border); border-radius: 16px; background: var(--surface-2)")}>
+                                    <span aria-hidden="true" style={css(V.lib.cm.fileThumb)}></span>
+                                    <div style={css("flex: 1 1 160px; min-width: 0; display: flex; flex-direction: column; gap: 2px")}>
+                                      <span style={css("font-size: 14px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap")}>{V.lib.cm.fileName}</span>
+                                      <span style={css("font-size: 12px; color: var(--muted)")}>Shown on the card in the Content grid.</span>
+                                    </div>
+                                    <label htmlFor="cm-file2" className="fb-ni fb-filelabel" style={css("position: relative; display: inline-flex; align-items: center; min-height: 40px; padding: 0 12px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); font-size: 13px; font-weight: 600; cursor: pointer")}>Replace<input id="cm-file2" type="file" accept="image/*" onChange={V.lib.cm.onFile} style={css("position: absolute; width: 1px; height: 1px; opacity: 0")} /></label>
+                                    <button type="button" className="fb-ni" onClick={V.lib.cm.removeImg} style={css("min-height: 40px; padding: 0 12px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); font-size: 13px; font-weight: 600; color: var(--red-ink); cursor: pointer")}>Remove</button>
+                                  </div>
+                                ) : null}
+                              </fieldset>
+                              <fieldset style={css("margin: 0; padding: 0; border: 0; min-width: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr)); gap: 16px")}>
+                                <legend style={css(V.ids.legend)}>Basics</legend>
+                                <div style={css("grid-column: 1 / -1; display: flex; flex-direction: column; gap: 6px")}>
+                                  <label htmlFor="cm-title" style={css(V.fieldLabel)}>Title</label>
+                                  <input id="cm-title" type="text" autoComplete="off" autoFocus placeholder="What was posted?" value={V.lib.cm.title} onChange={V.lib.cm.onTitle} style={css(V.fieldInput + " font-size: 15px;")} />
+                                </div>
+                                <div style={css("display: flex; flex-direction: column; gap: 6px")}>
+                                  <div style={css("display: flex; justify-content: space-between; align-items: baseline")}><label htmlFor="cm-hook" style={css(V.fieldLabel)}>Banner hook</label><span style={css("font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums")}>{V.lib.cm.hookCount}</span></div>
+                                  <input id="cm-hook" type="text" maxLength="24" autoComplete="off" placeholder="2 to 4 punchy words" value={V.lib.cm.hook} onChange={V.lib.cm.onHook} style={css(V.fieldInput + " font-size: 15px;")} />
+                                </div>
+                                <div style={css("display: flex; flex-direction: column; gap: 6px")}><label htmlFor="cm-channel" style={css(V.fieldLabel)}>Channel</label><DD d={V.dd.cmChannel} id="cm-channel" /></div>
+                                <div style={css("grid-column: 1 / -1; display: flex; flex-direction: column; gap: 6px")}>
+                                  <span id="cm-type-l" style={css(V.fieldLabel)}>Content type</span>
+                                  <div role="group" aria-labelledby="cm-type-l" style={css("display: flex; flex-wrap: wrap; gap: 8px")}>
+                                    {(V.lib.cm.types || []).map((t) => (
+                                      <button key={t.label} type="button" aria-pressed={t.pressed} onClick={t.pick} style={css(t.style)}><span aria-hidden="true" style={css(t.sw)}></span><span>{t.label}</span></button>
+                                    ))}
+                                  </div>
+                                </div>
+                                <div style={css("grid-column: 1 / -1; display: flex; flex-direction: column; gap: 8px")}>
+                                  <span id="cm-pl-l" style={css(V.fieldLabel)}>Platform</span>
+                                  <div role="group" aria-labelledby="cm-pl-l" style={css("display: flex; flex-wrap: wrap; gap: 8px")}>
+                                    {(V.lib.cm.platforms || []).map((p) => <button key={p.label} type="button" aria-pressed={p.pressed} onClick={p.pick} style={css(p.style)}>{p.label}</button>)}
+                                  </div>
+                                </div>
+                              </fieldset>
+                              <fieldset style={css("margin: 0; padding: 0; border: 0; min-width: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr)); gap: 16px")}>
+                                <legend style={css(V.ids.legend)}>Publishing</legend>
+                                <div style={css("display: flex; flex-direction: column; gap: 8px")}>
+                                  <span id="cm-st-l" style={css(V.fieldLabel)}>Status</span>
+                                  <div role="group" aria-labelledby="cm-st-l" style={css("display: inline-flex; align-self: flex-start; padding: 3px; gap: 2px; border-radius: 12px; background: var(--chip-2)")}>
+                                    {(V.lib.cm.statuses || []).map((x) => <button key={x.label} type="button" aria-pressed={x.pressed} onClick={x.pick} style={css(x.style)}>{x.label}</button>)}
+                                  </div>
+                                </div>
+                                <div style={css("display: flex; flex-direction: column; gap: 6px")}>
+                                  <label htmlFor="cm-date" style={css(V.fieldLabel)}>{V.lib.cm.dateLabel}</label>
+                                  <input id="cm-date" type="date" value={V.lib.cm.date} onChange={V.lib.cm.onDate} style={css(V.fieldInput)} />
+                                </div>
+                                <div style={css("display: flex; flex-direction: column; gap: 6px")}><label htmlFor="cm-project" style={css(V.fieldLabel)}>Project</label><DD d={V.dd.cmProject} id="cm-project" /></div>
+                                <div style={css("grid-column: 1 / -1; display: flex; flex-direction: column; gap: 6px")}>
+                                  <label htmlFor="cm-url" style={css(V.fieldLabel)}>Link</label>
+                                  <input id="cm-url" type="url" autoComplete="off" placeholder="https://… (a YouTube link can supply the banner)" value={V.lib.cm.url} onChange={V.lib.cm.onUrl} style={css(V.fieldInput)} />
+                                </div>
+                              </fieldset>
+                              <fieldset style={css("margin: 0; padding: 20px; border: 1px solid var(--border); border-radius: 20px; background: var(--surface-2); min-width: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(150px, 100%), 1fr)); gap: 16px")}>
+                                <legend style={css(V.ids.legend + " margin: 0; padding: 0 6px;")}>Performance</legend>
+                                <div style={css("display: flex; flex-direction: column; gap: 6px")}><label htmlFor="cm-views" style={css(V.fieldLabel)}>Views</label><input id="cm-views" type="text" inputMode="decimal" autoComplete="off" placeholder="12,400 or 12.4k" value={V.lib.cm.views} onChange={V.lib.cm.onViews} style={css(V.fieldInput + " background: var(--surface);")} /></div>
+                                <div style={css("display: flex; flex-direction: column; gap: 6px")}><label htmlFor="cm-likes" style={css(V.fieldLabel)}>Likes</label><input id="cm-likes" type="text" inputMode="decimal" autoComplete="off" placeholder="Optional" value={V.lib.cm.likes} onChange={V.lib.cm.onLikes} style={css(V.fieldInput + " background: var(--surface);")} /></div>
+                                <div style={css("display: flex; flex-direction: column; gap: 6px")}><label htmlFor="cm-comments" style={css(V.fieldLabel)}>Comments</label><input id="cm-comments" type="text" inputMode="decimal" autoComplete="off" placeholder="Optional" value={V.lib.cm.comments} onChange={V.lib.cm.onComments} style={css(V.fieldInput + " background: var(--surface);")} /></div>
+                                <p style={css("grid-column: 1 / -1; margin: 0; font-size: 12px; color: var(--muted)")}>Leave a stat blank if you do not have it; the card shows a dash rather than zero.</p>
+                              </fieldset>
+                              <div style={css("display: flex; flex-direction: column; gap: 6px")}>
+                                <label htmlFor="cm-notes" style={css(V.fieldLabel)}>Notes</label>
+                                <textarea id="cm-notes" rows="3" placeholder="Anything worth remembering about this post" value={V.lib.cm.notes} onChange={V.lib.cm.onNotes} style={css(V.ids.textarea + " font-size: 15px;")} />
+                              </div>
+                            </div>
+                            <aside aria-label="Preview" style={css("flex: 1 1 320px; min-width: 0; box-sizing: border-box; padding: 24px clamp(16px, 3vw, 28px) 28px; display: flex; flex-direction: column; gap: 20px; position: sticky; top: 0")}>
+                              <p style={css("margin: 0; font-size: 13px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted)")}>Preview</p>
+                              <div style={css("display: flex; flex-direction: column; gap: 12px")}>
+                                <div style={css(V.lib.cm.thumbStyle)}>
+                                  {V.lib.cm.typeLabel ? <span style={css(V.lib.cm.typeStyle)}>{V.lib.cm.typeLabel}</span> : null}
+                                  <span style={css("position: absolute; top: 12px; right: 12px; display: inline-flex; align-items: center; height: 22px; padding: 0 8px; font-size: 11px; font-weight: 700; background: var(--surface); color: var(--ink)")}>{V.lib.cm.state}</span>
+                                  <Hook b={V.lib.cm} />
+                                </div>
+                                <div style={css("display: flex; flex-direction: column; gap: 4px")}>
+                                  <span style={css("font-size: 16px; font-weight: 600; line-height: 1.35; overflow-wrap: anywhere")}>{V.lib.cm.previewTitle}</span>
+                                  <span style={css("font-size: 13px; color: var(--muted)")}>{V.lib.cm.previewMeta}</span>
+                                </div>
+                                <dl style={css("margin: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; padding: 12px 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line)")}>
+                                  {(V.lib.cm.previewStats || []).map((m) => (
+                                    <div key={m.label} style={css("display: flex; flex-direction: column; gap: 2px; min-width: 0")}><dt style={css("font-size: 11px; font-weight: 600; color: var(--muted-2)")}>{m.label}</dt><dd style={css("margin: 0; font-size: 15px; font-weight: 700; font-variant-numeric: tabular-nums")}>{m.value}</dd></div>
+                                  ))}
+                                </dl>
+                              </div>
+                              <div style={css("display: flex; flex-direction: column; gap: 10px; padding: 16px; border-radius: 16px; background: var(--surface-2); border: 1px solid var(--border)")}>
+                                <div style={css("display: flex; justify-content: space-between; align-items: baseline")}><span style={css("font-size: 14px; font-weight: 600")}>Card completeness</span><span style={css("font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums; color: var(--ink-3)")}>{V.lib.cm.doneLabel}</span></div>
+                                <div role="progressbar" aria-label="Card completeness" aria-valuemin="0" aria-valuemax={V.lib.cm.doneMax} aria-valuenow={V.lib.cm.doneN} style={css("height: 6px; border-radius: 999px; background: var(--border); overflow: hidden")}><div style={css(V.lib.cm.doneBar)}></div></div>
+                                <CheckList items={V.lib.cm.checks} gap="6px" />
+                              </div>
+                              <p style={css("margin: 0; font-size: 13px; color: var(--muted); text-wrap: pretty")}>The card counts toward the Content page totals and filters by its type and channel.</p>
+                            </aside>
+                          </div>
+                          <footer style={css("position: sticky; bottom: 0; z-index: 3; display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding: 16px clamp(16px, 3vw, 28px); border-top: 1px solid var(--line); background: var(--surface-2)")}>
+                            {V.lib.cm.showAnother ? <label style={css("display: inline-flex; align-items: center; gap: 10px; min-height: 44px; font-size: 14px; color: var(--ink-3); cursor: pointer")}><input type="checkbox" checked={V.lib.cm.another} onChange={V.lib.cm.onAnother} style={css("width: 18px; height: 18px; accent-color: var(--ink); margin: 0")} />Add another after this one</label> : null}
+                            {V.lib.cm.canDelete ? <button type="button" onClick={V.lib.cm.del} disabled={V.lib.cm.busy} style={css(V.lib.cm.delStyle)}>{V.lib.cm.delLabel}</button> : null}
+                            {V.lib.cm.hasErr ? <span role="alert" style={css("font-size: 13px; font-weight: 600; color: var(--red-ink)")}>{V.lib.cm.err}</span> : null}
+                            <span style={css("flex: 1")}></span>
+                            <span style={css("font-size: 12px; color: var(--muted)")}><kbd style={css("padding: 2px 6px; border: 1px solid var(--border-3); border-radius: 6px; background: var(--surface); font-family: var(--font-main); font-size: 12px")}>⌘ Enter</kbd> to save</span>
+                            <button type="button" className="fb-ni" onClick={V.lib.cm.close} style={css("min-height: 44px; padding: 0 18px; border: 0; border-radius: 14px; background: transparent; font-size: 14px; font-weight: 500; color: var(--ink-3); cursor: pointer")}>Cancel</button>
+                            <button type="button" onClick={V.lib.cm.save} disabled={V.lib.cm.busy} style={css(V.ui.btnPrimary + (V.lib.cm.busy ? " opacity: 0.6;" : ""))}>{V.lib.cm.saveLabel}</button>
+                          </footer>
+                        </dialog>
+                      </>
                     ) : null}
                     {/* app: Social view, Buffer channels and sent posts with their metrics */}
                     {V.lib.isSocial ? (
@@ -4831,139 +5013,7 @@ export default function StudioView({ V }) {
                                                           ) : null}
                                                         </button>
                                                         {" "}
-                                                        {/* app: Select and Multi select cells use the picker (components/studio/SelectPicker.jsx) */}
-                                                        {c.editing && V.ce.isPicker ? <SelectPicker p={V.ce.picker} dark={V.dark} /> : null}
-                                                        {c.editing && V.ce.isStatusPicker ? <StatusPicker p={V.ce.status} dark={V.dark} /> : null}
-                                                        {/* app: Text, Number, Date, Person, URL, Email, Phone, Files, Relation and Formula editors */}
-                                                        {c.editing && V.ce.editor ? <CellEditor e={V.ce.editor} dark={V.dark} /> : null}
-                                                        {c.editing && !V.ce.isPicker && !V.ce.isStatusPicker && !V.ce.editor ? (
-                                                          <>
-                                                            <button type="button" tabIndex="-1" aria-label="Close editor" onClick={V.closeCell} style={css("position: fixed; inset: 0; z-index: 0; border: 0; background: transparent; cursor: default")}></button>
-                                                            {" "}
-                                                            <div role="dialog" aria-label={V.ce.label} onKeyDown={V.ce.onKey} style={css(c.popStyle)}>
-                                                              <div style={css("display: flex; align-items: baseline; justify-content: space-between; gap: 10px; padding: 4px 6px 8px")}>
-                                                                <span style={css("font-size: 12px; font-weight: 600; color: var(--muted-2); white-space: nowrap")}>{V.ce.label}</span>
-                                                                {" "}
-                                                                <span style={css("min-width: 0; font-size: 12px; color: var(--muted-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis")}>{V.ce.project}</span>
-                                                              </div>
-                                                              {" "}
-                                                              {V.ce.isList ? (
-                                                                <>
-                                                                  <div role="listbox" aria-label={V.ce.label} style={css("display: flex; flex-direction: column; gap: 2px")}>
-                                                                    {(V.ce.opts || []).map((co2, co2__i) => (
-                                                                      <Fragment key={co2__i}>
-                                                                        <button type="button" role="option" className="mitem" aria-selected={co2.sel} onClick={co2.pick} style={css(co2.style)}>
-                                                                          <span aria-hidden="true" style={css(co2.swStyle)}>{co2.swText}</span>
-                                                                          {" "}
-                                                                          <span style={css("flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis")}>{co2.label}</span>
-                                                                          {" "}
-                                                                          <span style={css("font-size: 12px; font-weight: 500; color: var(--muted-2)")}>{co2.meta}</span>
-                                                                          {" "}
-                                                                          <span style={css(co2.check)}>
-                                                                            <svg aria-hidden="true" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                                                              <path d="M3.5 8.5l3 3 6-7"></path>
-                                                                            </svg>
-                                                                          </span>
-                                                                        </button>
-                                                                      </Fragment>
-                                                                    ))}
-                                                                  </div>
-                                                                </>
-                                                              ) : null}
-                                                              {" "}
-                                                              {V.ce.isDate ? (
-                                                                <>
-                                                                  <div style={css("display: flex; flex-direction: column; gap: 8px; padding: 0 2px")}>
-                                                                    <div style={css("display: flex; align-items: center; justify-content: space-between; gap: 8px")}>
-                                                                      <button type="button" className="fb-ni" aria-label="Previous month" onClick={V.ce.cal.prev} style={css(V.ce.navBtn)}>
-                                                                        <svg aria-hidden="true" width="16" height="16" viewBox="0 0 16 16">
-                                                                          <path d="M10 3.5L5.5 8l4.5 4.5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"></path>
-                                                                        </svg>
-                                                                      </button>
-                                                                      {" "}
-                                                                      <span style={css("font-size: 14px; font-weight: 700; color: var(--ink)")}>{V.ce.cal.label}</span>
-                                                                      {" "}
-                                                                      <button type="button" className="fb-ni" aria-label="Next month" onClick={V.ce.cal.next} style={css(V.ce.navBtn)}>
-                                                                        <svg aria-hidden="true" width="16" height="16" viewBox="0 0 16 16">
-                                                                          <path d="M6 3.5L10.5 8 6 12.5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"></path>
-                                                                        </svg>
-                                                                      </button>
-                                                                    </div>
-                                                                    {" "}
-                                                                    <div aria-hidden="true" style={css("display: grid; grid-template-columns: repeat(7, 36px); gap: 2px; justify-content: center")}>
-                                                                      {(V.ce.cal.weekdays || []).map((wd2, wd2__i) => (
-                                                                        <Fragment key={wd2__i}>
-                                                                          <span style={css("height: 24px; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; color: var(--muted-2)")}>{wd2}</span>
-                                                                        </Fragment>
-                                                                      ))}
-                                                                    </div>
-                                                                    {" "}
-                                                                    <div role="group" aria-label={V.ce.cal.label} style={css("display: grid; grid-template-columns: repeat(7, 36px); gap: 2px; justify-content: center")}>
-                                                                      {(V.ce.cal.days || []).map((dy, dy__i) => (
-                                                                        <Fragment key={dy__i}>
-                                                                          {dy.isDay ? (
-                                                                            <>
-                                                                              <button type="button" className="fb-day" aria-label={dy.aria} aria-pressed={dy.pressed} onClick={dy.pick} style={css(dy.style)}>{dy.num}</button>
-                                                                            </>
-                                                                          ) : null}
-                                                                          {" "}
-                                                                          {dy.isBlank ? (
-                                                                            <>
-                                                                              <span aria-hidden="true" style={css("width: 36px; height: 36px")}></span>
-                                                                            </>
-                                                                          ) : null}
-                                                                        </Fragment>
-                                                                      ))}
-                                                                    </div>
-                                                                    {" "}
-                                                                    <div style={css("display: flex; flex-wrap: wrap; gap: 6px; padding-top: 8px; border-top: 1px solid var(--line)")}>
-                                                                      {(V.ce.quick || []).map((qk, qk__i) => (
-                                                                        <Fragment key={qk__i}>
-                                                                          <button type="button" onClick={qk.pick} style={css(V.ce.quickStyle)}>{qk.label}</button>
-                                                                        </Fragment>
-                                                                      ))}
-                                                                    </div>
-                                                                  </div>
-                                                                </>
-                                                              ) : null}
-                                                              {" "}
-                                                              {V.ce.isText ? (
-                                                                <>
-                                                                  <div style={css("display: flex; flex-direction: column; gap: 10px; padding: 0 4px 4px")}>
-                                                                    {V.ce.hasOpen ? (
-                                                                      <>
-                                                                        <a href={V.ce.openHref || "#"} target="_blank" rel="noopener noreferrer" style={css(V.ce.openStyle)}>
-                                                                          <span>{V.ce.openText}</span>
-                                                                          <svg aria-hidden="true" width="12" height="12" viewBox="0 0 16 16">
-                                                                            <path d="M6 3h7v7M13 3L4 12" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"></path>
-                                                                          </svg>
-                                                                        </a>
-                                                                      </>
-                                                                    ) : null}
-                                                                    {" "}
-                                                                    <label htmlFor="ce-text" style={css("position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap")}>{V.ce.label}</label>
-                                                                    {" "}
-                                                                    <input id="ce-text" type="text" autoComplete="off" value={V.ce.text ?? ''} placeholder={V.ce.placeholder} onChange={V.ce.onText} onKeyDown={V.ce.onTextKey} style={css("width: 100%; min-height: 44px; box-sizing: border-box; padding: 0 12px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface-2); font-size: 14px; color: var(--ink)")} />
-                                                                    {" "}
-                                                                    <div style={css("display: flex; justify-content: flex-end; gap: 6px")}>
-                                                                      <button type="button" className="fb-ni" onClick={V.closeCell} style={css("min-height: 40px; padding: 0 14px; border: 0; border-radius: 12px; background: transparent; color: var(--ink-3); font-size: 14px; cursor: pointer")}>Cancel</button>
-                                                                      {" "}
-                                                                      <button type="button" onClick={V.ce.save} style={css("min-height: 40px; padding: 0 14px; border: 0; border-radius: 12px; background: var(--inv); color: var(--inv-ink); font-size: 14px; cursor: pointer")}>Save</button>
-                                                                    </div>
-                                                                  </div>
-                                                                </>
-                                                              ) : null}
-                                                              {" "}
-                                                              {V.ce.hasClear ? (
-                                                                <>
-                                                                  <div style={css("margin-top: 6px; padding-top: 6px; border-top: 1px solid var(--line)")}>
-                                                                    <button type="button" className="mitem" onClick={V.ce.clear} style={css(V.ce.clearStyle)}>{V.ce.clearLabel}</button>
-                                                                  </div>
-                                                                </>
-                                                              ) : null}
-                                                            </div>
-                                                          </>
-                                                        ) : null}
+                                                        {c.editing ? <CellPop ce={V.ce} popStyle={c.popStyle} close={V.closeCell} dark={V.dark} /> : null}
                                                       </>
                                                     ) : null}
                                                   </div>
@@ -5026,7 +5076,7 @@ export default function StudioView({ V }) {
                       <div style={css("display: flex; gap: 16px; align-items: flex-start; width: 100%")}>
                         {(V.groups || []).map((g, g__i) => (
                           <Fragment key={g__i}>
-                            <section aria-label={g.title} style={css(g.kanStyle)}>
+                            <section aria-label={g.title} style={css(g.kanStyle)} onDragOver={g.onDragOver} onDragLeave={g.onDragLeave} onDrop={g.onDrop}>
                               <div style={css("display: flex; align-items: center; gap: 10px; padding: 4px 4px 4px 8px")}>
                                 <span aria-hidden="true" style={css(g.dotStyle)}></span>
                                 {" "}
@@ -5049,82 +5099,91 @@ export default function StudioView({ V }) {
                                 <>
                                   {(g.cards || []).map((k, k__i) => (
                                     <Fragment key={k__i}>
-                                      <article className="fb-card" style={css(k.cardStyle)}>
-                                        <div style={css("display: flex; align-items: flex-start; justify-content: space-between; gap: 8px")}>
-                                          {k.hasType ? (
-                                            <>
-                                              <span style={css(k.typeStyle)}>{k.typeText}</span>
-                                            </>
-                                          ) : null}
-                                          {" "}
-                                          {k.hasUpdates ? (
-                                            <>
-                                              <span style={css("display: inline-flex; align-items: center; gap: 4px; margin-left: auto; height: 22px; padding: 0 8px; border-radius: 999px; background: var(--chip-2); font-size: var(--text-caption); font-weight: 600; color: var(--ink-3)")}>
-                                                <svg aria-hidden="true" width="12" height="12" viewBox="0 0 16 16">
-                                                  <path d="M2.5 3.5h11v7h-6l-3 2.5v-2.5h-2z" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round"></path>
-                                                </svg>
-                                                {" "}
-                                                <span>{k.updates}</span>
-                                                {" "}
-                                                <span style={css("position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap")}>updates</span>
-                                              </span>
-                                            </>
+                                      <article className="fb-card fb-pcard" style={css(k.cardStyle)} onKeyDown={k.onKey} draggable={k.draggable ? "true" : undefined} onDragStart={k.onDragStart} onDragEnd={k.onDragEnd}>
+                                        {/* app: project card (docs/design/project-card/ProjectCard.dc.html) */}
+                                        <div style={css("display: flex; align-items: center; gap: 8px; min-height: 24px")}>
+                                          {k.hasType ? <span style={css(k.typeStyle)}>{k.typeText}</span> : null}
+                                          {k.job ? <span style={css("font-size: 11.5px; font-weight: 600; letter-spacing: 0.04em; color: var(--faint); font-variant-numeric: tabular-nums; white-space: nowrap")}>{k.job}</span> : null}
+                                          {k.hasMenu ? (
+                                            <button type="button" className="fb-more fb-ni" aria-label={k.menuLabel} aria-haspopup="menu" aria-expanded={k.menuOpen ? "true" : "false"} onClick={k.toggleMenu} style={css("position: relative; z-index: 2; margin-left: auto; margin-right: -6px; width: 28px; height: 28px; flex: none; padding: 0; border: 0; border-radius: 8px; background: " + (k.menuOpen ? "var(--hover)" : "transparent") + "; color: var(--muted-2); display: inline-flex; align-items: center; justify-content: center; cursor: pointer")}>
+                                              <svg aria-hidden="true" width="16" height="16" viewBox="0 0 16 16"><circle cx="3.5" cy="8" r="1.3" fill="currentColor"></circle><circle cx="8" cy="8" r="1.3" fill="currentColor"></circle><circle cx="12.5" cy="8" r="1.3" fill="currentColor"></circle></svg>
+                                            </button>
                                           ) : null}
                                         </div>
-                                        {" "}
-                                        <h3 style={css("margin: 0; font-size: 15px; font-weight: 600; line-height: 1.35; color: var(--ink)")}>
-                                          <button type="button" className="fb-title fb-stretch" onClick={k.open} style={css(V.cardTitleBtn)}>
-                                            <span>{k.title}</span>
-                                          </button>
-                                        </h3>
-                                        {" "}
-                                        {k.hasBadges ? (
+                                        {k.menuOpen ? (
                                           <>
-                                            <div style={css("display: flex; flex-wrap: wrap; gap: 6px")}>
-                                              {(k.badges || []).map((b, b__i) => (
-                                                <Fragment key={b__i}>
-                                                  <span style={css(b.style)}>{b.text}</span>
+                                            <button type="button" tabIndex="-1" aria-label="Close menu" onClick={k.closeMenu} style={css("position: fixed; inset: 0; z-index: 3; border: 0; background: transparent; cursor: default")}></button>
+                                            <div role="menu" aria-label={k.menuLabel} style={css("position: absolute; z-index: 4; top: 42px; right: 8px; width: 220px; padding: 6px; box-sizing: border-box; background: var(--surface); border: 1px solid var(--line-4); border-radius: 14px; box-shadow: 0 16px 48px rgba(0,0,0,0.16)")}>
+                                              {k.menu.map((mi) => (
+                                                <Fragment key={mi.label}>
+                                                  {mi.sep ? <div role="separator" style={css("margin: 6px 4px; border-top: 1px solid var(--line)")}></div> : null}
+                                                  <button type="button" role="menuitem" className="mitem" onClick={mi.pick} autoFocus={mi.label === 'Open'} style={css("display: flex; align-items: center; gap: 10px; width: 100%; min-height: 36px; padding: 0 10px; border: 0; border-radius: 9px; background: transparent; font-size: 13.5px; font-weight: 500; text-align: left; cursor: pointer; color: " + (mi.danger ? "var(--red-ink)" : "var(--ink)"))}>
+                                                    <span style={css("flex: 1")}>{mi.label}</span>
+                                                    {mi.hint ? <span style={css("font-size: 11.5px; color: var(--faint)")}>{mi.hint}</span> : null}
+                                                  </button>
                                                 </Fragment>
                                               ))}
                                             </div>
                                           </>
                                         ) : null}
-                                        {" "}
-                                        <div style={css("display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; border-top: 1px solid var(--line); padding-top: 10px")}>
-                                          <div style={css("display: flex; align-items: center; gap: 4px")}>
-                                            {(k.people || []).map((pp, pp__i) => (
-                                              <Fragment key={pp__i}>
-                                                <span aria-hidden="true" style={css(pp.style)}>{pp.initials}</span>
-                                              </Fragment>
-                                            ))}
-                                            {" "}
-                                            <span style={css("position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap")}>{k.peopleText}</span>
+                                        {k.hasCover ? (
+                                          <div aria-hidden="true" style={css("margin: 0 -6px; aspect-ratio: 16 / 9; border-radius: 10px; overflow: hidden; background: var(--panel)")}>
+                                            <img src={k.cover} alt="" loading="lazy" style={css("width: 100%; height: 100%; object-fit: cover; display: block")} />
                                           </div>
-                                          {" "}
-                                          <div style={css("display: flex; align-items: center; gap: 6px; flex-wrap: wrap; justify-content: flex-end")}>
-                                            {(k.dates || []).map((d, d__i) => (
-                                              <Fragment key={d__i}>
-                                                <span style={css(d.style)}>{d.label}{" "}{d.text}</span>
-                                              </Fragment>
+                                        ) : null}
+                                        <h3 style={css(k.titleStyle)}>
+                                          <button type="button" className="fb-title fb-stretch" onClick={k.open} style={css(V.cardTitleBtn + " font-size: inherit; font-weight: inherit; line-height: inherit; color: inherit;")}>
+                                            <span>{k.title}</span>
+                                          </button>
+                                        </h3>
+                                        {k.hasFlags ? (
+                                          <div style={css("display: flex; flex-wrap: wrap; gap: 6px")}>
+                                            {k.hasStatus ? <span style={css(k.statusStyle)}><span aria-hidden="true" style={css(k.statusDot)}></span>{k.statusText}</span> : null}
+                                            {(k.flags || []).map((fl, fl__i) => (
+                                              <span key={fl__i} style={css(fl.style)}>
+                                                {fl.warn ? <svg aria-hidden="true" width="13" height="13" viewBox="0 0 16 16"><path d="M8 2.5l6 10.5H2z" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round"></path><path d="M8 6.5v3M8 11.2v.1" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"></path></svg> : null}
+                                                {fl.text}
+                                              </span>
                                             ))}
                                           </div>
-                                        </div>
-                                        {" "}
-                                        {k.hasLink ? (
-                                          <>
-                                            <a href={k.href || "#"} target={k.href ? "_blank" : undefined} rel="noopener noreferrer" style={css(k.linkStyle)}>
-                                              <span>{k.linkText}</span>
-                                              <svg aria-hidden="true" width="12" height="12" viewBox="0 0 16 16">
-                                                <path d="M6 3h7v7M13 3L4 12" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"></path>
-                                              </svg>
-                                            </a>
-                                          </>
+                                        ) : null}
+                                        {k.hasPipe ? (
+                                          <div role="img" aria-label={"Pipeline: " + k.pipeLabel} title={k.pipeLabel} style={css("display: flex; gap: 3px; align-items: center")}>
+                                            {k.pipe.map((ps, ps__i) => <span key={ps__i} style={css(ps.style)}></span>)}
+                                          </div>
+                                        ) : null}
+                                        {k.hasFoot ? (
+                                          <div style={css("display: flex; align-items: center; gap: 10px; min-width: 0; padding-top: 10px; border-top: 1px solid var(--line)")}>
+                                            {k.hasAvatars ? (
+                                              <div style={css("display: flex; align-items: center")}>
+                                                {k.avatars.map((av, av__i) => <span key={av__i} aria-hidden="true" title={av.title} style={css(av.style + (av__i ? " margin-left: -6px;" : ""))}>{av.initials}</span>)}
+                                                <span style={css("position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap")}>{k.peopleText}</span>
+                                              </div>
+                                            ) : null}
+                                            {(k.counts || []).map((ct) => (
+                                              <span key={ct.key} title={ct.title} style={css(ct.style)}>
+                                                <svg aria-hidden="true" width="14" height="14" viewBox="0 0 16 16"><path d={ct.icon} fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"></path></svg>
+                                                {ct.text}
+                                                {ct.hot ? <span aria-hidden="true" style={css("width: 6px; height: 6px; margin-left: 1px; border-radius: 999px; background: #E5484D")}></span> : null}
+                                                <span style={css("position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap")}>{ct.title}</span>
+                                              </span>
+                                            ))}
+                                            {k.hasLink ? (
+                                              <a href={k.href || "#"} target={k.href ? "_blank" : undefined} rel="noopener noreferrer" style={css(k.linkStyle)}>
+                                                <span style={css("overflow: hidden; text-overflow: ellipsis")}>{k.linkText}</span>
+                                                <svg aria-hidden="true" width="12" height="12" viewBox="0 0 16 16" style={css("flex: none")}><path d="M6 3h7v7M13 3L4 12" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"></path></svg>
+                                              </a>
+                                            ) : null}
+                                            <span style={css("flex: 1")}></span>
+                                            {k.hasNext ? <span title={k.next.title} style={css(k.next.style)}><span style={css("font-weight: 500; opacity: 0.8")}>{k.next.label}</span>{" "}{k.next.text}</span> : null}
+                                          </div>
                                         ) : null}
                                       </article>
                                     </Fragment>
                                   ))}
                                   {" "}
-                                  {g.isEmpty ? (
+                                  {g.showSlot ? <div aria-hidden="true" style={css("height: 92px; flex: none; border: 1.5px dashed var(--border-strong); border-radius: 18px; background: color-mix(in srgb, var(--surface) 60%, transparent)")}></div> : null}
+                                  {g.isEmpty && !g.showSlot ? (
                                     <>
                                       <div style={css("border: 1.5px dashed var(--border-2); border-radius: 18px; padding: 28px 16px; text-align: center; font-size: var(--text-body-sm); color: var(--muted)")}>No projects yet</div>
                                     </>
@@ -5544,110 +5603,126 @@ export default function StudioView({ V }) {
                     <button type="button" aria-label="Close project details" onClick={V.closeDrawer} style={css("position: fixed; inset: 0; z-index: 44; border: 0; background: rgba(17,17,17,0.32); cursor: default")}></button>
                     {" "}
                     {/* app: wider drawer (Widen panel toggles it); files dropped anywhere on it upload, or attach on Comments */}
-                    <dialog open aria-modal="true" aria-labelledby="drawer-title" onDragOver={V.dr.onDragOver} onDragLeave={V.dr.onDragLeave} onDrop={V.dr.onDrop} style={css(V.dr.panelStyle)}>
+                    <dialog open aria-modal="true" aria-labelledby="drawer-title" className={"fb-dlg" + (V.dr.split ? " fb-dlg-split" : "")} onDragOver={V.dr.onDragOver} onDragLeave={V.dr.onDragLeave} onDrop={V.dr.onDrop} style={css(V.dr.panelStyle)}>
                       {V.dr.dragging ? (
                         <div aria-hidden="true" style={css("position: absolute; inset: 10px; z-index: 5; display: flex; align-items: center; justify-content: center; border: 2px dashed var(--ink); border-radius: 20px; background: color-mix(in srgb, var(--surface) 88%, transparent); font-size: 16px; font-weight: 700; color: var(--ink); pointer-events: none")}>{V.dr.dropText}</div>
                       ) : null}
-                      <header style={css("flex: none; display: flex; flex-direction: column; gap: 14px; padding: 14px 14px 0 24px; border-bottom: 1px solid var(--line)")}>
-                        <div style={css("display: flex; align-items: center; gap: 6px")}>
-                          <span style={css(V.dr.jobStyle)}>{V.dr.job}</span>
-                          {" "}
-                          <span style={css("display: inline-flex; align-items: center; gap: 8px; margin-left: 6px; font-size: var(--text-caption); font-weight: 600; color: var(--muted)")}>
+                      {/* app: project modal (docs/design/project-card/CardDetail.dc.html): header, pipeline, then tabs beside the properties rail */}
+                      <header className="fb-dlg-hd" style={css("position: relative; z-index: 3; flex: none; display: flex; flex-direction: column; gap: 10px; padding: 14px 14px 0 28px")}>
+                        <div style={css("display: flex; align-items: center; gap: 4px; min-width: 0")}>
+                          <span style={css(V.dr.jobStyle + " white-space: nowrap;")}>{V.dr.job}</span>
+                          <span style={css("display: inline-flex; align-items: center; gap: 8px; margin-left: 8px; font-size: var(--text-caption); font-weight: 600; color: var(--muted); white-space: nowrap")}>
                             <span aria-hidden="true" style={css(V.dr.stageDot)}></span>
                             {V.dr.stage}
                           </span>
-                          {" "}
                           <span style={css("flex: 1")}></span>
-                          {" "}
-                          <span style={css("margin-right: 4px; font-size: var(--text-caption); color: var(--muted-2); font-variant-numeric: tabular-nums")}>{V.dr.posText}</span>
-                          {" "}
-                          <button type="button" className="fb-ni" aria-label="Previous project" onClick={V.dr.prev} style={css(V.dIconBtn)}>
-                            <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                              <path d="M15 18l-6-6 6-6"></path>
-                            </svg>
+                          <span className="fb-dlg-x" style={css("margin-right: 4px; font-size: var(--text-caption); color: var(--muted-2); font-variant-numeric: tabular-nums; white-space: nowrap")}>{V.dr.posText}</span>
+                          <button type="button" className="fb-ni" aria-label="Previous project" title="Previous project" onClick={V.dr.prev} style={css(V.dIconBtn)}>
+                            <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6"></path></svg>
                           </button>
-                          {" "}
-                          <button type="button" className="fb-ni" aria-label="Next project" onClick={V.dr.next} style={css(V.dIconBtn)}>
-                            <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                              <path d="M9 18l6-6-6-6"></path>
-                            </svg>
+                          <button type="button" className="fb-ni" aria-label="Next project" title="Next project" onClick={V.dr.next} style={css(V.dIconBtn)}>
+                            <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6"></path></svg>
                           </button>
-                          {" "}
+                          <span aria-hidden="true" className="fb-dlg-x" style={css("width: 1px; height: 20px; margin: 0 4px; background: var(--line-4)")}></span>
+                          <button type="button" className="fb-ni fb-dlg-x" aria-label="Copy link" title="Copy link" onClick={V.dr.copyLink} style={css(V.dIconBtn)}>
+                            <svg aria-hidden="true" width="17" height="17" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"><path d="M7 9a2.5 2.5 0 0 0 3.5 0l2-2a2.5 2.5 0 0 0-3.5-3.5l-.75.75M9 7a2.5 2.5 0 0 0-3.5 0l-2 2a2.5 2.5 0 0 0 3.5 3.5l.75-.75"></path></svg>
+                          </button>
                           {V.dr.canWiden ? (
-                          <button type="button" className="fb-ni" aria-label={V.dr.wideLabel} aria-pressed={V.dr.wide ? "true" : "false"} title={V.dr.wideLabel} onClick={V.dr.toggleWide} style={css(V.dIconBtn)}>
-                            <svg aria-hidden="true" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                              <path d={V.dr.wideIcon}></path>
-                            </svg>
-                          </button>
+                            <button type="button" className="fb-ni fb-dlg-x" aria-label={V.dr.wideLabel} aria-pressed={V.dr.wide ? "true" : "false"} title={V.dr.wideLabel} onClick={V.dr.toggleWide} style={css(V.dIconBtn)}>
+                              <svg aria-hidden="true" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d={V.dr.wideIcon}></path></svg>
+                            </button>
                           ) : null}
-                          {" "}
-                          <button type="button" className="fb-ni" aria-label="Close" onClick={V.closeDrawer} style={css(V.dIconBtn)}>
-                            <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-                              <path d="M18 6 6 18M6 6l12 12"></path>
-                            </svg>
+                          {V.dr.more.items.length ? (
+                            <span style={css("position: relative; display: inline-flex")}>
+                              <button type="button" className="fb-ni" aria-label="More actions" title="More actions" aria-haspopup="menu" aria-expanded={V.dr.more.open ? "true" : "false"} onClick={V.dr.more.toggle} style={css(V.dIconBtn)}>
+                                <svg aria-hidden="true" width="18" height="18" viewBox="0 0 16 16"><circle cx="3.5" cy="8" r="1.3" fill="currentColor"></circle><circle cx="8" cy="8" r="1.3" fill="currentColor"></circle><circle cx="12.5" cy="8" r="1.3" fill="currentColor"></circle></svg>
+                              </button>
+                              {V.dr.more.open ? (
+                                <>
+                                  <button type="button" tabIndex="-1" aria-label="Close menu" onClick={V.dr.more.close} style={css("position: fixed; inset: 0; z-index: 20; border: 0; background: transparent; cursor: default")}></button>
+                                  <div role="menu" aria-label="More actions" style={css("position: absolute; z-index: 21; top: calc(100% + 6px); right: 0; width: 230px; padding: 6px; box-sizing: border-box; background: var(--surface); border: 1px solid var(--line-4); border-radius: 14px; box-shadow: 0 16px 48px rgba(0,0,0,0.16)")}>
+                                    {V.dr.more.items.map((mi) => (
+                                      <button key={mi.label} type="button" role="menuitem" className="mitem" onClick={mi.pick} style={css("display: flex; align-items: center; width: 100%; min-height: 36px; padding: 0 10px; border: 0; border-radius: 9px; background: transparent; font-size: 13.5px; font-weight: 500; text-align: left; cursor: pointer; color: " + (mi.danger ? "var(--red-ink)" : "var(--ink)"))}>{mi.label}</button>
+                                    ))}
+                                  </div>
+                                </>
+                              ) : null}
+                            </span>
+                          ) : null}
+                          <button type="button" className="fb-ni" aria-label="Close" title="Close" onClick={V.closeDrawer} style={css(V.dIconBtn)}>
+                            <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M18 6 6 18M6 6l12 12"></path></svg>
                           </button>
                         </div>
-                        {" "}
-                        <div style={css("display: flex; flex-direction: column; gap: 12px; padding-right: 10px")}>
-                          <h2 id="drawer-title" style={css("margin: 0; font-family: var(--font-title); font-size: var(--text-h3); font-weight: var(--weight-black); line-height: 1.15; letter-spacing: -0.02em; color: var(--ink)")}>{V.dr.title}</h2>
-                          {" "}
-                          <div style={css("display: flex; flex-wrap: wrap; align-items: center; gap: 6px")}>
-                            {(V.dr.blocks || []).map((b, b__i) => (
-                              <Fragment key={b__i}>
-                                <span style={css(b.style)}>{b.text}</span>
-                              </Fragment>
-                            ))}
-                            {" "}
-                            <span style={css("margin-left: 6px; font-size: 13px; color: var(--muted)")}>{V.dr.metaLine}</span>
-                          </div>
+                        {/* app: click the title to rename the project in place (Super Admin) */}
+                        {V.dr.titleEdit && V.dr.titleEdit.editing ? (
+                          <input id="drawer-title" type="text" aria-label="Project name" autoFocus onFocus={(e) => e.target.select()} value={V.dr.titleEdit.text} onChange={V.dr.titleEdit.onText} onKeyDown={V.dr.titleEdit.onKey} onBlur={V.dr.titleEdit.save} maxLength={200}
+                            className="fb-dlg-ttl" style={css("margin: 0 0 0 -9px; font-family: var(--font-title); font-size: 28px; font-weight: var(--weight-black); line-height: 1.15; letter-spacing: -0.02em; color: var(--ink); width: calc(100% - 4px); box-sizing: border-box; padding: 2px 8px; border: 1px solid var(--border-strong); border-radius: 10px; background: var(--surface-2); outline: none")} />
+                        ) : V.dr.titleEdit && V.dr.titleEdit.can ? (
+                          <h2 id="drawer-title" style={css("margin: 0")}>
+                            <button type="button" className="ttl-edit fb-dlg-ttl" onClick={V.dr.titleEdit.start} aria-label={V.dr.titleEdit.aria} title="Click to rename"
+                              style={css("margin: 0 0 0 -9px; font-family: var(--font-title); font-size: 28px; font-weight: var(--weight-black); line-height: 1.15; letter-spacing: -0.02em; color: var(--ink); display: block; width: calc(100% - 4px); text-align: left; padding: 2px 8px; border: 1px solid transparent; border-radius: 10px; background: transparent; cursor: text")}>{V.dr.title}</button>
+                          </h2>
+                        ) : (
+                          <h2 id="drawer-title" className="fb-dlg-ttl" style={css("margin: 0; font-family: var(--font-title); font-size: 28px; font-weight: var(--weight-black); line-height: 1.15; letter-spacing: -0.02em; color: var(--ink)")}>{V.dr.title}</h2>
+                        )}
+                        <div style={css("display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding-bottom: 16px")}>
+                          {V.dr.typeBlock ? <span style={css(V.dr.typeBlock.style)}>{V.dr.typeBlock.text}</span> : null}
+                          {V.dr.headStatus.show ? (
+                            <span style={css("position: relative; display: inline-flex")}>
+                              {V.dr.headStatus.can ? (
+                                <button type="button" className="fb-stsel" aria-haspopup="dialog" aria-expanded={V.dr.headStatus.isOpen ? "true" : "false"} aria-label={"Status: " + V.dr.headStatus.text + ". Change status"} onClick={V.dr.headStatus.open} style={css(V.dr.headStatus.style + " cursor: pointer;")}>
+                                  <span aria-hidden="true" style={css(V.dr.headStatus.dot)}></span>
+                                  {V.dr.headStatus.text}
+                                  <svg aria-hidden="true" width="14" height="14" viewBox="0 0 16 16"><path d="M4 6l4 4 4-4" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"></path></svg>
+                                </button>
+                              ) : (
+                                <span style={css(V.dr.headStatus.style)}><span aria-hidden="true" style={css(V.dr.headStatus.dot)}></span>{V.dr.headStatus.text}</span>
+                              )}
+                              {V.dr.headStatus.isOpen ? <CellPop ce={V.ce} popStyle={V.drPop} close={V.closeCell} dark={V.dark} /> : null}
+                            </span>
+                          ) : null}
+                          {V.dr.metaLine ? <span style={css("margin-left: 6px; font-size: 13px; color: var(--muted)")}>{V.dr.metaLine}</span> : null}
                         </div>
-                        {" "}
-                        <div role="tablist" aria-label="Project sections" style={css("display: flex; gap: 24px; margin-bottom: -1px; overflow-x: auto")}>
+                      </header>
+                      <ol aria-label="Production pipeline" className="fb-dlg-steps" style={css("flex: none; margin: 0 28px; padding: 16px 0 18px; list-style: none; display: grid; grid-template-columns: repeat(" + (V.dr.steps || []).length + ", minmax(0, 1fr)); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line)")}>
+                        {(V.dr.steps || []).map((st) => (
+                          <li key={st.label} aria-current={st.current} style={css("position: relative; display: flex; flex-direction: column; gap: 4px; min-width: 0; padding-right: 12px")}>
+                            {!st.last ? <span aria-hidden="true" style={css(st.line)}></span> : null}
+                            <span aria-hidden="true" style={css(st.marker)}></span>
+                            <span style={css("margin-top: 6px; font-size: 12px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis")}>{st.label}</span>
+                            <span style={css(st.valueStyle)}>{st.value}</span>
+                            {st.meta ? <span style={css("font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis")}>{st.meta}</span> : null}
+                          </li>
+                        ))}
+                      </ol>
+                      <div className="fb-dlg-body" style={css(V.dr.bodyStyle)}>
+                      <div className="fb-dlg-main" style={css("display: flex; flex-direction: column; min-width: 0; min-height: 0")}>
+                        <div role="tablist" aria-label="Project sections" style={css("flex: none; display: flex; gap: 24px; padding: 0 28px; border-bottom: 1px solid var(--line); overflow-x: auto")}>
                           {(V.dr.tabs || []).map((t, t__i) => (
                             <Fragment key={t__i}>
-                              <button type="button" role="tab" className="fb-tab" id={t.id} aria-selected={t.selected} aria-controls="drawer-panel" onClick={t.pick} style={css(t.style)}>
-                                <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d={t.icon}></path></svg>
+                              <button type="button" role="tab" className="fb-tab" id={t.id} aria-selected={t.selected} aria-controls="drawer-panel" onClick={t.pick} style={css(t.style + " margin-bottom: -1px;")}>
                                 <span>{t.label}</span>
-                                {" "}
-                                {t.hasCount ? (
-                                  <>
-                                    <span style={css(t.badge)}>{t.count}</span>
-                                  </>
-                                ) : null}
+                                {t.hasCount ? <span style={css(t.badge)}>{t.count}</span> : null}
                               </button>
                             </Fragment>
                           ))}
                         </div>
-                      </header>
-                      {" "}
-                      <div id="drawer-panel" role="tabpanel" aria-labelledby={V.dr.tabId} style={css("flex: 1 1 auto; min-height: 0; overflow-y: auto; box-sizing: border-box; padding: 24px; display: flex; flex-direction: column; gap: 28px")}>
+                      <div id="drawer-panel" role="tabpanel" aria-labelledby={V.dr.tabId} className="fb-dlg-pane" style={css("flex: 1 1 auto; min-height: 0; overflow-y: auto; box-sizing: border-box; padding: 24px 28px 32px; display: flex; flex-direction: column; gap: 28px")}>
                         {V.dr.isOverview ? (
                           <>
-                            <section aria-labelledby="dr-pipe" style={css("display: flex; flex-direction: column; gap: 6px")}>
-                              <h3 id="dr-pipe" style={css(V.dH3)}>Pipeline</h3>
-                              {" "}
-                              <div style={css("position: relative")}>
-                                <span aria-hidden="true" style={css("position: absolute; left: 6px; top: 26px; bottom: 26px; width: 2px; background: var(--line-3)")}></span>
-                                {" "}
-                                <ol style={css("position: relative; margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column")}>
-                                  {(V.dr.steps || []).map((st, st__i) => (
-                                    <Fragment key={st__i}>
-                                      <li style={css("display: grid; grid-template-columns: 14px minmax(0, 1fr) auto; align-items: center; gap: 14px; min-height: 52px; padding: 6px 0; box-sizing: border-box")}>
-                                        <span aria-hidden="true" style={css(st.marker)}></span>
-                                        {" "}
-                                        <span style={css("display: flex; flex-direction: column; gap: 2px; min-width: 0")}>
-                                          <span style={css("font-size: 14px; font-weight: 600; color: var(--ink)")}>{st.label}</span>
-                                          {" "}
-                                          <span style={css("font-size: 12px; color: var(--muted-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis")}>{st.meta}</span>
-                                        </span>
-                                        {" "}
-                                        <span style={css(st.valueStyle)}>{st.value}</span>
-                                      </li>
-                                    </Fragment>
-                                  ))}
-                                </ol>
-                              </div>
-                            </section>
+                            {!V.dr.split ? <div style={css("display: flex; flex-direction: column; gap: 20px; padding-bottom: 24px; border-bottom: 1px solid var(--line)")}><DrRail V={V} /></div> : null}
+                            {V.dr.brief.show ? (
+                              <section aria-labelledby="dr-brief" style={css("display: flex; flex-direction: column; gap: 10px")}>
+                                <h3 id="dr-brief" style={css(V.dH3)}>Brief</h3>
+                                {V.dr.brief.editing ? (
+                                  <textarea aria-label="Brief" autoFocus rows={6} value={V.dr.brief.draft} placeholder={V.dr.brief.placeholder} onChange={V.dr.brief.onDraft} onKeyDown={V.dr.brief.onKey} onBlur={V.dr.brief.save} style={css("width: 100%; min-height: 140px; box-sizing: border-box; padding: 14px 16px; border: 1px solid var(--ink); border-radius: 14px; background: var(--surface); font-family: inherit; font-size: 14.5px; line-height: 1.6; color: var(--ink); resize: vertical; outline: none")}></textarea>
+                                ) : V.dr.brief.can ? (
+                                  <button type="button" className="fb-brief" onClick={V.dr.brief.start} aria-label={V.dr.brief.has ? "Edit brief" : "Add a brief"} title="Click to edit" style={css("display: block; width: 100%; box-sizing: border-box; padding: 14px 16px; border: 1px " + (V.dr.brief.has ? "solid var(--line-4)" : "dashed var(--border-2)") + "; border-radius: 14px; background: transparent; font-family: inherit; font-size: 14.5px; font-weight: 400; letter-spacing: normal; line-height: 1.6; text-align: left; white-space: pre-wrap; overflow-wrap: anywhere; color: " + (V.dr.brief.has ? "var(--ink-2)" : "var(--faint)") + "; cursor: text")}>{V.dr.brief.has ? V.dr.brief.text : V.dr.brief.emptyText}</button>
+                                ) : (
+                                  <p style={css("margin: 0; padding: 14px 16px; border: 1px solid var(--line-4); border-radius: 14px; font-size: 14.5px; line-height: 1.6; white-space: pre-wrap; overflow-wrap: anywhere; color: var(--ink-2)")}>{V.dr.brief.text}</p>
+                                )}
+                              </section>
+                            ) : null}
                             {/* app: the project's checklist (from its template) */}
                             {V.dr.checklist && V.dr.checklist.show ? (
                               <section aria-labelledby="dr-ck" style={css("display: flex; flex-direction: column; gap: 10px; padding-top: 20px; border-top: 1px solid var(--line)")}>
@@ -5684,75 +5759,83 @@ export default function StudioView({ V }) {
                                 ) : null}
                               </section>
                             ) : null}
-                            {" "}
-                            {(V.dr.sections || []).map((sec, sec__i) => (
-                              <Fragment key={sec__i}>
-                                <section style={css("display: flex; flex-direction: column; gap: 14px; padding-top: 20px; border-top: 1px solid var(--line)")}>
-                                  <h3 style={css(V.dH3)}>{sec.title}</h3>
-                                  {" "}
-                                  <dl style={css("margin: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 16px 20px")}>
-                                    {(sec.fields || []).map((f, f__i) => (
-                                      <Fragment key={f__i}>
-                                        <div style={css("display: flex; flex-direction: column; gap: 6px; min-width: 0")}>
-                                          <dt style={css("font-size: var(--text-caption); font-weight: 600; color: var(--muted-2)")}>{f.label}</dt>
-                                          {" "}
-                                          <dd style={css("margin: 0; min-height: 26px; display: flex; align-items: center; gap: 8px; min-width: 0; font-size: 14px; color: var(--ink-2)")}>
-                                            {f.isText ? (
-                                              <>
-                                                <span style={css(f.textStyle)}>{f.text}</span>
-                                              </>
-                                            ) : null}
-                                            {" "}
-                                            {f.isBlock ? (
-                                              <>
-                                                <span style={css(f.blockStyle)}>{f.text}</span>
-                                              </>
-                                            ) : null}
-                                            {" "}
-                                            {f.isDate ? (
-                                              <>
-                                                <span style={css(f.chipStyle)}>{f.text}</span>
-                                              </>
-                                            ) : null}
-                                            {" "}
-                                            {f.isPerson ? (
-                                              <>
-                                                <span aria-hidden="true" style={css(f.avatarStyle)}>{f.initials}</span>
-                                                <span style={css("white-space: nowrap; overflow: hidden; text-overflow: ellipsis")}>{f.text}</span>
-                                              </>
-                                            ) : null}
-                                            {" "}
-                                            {f.isDot ? (
-                                              <>
-                                                <span aria-hidden="true" style={css(f.dotStyle)}></span>
-                                                <span>{f.text}</span>
-                                              </>
-                                            ) : null}
-                                            {" "}
-                                            {f.isLink ? (
-                                              <>
-                                                <a href={f.href || "#"} target={f.href ? "_blank" : undefined} rel="noopener noreferrer" style={css(f.linkStyle)}>
-                                                  <span>{f.text}</span>
-                                                  <svg aria-hidden="true" width="12" height="12" viewBox="0 0 16 16">
-                                                    <path d="M6 3h7v7M13 3L4 12" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"></path>
-                                                  </svg>
-                                                </a>
-                                              </>
-                                            ) : null}
-                                            {" "}
-                                            {f.isEmpty ? (
-                                              <>
-                                                <span style={css("color: var(--faint)")}>{f.emptyText}</span>
-                                              </>
-                                            ) : null}
-                                          </dd>
-                                        </div>
-                                      </Fragment>
+                            {/* app: the project's Social post, sent to Buffer by a Publish to Buffer workflow */}
+                            {V.dr.publish && V.dr.publish.show ? (
+                              <section aria-labelledby="dr-pub" style={css("display: flex; flex-direction: column; gap: 12px; padding-top: 20px; border-top: 1px solid var(--line)")}>
+                                <h3 id="dr-pub" style={css(V.dH3)}>Social post</h3>
+                                <p style={css("margin: 0; font-size: 13px; line-height: 1.45; color: var(--muted)")}>{V.dr.publish.whenText}</p>
+                                <label style={css("display: flex; flex-direction: column; gap: 6px")}>
+                                  <span style={css("font-size: var(--text-caption); font-weight: 600; color: var(--muted-2)")}>Caption</span>
+                                  <textarea rows={4} value={V.dr.publish.caption} onChange={V.dr.publish.onCaption} onBlur={V.dr.publish.saveCaption} readOnly={V.dr.publish.readOnly} placeholder="What the post says on every channel" style={css(V.fieldInput + " min-height: 96px; padding: 10px 14px; line-height: 1.45; resize: vertical; font-family: inherit;")}></textarea>
+                                </label>
+                                <div role="group" aria-label="Buffer channels" style={css("display: flex; flex-direction: column; gap: 6px")}>
+                                  <span style={css("font-size: var(--text-caption); font-weight: 600; color: var(--muted-2)")}>Channels</span>
+                                  {V.dr.publish.noChannels ? <p style={css("margin: 0; font-size: 13px; color: var(--muted)")}>{V.dr.publish.noChannels}</p> : null}
+                                  <div style={css("display: flex; flex-wrap: wrap; gap: 8px")}>
+                                    {V.dr.publish.channels.map((c) => (
+                                      <button key={c.id} type="button" aria-pressed={c.on} disabled={V.dr.publish.readOnly} onClick={c.toggle} style={css(c.style)}>{c.label}</button>
                                     ))}
-                                  </dl>
-                                </section>
-                              </Fragment>
-                            ))}
+                                  </div>
+                                </div>
+                                {V.dr.publish.showYt ? (
+                                  <label style={css("display: flex; flex-direction: column; gap: 6px")}>
+                                    <span style={css("font-size: var(--text-caption); font-weight: 600; color: var(--muted-2)")}>YouTube title</span>
+                                    <input type="text" maxLength={100} value={V.dr.publish.ytTitle} placeholder={V.dr.publish.ytPlaceholder} onChange={V.dr.publish.onYt} onBlur={V.dr.publish.saveYt} readOnly={V.dr.publish.readOnly} style={css(V.fieldInput)} />
+                                  </label>
+                                ) : null}
+                                <div role="group" aria-label="When to post" style={css("display: flex; flex-direction: column; gap: 6px")}>
+                                  <span style={css("font-size: var(--text-caption); font-weight: 600; color: var(--muted-2)")}>When</span>
+                                  <div style={css("display: flex; flex-wrap: wrap; align-items: center; gap: 8px")}>
+                                    {V.dr.publish.schedules.map((x) => <button key={x.label} type="button" aria-pressed={x.on} disabled={V.dr.publish.readOnly} onClick={x.pick} style={css(x.style)}>{x.label}</button>)}
+                                    {V.dr.publish.isDate ? <input type="time" aria-label="Post time" value={V.dr.publish.time} onChange={V.dr.publish.onTime} readOnly={V.dr.publish.readOnly} style={css(V.fieldInput + " width: auto; min-height: 36px;")} /> : null}
+                                  </div>
+                                  {V.dr.publish.isDate ? <p style={css("margin: 0; font-size: 12px; color: var(--muted-2)")}>{V.dr.publish.dateNote}</p> : null}
+                                </div>
+                                <p style={css("margin: 0; font-size: 13px; color: var(--ink-3)")}>{V.dr.publish.fileText}</p>
+                                {V.dr.publish.history.length ? (
+                                  <ul aria-label="Sent to Buffer" style={css("margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column")}>
+                                    {V.dr.publish.history.map((h) => (
+                                      <li key={h.id} style={css("display: flex; align-items: center; gap: 10px; min-height: 44px; border-bottom: 1px solid var(--line)")}>
+                                        <span style={css("flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px")}>
+                                          <span style={css(h.textStyle)}>{h.text}</span>
+                                          <span style={css("font-size: 12px; color: var(--muted-2); overflow-wrap: anywhere")}>{h.sub}</span>
+                                        </span>
+                                        {h.canClear ? <button type="button" aria-label={h.clearLabel} onClick={h.clear} style={css(V.ui.ghostSm + " border: 1px solid var(--border);")}>Allow again</button> : null}
+                                      </li>
+                                    ))}
+                                  </ul>
+                                ) : null}
+                              </section>
+                            ) : null}
+                            {" "}
+                            {V.dr.filesPeek.show ? (
+                              <section aria-labelledby="dr-files" style={css("display: flex; flex-direction: column; gap: 12px; padding-top: 20px; border-top: 1px solid var(--line)")}>
+                                <div style={css("display: flex; align-items: center; gap: 12px")}>
+                                  <h3 id="dr-files" style={css(V.dH3)}>Latest files</h3>
+                                  <span style={css("flex: 1")}></span>
+                                  {V.dr.filesPeek.more ? <button type="button" onClick={V.dr.filesPeek.seeAll} style={css(V.dLink + " padding: 0; min-height: 32px; border: 0; background: transparent; cursor: pointer;")}>{V.dr.filesPeek.more}</button> : null}
+                                </div>
+                                <div style={css("display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px")}>
+                                  {V.dr.filesPeek.items.map((fp) => (
+                                    <a key={fp.key} href="#" onClick={fp.open} aria-label={"Open " + fp.name} style={css("display: flex; flex-direction: column; min-width: 0; border: 1px solid var(--line-4); border-radius: 12px; overflow: hidden; background: var(--surface); color: var(--ink); text-decoration: none")}>
+                                      <span aria-hidden="true" style={css("aspect-ratio: 16 / 10; display: flex; align-items: center; justify-content: center; background: var(--panel); overflow: hidden")}>
+                                        {fp.hasPreview ? <img src={fp.preview} alt="" loading="lazy" style={css("width: 100%; height: 100%; object-fit: cover; display: block")} /> : <span style={css(fp.badge)}>{fp.typeLabel}</span>}
+                                      </span>
+                                      <span style={css("display: flex; flex-direction: column; gap: 2px; min-width: 0; padding: 8px 10px")}>
+                                        <span style={css("font-size: 12.5px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis")}>{fp.name}</span>
+                                        <span style={css("font-size: 11.5px; color: var(--muted-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis")}>{fp.meta}</span>
+                                      </span>
+                                    </a>
+                                  ))}
+                                  {V.dr.canUpload ? (
+                                    <button type="button" onClick={V.dr.upload} style={css("min-height: 112px; display: flex; align-items: center; justify-content: center; gap: 6px; border: 1.5px dashed var(--border-2); border-radius: 12px; background: var(--surface-2); color: var(--muted); font-size: 13px; font-weight: 600; cursor: pointer")}>
+                                      <svg aria-hidden="true" width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M8 3v10M3 8h10"></path></svg>
+                                      Add file
+                                    </button>
+                                  ) : null}
+                                </div>
+                              </section>
+                            ) : null}
                           </>
                         ) : null}
                         {" "}
@@ -5949,7 +6032,8 @@ export default function StudioView({ V }) {
                         ) : null}
                       </div>
                       {" "}
-                      <footer style={css("flex: none; display: flex; flex-direction: column; gap: 8px; padding: 14px 24px 18px; border-top: 1px solid var(--line); background: var(--surface)")}>
+                      {V.dr.isComments ? (
+                      <footer style={css("flex: none; display: flex; flex-direction: column; gap: 8px; padding: 14px 28px 18px; border-top: 1px solid var(--line); background: var(--surface)")}>
                         {V.dr.isComments ? (
                           <>
                             {/* app: comment box. Shows who is posting, takes images and documents, Cmd+Enter posts */}
@@ -5992,21 +6076,15 @@ export default function StudioView({ V }) {
                             </div>
                           </>
                         ) : null}
-                        {" "}
-                        {V.dr.notComments ? (
-                          <>
-                            <div style={css("display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 8px")}>
-                              <span style={css("flex: 1 1 160px; font-size: 13px; color: var(--muted)")}>{V.dr.footNote}</span>
-                              {" "}
-                              {(V.dr.actions || []).map((ac, ac__i) => (
-                                <Fragment key={ac__i}>
-                                  <button type="button" onClick={ac.pick} style={css(ac.style)}>{ac.label}</button>
-                                </Fragment>
-                              ))}
-                            </div>
-                          </>
-                        ) : null}
                       </footer>
+                      ) : null}
+                      </div>
+                      {V.dr.split ? (
+                        <aside className="fb-dlg-rail" aria-label="Project properties" style={css("min-height: 0; overflow-y: auto; box-sizing: border-box; border-left: 1px solid var(--line); background: var(--surface-2); padding: 18px 18px 24px; display: flex; flex-direction: column; gap: 20px")}>
+                          <DrRail V={V} />
+                        </aside>
+                      ) : null}
+                      </div>
                     </dialog>
                   </>
                 ) : null}
@@ -6016,6 +6094,213 @@ export default function StudioView({ V }) {
         </div>
       </div>
     </div>
+  );
+}
+
+// app: the project modal's properties rail: Next step, then grouped fields. Editable rows open the board's cell
+// editors under the row (cellEdit with src 'dr'); read-only rows show the value only.
+const PROP_ROW = 'display: grid; grid-template-columns: 96px minmax(0, 1fr); align-items: center; gap: 8px; width: 100%; min-height: 38px; padding: 3px 8px; box-sizing: border-box; border: 0; border-radius: 10px; background: transparent; font-family: inherit; font-size: 13.5px; font-weight: 500; letter-spacing: normal; line-height: 1.3; text-align: left; color: var(--ink);';
+function PropValue({ f }) {
+  return (
+    <span style={css('min-width: 0; display: flex; align-items: center; gap: 8px; overflow: hidden')}>
+      {f.isText ? <span style={css(f.textStyle)}>{f.text}</span> : null}
+      {f.isBlock ? <span style={css(f.blockStyle)}>{f.text}</span> : null}
+      {f.isDate ? <span style={css(f.chipStyle)}>{f.text}</span> : null}
+      {f.isPerson ? <><span aria-hidden="true" style={css(f.avatarStyle)}>{f.initials}</span><span style={css('white-space: nowrap; overflow: hidden; text-overflow: ellipsis')}>{f.text}</span></> : null}
+      {f.isDot ? <><span aria-hidden="true" style={css(f.dotStyle)}></span><span>{f.text}</span></> : null}
+      {f.isLink ? <span style={css('color: var(--link); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis')}>{f.text}</span> : null}
+      {f.isEmpty ? <span style={css('color: var(--faint); font-weight: 400')}>{f.emptyText}</span> : null}
+      {f.rel ? <span style={css(f.relStyle + ' white-space: nowrap')}>{f.rel}</span> : null}
+    </span>
+  );
+}
+function DrRail({ V }) {
+  const dr = V.dr;
+  return (
+    <>
+      {dr.nextStep.show ? (
+        <div style={css('display: flex; flex-direction: column; gap: 8px; padding: 14px; border-radius: 16px; background: var(--surface); border: 1px solid var(--line-4)')}>
+          <span style={css('font-size: 12px; font-weight: 600; color: var(--muted-2)')}>Next step</span>
+          {dr.nextStep.has ? (
+            <button type="button" onClick={dr.nextStep.pick} style={css('display: inline-flex; align-items: center; justify-content: center; gap: 8px; width: 100%; min-height: 40px; padding: 0 14px; border: 0; border-radius: 12px; background: var(--inv); color: var(--inv-ink); font-size: 13.5px; font-weight: 600; cursor: pointer')}>
+              {dr.nextStep.label}
+              <svg aria-hidden="true" width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M3 8h10M9 4l4 4-4 4"></path></svg>
+            </button>
+          ) : null}
+          {dr.nextStep.others.map((o) => <button key={o.label} type="button" onClick={o.pick} style={css('width: 100%; min-height: 38px; padding: 0 14px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); color: var(--ink); font-size: 13.5px; font-weight: 600; cursor: pointer')}>{o.label}</button>)}
+          {dr.nextStep.note ? <span style={css('font-size: 12px; line-height: 1.45; color: var(--muted)')}>{dr.nextStep.note}</span> : null}
+        </div>
+      ) : null}
+      {dr.rail.map((g) => (
+        <section key={g.title} aria-label={g.title} style={css('display: flex; flex-direction: column')}>
+          <h3 style={css('margin: 0 0 4px; padding: 0 8px; font-size: 12px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted-2)')}>{g.title}</h3>
+          {g.fields.map((f) => (
+            <div key={f.key} style={css('position: relative')}>
+              {f.isLink && !f.isOpen ? (
+                <div style={css(PROP_ROW)}>
+                  <span style={css('font-size: 13px; color: var(--muted)')}>{f.label}</span>
+                  <span style={css('min-width: 0; display: flex; align-items: center; gap: 4px')}>
+                    <a href={f.href || '#'} target={f.href ? '_blank' : undefined} rel="noopener noreferrer" style={css(f.linkStyle)}><span style={css('overflow: hidden; text-overflow: ellipsis')}>{f.text}</span></a>
+                    {f.can ? (
+                      <button type="button" className="fb-ni" aria-label={'Edit ' + f.label} title="Edit link" onClick={f.open} style={css('flex: none; margin-left: auto; width: 28px; height: 28px; border: 0; border-radius: 8px; background: transparent; color: var(--muted-2); display: inline-flex; align-items: center; justify-content: center; cursor: pointer')}>
+                        <svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 20h4L19 9l-4-4L4 16z"></path></svg>
+                      </button>
+                    ) : null}
+                  </span>
+                </div>
+              ) : f.can ? (
+                <button type="button" className="fb-prop" aria-haspopup="dialog" aria-expanded={f.isOpen ? 'true' : 'false'} aria-label={f.aria} onClick={f.open} style={css(PROP_ROW + ' cursor: pointer;' + (f.isOpen ? ' background: var(--hover);' : ''))}>
+                  <span style={css('font-size: 13px; color: var(--muted)')}>{f.label}</span>
+                  <PropValue f={f} />
+                </button>
+              ) : (
+                <div style={css(PROP_ROW)}>
+                  <span style={css('font-size: 13px; color: var(--muted)')}>{f.label}</span>
+                  <PropValue f={f} />
+                </div>
+              )}
+              {f.isOpen ? <CellPop ce={V.ce} popStyle={V.drPop} close={V.closeCell} dark={V.dark} /> : null}
+            </div>
+          ))}
+        </section>
+      ))}
+    </>
+  );
+}
+
+// app: the board's cell editor popover, shared by table cells and the project modal's header and properties rail.
+// Select fields use SelectPicker, Status the StatusPicker, typed fields CellEditor, the rest the list / date / text panel.
+function CellPop({ ce, popStyle, close, dark }) {
+  if (ce.isPicker) return <SelectPicker p={ce.picker} dark={dark} />;
+  if (ce.isStatusPicker) return <StatusPicker p={ce.status} dark={dark} />;
+  if (ce.editor) return <CellEditor e={ce.editor} dark={dark} />;
+  return (
+    <>
+      <button type="button" tabIndex="-1" aria-label="Close editor" onClick={close} style={css("position: fixed; inset: 0; z-index: 0; border: 0; background: transparent; cursor: default")}></button>
+      {" "}
+      <div role="dialog" aria-label={ce.label} onKeyDown={ce.onKey} style={css(popStyle)}>
+        <div style={css("display: flex; align-items: baseline; justify-content: space-between; gap: 10px; padding: 4px 6px 8px")}>
+          <span style={css("font-size: 12px; font-weight: 600; color: var(--muted-2); white-space: nowrap")}>{ce.label}</span>
+          {" "}
+          <span style={css("min-width: 0; font-size: 12px; color: var(--muted-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis")}>{ce.project}</span>
+        </div>
+        {" "}
+        {ce.isList ? (
+          <>
+            <div role="listbox" aria-label={ce.label} style={css("display: flex; flex-direction: column; gap: 2px")}>
+              {(ce.opts || []).map((co2, co2__i) => (
+                <Fragment key={co2__i}>
+                  <button type="button" role="option" className="mitem" aria-selected={co2.sel} onClick={co2.pick} style={css(co2.style)}>
+                    <span aria-hidden="true" style={css(co2.swStyle)}>{co2.swText}</span>
+                    {" "}
+                    <span style={css("flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis")}>{co2.label}</span>
+                    {" "}
+                    <span style={css("font-size: 12px; font-weight: 500; color: var(--muted-2)")}>{co2.meta}</span>
+                    {" "}
+                    <span style={css(co2.check)}>
+                      <svg aria-hidden="true" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M3.5 8.5l3 3 6-7"></path>
+                      </svg>
+                    </span>
+                  </button>
+                </Fragment>
+              ))}
+            </div>
+          </>
+        ) : null}
+        {" "}
+        {ce.isDate ? (
+          <>
+            <div style={css("display: flex; flex-direction: column; gap: 8px; padding: 0 2px")}>
+              <div style={css("display: flex; align-items: center; justify-content: space-between; gap: 8px")}>
+                <button type="button" className="fb-ni" aria-label="Previous month" onClick={ce.cal.prev} style={css(ce.navBtn)}>
+                  <svg aria-hidden="true" width="16" height="16" viewBox="0 0 16 16">
+                    <path d="M10 3.5L5.5 8l4.5 4.5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"></path>
+                  </svg>
+                </button>
+                {" "}
+                <span style={css("font-size: 14px; font-weight: 700; color: var(--ink)")}>{ce.cal.label}</span>
+                {" "}
+                <button type="button" className="fb-ni" aria-label="Next month" onClick={ce.cal.next} style={css(ce.navBtn)}>
+                  <svg aria-hidden="true" width="16" height="16" viewBox="0 0 16 16">
+                    <path d="M6 3.5L10.5 8 6 12.5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"></path>
+                  </svg>
+                </button>
+              </div>
+              {" "}
+              <div aria-hidden="true" style={css("display: grid; grid-template-columns: repeat(7, 36px); gap: 2px; justify-content: center")}>
+                {(ce.cal.weekdays || []).map((wd2, wd2__i) => (
+                  <Fragment key={wd2__i}>
+                    <span style={css("height: 24px; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; color: var(--muted-2)")}>{wd2}</span>
+                  </Fragment>
+                ))}
+              </div>
+              {" "}
+              <div role="group" aria-label={ce.cal.label} style={css("display: grid; grid-template-columns: repeat(7, 36px); gap: 2px; justify-content: center")}>
+                {(ce.cal.days || []).map((dy, dy__i) => (
+                  <Fragment key={dy__i}>
+                    {dy.isDay ? (
+                      <>
+                        <button type="button" className="fb-day" aria-label={dy.aria} aria-pressed={dy.pressed} onClick={dy.pick} style={css(dy.style)}>{dy.num}</button>
+                      </>
+                    ) : null}
+                    {" "}
+                    {dy.isBlank ? (
+                      <>
+                        <span aria-hidden="true" style={css("width: 36px; height: 36px")}></span>
+                      </>
+                    ) : null}
+                  </Fragment>
+                ))}
+              </div>
+              {" "}
+              <div style={css("display: flex; flex-wrap: wrap; gap: 6px; padding-top: 8px; border-top: 1px solid var(--line)")}>
+                {(ce.quick || []).map((qk, qk__i) => (
+                  <Fragment key={qk__i}>
+                    <button type="button" onClick={qk.pick} style={css(ce.quickStyle)}>{qk.label}</button>
+                  </Fragment>
+                ))}
+              </div>
+            </div>
+          </>
+        ) : null}
+        {" "}
+        {ce.isText ? (
+          <>
+            <div style={css("display: flex; flex-direction: column; gap: 10px; padding: 0 4px 4px")}>
+              {ce.hasOpen ? (
+                <>
+                  <a href={ce.openHref || "#"} target="_blank" rel="noopener noreferrer" style={css(ce.openStyle)}>
+                    <span>{ce.openText}</span>
+                    <svg aria-hidden="true" width="12" height="12" viewBox="0 0 16 16">
+                      <path d="M6 3h7v7M13 3L4 12" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"></path>
+                    </svg>
+                  </a>
+                </>
+              ) : null}
+              {" "}
+              <label htmlFor="ce-text" style={css("position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap")}>{ce.label}</label>
+              {" "}
+              <input id="ce-text" type="text" autoComplete="off" value={ce.text ?? ''} placeholder={ce.placeholder} onChange={ce.onText} onKeyDown={ce.onTextKey} style={css("width: 100%; min-height: 44px; box-sizing: border-box; padding: 0 12px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface-2); font-size: 14px; color: var(--ink)")} />
+              {" "}
+              <div style={css("display: flex; justify-content: flex-end; gap: 6px")}>
+                <button type="button" className="fb-ni" onClick={close} style={css("min-height: 40px; padding: 0 14px; border: 0; border-radius: 12px; background: transparent; color: var(--ink-3); font-size: 14px; cursor: pointer")}>Cancel</button>
+                {" "}
+                <button type="button" onClick={ce.save} style={css("min-height: 40px; padding: 0 14px; border: 0; border-radius: 12px; background: var(--inv); color: var(--inv-ink); font-size: 14px; cursor: pointer")}>Save</button>
+              </div>
+            </div>
+          </>
+        ) : null}
+        {" "}
+        {ce.hasClear ? (
+          <>
+            <div style={css("margin-top: 6px; padding-top: 6px; border-top: 1px solid var(--line)")}>
+              <button type="button" className="mitem" onClick={ce.clear} style={css(ce.clearStyle)}>{ce.clearLabel}</button>
+            </div>
+          </>
+        ) : null}
+      </div>
+    </>
   );
 }
 

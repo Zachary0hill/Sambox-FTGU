@@ -1,0 +1,358 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Project details</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Montserrat:wght@800;900&display=swap" rel="stylesheet">
+<style>
+:root {
+  --page: #EBEBEB; --surface: #FFFFFF; --surface-2: #FAFAFA; --panel: #F6F6F6; --hover: #F3F3F3; --chip: #F1F1F1; --chip-2: #EEEEEE; --track: #F0F0F0;
+  --line: #F0F0F0; --line-2: #EFEFEF; --line-4: #ECECEC; --border: #E6E6E6; --border-2: #DCDCDC; --border-strong: #BDBDBD;
+  --ink: #111111; --ink-2: #2A2A2A; --ink-2b: #3A3A3A; --ink-3: #4A4A4A; --muted: #666666; --muted-2: #707070; --faint: #8A8A8A;
+  --inv: #111111; --inv-ink: #FFFFFF; --link: #0B6E62;
+  --red-soft: #FDE8E5; --red-ink: #9B1C13; --amber-soft: #FFF4D9; --amber-ink: #774F00; --green-soft: #E6F5EC; --green-ink: #1B653B;
+  --blue-soft: #E9F0FE; --blue-ink: #1E46A8; --violet-soft: #F2EBFB; --violet-ink: #5B2A9E; --coral-soft: #FDEDE5; --coral-ink: #933612;
+  --font-main: "Inter", system-ui, sans-serif; --font-title: "Montserrat", "Inter", system-ui, sans-serif;
+}
+* { box-sizing: border-box }
+body { margin: 0; min-height: 100vh; font-family: var(--font-main); color: var(--ink); -webkit-font-smoothing: antialiased; background: var(--page) }
+button, input, textarea { font-family: inherit; color: inherit }
+button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px }
+
+/* Backdrop: the board behind, dimmed */
+.scrim { position: fixed; inset: 0; background: rgba(17,17,17,0.36) }
+.board-ghost { position: fixed; inset: 0; padding: 120px 110px; display: flex; gap: 16px; filter: blur(1px) }
+.board-ghost div { flex: 1; max-width: 470px; height: 420px; border-radius: 24px; background: #F6F6F6; border-top: 3px solid var(--c) }
+
+/* ---------- Dialog ---------- */
+.dlg { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: min(1120px, calc(100vw - 48px)); height: min(88vh, 900px); display: flex; flex-direction: column; overflow: hidden; background: var(--surface); border: 1px solid var(--line-4); border-radius: 24px; box-shadow: 0 24px 80px rgba(0,0,0,0.24); animation: dlgIn .18s cubic-bezier(.2,.8,.2,1) both }
+@keyframes dlgIn { from { opacity: 0; transform: translate(-50%, calc(-50% + 12px)) scale(.985) } to { opacity: 1; transform: translate(-50%, -50%) } }
+
+/* Header */
+.hd { flex: none; padding: 14px 14px 0 28px; display: flex; flex-direction: column; gap: 12px }
+.bar { display: flex; align-items: center; gap: 4px }
+.job { display: inline-flex; align-items: center; height: 26px; padding: 0 9px; background: var(--chip-2); color: var(--ink-2); font-size: 12px; font-weight: 700; letter-spacing: 0.04em; font-variant-numeric: tabular-nums; white-space: nowrap }
+.crumb { display: inline-flex; align-items: center; gap: 8px; white-space: nowrap; margin-left: 8px; font-size: 12.5px; font-weight: 600; color: var(--muted) }
+.crumb i { width: 8px; height: 8px; border-radius: 999px; background: #F08A5D }
+.pos { margin-right: 4px; font-size: 12px; color: var(--muted-2); font-variant-numeric: tabular-nums }
+.ib { width: 36px; height: 36px; border: 0; border-radius: 10px; background: transparent; color: var(--muted-2); display: inline-flex; align-items: center; justify-content: center; cursor: pointer }
+.ib:hover { background: var(--hover); color: var(--ink) }
+.vsep { width: 1px; height: 20px; margin: 0 4px; background: var(--line-4) }
+.title { margin: 0 0 0 -9px; padding: 2px 8px; border: 1px solid transparent; border-radius: 10px; font-family: var(--font-title); font-size: 28px; font-weight: 900; line-height: 1.15; letter-spacing: -0.02em; cursor: text }
+.title:hover { background: var(--hover); border-color: var(--line-4) }
+.tags { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding-bottom: 16px }
+.type { display: inline-flex; align-items: center; height: 26px; padding: 0 10px; font-size: 12px; font-weight: 700; background: #FF6A3D; color: #1A0A04 }
+.stsel { display: inline-flex; align-items: center; gap: 7px; height: 26px; padding: 0 8px 0 10px; border: 0; font-size: 12px; font-weight: 600; background: var(--coral-soft); color: var(--coral-ink); cursor: pointer }
+.stsel::before { content: ""; width: 7px; height: 7px; border-radius: 999px; background: #F08A5D }
+.stsel:hover { box-shadow: inset 0 0 0 1px currentColor }
+.meta-t { font-size: 13px; color: var(--muted) }
+.meta-t b { font-weight: 600; color: var(--ink-3) }
+
+/* Stepper: horizontal production pipeline */
+.steps { flex: none; display: grid; grid-template-columns: repeat(5, 1fr); margin: 0 28px; padding: 16px 0 18px; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line) }
+.step { position: relative; display: flex; flex-direction: column; gap: 6px; padding-right: 12px; min-width: 0 }
+.step::before { content: ""; position: absolute; top: 6px; left: 20px; right: 4px; height: 2px; background: var(--track) }
+.step:last-child::before { display: none }
+.step.done::before { background: #22844C }
+.mk { position: relative; width: 14px; height: 14px; background: var(--surface); border: 2px solid var(--border-strong) }
+.done .mk { background: #22844C; border-color: #22844C }
+.now .mk { background: #2F5BD3; border-color: #2F5BD3; box-shadow: 0 0 0 4px var(--blue-soft) }
+.warn .mk { background: #C42B2F; border-color: #C42B2F; box-shadow: 0 0 0 4px var(--red-soft) }
+.step .l { margin-top: 4px; font-size: 12px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted-2) }
+.step .v { font-size: 14px; font-weight: 600; color: var(--ink) }
+.now .v { color: var(--blue-ink) }
+.step .m { font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis }
+
+/* Body: main column + properties rail */
+.body { flex: 1 1 auto; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) 360px }
+.main { min-width: 0; display: flex; flex-direction: column; min-height: 0 }
+.tabs { flex: none; display: flex; gap: 24px; padding: 0 28px; border-bottom: 1px solid var(--line) }
+.tab { position: relative; display: inline-flex; align-items: center; gap: 8px; height: 46px; padding: 0; border: 0; background: transparent; font-size: 14px; font-weight: 600; color: var(--muted); cursor: pointer }
+.tab:hover { color: var(--ink) }
+.tab[aria-selected="true"] { color: var(--ink) }
+.tab[aria-selected="true"]::after { content: ""; position: absolute; left: 0; right: 0; bottom: -1px; height: 2px; background: var(--ink) }
+.tab .n { display: inline-flex; align-items: center; height: 20px; padding: 0 7px; border-radius: 999px; background: var(--chip-2); font-size: 11.5px; font-weight: 700; color: var(--ink-3) }
+.tab .n.hot { background: #E5484D; color: #FFFFFF }
+.pane { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 24px 28px 32px; display: flex; flex-direction: column; gap: 28px }
+.pane[hidden] { display: none }
+.blk h3 { display: flex; align-items: center; gap: 10px; margin: 0 0 10px; font-size: 13px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted-2) }
+.blk h3 .r { margin-left: auto; text-transform: none; letter-spacing: 0; font-weight: 600; color: var(--muted-2) }
+.brief { padding: 14px 16px; border: 1px solid var(--line-4); border-radius: 14px; font-size: 14.5px; line-height: 1.6; color: var(--ink-2); cursor: text }
+.brief:hover { border-color: var(--border-2) }
+.brief p { margin: 0 0 8px } .brief p:last-child { margin: 0 }
+.brief b { color: var(--ink) }
+.prog { display: block; height: 6px; margin-bottom: 8px; border-radius: 999px; overflow: hidden; background: var(--chip-2) }
+.prog span { display: block; height: 100%; width: 33%; background: #22844C; border-radius: 999px }
+.ck { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column }
+.ck li { display: flex; align-items: center; gap: 12px; min-height: 40px; padding: 0 8px; margin: 0 -8px; border-radius: 10px; font-size: 14px }
+.ck li:hover { background: var(--hover) }
+.box { width: 18px; height: 18px; flex: none; border: 1.5px solid var(--border-strong); border-radius: 5px; display: inline-flex; align-items: center; justify-content: center; color: #FFFFFF }
+.ck .on .box { background: #22844C; border-color: #22844C }
+.ck .on .t { color: var(--muted); text-decoration: line-through }
+.ck .who { margin-left: auto; font-size: 12px; color: var(--muted-2) }
+.add { display: flex; align-items: center; gap: 10px; min-height: 40px; margin: 2px -8px 0; padding: 0 8px; border-radius: 10px; color: var(--muted); font-size: 14px; cursor: text }
+.add:hover { background: var(--hover) }
+.files { display: grid; grid-template-columns: repeat(auto-fill, minmax(132px, 1fr)); gap: 10px }
+.file { border: 1px solid var(--line-4); border-radius: 12px; overflow: hidden; background: var(--surface) }
+.file .th { aspect-ratio: 16 / 10; display: flex; align-items: flex-end; padding: 8px; font-family: var(--font-title); font-weight: 900; font-size: 13px; line-height: 1; color: #FFFFFF; text-transform: uppercase }
+.file .nm { padding: 8px 10px; font-size: 12px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis }
+.file .nm small { display: block; font-weight: 500; color: var(--muted-2) }
+.file.drop { display: flex; align-items: center; justify-content: center; min-height: 112px; border-style: dashed; border-width: 1.5px; border-color: var(--border-2); color: var(--muted); font-size: 13px; font-weight: 600; background: var(--surface-2) }
+
+/* Comments */
+.thread { display: flex; flex-direction: column; gap: 18px }
+.cm { display: flex; gap: 12px }
+.cm .av { width: 32px; height: 32px; flex: none; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; color: #FFFFFF; font-size: 13px; font-weight: 700 }
+.cm .who { font-size: 13.5px; font-weight: 700 } .cm .who span { margin-left: 6px; font-weight: 500; color: var(--muted-2) }
+.cm .tx { margin-top: 4px; font-size: 14px; line-height: 1.55; color: var(--ink-2) }
+.cm.int .bub { padding: 10px 12px; border-radius: 12px; background: var(--amber-soft) }
+.pill-int { display: inline-flex; align-items: center; height: 18px; padding: 0 6px; margin-left: 6px; border-radius: 5px; background: var(--amber-soft); color: var(--amber-ink); font-size: 10.5px; font-weight: 700; letter-spacing: 0.03em; text-transform: uppercase }
+.composer { flex: none; margin: 0 28px 20px; border: 1px solid var(--border); border-radius: 16px; background: var(--surface) }
+.composer:focus-within { border-color: var(--ink) }
+.composer textarea { display: block; width: 100%; min-height: 56px; padding: 12px 14px 6px; border: 0; background: transparent; resize: none; font-size: 14px; line-height: 1.5; outline: none }
+.composer .row { display: flex; align-items: center; gap: 8px; padding: 6px 8px 8px 12px }
+.composer .hint { font-size: 12px; color: var(--muted-2) }
+.tog { display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 10px; border: 1px solid var(--border); border-radius: 999px; background: var(--surface); font-size: 12px; font-weight: 600; color: var(--ink-3); cursor: pointer }
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 36px; padding: 0 14px; border-radius: 12px; font-size: 13.5px; font-weight: 600; cursor: pointer; white-space: nowrap }
+.btn.pri { border: 0; background: var(--inv); color: var(--inv-ink) }
+.btn.gh { border: 1px solid var(--border); background: var(--surface); color: var(--ink) }
+
+/* Properties rail */
+.rail { min-height: 0; overflow-y: auto; border-left: 1px solid var(--line); background: var(--surface-2); padding: 18px 18px 24px; display: flex; flex-direction: column; gap: 20px }
+.next { display: flex; flex-direction: column; gap: 8px; padding: 14px; border-radius: 16px; background: var(--surface); border: 1px solid var(--line-4) }
+.next .k { font-size: 12px; font-weight: 600; color: var(--muted-2) }
+.next .btn { width: 100%; min-height: 40px }
+.grp h4 { margin: 0 0 4px; padding: 0 8px; font-size: 12px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted-2) }
+.prop { display: grid; grid-template-columns: 92px minmax(0, 1fr); align-items: center; gap: 8px; min-height: 38px; padding: 3px 8px; border-radius: 10px; cursor: pointer }
+.prop:hover { background: var(--hover) }
+.prop .pl { font-size: 13px; color: var(--muted) }
+.prop .pv { min-width: 0; display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 500; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis }
+.prop .pv.empty { color: var(--faint); font-weight: 400 }
+.ro { cursor: default } .ro:hover { background: transparent }
+.av20 { width: 22px; height: 22px; flex: none; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; color: #FFFFFF; font-size: 10px; font-weight: 700 }
+.blk2 { display: inline-flex; align-items: center; height: 22px; padding: 0 8px; font-size: 12px; font-weight: 600 }
+.chip { display: inline-flex; align-items: center; height: 24px; padding: 0 9px; border-radius: 999px; font-size: 12.5px; font-weight: 600; font-variant-numeric: tabular-nums; background: var(--hover); color: var(--ink-2b) }
+.chip.today { background: var(--amber-soft); color: var(--amber-ink) }
+.chip.late { background: var(--red-soft); color: var(--red-ink) }
+.rel { font-size: 12px; color: var(--muted-2) }
+.lnk { color: var(--link); font-weight: 600; text-decoration: underline; text-underline-offset: 3px }
+.foot-meta { margin-top: auto; padding: 12px 8px 0; border-top: 1px solid var(--line); font-size: 12px; line-height: 1.6; color: var(--muted-2) }
+
+/* Small screens: full-screen sheet, rail stacks after the stepper */
+@media (max-width: 860px) {
+  .dlg { inset: 0; top: 0; left: 0; transform: none; width: 100vw; height: 100dvh; border-radius: 0; border: 0; animation: none }
+  .hd { padding-left: 16px } .title { font-size: 22px }
+  .steps { margin: 0 16px; grid-template-columns: none; grid-auto-flow: column; grid-auto-columns: 132px; overflow-x: auto }
+  .body { display: flex; flex-direction: column; overflow-y: auto } .body > * { flex: none } .main { min-height: auto }
+  .rail { order: -1; overflow: visible; border-left: 0; border-bottom: 1px solid var(--line) }
+  .pane { overflow: visible; padding: 20px 16px } .tabs { padding: 0 16px; overflow-x: auto } .composer { margin: 0 16px 16px }
+  .bar .pos, .bar .wide, .bar .cp, .bar .vsep { display: none }
+}
+@media (prefers-reduced-motion: reduce) { .dlg { animation: none } }
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-l" viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-r" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+  <symbol id="i-wide" viewBox="0 0 24 24"><path d="M15 3h6v6M21 3l-7 7M9 21H3v-6M3 21l7-7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-link" viewBox="0 0 16 16"><path d="M7 9a2.5 2.5 0 0 0 3.5 0l2-2a2.5 2.5 0 0 0-3.5-3.5l-.75.75M9 7a2.5 2.5 0 0 0-3.5 0l-2 2a2.5 2.5 0 0 0 3.5 3.5l.75-.75" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></symbol>
+  <symbol id="i-more" viewBox="0 0 16 16"><circle cx="3.5" cy="8" r="1.3" fill="currentColor"/><circle cx="8" cy="8" r="1.3" fill="currentColor"/><circle cx="12.5" cy="8" r="1.3" fill="currentColor"/></symbol>
+  <symbol id="i-chev" viewBox="0 0 16 16"><path d="M4 6l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-ok" viewBox="0 0 16 16"><path d="M3.5 8.5l3 3 6-7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 16 16"><path d="M8 3v10M3 8h10" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+  <symbol id="i-arrow" viewBox="0 0 16 16"><path d="M3 8h10M9 4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-clip" viewBox="0 0 16 16"><path d="M13 7.5l-5.25 5.25a3 3 0 0 1-4.25-4.25L9 3a2 2 0 0 1 2.83 2.83L6.5 11.17a1 1 0 0 1-1.42-1.42L10 4.83" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></symbol>
+</svg>
+
+<div class="board-ghost" aria-hidden="true"><div style="--c:#F08A5D"></div><div style="--c:#E0567F"></div><div style="--c:#A66BD6"></div></div>
+<a class="scrim" href="ProjectCard.dc.html" aria-label="Close project details"></a>
+
+<section class="dlg" role="dialog" aria-modal="true" aria-labelledby="dlg-title">
+  <!-- ===== Header ===== -->
+  <header class="hd">
+    <div class="bar">
+      <span class="job">FTGU-0142</span>
+      <span class="crumb"><i></i>In Production</span>
+      <span style="flex:1"></span>
+      <span class="pos">1 of 3</span>
+      <button class="ib" aria-label="Previous project" title="Previous (K)"><svg width="18" height="18"><use href="#i-l"/></svg></button>
+      <button class="ib" aria-label="Next project" title="Next (J)"><svg width="18" height="18"><use href="#i-r"/></svg></button>
+      <span class="vsep"></span>
+      <button class="ib cp" aria-label="Copy link" title="Copy link"><svg width="17" height="17"><use href="#i-link"/></svg></button>
+      <button class="ib wide" aria-label="Open as full page" title="Open as full page"><svg width="16" height="16"><use href="#i-wide"/></svg></button>
+      <button class="ib" aria-label="More actions" aria-haspopup="menu"><svg width="18" height="18"><use href="#i-more"/></svg></button>
+      <a class="ib" href="ProjectCard.dc.html" aria-label="Close" title="Close (Esc)"><svg width="18" height="18"><use href="#i-x"/></svg></a>
+    </div>
+    <h2 id="dlg-title" class="title" title="Click to rename">I tried living on $10 a day for a week</h2>
+    <div class="tags">
+      <span class="type">YouTube Video</span>
+      <button class="stsel" aria-haspopup="listbox">Filming <svg width="14" height="14"><use href="#i-chev"/></svg></button>
+      <span class="meta-t" style="margin-left:6px"><b>FTGU Main</b> &nbsp;·&nbsp; Pub Oct 28 &nbsp;·&nbsp; Linked to monday</span>
+    </div>
+  </header>
+
+  <!-- ===== Pipeline ===== -->
+  <ol class="steps" aria-label="Production pipeline" style="list-style:none">
+    <li class="step done"><span class="mk"></span><span class="l">Script</span><span class="v">Locked</span><span class="m">Oct 18</span></li>
+    <li class="step now" aria-current="step"><span class="mk"></span><span class="l">Film</span><span class="v">Filming</span><span class="m">Film today · Oct 26</span></li>
+    <li class="step"><span class="mk"></span><span class="l">Edit</span><span class="v">Assigned</span><span class="m">Zach · Due Oct 30</span></li>
+    <li class="step"><span class="mk"></span><span class="l">Thumbnail</span><span class="v">Not started</span><span class="m">Mia · Due Oct 27</span></li>
+    <li class="step"><span class="mk"></span><span class="l">Publish</span><span class="v">Not scheduled</span><span class="m">Pub Oct 28</span></li>
+  </ol>
+
+  <!-- ===== Body ===== -->
+  <div class="body">
+    <div class="main">
+      <div class="tabs" role="tablist" aria-label="Project sections">
+        <button class="tab" role="tab" id="t-ov" aria-selected="true" aria-controls="p-ov">Overview</button>
+        <button class="tab" role="tab" id="t-cm" aria-selected="false" aria-controls="p-cm">Comments <span class="n hot">3</span></button>
+        <button class="tab" role="tab" id="t-fl" aria-selected="false" aria-controls="p-fl">Files <span class="n">4</span></button>
+        <button class="tab" role="tab" id="t-ac" aria-selected="false" aria-controls="p-ac">Activity</button>
+      </div>
+
+      <!-- Overview -->
+      <div class="pane" role="tabpanel" id="p-ov" aria-labelledby="t-ov">
+        <div class="blk">
+          <h3>Brief</h3>
+          <div class="brief" tabindex="0" title="Click to edit">
+            <p><b>Hook:</b> “I gave myself $70 for the whole week. By Wednesday I had $4 left.”</p>
+            <p><b>Angle:</b> Day-by-day vlog, receipt overlays, honest about what broke. End on the 3 habits that stuck.</p>
+            <p><b>B-roll:</b> grocery haul, meal prep, transit, the $4 dinner.</p>
+          </div>
+        </div>
+
+        <div class="blk">
+          <h3>Checklist <span class="r">2 of 6</span></h3>
+          <span class="prog"><span></span></span>
+          <ul class="ck">
+            <li class="on"><span class="box"><svg width="12" height="12"><use href="#i-ok"/></svg></span><span class="t">Script approved</span><span class="who">Oct 18</span></li>
+            <li class="on"><span class="box"><svg width="12" height="12"><use href="#i-ok"/></svg></span><span class="t">Shot list sent to crew</span><span class="who">Oct 22</span></li>
+            <li><span class="box"></span><span class="t">Film day 1 to 3</span><span class="who">Today</span></li>
+            <li><span class="box"></span><span class="t">Upload rushes to Files</span></li>
+            <li><span class="box"></span><span class="t">Thumbnail concepts (3)</span><span class="who">Mia</span></li>
+            <li><span class="box"></span><span class="t">Title + description draft</span></li>
+          </ul>
+          <div class="add"><svg width="14" height="14"><use href="#i-plus"/></svg>Add a step</div>
+        </div>
+
+        <div class="blk">
+          <h3>Latest files <span class="r"><a class="lnk" href="#" style="font-size:12.5px">See all 4</a></span></h3>
+          <div class="files">
+            <div class="file"><div class="th" style="background:linear-gradient(135deg,#3B2A1A,#120C06)">$10<br>a day</div><div class="nm">thumb-concept-a.png<small>Mia · 2h ago</small></div></div>
+            <div class="file"><div class="th" style="background:linear-gradient(135deg,#1A2A3B,#060C12)">Day 1</div><div class="nm">script-v3.pdf<small>Zach · Oct 18</small></div></div>
+            <div class="file drop"><svg width="14" height="14"><use href="#i-clip"/></svg>&nbsp;Drop files</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Comments -->
+      <div class="pane" role="tabpanel" id="p-cm" aria-labelledby="t-cm" hidden>
+        <div class="thread">
+          <div class="cm"><span class="av" style="background:#E0567F">M</span><div><div class="who">Mia Torres<span>Designer · 3h ago</span></div><div class="tx">Pulled two frames from yesterday's test for the thumbnail. Can we get one shot of the receipt pile on the counter?</div></div></div>
+          <div class="cm int"><span class="av" style="background:#4C7CF0">Z</span><div class="bub"><div class="who">Zach Hill<span>Super Admin · 1h ago</span><span class="pill-int">Internal</span></div><div class="tx">Yes, adding it to day 2. Keep the sponsor out of the thumb.</div></div></div>
+          <div class="cm"><span class="av" style="background:#3DB46D">J</span><div><div class="who">Jordan Lee<span>Editor · 12m ago</span></div><div class="tx">Rushes from day 1 are in Files. Audio on clip 4 clips a bit, I'll fix in post.</div></div></div>
+        </div>
+      </div>
+
+      <!-- Files -->
+      <div class="pane" role="tabpanel" id="p-fl" aria-labelledby="t-fl" hidden>
+        <div class="files">
+          <div class="file"><div class="th" style="background:linear-gradient(135deg,#3B2A1A,#120C06)">$10<br>a day</div><div class="nm">thumb-concept-a.png<small>Mia · 2h ago</small></div></div>
+          <div class="file"><div class="th" style="background:linear-gradient(135deg,#2A3B1A,#0C1206)">$4<br>dinner</div><div class="nm">thumb-concept-b.png<small>Mia · 2h ago</small></div></div>
+          <div class="file"><div class="th" style="background:linear-gradient(135deg,#1A2A3B,#060C12)">Day 1</div><div class="nm">script-v3.pdf<small>Zach · Oct 18</small></div></div>
+          <div class="file"><div class="th" style="background:linear-gradient(135deg,#333,#111)">Shots</div><div class="nm">shot-list.md<small>Zach · Oct 22</small></div></div>
+          <div class="file drop"><svg width="14" height="14"><use href="#i-clip"/></svg>&nbsp;Drop files</div>
+        </div>
+      </div>
+
+      <!-- Activity -->
+      <div class="pane" role="tabpanel" id="p-ac" aria-labelledby="t-ac" hidden>
+        <ul class="ck">
+          <li><span class="who" style="margin:0;width:64px">12m</span>Jordan uploaded 6 files</li>
+          <li><span class="who" style="margin:0;width:64px">Today</span>Zach moved status Scripting → Filming</li>
+          <li><span class="who" style="margin:0;width:64px">Oct 22</span>Zach set Thumb Due to Oct 27</li>
+          <li><span class="who" style="margin:0;width:64px">Oct 18</span>Zach created the project from template “Long-form vlog”</li>
+        </ul>
+      </div>
+
+      <!-- Composer: Comments tab only, pinned under the thread -->
+      <div class="composer" id="composer" hidden>
+        <textarea rows="2" placeholder="Write a comment. @ to mention, Cmd+Enter to post"></textarea>
+        <div class="row">
+          <button class="ib" aria-label="Attach files" style="width:30px;height:30px"><svg width="15" height="15"><use href="#i-clip"/></svg></button>
+          <button class="tog" aria-pressed="false">Internal</button>
+          <span style="flex:1"></span>
+          <span class="hint">Commenting as <b>Zach</b></span>
+          <button class="btn pri" style="opacity:.45">Post</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== Properties rail ===== -->
+    <aside class="rail" aria-label="Project properties">
+      <div class="next">
+        <span class="k">Next step</span>
+        <button class="btn pri">Mark film wrapped <svg width="14" height="14"><use href="#i-arrow"/></svg></button>
+        <span class="rel">Moves status to Editing and notifies Zach.</span>
+      </div>
+
+      <div class="grp">
+        <h4>Details</h4>
+        <div class="prop"><span class="pl">Status</span><span class="pv"><span class="blk2" style="background:var(--coral-soft);color:var(--coral-ink)">Filming</span></span></div>
+        <div class="prop"><span class="pl">Content type</span><span class="pv"><span class="blk2" style="background:#FF6A3D;color:#1A0A04">YouTube Video</span></span></div>
+        <div class="prop"><span class="pl">Channel</span><span class="pv">FTGU Main</span></div>
+        <div class="prop ro"><span class="pl">Job #</span><span class="pv" style="font-variant-numeric:tabular-nums;font-weight:600">FTGU-0142</span></div>
+      </div>
+
+      <div class="grp">
+        <h4>Team</h4>
+        <div class="prop"><span class="pl">Editor</span><span class="pv"><span class="av20" style="background:#4C7CF0">Z</span>Zach Hill<span class="blk2" style="background:var(--amber-soft);color:var(--amber-ink);margin-left:auto">Assigned</span></span></div>
+        <div class="prop"><span class="pl">Designer</span><span class="pv"><span class="av20" style="background:#E0567F">M</span>Mia Torres<span class="blk2" style="background:var(--chip);color:var(--ink-3);margin-left:auto">Not Started</span></span></div>
+      </div>
+
+      <div class="grp">
+        <h4>Dates</h4>
+        <div class="prop"><span class="pl">Film</span><span class="pv"><span class="chip today">Oct 26</span><span class="rel">Today</span></span></div>
+        <div class="prop"><span class="pl">Thumb due</span><span class="pv"><span class="chip">Oct 27</span><span class="rel">Tomorrow</span></span></div>
+        <div class="prop"><span class="pl">Edit due</span><span class="pv"><span class="chip">Oct 30</span><span class="rel">in 4 days</span></span></div>
+        <div class="prop"><span class="pl">Publish</span><span class="pv"><span class="chip">Oct 28</span><span class="rel" style="color:var(--red-ink)">before edit due</span></span></div>
+      </div>
+
+      <div class="grp">
+        <h4>Sponsor</h4>
+        <div class="prop"><span class="pl">Sponsor</span><span class="pv empty">None</span></div>
+      </div>
+
+      <div class="grp">
+        <h4>Publishing</h4>
+        <div class="prop"><span class="pl">URL</span><span class="pv empty">Add a link</span></div>
+      </div>
+
+      <div class="grp">
+        <h4>More properties</h4>
+        <div class="prop"><span class="pl">Budget</span><span class="pv">$1,200</span></div>
+        <div class="prop"><span class="pl">Location</span><span class="pv">Austin, TX</span></div>
+        <div class="prop" style="color:var(--muted)"><span class="pl" style="display:flex;align-items:center;gap:6px"><svg width="12" height="12"><use href="#i-plus"/></svg>Add property</span><span></span></div>
+      </div>
+
+      <div class="foot-meta">Created by Zach from “Long-form vlog” · Oct 18<br>Last edited 12m ago by Jordan</div>
+    </aside>
+  </div>
+</section>
+
+<script>
+// Comp only: tab switching. The composer shows on the Comments tab.
+document.querySelectorAll('.tab').forEach(function (t) {
+  t.addEventListener('click', function () {
+    document.querySelectorAll('.tab').forEach(function (x) { x.setAttribute('aria-selected', x === t ? 'true' : 'false'); });
+    document.querySelectorAll('.pane').forEach(function (p) { p.hidden = p.id !== t.getAttribute('aria-controls'); });
+    document.getElementById('composer').hidden = t.id !== 't-cm';
+  });
+});
+</script>
+</body>
+</html>

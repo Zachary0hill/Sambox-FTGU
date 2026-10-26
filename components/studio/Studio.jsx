@@ -129,7 +129,7 @@ export default function Studio({ initialPath, initialProject }) {
     const bump = () => { clearTimeout(t); t = setTimeout(() => reload(), 350); };
     const ch = sb.channel('board-' + ctx.workspace_id);
     ['projects', 'project_edits', 'project_thumbnails', 'sponsorships', 'comments', 'project_assets', 'distribution_tasks', 'inbox_items', 'research_runs',
-      'ideas', 'idea_comments', 'project_checklist', 'project_last_edit', 'automation_runs'].forEach((table) =>
+      'ideas', 'idea_comments', 'project_checklist', 'project_last_edit', 'automation_runs', 'project_publish', 'buffer_publications', 'content_entries'].forEach((table) =>
       ch.on('postgres_changes', { event: '*', schema: 'public', table }, bump));
     ch.on('postgres_changes', { event: '*', schema: 'public', table: 'notifications', filter: 'user_id=eq.' + ctx.user_id }, bump);
     // If the realtime connection drops, poll every 45 seconds while the tab is visible, and catch up when the tab

@@ -5,6 +5,7 @@ import { buildMessageEmail } from '@/lib/email/message-template';
 import { getIntegration } from '@/lib/integrations/secrets';
 import { postSlackAlert } from '@/lib/integrations/providers/slack';
 import { postN8n } from '@/lib/integrations/providers/n8n';
+import { publishProjectToBuffer, PublishSetupError } from '@/lib/integrations/buffer-publish';
 import { actionById, actionsOf, triggerOf, triggerText } from './catalog';
 
 // The automation runner. Database triggers queue automation_runs rows when a live workflow's trigger fires; each tick
@@ -241,6 +242,20 @@ async function perform(key: string, message: string, ctx: Ctx): Promise<string> 
     if (ctx.test) return 'Would POST to the n8n webhook: ' + JSON.stringify(body).slice(0, 160) + '…';
     const res = await postN8n(conn.secret, conn.config, body);
     return 'n8n answered ' + res.status + (res.reply ? ': ' + res.reply.slice(0, 120) : '.');
+  }
+  if (key === 'buffer_publish') {
+    if (!p) throw new Permanent('This run has no project to publish.');
+    let res;
+    try {
+      res = await publishProjectToBuffer(p, { runId: ctx.test ? null : ctx.r.id, test: ctx.test });
+    } catch (err) {
+      if (err instanceof PublishSetupError) throw new Permanent(err.message);
+      throw err;
+    }
+    // Channels that posted are recorded and skipped on a retry, so only the failed ones are tried again.
+    if (res.failed.length) throw res.retry ? new Error(res.detail) : new Permanent(res.detail);
+    if (!ctx.test) await logAutomation(ctx, 'published to Buffer');
+    return res.detail;
   }
   throw new Permanent('Unknown action ' + key + '.');
 }

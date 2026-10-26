@@ -3,6 +3,7 @@ import { getMember, isSuperAdmin, isCron, deny } from '@/lib/integrations/auth';
 import { getIntegration, connectedWorkspaces, markChecked } from '@/lib/integrations/secrets';
 import { providerById } from '@/lib/integrations/registry';
 import { MODULES } from '@/lib/integrations/providers';
+import { cleanupBufferMedia } from '@/lib/integrations/buffer-publish';
 
 export const maxDuration = 300;
 
@@ -29,6 +30,8 @@ export async function POST(request: Request, ctx: RouteContext<'/api/integration
       const conn = await getIntegration(ws, def.id);
       if (!conn) { results.push({ workspaceId: ws, error: def.name + ' is not connected.' }); continue; }
       const r = await mod.sync(ws, conn.secret, conn.config);
+      // Sent posts no longer need their public media copy (lib/integrations/buffer-publish.ts).
+      if (def.id === 'buffer') await cleanupBufferMedia(ws).catch((e) => console.warn('buffer-media cleanup', e));
       await markChecked(ws, def.id, null, true);
       results.push({ workspaceId: ws, summary: r.summary });
     } catch (err) {

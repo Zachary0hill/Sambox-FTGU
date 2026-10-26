@@ -60,7 +60,7 @@ const provider: ProviderModule = {
     const projectId = String(config.projectId || '');
     if (!secret.apiKey) return 'Add the API key.';
     if (!projectId) return 'Add the project ID.';
-    const res = await fetch(API + '/projects/' + encodeURIComponent(projectId), { headers: { 'x-bb-api-key': secret.apiKey } });
+    const res = await fetch(API + '/projects/' + encodeURIComponent(projectId), { headers: { 'x-bb-api-key': secret.apiKey }, signal: AbortSignal.timeout(15000) });
     if (res.status === 401 || res.status === 403) return 'The API key is not valid.';
     if (res.status === 404) return 'No project with that ID for this key.';
     if (!res.ok) return 'Browserbase answered HTTP ' + res.status + '.';

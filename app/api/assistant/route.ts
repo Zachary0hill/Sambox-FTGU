@@ -1,16 +1,20 @@
 import { NextResponse } from 'next/server';
 import { streamText, isStepCount, APICallError, RetryError, type ModelMessage } from 'ai';
-import { getMember, deny } from '@/lib/integrations/auth';
+import { getMember, isSuperAdmin, deny } from '@/lib/integrations/auth';
 import { getIntegration } from '@/lib/integrations/secrets';
-import { providerById } from '@/lib/integrations/registry';
+import { providerById, type ProviderId } from '@/lib/integrations/registry';
 import { workspaceModel } from '@/lib/ai/model';
 import { assistantTools, urlsIn } from '@/lib/ai/tools';
 import { systemPrompt } from '@/lib/ai/prompt';
+import { aiProviders, readPrefs, type AssistantMode } from '@/lib/ai/settings';
 
 // The Daily assistant. Any active member can use it; tools run on their own session, so RLS scopes every answer.
-// GET tells the client whether a model is connected (members cannot read the integrations table themselves).
+// GET tells the client whether a model is connected, which models the picker offers and the default answer mode
+// (members cannot read the integrations table themselves).
 // POST stores the user turn, streams the reply as NDJSON lines, then stores the reply. Write tools only return
 // proposals (streamed as `proposal` lines); the member creates them with a click on the Daily page.
+// The body may pick a connected provider and model and a mode: 'fast' keeps reasoning minimal, 'think' reasons first
+// and streams the model's reasoning summary as `think` lines for the collapsible Thinking block.
 
 export const maxDuration = 60;
 
@@ -25,12 +29,19 @@ export async function GET() {
   const m = await getMember();
   if (!m) return deny('Sign in to use the assistant.', 401);
   const ws = m.ctx.workspace_id;
-  const [wm, fc] = await Promise.all([
+  const [wm, fc, list, st] = await Promise.all([
     workspaceModel(ws).catch(() => null),
     getIntegration(ws, 'firecrawl').catch(() => null),
+    aiProviders(ws).catch(() => []),
+    m.supabase.from('workspace_settings').select('*').eq('workspace_id', ws).maybeSingle(),
   ]);
+  const admin = isSuperAdmin(m);
+  const providers = list.filter((p) => p.connected).map((p) => ({ id: p.id, name: p.name, model: p.model }));
+  const mode = readPrefs(st.data as Record<string, unknown> | null).mode;
   return NextResponse.json(
-    wm ? { enabled: true, provider: wm.provider, providerName: providerName(wm.provider), model: wm.modelId, web: !!fc } : { enabled: false },
+    wm
+      ? { enabled: true, provider: wm.provider, providerName: providerName(wm.provider), model: wm.modelId, web: !!fc, providers, mode, admin }
+      : { enabled: false, providers: [], mode, admin },
     { headers: { 'Cache-Control': 'no-store' } },
   );
 }
@@ -77,6 +88,9 @@ export async function POST(request: Request) {
   if (!text) return deny('Write a message first.', 400);
   if (text.length > MAX_TEXT) return deny('Keep messages under ' + MAX_TEXT + ' characters.', 400);
   const threadIn = typeof body.threadId === 'string' && /^[0-9a-f-]{36}$/i.test(body.threadId) ? body.threadId : null;
+  const pickProvider = typeof body.provider === 'string' && providerById(body.provider)?.group === 'ai' ? (body.provider as ProviderId) : undefined;
+  const pickModel = typeof body.model === 'string' && /^[\w.:/-]{1,100}$/.test(body.model) ? body.model : undefined;
+  const modeIn: AssistantMode | null = body.mode === 'think' || body.mode === 'fast' ? body.mode : null;
 
   // Per-member rate limit: user turns in the last hour across their own threads.
   const since = new Date(Date.now() - 3600 * 1000).toISOString();
@@ -87,7 +101,9 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'You have sent ' + RATE_PER_HOUR + ' messages to the assistant in the last hour. Try again a little later.', code: 'rate_limited' }, { status: 429 });
   }
 
-  const wm = await workspaceModel(ws).catch(() => null);
+  // A picked provider that has since been disconnected falls back to the workspace default.
+  const wm = (pickProvider ? await workspaceModel(ws, pickProvider, pickModel).catch(() => null) : null)
+    || await workspaceModel(ws).catch(() => null);
   if (!wm) return NextResponse.json({ error: 'No AI model is connected. A Super Admin can add one in Workspace Settings > Integrations.', code: 'no_model' }, { status: 409 });
 
   // Thread and user turn are written on the member's session (ai_threads/ai_messages RLS: own rows only).
@@ -128,6 +144,8 @@ export async function POST(request: Request) {
   });
 
   const settings = (st.data || {}) as Record<string, unknown>;
+  const prefs = readPrefs(settings);
+  const mode: AssistantMode = modeIn || prefs.mode;
   const day = todayIn(String(settings.timezone || 'America/Chicago'));
   const userUrls = rows.filter((r) => r.role === 'user').flatMap((r) => urlsIn(r.body));
   const tools = assistantTools({ member: m, today: day.iso, firecrawlKey: fc ? fc.secret.apiKey || null : null, userUrls });
@@ -136,13 +154,22 @@ export async function POST(request: Request) {
 
   const result = streamText({
     model: wm.model,
-    instructions: systemPrompt({ ctx, today: day.iso, weekday: day.weekday, timezone: day.tz, settings, tools: Object.keys(tools), providerName: name + ' (' + wm.modelId + ')', accounts }),
+    instructions: systemPrompt({ ctx, today: day.iso, weekday: day.weekday, timezone: day.tz, settings, tools: Object.keys(tools), providerName: name + ' (' + wm.modelId + ')', accounts, instructions: prefs.instructions }),
     messages,
     tools,
+    // Fast answers start writing right away; Think reasons first. Reasoning summaries are requested in both modes so
+    // whatever thinking a model does shows in the Thinking block instead of a silent pause.
+    reasoning: mode === 'think' ? 'high' : 'minimal',
+    providerOptions: {
+      anthropic: { thinking: { type: 'adaptive', display: 'summarized' } },
+      openai: { reasoningSummary: 'auto' },
+      google: { thinkingConfig: { includeThoughts: true } },
+    },
     stopWhen: isStepCount(8),
     maxOutputTokens: 4000,
     maxRetries: 1,
-    abortSignal: AbortSignal.timeout((maxDuration - 5) * 1000),
+    // Stop in the chat aborts the request, which ends generation; what was written so far is still saved.
+    abortSignal: AbortSignal.any([request.signal, AbortSignal.timeout((maxDuration - 5) * 1000)]),
     onError: ({ error }) => console.warn('assistant', error instanceof Error ? error.message : error),
   });
 
@@ -154,17 +181,30 @@ export async function POST(request: Request) {
         if (closed) return;
         try { controller.enqueue(enc.encode(JSON.stringify(o) + '\n')); } catch { closed = true; }
       };
-      send({ t: 'thread', id: threadId, provider: wm.provider, model: wm.modelId });
+      send({ t: 'thread', id: threadId, provider: wm.provider, model: wm.modelId, mode });
       let reply = '';
+      let thinking = '';
+      let thinkFrom = 0;
+      let thinkMs = 0;
       let error = '';
       const used: string[] = [];
       const proposals: Record<string, unknown>[] = [];
       // Keep reading even if the browser goes away, so the reply is still saved to the thread.
       try {
         for await (const part of result.stream) {
-          if (part.type === 'text-delta') { reply += part.text; send({ t: 'text', d: part.text }); }
+          if (part.type === 'reasoning-delta') {
+            if (!part.text) continue;
+            if (!thinkFrom) thinkFrom = Date.now();
+            thinking += part.text;
+            send({ t: 'think', d: part.text });
+          }
+          else if (part.type === 'text-delta') {
+            if (thinkFrom && !thinkMs) { thinkMs = Date.now() - thinkFrom; send({ t: 'thought', ms: thinkMs }); }
+            reply += part.text; send({ t: 'text', d: part.text });
+          }
           else if (part.type === 'tool-call') { if (!used.includes(part.toolName)) used.push(part.toolName); send({ t: 'tool', name: part.toolName }); }
           else if (part.type === 'tool-result') {
+            send({ t: 'tool-done', name: part.toolName });
             const out = part.output as { proposal?: Record<string, unknown> } | null;
             if (out && out.proposal && typeof out.proposal === 'object' && proposals.length < 10) { proposals.push(out.proposal); send({ t: 'proposal', p: out.proposal }); }
           }
@@ -179,7 +219,8 @@ export async function POST(request: Request) {
       if (reply.trim() || proposals.length) {
         const saved = await sb.from('ai_messages').insert({
           thread_id: threadId, role: 'assistant', body: reply.trim().slice(0, 20000) || 'Here is the proposal. Nothing is saved until you click the button.',
-          meta: { provider: wm.provider, model: wm.modelId, tools: used, ...(proposals.length ? { proposals } : {}), ...(error ? { error } : {}) },
+          meta: { provider: wm.provider, model: wm.modelId, mode, tools: used,
+            ...(thinking.trim() ? { thinking: thinking.trim().slice(0, 12000), thinkMs: thinkMs || (thinkFrom ? Date.now() - thinkFrom : 0) } : {}), ...(proposals.length ? { proposals } : {}), ...(error ? { error } : {}) },
         });
         if (saved.error) console.warn('assistant save', saved.error.message);
         await sb.from('ai_threads').update({ updated_at: new Date().toISOString() }).eq('id', threadId);

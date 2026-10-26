@@ -78,7 +78,7 @@ export async function runActor<T = Record<string, unknown>>(
 const provider: ProviderModule = {
   async verify(secret) {
     if (!secret.apiToken) return 'Add the API token.';
-    const res = await fetch(API + '/users/me', { headers: { authorization: 'Bearer ' + secret.apiToken } });
+    const res = await fetch(API + '/users/me', { headers: { authorization: 'Bearer ' + secret.apiToken }, signal: AbortSignal.timeout(15000) });
     if (res.status === 401) return 'The API token is not valid.';
     if (!res.ok) return 'Apify answered HTTP ' + res.status + '.';
     return null;
