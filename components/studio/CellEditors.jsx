@@ -76,9 +76,11 @@ function NumberEditor({ e }) {
   );
 }
 
-function Calendar({ month, setMonth, start, end, today, onPick }) {
+function Calendar({ month, setMonth, start, end, today, weekStart, onPick }) {
   const y = month[0], m = month[1];
-  const lead = new Date(y, m, 1).getDay();
+  // weekStart 1 starts weeks on Monday (Workspace Settings > General).
+  const lead = (new Date(y, m, 1).getDay() - weekStart + 7) % 7;
+  const dow = DOW.slice(weekStart).concat(DOW.slice(0, weekStart));
   const n = new Date(y, m + 1, 0).getDate();
   const cells = [];
   for (let i = 0; i < lead; i++) cells.push(null);
@@ -95,7 +97,7 @@ function Calendar({ month, setMonth, start, end, today, onPick }) {
         </div>
       </div>
       <div role="group" aria-label={MONTH[m] + ' ' + y} style={css('display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 2px')}>
-        {DOW.map((d) => <span key={d} aria-hidden="true" style={css('height: 28px; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; color: var(--muted-2)')}>{d}</span>)}
+        {dow.map((d) => <span key={d} aria-hidden="true" style={css('height: 28px; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; color: var(--muted-2)')}>{d}</span>)}
         {cells.map((iso, i) => {
           if (!iso) return <span key={'b' + i}></span>;
           const sel = iso === start || iso === end;
@@ -164,7 +166,7 @@ function DateEditor({ e }) {
             style={css('height: 30px; padding: 0 10px; border: 1px solid var(--border); border-radius: 999px; background: var(--surface); color: var(--ink-2b); font-size: 12px; font-weight: 600; cursor: pointer')}>{q[0]}</button>
         ))}
       </div>
-      <Calendar month={month} setMonth={setMonth} start={v.start} end={range ? v.end : ''} today={e.today} onPick={pick} />
+      <Calendar month={month} setMonth={setMonth} start={v.start} end={range ? v.end : ''} today={e.today} weekStart={e.weekStart || 0} onPick={pick} />
       {e.canConfig ? (
         <>
           <div style={css('height: 1px; background: var(--line)')}></div>

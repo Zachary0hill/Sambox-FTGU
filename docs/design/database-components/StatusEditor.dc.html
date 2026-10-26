@@ -1,0 +1,208 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Status</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Montserrat:wght@900&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#1E46A8}a:hover{color:#111111}
+</style>
+</helmet>
+<div style="width: 1440px; height: 1100px; box-sizing: border-box; padding: 64px; background: #EBEBEB; font-family: Inter, system-ui, sans-serif; color: #111111; display: flex; flex-direction: column; gap: 36px">
+
+  <header style="display: flex; flex-direction: column; gap: 8px">
+    <p style="margin: 0; font-size: 13px; font-weight: 600; color: #707070">FTGU Studio · Database components · 05</p>
+    <h1 style="margin: 0; font-family: Montserrat, Inter, sans-serif; font-weight: 900; font-size: 40px; line-height: 1.1; letter-spacing: -0.02em">Status</h1>
+    <p style="margin: 0; max-width: 860px; font-size: 16px; line-height: 1.5; color: #4A4A4A">A Select with fixed groups. The groups are the board stages: In Production, Post Production, Publishing. Options move between groups, groups do not get deleted. Options can notify the sponsor when set.</p>
+  </header>
+
+  <div style="display: flex; gap: 36px; align-items: flex-start">
+
+    <div style="display: flex; flex-direction: column; gap: 10px; width: 300px">
+      <p style="margin: 0; font-size: 13px; font-weight: 700">A. Status picker</p>
+      <div style="height: 44px; display: flex; box-shadow: inset 0 0 0 2px #111111; background: #C2532A; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; color: #FFFFFF">Filming</div>
+      <div style="background: #FFFFFF; border: 1px solid #ECECEC; border-radius: 16px; box-shadow: 0 16px 48px rgba(0,0,0,0.18); padding: 8px; display: flex; flex-direction: column; gap: 2px">
+        <label style="display: flex; align-items: center; gap: 8px; height: 36px; padding: 0 10px; border: 2px solid #111111; border-radius: 10px">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#707070" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{I.search}}"></path></svg>
+          <span style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Search statuses</span>
+          <input type="text" placeholder="Search statuses" style="flex: 1; min-width: 0; border: 0; background: transparent; font-family: inherit; font-size: 14px; outline: none">
+        </label>
+        <sc-for list="{{groups}}" as="g" hint-placeholder-count="3">
+          <div style="display: flex; align-items: center; gap: 8px; padding: 10px 10px 4px">
+            <span style="{{g.dot}}"></span>
+            <span style="font-size: 12px; font-weight: 600; color: #707070">{{g.name}}</span>
+          </div>
+          <sc-for list="{{g.opts}}" as="o" hint-placeholder-count="2">
+            <button type="button" style="display: flex; align-items: center; gap: 10px; height: 36px; padding: 0 10px; border: 0; border-radius: 10px; background: {{o.bg}}; font-family: inherit; cursor: pointer">
+              <span style="{{o.block}}">{{o.name}}</span>
+              <span style="flex: 1"></span>
+              <sc-if value="{{o.notify}}" hint-placeholder-val="{{false}}">
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="#707070" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-label="Notifies sponsor" role="img"><path d="{{I.bell}}"></path></svg>
+              </sc-if>
+              <sc-if value="{{o.on}}" hint-placeholder-val="{{false}}">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#111111" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{I.check}}"></path></svg>
+              </sc-if>
+            </button>
+          </sc-for>
+        </sc-for>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 10px; width: 420px">
+      <p style="margin: 0; font-size: 13px; font-weight: 700">B. Status options in Edit property</p>
+      <div style="background: #FFFFFF; border-radius: 20px; padding: 16px; display: flex; flex-direction: column; gap: 4px; box-shadow: 0 1px 2px rgba(0,0,0,0.04), 0 24px 60px rgba(0,0,0,0.06)">
+        <sc-for list="{{groups}}" as="g" hint-placeholder-count="3">
+          <div style="display: flex; align-items: center; gap: 8px; height: 36px; padding: 0 6px; margin-top: 6px">
+            <span style="{{g.dot}}"></span>
+            <span style="flex: 1; font-size: 13px; font-weight: 700">{{g.name}}</span>
+            <span style="font-size: 12px; color: #707070">{{g.count}}</span>
+            <button type="button" aria-label="Add option to {{g.name}}" style="width: 28px; height: 28px; border: 0; border-radius: 8px; background: transparent; display: inline-flex; align-items: center; justify-content: center; cursor: pointer">
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="#4A4A4A" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><path d="{{I.plus}}"></path></svg>
+            </button>
+          </div>
+          <sc-for list="{{g.opts}}" as="o" hint-placeholder-count="2">
+            <div style="display: flex; align-items: center; gap: 8px; height: 40px; padding: 0 6px; border-radius: 10px; background: {{o.rowBg}}">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#8A8A8A" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="{{I.drag}}"></path></svg>
+              <span style="{{o.block}}">{{o.name}}</span>
+              <span style="flex: 1"></span>
+              <sc-if value="{{o.isDefault}}" hint-placeholder-val="{{false}}">
+                <span style="height: 22px; padding: 0 8px; border-radius: 999px; background: #F1F1F1; display: inline-flex; align-items: center; font-size: 11px; font-weight: 600; color: #4A4A4A">Default</span>
+              </sc-if>
+              <sc-if value="{{o.notify}}" hint-placeholder-val="{{false}}">
+                <span style="height: 22px; padding: 0 8px; border-radius: 999px; background: #F2EBFB; display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 600; color: #5B2A9E">Notifies sponsor</span>
+              </sc-if>
+              <button type="button" aria-label="Edit {{o.name}}" style="width: 28px; height: 28px; border: 0; border-radius: 8px; background: {{o.moreBg}}; display: inline-flex; align-items: center; justify-content: center; cursor: pointer">
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="#111111" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M3.5 8h.01M8 8h.01M12.5 8h.01"></path></svg>
+              </button>
+            </div>
+          </sc-for>
+        </sc-for>
+        <div style="height: 1px; background: #F0F0F0; margin: 8px 0"></div>
+        <div style="display: flex; align-items: center; justify-content: space-between; height: 40px; padding: 0 6px">
+          <span style="font-size: 14px; font-weight: 500">Default for new projects</span>
+          <button type="button" style="display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 10px; border: 1px solid #E6E6E6; border-radius: 10px; background: #F6F6F6; font-family: inherit; font-size: 13px; font-weight: 600; color: #111111; cursor: pointer">Scripting
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="#4A4A4A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{I.chevD}}"></path></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 10px; width: 280px">
+      <p style="margin: 0; font-size: 13px; font-weight: 700">C. Status option menu</p>
+      <div style="background: #FFFFFF; border: 1px solid #ECECEC; border-radius: 16px; box-shadow: 0 16px 48px rgba(0,0,0,0.18); padding: 8px; display: flex; flex-direction: column; gap: 2px">
+        <label style="display: flex"><span style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Option name</span>
+          <input type="text" value="Sponsor Review" style="width: 100%; height: 36px; box-sizing: border-box; padding: 0 10px; border: 2px solid #111111; border-radius: 10px; font-family: inherit; font-size: 14px; font-weight: 600; outline: none">
+        </label>
+        <div style="height: 4px"></div>
+        <button type="button" style="display: flex; align-items: center; gap: 10px; height: 34px; padding: 0 10px; border: 0; border-radius: 10px; background: transparent; font-family: inherit; font-size: 14px; font-weight: 500; color: #111111; text-align: left; cursor: pointer">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#4A4A4A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{I.group}}"></path></svg>
+          <span style="flex: 1">Group</span><span style="font-size: 13px; color: #707070">Post Production</span>
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="#707070" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{I.chevR}}"></path></svg>
+        </button>
+        <div style="display: flex; align-items: center; gap: 10px; height: 34px; padding: 0 10px">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#4A4A4A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{I.bell}}"></path></svg>
+          <span style="flex: 1; font-size: 14px; font-weight: 500">Notify sponsor</span>
+          <button type="button" role="switch" aria-checked="true" aria-label="Notify sponsor" style="width: 30px; height: 18px; padding: 2px; border: 0; border-radius: 999px; background: #111111; display: flex; justify-content: flex-end; cursor: pointer"><span style="width: 14px; height: 14px; border-radius: 999px; background: #FFFFFF"></span></button>
+        </div>
+        <div style="display: flex; align-items: center; gap: 10px; height: 34px; padding: 0 10px">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#4A4A4A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{I.lock}}"></path></svg>
+          <span style="flex: 1; font-size: 14px; font-weight: 500">Editors can set this</span>
+          <button type="button" role="switch" aria-checked="false" aria-label="Editors can set this" style="width: 30px; height: 18px; padding: 2px; border: 0; border-radius: 999px; background: #CFCFCF; display: flex; justify-content: flex-start; cursor: pointer"><span style="width: 14px; height: 14px; border-radius: 999px; background: #FFFFFF"></span></button>
+        </div>
+        <div style="height: 1px; background: #F0F0F0; margin: 4px 0"></div>
+        <p style="margin: 0; padding: 4px 10px; font-size: 12px; font-weight: 600; color: #707070">Colors</p>
+        <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; padding: 4px 10px 8px">
+          <sc-for list="{{swatches}}" as="s" hint-placeholder-count="8">
+            <button type="button" aria-label="{{s.name}}" aria-pressed="{{s.pressed}}" style="{{s.style}}">
+              <sc-if value="{{s.on}}" hint-placeholder-val="{{false}}"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="#FFFFFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{I.check}}"></path></svg></sc-if>
+            </button>
+          </sc-for>
+        </div>
+        <div style="height: 1px; background: #F0F0F0; margin: 4px 0"></div>
+        <button type="button" style="display: flex; align-items: center; gap: 10px; height: 34px; padding: 0 10px; border: 0; border-radius: 10px; background: transparent; font-family: inherit; font-size: 14px; font-weight: 500; color: #C42B2F; text-align: left; cursor: pointer">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#C42B2F" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{I.trash}}"></path></svg>Delete
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <section style="display: flex; flex-direction: column; gap: 12px">
+    <p style="margin: 0; font-size: 13px; font-weight: 700">D. Show as · set per view in Edit property</p>
+    <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 24px">
+      <sc-for list="{{displays}}" as="d" hint-placeholder-count="4">
+        <div style="background: #FFFFFF; border-radius: 20px; overflow: hidden; display: flex; flex-direction: column">
+          <div style="height: 44px; display: flex; align-items: center; justify-content: space-between; padding: 0 16px; border-bottom: 1px solid #F0F0F0">
+            <span style="font-size: 13px; font-weight: 700">{{d.name}}</span>
+            <span style="font-size: 12px; color: #707070">{{d.note}}</span>
+          </div>
+          <sc-for list="{{d.rows}}" as="r" hint-placeholder-count="3">
+            <div style="height: 44px; border-bottom: 1px solid #F0F0F0; display: flex; align-items: stretch">
+              <div style="{{r.wrap}}">
+                <sc-for list="{{r.parts}}" as="p" hint-placeholder-count="1"><span style="{{p.s}}">{{p.t}}</span></sc-for>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+      </sc-for>
+    </div>
+  </section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1100}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const T = {
+      gray: ['Default', '#F1F1F1', '#4A4A4A', '#6B6B6B', '#B0B0B0'], coral: ['Coral', '#FDEDE5', '#933612', '#C2532A', '#F08A5D'],
+      pink: ['Pink', '#FCE8EF', '#99224B', '#B8335F', '#E0567F'], violet: ['Violet', '#F2EBFB', '#5B2A9E', '#7A45C4', '#A66BD6'],
+      blue: ['Blue', '#E9F0FE', '#1E46A8', '#2F5BD3', '#4C7CF0'], green: ['Green', '#E6F5EC', '#1B653B', '#22844C', '#3DB46D'],
+      amber: ['Amber', '#FFF4D9', '#774F00', '#9A6A00', '#E0A526'], red: ['Red', '#FDE8E5', '#9B1C13', '#C42B2F', '#E5484D']
+    };
+    const I = {
+      search: 'M7 2.5a4.5 4.5 0 1 0 0 9a4.5 4.5 0 1 0 0-9zM10.5 10.5L13.5 13.5', check: 'M3.5 8.5l3 3 6-7', plus: 'M8 3v10M3 8h10',
+      drag: 'M6 4h.01M6 8h.01M6 12h.01M10 4h.01M10 8h.01M10 12h.01', chevD: 'M4 6l4 4 4-4', chevR: 'M6 4l4 4-4 4',
+      bell: 'M4 11.5V7a4 4 0 0 1 8 0v4.5l1 1H3zM6.5 14h3', group: 'M2.5 4h11v3h-11zM2.5 9h11v3h-11z',
+      lock: 'M4 7.5h8v6H4zM5.5 7.5V5a2.5 2.5 0 0 1 5 0v2.5', trash: 'M2.5 4.5h11M6 4.5V3h4v1.5M4 4.5l.7 9h6.6l.7-9'
+    };
+    const block = (k) => 'display: inline-flex; align-items: center; height: 24px; padding: 0 10px; border-radius: 4px; font-size: 12px; font-weight: 600; white-space: nowrap; color: #FFFFFF; background: ' + T[k][3] + ';';
+    const G = [
+      ['In Production', 'coral', [['Scripting', 'gray'], ['Filming', 'coral']]],
+      ['Post Production', 'blue', [['Editing', 'blue'], ['Sponsor Review', 'violet']]],
+      ['Publishing', 'green', [['Scheduled', 'pink'], ['Live', 'green']]]
+    ];
+    const notifySet = { 'Sponsor Review': true, Scheduled: true, Live: true };
+    const groups = G.map((g) => ({
+      name: g[0], count: g[2].length + ' options',
+      dot: 'width: 8px; height: 8px; border-radius: 999px; background: ' + T[g[1]][4] + ';',
+      opts: g[2].map((o) => ({
+        name: o[0], block: block(o[1]), on: o[0] === 'Filming', bg: o[0] === 'Filming' ? '#F3F3F3' : 'transparent',
+        notify: !!notifySet[o[0]], isDefault: o[0] === 'Scripting',
+        rowBg: o[0] === 'Sponsor Review' ? '#F3F3F3' : 'transparent', moreBg: o[0] === 'Sponsor Review' ? '#E6E6E6' : 'transparent'
+      }))
+    }));
+    const swatches = Object.keys(T).map((k) => ({
+      name: T[k][0], on: k === 'violet', pressed: k === 'violet' ? 'true' : 'false',
+      style: 'height: 32px; border: 0; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; background: ' + T[k][3] + ';' + (k === 'violet' ? ' box-shadow: 0 0 0 2px #FFFFFF, 0 0 0 4px #111111;' : '')
+    }));
+    const cell = 'flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 0 12px;';
+    const pill = (k, t) => ({ t: '● ' + t, s: 'display: inline-flex; align-items: center; height: 24px; padding: 0 10px; border-radius: 999px; font-size: 12px; font-weight: 600; background: ' + T[k][1] + '; color: ' + T[k][2] + ';' });
+    const box = (on) => ({ t: on ? '✓' : '', s: 'width: 18px; height: 18px; box-sizing: border-box; border-radius: 5px; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: #FFFFFF; ' + (on ? 'background: #111111;' : 'border: 1.5px solid #BDBDBD;') });
+    const seg = (n, k) => [0, 1, 2].map((i) => ({ t: '', s: 'flex: 1; height: 6px; border-radius: 999px; background: ' + (i < n ? T[k][4] : '#EDEDED') + ';' }));
+    const rows3 = [['Filming', 'coral', 1], ['Sponsor Review', 'violet', 2], ['Live', 'green', 3]];
+    const displays = [
+      { name: 'Block', note: 'Current board', rows: rows3.map((r) => ({ wrap: 'flex: 1; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; color: #FFFFFF; background: ' + T[r[1]][3] + ';', parts: [{ t: r[0], s: '' }] })) },
+      { name: 'Pill', note: 'Lighter tables', rows: rows3.map((r) => ({ wrap: cell, parts: [pill(r[1], r[0])] })) },
+      { name: 'Checkbox', note: 'Checked in Publishing', rows: rows3.map((r) => ({ wrap: cell + ' justify-content: flex-start;', parts: [box(r[2] === 3), { t: r[0], s: 'font-size: 13px; color: #3A3A3A;' }] })) },
+      { name: 'Stage bar', note: 'Progress by group', rows: rows3.map((r) => ({ wrap: cell + ' gap: 4px;', parts: seg(r[2], r[1]).concat([{ t: r[0], s: 'flex: none; width: 104px; margin-left: 8px; font-size: 12px; font-weight: 600; color: #3A3A3A; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;' }]) })) }
+    ];
+    return { I: I, groups: groups, swatches: swatches, displays: displays };
+  }
+}
+</script>
+</body>
+</html>

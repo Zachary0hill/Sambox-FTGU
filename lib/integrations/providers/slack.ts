@@ -279,10 +279,27 @@ export async function handleEvent({ ws, secret, config }: Hit, env: SlackEnvelop
   }
 }
 
-// Posts a plain message as the bot. For future automations; the bot must be in the channel (or have chat:write.public).
+// Posts a plain message as the bot; the bot must be in the channel (or have chat:write.public).
 export async function postSlackMessage(ws: string, channel: string, text: string) {
   const conn = await getIntegration(ws, 'slack');
   if (!conn) throw new Error('Slack is not connected.');
   const r = await call<{ channel: string; ts: string }>(conn.secret.botToken, 'chat.postMessage', { channel, text }, true);
+  return { channel: r.channel, ts: r.ts };
+}
+
+// Alerts (automations, notifications): to the Alerts channel from Settings, @mentioning the person when Slack finds
+// their email (users:read.email). With no Alerts channel the bot messages the person directly.
+export async function postSlackAlert(ws: string, text: string, email?: string | null) {
+  const conn = await getIntegration(ws, 'slack');
+  if (!conn) throw new Error('Slack is not connected.');
+  const token = conn.secret.botToken;
+  let userId = '';
+  if (email) {
+    userId = await call<{ user: { id: string } }>(token, 'users.lookupByEmail', { email }).then((r) => r.user.id).catch(() => '');
+  }
+  const channel = String(conn.config.alertChannel || '').trim() || userId;
+  if (!channel) throw new Error('Add an Alerts channel to the Slack integration in Workspace Settings.');
+  const body = userId && channel !== userId ? '<@' + userId + '> ' + text : text;
+  const r = await call<{ channel: string; ts: string }>(token, 'chat.postMessage', { channel, text: body }, true);
   return { channel: r.channel, ts: r.ts };
 }

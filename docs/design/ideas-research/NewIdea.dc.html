@@ -1,0 +1,367 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>New idea</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Montserrat:wght@800;900&display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#111111}a:hover{color:#2A2A2A}
+.ni-ghost:hover{background:#F2F2F2}
+.ni-field:focus{border-color:#111111;outline:none;background:#FFFFFF}
+button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,label:focus-within{outline:2px solid #111111;outline-offset:2px}
+input[type=range]{accent-color:#111111}
+</style>
+</helmet>
+<div style="--surface: #FFFFFF; --surface-2: #FAFAFA; --ink: #111111; --ink-2: #2A2A2A; --ink-3: #444444; --muted: #666666; --border: #E6E6E6; --line: #ECECEC; --chip: #F0F0F0; --font-main: 'Inter', system-ui, sans-serif; --font-title: 'Montserrat', 'Inter', system-ui, sans-serif; min-height: 100vh; box-sizing: border-box; padding: 48px 16px; background: #8E8E8E; font-family: var(--font-main); color: var(--ink); display: flex; justify-content: center; align-items: flex-start">
+
+<section role="dialog" aria-modal="true" aria-labelledby="ni-h" style="width: 100%; max-width: 1120px; box-sizing: border-box; background: var(--surface); border-radius: 28px; box-shadow: 0 24px 80px rgba(0,0,0,0.28); display: flex; flex-direction: column">
+
+<header style="display: flex; flex-wrap: wrap; align-items: flex-start; gap: 16px; padding: 28px 28px 20px; border-bottom: 1px solid var(--line)">
+<div style="flex: 1 1 300px; display: flex; flex-direction: column; gap: 6px; min-width: 0">
+<h2 id="ni-h" style="margin: 0; font-family: var(--font-title); font-weight: 900; font-size: 24px; letter-spacing: -0.02em">New idea</h2>
+<p style="margin: 0; font-size: 14px; color: var(--muted)">Ideas start as Draft and belong to one brand. Capture fast, add the brief when you have it.</p>
+</div>
+<div role="group" aria-label="Form depth" style="display: inline-flex; padding: 3px; gap: 2px; border-radius: 14px; background: var(--chip)">
+<sc-for list="{{modes}}" as="m" hint-placeholder-count="2">
+<button type="button" aria-pressed="{{m.pressed}}" onClick="{{m.pick}}" style="{{m.style}}">{{m.label}}</button>
+</sc-for>
+</div>
+<a href="Main.dc.html" aria-label="Close" class="ni-ghost" style="width: 44px; height: 44px; display: inline-flex; align-items: center; justify-content: center; border-radius: 12px; color: var(--ink)"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"></path></svg></a>
+</header>
+
+<div style="display: flex; flex-wrap: wrap; align-items: flex-start">
+
+<div style="flex: 999 1 520px; min-width: 0; box-sizing: border-box; padding: 24px 28px 28px; display: flex; flex-direction: column; gap: 28px; border-right: 1px solid var(--line)">
+
+<fieldset style="margin: 0; padding: 0; border: 0; display: flex; flex-direction: column; gap: 12px">
+<legend style="padding: 0; margin-bottom: 12px; font-size: 13px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted)">Banner</legend>
+<div role="group" aria-label="Banner style" style="display: flex; flex-wrap: wrap; gap: 8px">
+<sc-for list="{{covers}}" as="cv" hint-placeholder-count="3">
+<button type="button" aria-pressed="{{cv.pressed}}" onClick="{{cv.pick}}" style="{{cv.style}}">{{cv.label}}</button>
+</sc-for>
+</div>
+<sc-if value="{{showDrop}}" hint-placeholder-val="{{true}}">
+<div onDragOver="{{onDragOver}}" onDragLeave="{{onDragLeave}}" onDrop="{{onDrop}}" style="{{dropStyle}}">
+<span aria-hidden="true" style="width: 48px; height: 48px; border-radius: 14px; background: #FFFFFF; border: 1px solid #E6E6E6; display: flex; align-items: center; justify-content: center; color: #111111"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4M7 9l5-5 5 5M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"></path></svg></span>
+<p style="margin: 0; font-size: 15px; font-weight: 600">{{dropTitle}}</p>
+<p style="margin: 0; font-size: 13px; color: var(--muted)">JPG, PNG or WebP. 16:9 works best, 1920×1080 or larger.</p>
+<div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 4px">
+<label for="ni-file" class="ni-ghost" style="display: inline-flex; align-items: center; min-height: 40px; padding: 0 14px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); font-size: 13px; font-weight: 600; cursor: pointer">Browse files</label>
+<input id="ni-file" type="file" accept="image/*" onChange="{{onFile}}" style="position: absolute; width: 1px; height: 1px; opacity: 0">
+<button type="button" onClick="{{useSample}}" class="ni-ghost" style="min-height: 40px; padding: 0 14px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); font: inherit; font-size: 13px; font-weight: 600; color: var(--ink); cursor: pointer">Pick from brand files</button>
+</div>
+</div>
+</sc-if>
+<sc-if value="{{hasImg}}" hint-placeholder-val="{{false}}">
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding: 10px; border: 1px solid var(--border); border-radius: 16px; background: var(--surface-2)">
+<span aria-hidden="true" style="{{fileThumb}}"></span>
+<div style="flex: 1 1 160px; min-width: 0; display: flex; flex-direction: column; gap: 2px">
+<span style="font-size: 14px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">{{fileName}}</span>
+<span style="font-size: 12px; color: var(--muted)">Drag the preview to set the focal point</span>
+</div>
+<label for="ni-file2" class="ni-ghost" style="display: inline-flex; align-items: center; min-height: 40px; padding: 0 12px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); font-size: 13px; font-weight: 600; cursor: pointer">Replace</label>
+<input id="ni-file2" type="file" accept="image/*" onChange="{{onFile}}" style="position: absolute; width: 1px; height: 1px; opacity: 0">
+<button type="button" onClick="{{removeImg}}" class="ni-ghost" style="min-height: 40px; padding: 0 12px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); font: inherit; font-size: 13px; font-weight: 600; color: #9B1C13; cursor: pointer">Remove</button>
+</div>
+</sc-if>
+</fieldset>
+
+<fieldset style="margin: 0; padding: 0; border: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr)); gap: 16px">
+<legend style="padding: 0; margin-bottom: 12px; font-size: 13px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted)">Basics</legend>
+<div style="grid-column: 1 / -1; display: flex; flex-direction: column; gap: 6px">
+<label for="ni-title" style="font-size: 13px; font-weight: 600">Title</label>
+<input id="ni-title" class="ni-field" type="text" autocomplete="off" placeholder="What is the idea?" value="{{title}}" onChange="{{onTitle}}" style="min-height: 44px; box-sizing: border-box; padding: 0 14px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface-2); font: inherit; font-size: 15px; color: var(--ink)">
+</div>
+<div style="display: flex; flex-direction: column; gap: 6px">
+<div style="display: flex; justify-content: space-between; align-items: baseline"><label for="ni-hook" style="font-size: 13px; font-weight: 600">Banner hook</label><span style="font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums">{{hookCount}}</span></div>
+<input id="ni-hook" class="ni-field" type="text" maxlength="24" autocomplete="off" placeholder="2 to 4 punchy words" value="{{hook}}" onChange="{{onHook}}" style="min-height: 44px; box-sizing: border-box; padding: 0 14px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface-2); font: inherit; font-size: 15px; color: var(--ink)">
+</div>
+<div style="display: flex; flex-direction: column; gap: 6px">
+<label for="ni-brand" style="font-size: 13px; font-weight: 600">Brand</label>
+<select id="ni-brand" class="ni-field" value="{{brand}}" onChange="{{onBrand}}" style="min-height: 44px; box-sizing: border-box; padding: 0 12px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface-2); font: inherit; font-size: 15px; color: var(--ink)">
+<option value="Completeful">Completeful</option>
+<option value="Parish Tactical">Parish Tactical</option>
+<option value="FoundrBox">FoundrBox</option>
+<option value="ZZMEDIA">ZZMEDIA</option>
+</select>
+</div>
+<div style="grid-column: 1 / -1; display: flex; flex-direction: column; gap: 6px">
+<span id="ni-type-l" style="font-size: 13px; font-weight: 600">Type</span>
+<div role="group" aria-labelledby="ni-type-l" style="display: flex; flex-wrap: wrap; gap: 8px">
+<sc-for list="{{types}}" as="t" hint-placeholder-count="3">
+<button type="button" aria-pressed="{{t.pressed}}" onClick="{{t.pick}}" style="{{t.style}}"><span aria-hidden="true" style="{{t.sw}}"></span><span style="display: flex; flex-direction: column; align-items: flex-start; gap: 2px"><span style="font-size: 14px; font-weight: 600">{{t.label}}</span><span style="font-size: 12px; color: #666666">{{t.hint}}</span></span></button>
+</sc-for>
+</div>
+</div>
+<div style="grid-column: 1 / -1; display: flex; flex-direction: column; gap: 6px">
+<label for="ni-body" style="font-size: 13px; font-weight: 600">Content</label>
+<textarea id="ni-body" class="ni-field" rows="5" placeholder="Description, draft script, links and references. Blank lines split paragraphs." value="{{body}}" onChange="{{onBody}}" style="box-sizing: border-box; padding: 12px 14px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface-2); font: inherit; font-size: 15px; line-height: 1.5; color: var(--ink); resize: vertical"></textarea>
+</div>
+</fieldset>
+
+<sc-if value="{{isFull}}" hint-placeholder-val="{{true}}">
+<fieldset style="margin: 0; padding: 0; border: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr)); gap: 16px">
+<legend style="padding: 0; margin-bottom: 12px; font-size: 13px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted)">Angle</legend>
+<div style="display: flex; flex-direction: column; gap: 6px">
+<label for="ni-aud" style="font-size: 13px; font-weight: 600">Who it is for</label>
+<input id="ni-aud" class="ni-field" type="text" autocomplete="off" placeholder="First-time merch sellers" value="{{aud}}" onChange="{{onAud}}" style="min-height: 44px; box-sizing: border-box; padding: 0 14px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface-2); font: inherit; font-size: 15px; color: var(--ink)">
+</div>
+<div style="display: flex; flex-direction: column; gap: 6px">
+<label for="ni-pillar" style="font-size: 13px; font-weight: 600">Content pillar</label>
+<select id="ni-pillar" class="ni-field" style="min-height: 44px; box-sizing: border-box; padding: 0 12px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface-2); font: inherit; font-size: 15px; color: var(--ink)">
+<option>Education</option>
+<option>Behind the scenes</option>
+<option>Product</option>
+<option>Story</option>
+<option>Trend</option>
+</select>
+</div>
+<div style="grid-column: 1 / -1; display: flex; flex-direction: column; gap: 6px">
+<label for="ni-promise" style="font-size: 13px; font-weight: 600">The viewer walks away with</label>
+<input id="ni-promise" class="ni-field" type="text" autocomplete="off" placeholder="One clear takeaway or payoff" value="{{promise}}" onChange="{{onPromise}}" style="min-height: 44px; box-sizing: border-box; padding: 0 14px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface-2); font: inherit; font-size: 15px; color: var(--ink)">
+</div>
+<div style="grid-column: 1 / -1; display: flex; flex-direction: column; gap: 8px">
+<span id="ni-fmt-l" style="font-size: 13px; font-weight: 600">Format</span>
+<div role="group" aria-labelledby="ni-fmt-l" style="display: flex; flex-wrap: wrap; gap: 8px">
+<sc-for list="{{formats}}" as="f" hint-placeholder-count="5">
+<button type="button" aria-pressed="{{f.pressed}}" onClick="{{f.pick}}" style="{{f.style}}">{{f.label}}</button>
+</sc-for>
+</div>
+</div>
+<div style="grid-column: 1 / -1; display: flex; flex-direction: column; gap: 8px">
+<span id="ni-pl-l" style="font-size: 13px; font-weight: 600">Platforms <span style="font-weight: 400; color: var(--muted)">pick any</span></span>
+<div role="group" aria-labelledby="ni-pl-l" style="display: flex; flex-wrap: wrap; gap: 8px">
+<sc-for list="{{platforms}}" as="p" hint-placeholder-count="5">
+<button type="button" aria-pressed="{{p.pressed}}" onClick="{{p.pick}}" style="{{p.style}}"><sc-if value="{{p.on}}" hint-placeholder-val="{{false}}"><svg aria-hidden="true" width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 8.5l3 3 6-7"></path></svg></sc-if>{{p.label}}</button>
+</sc-for>
+</div>
+</div>
+</fieldset>
+
+<fieldset style="margin: 0; padding: 20px; border: 1px solid var(--border); border-radius: 20px; background: var(--surface-2); display: flex; flex-direction: column; gap: 18px">
+<legend style="padding: 0 6px; font-size: 13px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted)">Score</legend>
+<div style="display: flex; flex-wrap: wrap; gap: 24px; align-items: center">
+<div style="flex: 999 1 300px; display: flex; flex-direction: column; gap: 14px">
+<sc-for list="{{ice}}" as="k" hint-placeholder-count="3">
+<div style="display: grid; grid-template-columns: 96px minmax(0, 1fr) 32px; align-items: center; gap: 12px">
+<label for="{{k.id}}" style="font-size: 14px; font-weight: 600">{{k.label}}</label>
+<input id="{{k.id}}" type="range" min="1" max="10" step="1" value="{{k.value}}" onChange="{{k.onChange}}" aria-describedby="{{k.hintId}}" style="width: 100%">
+<span style="font-size: 14px; font-weight: 700; text-align: right; font-variant-numeric: tabular-nums">{{k.value}}</span>
+<span id="{{k.hintId}}" style="grid-column: 2 / 4; margin-top: -8px; font-size: 12px; color: var(--muted)">{{k.hint}}</span>
+</div>
+</sc-for>
+</div>
+<div style="flex: 1 1 160px; display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 18px; border-radius: 16px; background: #FFFFFF; border: 1px solid var(--border)">
+<span style="font-size: 12px; font-weight: 600; color: var(--muted)">ICE score</span>
+<span style="font-family: var(--font-title); font-weight: 900; font-size: 44px; line-height: 1; font-variant-numeric: tabular-nums">{{iceScore}}</span>
+<span style="{{iceTagStyle}}">{{iceTag}}</span>
+</div>
+</div>
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(200px, 100%), 1fr)); gap: 16px">
+<div style="display: flex; flex-direction: column; gap: 8px">
+<span id="ni-pri-l" style="font-size: 13px; font-weight: 600">Priority</span>
+<div role="group" aria-labelledby="ni-pri-l" style="display: inline-flex; padding: 3px; gap: 2px; border-radius: 12px; background: #EDEDED">
+<sc-for list="{{pris}}" as="p" hint-placeholder-count="3">
+<button type="button" aria-pressed="{{p.pressed}}" onClick="{{p.pick}}" style="{{p.style}}">{{p.label}}</button>
+</sc-for>
+</div>
+</div>
+<div style="display: flex; flex-direction: column; gap: 8px">
+<span id="ni-eff-l" style="font-size: 13px; font-weight: 600">Production effort</span>
+<div role="group" aria-labelledby="ni-eff-l" style="display: inline-flex; padding: 3px; gap: 2px; border-radius: 12px; background: #EDEDED">
+<sc-for list="{{efforts}}" as="p" hint-placeholder-count="3">
+<button type="button" aria-pressed="{{p.pressed}}" onClick="{{p.pick}}" style="{{p.style}}">{{p.label}}</button>
+</sc-for>
+</div>
+</div>
+</div>
+</fieldset>
+
+<fieldset style="margin: 0; padding: 0; border: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(200px, 100%), 1fr)); gap: 16px">
+<legend style="padding: 0; margin-bottom: 12px; font-size: 13px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted)">Planning</legend>
+<div style="display: flex; flex-direction: column; gap: 6px">
+<label for="ni-owner" style="font-size: 13px; font-weight: 600">Owner</label>
+<select id="ni-owner" class="ni-field" style="min-height: 44px; box-sizing: border-box; padding: 0 12px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface-2); font: inherit; font-size: 15px; color: var(--ink)">
+<option>You</option>
+<option>Avery K.</option>
+<option>Jordan P.</option>
+</select>
+</div>
+<div style="display: flex; flex-direction: column; gap: 6px">
+<label for="ni-win" style="font-size: 13px; font-weight: 600">Target publish window</label>
+<select id="ni-win" class="ni-field" style="min-height: 44px; box-sizing: border-box; padding: 0 12px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface-2); font: inherit; font-size: 15px; color: var(--ink)">
+<option>No window yet</option>
+<option>This month</option>
+<option>November 2026</option>
+<option>December 2026</option>
+<option>Q1 2027</option>
+</select>
+</div>
+<div style="display: flex; flex-direction: column; gap: 6px">
+<label for="ni-sp" style="font-size: 13px; font-weight: 600">Sponsor fit</label>
+<select id="ni-sp" class="ni-field" style="min-height: 44px; box-sizing: border-box; padding: 0 12px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface-2); font: inherit; font-size: 15px; color: var(--ink)">
+<option>None</option>
+<option>[SPONSOR NAME]</option>
+</select>
+</div>
+<div style="grid-column: 1 / -1; display: flex; flex-direction: column; gap: 6px">
+<label for="ni-tags" style="font-size: 13px; font-weight: 600">Tags</label>
+<input id="ni-tags" class="ni-field" type="text" autocomplete="off" placeholder="#hooks #shorts" value="{{tags}}" onChange="{{onTags}}" style="min-height: 44px; box-sizing: border-box; padding: 0 14px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface-2); font: inherit; font-size: 15px; color: var(--ink)">
+</div>
+</fieldset>
+
+<fieldset style="margin: 0; padding: 0; border: 0; display: flex; flex-direction: column; gap: 10px">
+<legend style="padding: 0; margin-bottom: 12px; font-size: 13px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted)">References</legend>
+<sc-for list="{{refs}}" as="r" hint-placeholder-count="1">
+<div style="display: flex; gap: 8px; align-items: center">
+<span aria-hidden="true" style="width: 44px; height: 44px; flex: none; border-radius: 12px; background: var(--chip); display: flex; align-items: center; justify-content: center; color: #444444"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"></path></svg></span>
+<label for="{{r.id}}" style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">{{r.label}}</label>
+<input id="{{r.id}}" class="ni-field" type="url" autocomplete="off" placeholder="Paste a video, article or post link" value="{{r.value}}" onChange="{{r.onChange}}" style="flex: 1; min-width: 0; min-height: 44px; box-sizing: border-box; padding: 0 14px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface-2); font: inherit; font-size: 14px; color: var(--ink)">
+<button type="button" aria-label="{{r.removeLabel}}" onClick="{{r.remove}}" class="ni-ghost" style="width: 44px; height: 44px; flex: none; padding: 0; border: 0; border-radius: 12px; background: transparent; color: #666666; cursor: pointer; display: inline-flex; align-items: center; justify-content: center"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"></path></svg></button>
+</div>
+</sc-for>
+<div style="display: flex; flex-wrap: wrap; gap: 8px">
+<button type="button" onClick="{{addRef}}" class="ni-ghost" style="display: inline-flex; align-items: center; gap: 6px; min-height: 40px; padding: 0 14px; border: 1px dashed #C9C9C9; border-radius: 12px; background: transparent; font: inherit; font-size: 13px; font-weight: 600; color: var(--ink-3); cursor: pointer"><svg aria-hidden="true" width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 3v10M3 8h10"></path></svg>Add link</button>
+<button type="button" class="ni-ghost" style="display: inline-flex; align-items: center; gap: 6px; min-height: 40px; padding: 0 14px; border: 1px dashed #C9C9C9; border-radius: 12px; background: transparent; font: inherit; font-size: 13px; font-weight: 600; color: var(--ink-3); cursor: pointer"><svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><path d="M21 21l-4.3-4.3"></path></svg>Attach a research run</button>
+</div>
+</fieldset>
+</sc-if>
+</div>
+
+<aside aria-label="Preview" style="flex: 1 1 320px; min-width: 0; box-sizing: border-box; padding: 24px 28px 28px; display: flex; flex-direction: column; gap: 20px; position: sticky; top: 0">
+<p style="margin: 0; font-size: 13px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted)">Preview</p>
+<div style="display: flex; flex-direction: column; gap: 14px">
+<div style="{{thumbStyle}}">
+<sc-if value="{{hasRealImg}}" hint-placeholder-val="{{false}}"><img src="{{imgUrl}}" alt="" style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover"></sc-if>
+<sc-if value="{{showHook}}" hint-placeholder-val="{{true}}"><span style="position: relative; max-width: 80%; font-family: var(--font-title); font-weight: 900; font-size: 26px; line-height: 1.06; letter-spacing: -0.03em; text-transform: uppercase"><span style="padding: 0 6px; background: #FFE14D; color: #111111; -webkit-box-decoration-break: clone; box-decoration-break: clone">{{hookHi}}</span> {{hookRest}}</span></sc-if>
+<span style="position: absolute; right: 12px; bottom: 12px; display: inline-flex; align-items: center; height: 26px; padding: 0 10px; border-radius: 8px; background: rgba(17,17,17,0.76); color: #FFFFFF; font-size: 12px; font-weight: 600">{{type}}  ·  0 comments</span>
+<span style="{{priStyle}}">{{pri}}</span>
+</div>
+<div style="display: flex; align-items: flex-start; gap: 12px">
+<span aria-hidden="true" style="width: 40px; height: 40px; flex: none; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; background: #EBEBEB; font-size: 12px; font-weight: 700">{{ini}}</span>
+<div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px">
+<span style="font-size: 16px; font-weight: 600; line-height: 1.35">{{previewTitle}}</span>
+<span style="display: flex; flex-wrap: wrap; gap: 4px 10px; font-size: 13px; color: var(--muted)"><span style="display: inline-flex; align-items: center; gap: 6px; color: var(--ink-3)"><span aria-hidden="true" style="width: 8px; height: 8px; border-radius: 999px; background: #BDBDBD"></span>Draft</span><span>{{brand}}</span><span>{{format}}</span></span>
+</div>
+<span style="{{scorePill}}">{{iceScore}}</span>
+</div>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 10px; padding: 16px; border-radius: 16px; background: var(--surface-2); border: 1px solid var(--border)">
+<div style="display: flex; justify-content: space-between; align-items: baseline"><span style="font-size: 14px; font-weight: 600">Brief strength</span><span style="font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums; color: var(--ink-3)">{{doneLabel}}</span></div>
+<div role="progressbar" aria-label="Brief strength" aria-valuemin="0" aria-valuemax="{{doneMax}}" aria-valuenow="{{doneN}}" style="height: 6px; border-radius: 999px; background: #E6E6E6; overflow: hidden"><div style="{{doneBar}}"></div></div>
+<ul style="margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 6px">
+<sc-for list="{{checks}}" as="ck" hint-placeholder-count="5">
+<li style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: {{ck.color}}"><span aria-hidden="true" style="{{ck.box}}"><sc-if value="{{ck.on}}" hint-placeholder-val="{{false}}"><svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 8.5l3 3 6-7"></path></svg></sc-if></span>{{ck.label}}<span style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">{{ck.sr}}</span></li>
+</sc-for>
+</ul>
+</div>
+<p style="margin: 0; font-size: 13px; color: var(--muted); text-wrap: pretty">Approvers see score, angle and references on the review card. Missing items stay optional.</p>
+</aside>
+</div>
+
+<footer style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding: 16px 28px; border-top: 1px solid var(--line); background: var(--surface-2); border-radius: 0 0 28px 28px">
+<label style="display: inline-flex; align-items: center; gap: 10px; min-height: 44px; font-size: 14px; color: var(--ink-3); cursor: pointer"><input type="checkbox" style="width: 18px; height: 18px; accent-color: #111111; margin: 0">Create another after this one</label>
+<span style="flex: 1"></span>
+<span style="font-size: 12px; color: var(--muted)"><kbd style="padding: 2px 6px; border: 1px solid #DADADA; border-radius: 6px; background: #FFFFFF; font-family: var(--font-main); font-size: 12px">⌘ Enter</kbd> to create</span>
+<a href="Main.dc.html" class="ni-ghost" style="display: inline-flex; align-items: center; min-height: 44px; padding: 0 18px; border-radius: 14px; font-size: 14px; font-weight: 500; color: var(--ink-3); text-decoration: none">Cancel</a>
+<a href="IdeaDetail.dc.html" style="display: inline-flex; align-items: center; min-height: 44px; padding: 0 20px; border-radius: 14px; background: #111111; color: #FFFFFF; font-size: 14px; font-weight: 600; text-decoration: none">Create idea</a>
+</footer>
+</section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":2260}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = {
+      mode: 'full', cover: 'both', imgUrl: '', fileName: '', hasFile: true, dragOver: false,
+      title: 'Why we print on demand instead of holding stock', hook: 'No inventory', brand: 'Completeful', type: 'Idea',
+      body: '', aud: 'First-time merch sellers', promise: '', format: 'Long-form', plats: ['YouTube', 'Shorts'],
+      ice: [8, 7, 6], pri: 'P1', effort: 'M', tags: '#pod #education', refs: ['https://youtube.com/watch?v=[REFERENCE]'], sample: true
+    };
+  }
+  componentWillUnmount() { if (this.state.imgUrl) { try { URL.revokeObjectURL(this.state.imgUrl); } catch (e) {} } }
+  renderVals() {
+    const s = this.state;
+    const set = (p) => this.setState(p);
+    const BR = { 'Completeful': ['#FF0080', '#FFFFFF', 'C'], 'Parish Tactical': ['#4A5233', '#FFFFFF', 'PT'], 'FoundrBox': ['#16FFDE', '#111111', 'FB'], 'ZZMEDIA': ['#111111', '#FFFFFF', 'ZZ'] };
+    const TYPE = { 'Idea': ['#2F5BD3', 'A seed. One line is enough.'], 'Script': ['#9A6A00', 'Draft script or outline.'], 'Research': ['#C2532A', 'Findings and sources.'] };
+    const b = BR[s.brand];
+    const seg = (on) => 'min-height: 40px; padding: 0 14px; border: 0; border-radius: 11px; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; ' + (on ? 'background: #FFFFFF; color: #111111; box-shadow: 0 1px 3px rgba(17,17,17,0.12);' : 'background: transparent; color: #666666;');
+    const chip = (on) => 'display: inline-flex; align-items: center; gap: 6px; min-height: 40px; padding: 0 14px; box-sizing: border-box; border-radius: 999px; font: inherit; font-size: 14px; font-weight: 500; cursor: pointer; ' + (on ? 'background: #111111; border: 1px solid #111111; color: #FFFFFF;' : 'background: #FFFFFF; border: 1px solid #E6E6E6; color: #444444;');
+    const hasImg = s.cover !== 'hook' && (s.imgUrl || s.hasFile);
+    const takeFile = (f) => {
+      if (!f || !/^image\//.test(f.type || '')) return;
+      let url = '';
+      try { url = URL.createObjectURL(f); } catch (e) { url = ''; }
+      if (s.imgUrl) { try { URL.revokeObjectURL(s.imgUrl); } catch (e) {} }
+      set({ imgUrl: url, fileName: f.name, hasFile: true, dragOver: false, cover: s.cover === 'hook' ? 'both' : s.cover });
+    };
+    const hk = (s.hook || 'Your hook').split(' ');
+    const sc = (s.ice[0] + s.ice[1] + s.ice[2]) / 3;
+    const tag = sc >= 7.5 ? ['Strong', '#E6F5EC', '#1B653B'] : sc >= 6.5 ? ['Promising', '#FBF1DC', '#7A5300'] : ['Needs work', '#F0F0F0', '#444444'];
+    const checks = [
+      ['Title', !!s.title.trim()], ['Banner hook', !!s.hook.trim()], ['Cover image', !!hasImg], ['Audience', !!s.aud.trim()],
+      ['Viewer takeaway', !!s.promise.trim()], ['Platforms', s.plats.length > 0], ['Content', !!s.body.trim()], ['References', s.refs.some((r) => r.trim())]
+    ];
+    const doneN = checks.filter((c) => c[1]).length;
+    const ICE = [['Impact', 'How much it moves views, leads or sales'], ['Confidence', 'How sure you are it lands, backed by data'], ['Ease', 'How cheap it is to shoot and edit']];
+    const thumbBase = 'position: relative; display: flex; align-items: flex-end; aspect-ratio: 16 / 9; box-sizing: border-box; padding: 18px; border-radius: 16px; overflow: hidden; ';
+    return {
+      modes: [['quick', 'Quick capture'], ['full', 'Full brief']].map((m) => ({ label: m[1], pressed: s.mode === m[0] ? 'true' : 'false', style: seg(s.mode === m[0]), pick: () => set({ mode: m[0] }) })),
+      isFull: s.mode === 'full',
+      covers: [['hook', 'Brand color + hook'], ['image', 'Image only'], ['both', 'Image + hook']].map((c) => ({ label: c[1], pressed: s.cover === c[0] ? 'true' : 'false', style: chip(s.cover === c[0]), pick: () => set({ cover: c[0] }) })),
+      showDrop: s.cover !== 'hook' && !hasImg,
+      hasImg: !!hasImg,
+      dropTitle: s.dragOver ? 'Drop to set the banner' : 'Drag an image here',
+      dropStyle: 'display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 28px 16px; border-radius: 18px; text-align: center; transition: background 0.12s ease, border-color 0.12s ease; ' + (s.dragOver ? 'background: #F2F2F2; border: 2px dashed #111111;' : 'background: #FAFAFA; border: 2px dashed #D4D4D4;'),
+      onDragOver: (e) => { e.preventDefault(); if (!s.dragOver) set({ dragOver: true }); },
+      onDragLeave: () => set({ dragOver: false }),
+      onDrop: (e) => { e.preventDefault(); const f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]; if (f) takeFile(f); else set({ dragOver: false }); },
+      onFile: (e) => { const f = e.target.files && e.target.files[0]; takeFile(f); },
+      useSample: () => set({ hasFile: true, imgUrl: '', fileName: 'brand-files/warehouse-wide.jpg' }),
+      removeImg: () => { if (s.imgUrl) { try { URL.revokeObjectURL(s.imgUrl); } catch (e) {} } set({ imgUrl: '', hasFile: false, fileName: '' }); },
+      fileName: s.fileName || 'warehouse-wide.jpg',
+      fileThumb: 'width: 80px; height: 45px; flex: none; border-radius: 8px; background: ' + (s.imgUrl ? 'url("' + s.imgUrl + '") center / cover' : 'repeating-linear-gradient(135deg, #2E2E2E 0 8px, #383838 8px 16px)') + ';',
+      title: s.title, hook: s.hook, brand: s.brand, body: s.body, aud: s.aud, promise: s.promise, tags: s.tags, type: s.type, format: s.format, pri: s.pri,
+      hookCount: s.hook.length + '/24',
+      onTitle: (e) => set({ title: e.target.value }), onHook: (e) => set({ hook: e.target.value.slice(0, 24) }), onBrand: (e) => set({ brand: e.target.value }),
+      onBody: (e) => set({ body: e.target.value }), onAud: (e) => set({ aud: e.target.value }), onPromise: (e) => set({ promise: e.target.value }), onTags: (e) => set({ tags: e.target.value }),
+      types: Object.keys(TYPE).map((t) => ({ label: t, hint: TYPE[t][1], pressed: s.type === t ? 'true' : 'false', pick: () => set({ type: t }),
+        sw: 'width: 10px; height: 28px; flex: none; background: ' + TYPE[t][0] + ';',
+        style: 'flex: 1 1 160px; display: flex; align-items: center; gap: 12px; min-height: 56px; padding: 8px 14px; box-sizing: border-box; border-radius: 14px; font: inherit; text-align: left; color: #111111; cursor: pointer; ' + (s.type === t ? 'background: #FFFFFF; border: 1.5px solid #111111;' : 'background: #FAFAFA; border: 1px solid #E6E6E6;') })),
+      formats: ['Long-form', 'Short', 'Reel', 'Livestream', 'Podcast clip'].map((f) => ({ label: f, pressed: s.format === f ? 'true' : 'false', style: chip(s.format === f), pick: () => set({ format: f }) })),
+      platforms: ['YouTube', 'Shorts', 'TikTok', 'Instagram', 'Facebook'].map((p) => { const on = s.plats.indexOf(p) >= 0; return { label: p, on: on, pressed: on ? 'true' : 'false', style: chip(on), pick: () => set({ plats: on ? s.plats.filter((x) => x !== p) : s.plats.concat([p]) }) }; }),
+      ice: ICE.map((k, n) => ({ id: 'ni-ice-' + n, hintId: 'ni-ice-h-' + n, label: k[0], hint: k[1], value: s.ice[n], onChange: (e) => { const v = s.ice.slice(); v[n] = Number(e.target.value); set({ ice: v }); } })),
+      iceScore: sc.toFixed(1), iceTag: tag[0],
+      iceTagStyle: 'display: inline-flex; align-items: center; height: 24px; padding: 0 10px; border-radius: 999px; background: ' + tag[1] + '; color: ' + tag[2] + '; font-size: 12px; font-weight: 700;',
+      scorePill: 'flex: none; display: inline-flex; align-items: center; height: 28px; padding: 0 10px; border-radius: 8px; background: ' + tag[1] + '; color: ' + tag[2] + '; font-size: 13px; font-weight: 700; font-variant-numeric: tabular-nums;',
+      pris: ['P1', 'P2', 'P3'].map((p) => ({ label: p, pressed: s.pri === p ? 'true' : 'false', style: seg(s.pri === p), pick: () => set({ pri: p }) })),
+      efforts: [['S', 'Small'], ['M', 'Medium'], ['L', 'Large']].map((p) => ({ label: p[1], pressed: s.effort === p[0] ? 'true' : 'false', style: seg(s.effort === p[0]), pick: () => set({ effort: p[0] }) })),
+      refs: s.refs.map((r, n) => ({ id: 'ni-ref-' + n, label: 'Reference link ' + (n + 1), removeLabel: 'Remove reference ' + (n + 1), value: r,
+        onChange: (e) => { const v = s.refs.slice(); v[n] = e.target.value; set({ refs: v }); }, remove: () => set({ refs: s.refs.filter((x, k) => k !== n) }) })),
+      addRef: () => set({ refs: s.refs.concat(['']) }),
+      thumbStyle: thumbBase + (s.cover === 'hook' || !hasImg ? 'background: ' + b[0] + '; color: ' + b[1] + ';' : 'background: repeating-linear-gradient(135deg, #2E2E2E 0 14px, #383838 14px 28px); color: #FFFFFF;'),
+      hasRealImg: s.cover !== 'hook' && !!s.imgUrl, imgUrl: s.imgUrl,
+      showHook: s.cover !== 'image' || !hasImg,
+      hookHi: hk[0], hookRest: hk.slice(1).join(' '),
+      priStyle: 'position: absolute; top: 12px; left: 12px; display: inline-flex; align-items: center; height: 24px; padding: 0 8px; border-radius: 7px; font-size: 11px; font-weight: 700; ' + (s.pri === 'P1' ? 'background: #111111; color: #FFFFFF;' : 'background: rgba(255,255,255,0.92); color: #111111;'),
+      ini: b[2], previewTitle: s.title.trim() || 'Untitled idea',
+      doneN: doneN, doneMax: checks.length, doneLabel: doneN + ' of ' + checks.length,
+      doneBar: 'width: ' + Math.round(doneN / checks.length * 100) + '%; height: 100%; border-radius: 999px; background: #111111; transition: width 0.2s ease;',
+      checks: checks.map((c) => ({ label: c[0], on: c[1], sr: c[1] ? ', done' : ', missing', color: c[1] ? '#111111' : '#666666',
+        box: 'width: 16px; height: 16px; flex: none; box-sizing: border-box; border-radius: 5px; display: inline-flex; align-items: center; justify-content: center; ' + (c[1] ? 'background: #22844C;' : 'border: 1.5px solid #C9C9C9;') }))
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -159,7 +159,7 @@ export async function executeRun(runId: string, m: Member) {
     if (await cancelled()) return;
     if (!ideas.length) return fail('The model did not return ideas tied to the findings. Try again or add topics.');
 
-    const ids = await saveIdeas(m, inputs.brandId, ideas, (brand && brand.name) || '');
+    const ids = await saveIdeas(m, runId, inputs.brandId, ideas, (brand && brand.name) || '');
     await save({ status: 'done', idea_ids: ids, finished_at: new Date().toISOString(), error: null });
   } catch (err) {
     await fail(msg(err));
@@ -177,11 +177,11 @@ function brief(b: Record<string, unknown> | null): BrandBrief {
 
 // Saves drafts as Research ideas on the member's session (ideas_insert: author is the caller, brand visible, not an
 // editor) and logs them like the app does. Falls back to the secret-key client if the session expired mid-run.
-async function saveIdeas(m: Member, brandId: string, ideas: IdeaDraft[], brandName: string): Promise<string[]> {
+async function saveIdeas(m: Member, runId: string, brandId: string, ideas: IdeaDraft[], brandName: string): Promise<string[]> {
   const ws = m.ctx.workspace_id, uid = m.ctx.user_id;
   const rows = ideas.map((i) => ({
     workspace_id: ws, brand_id: brandId, type: 'research', status: 'draft', title: i.title, hook: i.hook,
-    body: i.body, tags: i.tags, refs: i.refs, author_id: uid,
+    body: i.body, tags: i.tags, refs: i.refs, author_id: uid, source: 'research', research_run_id: runId,
   }));
   const mine = await m.supabase.from('ideas').insert(rows).select('id, title');
   if (!mine.error && mine.data) {

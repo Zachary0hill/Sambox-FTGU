@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Edit property panel</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Montserrat:wght@900&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#1E46A8}a:hover{color:#111111}
+</style>
+</helmet>
+<div style="width: 1440px; height: 1180px; box-sizing: border-box; padding: 64px; background: #EBEBEB; font-family: Inter, system-ui, sans-serif; color: #111111; display: flex; flex-direction: column; gap: 36px">
+
+  <header style="display: flex; flex-direction: column; gap: 8px">
+    <p style="margin: 0; font-size: 13px; font-weight: 600; color: #707070">FTGU Studio · Database components · 06</p>
+    <h1 style="margin: 0; font-family: Montserrat, Inter, sans-serif; font-weight: 900; font-size: 40px; line-height: 1.1; letter-spacing: -0.02em">Edit property panel</h1>
+    <p style="margin: 0; max-width: 860px; font-size: 16px; line-height: 1.5; color: #4A4A4A">Right side sheet, 320px. Same shell for every type: name, type, type settings, display, access, then duplicate and delete. Only the middle block changes per type.</p>
+  </header>
+
+  <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 24px; align-items: start">
+    <sc-for list="{{panels}}" as="p" hint-placeholder-count="4">
+      <div style="display: flex; flex-direction: column; gap: 10px">
+        <p style="margin: 0; font-size: 13px; font-weight: 700">{{p.caption}}</p>
+        <aside aria-label="Edit property" style="background: #FFFFFF; border-radius: 20px; box-shadow: 0 1px 2px rgba(0,0,0,0.04), 0 24px 60px rgba(0,0,0,0.08); padding: 12px; display: flex; flex-direction: column; gap: 2px">
+          <div style="display: flex; align-items: center; gap: 6px; height: 40px; margin-bottom: 6px">
+            <button type="button" aria-label="Back" style="width: 32px; height: 32px; border: 0; border-radius: 8px; background: transparent; display: inline-flex; align-items: center; justify-content: center; cursor: pointer">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#111111" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{I.back}}"></path></svg>
+            </button>
+            <h2 style="margin: 0; flex: 1; font-size: 15px; font-weight: 700">Edit property</h2>
+            <button type="button" aria-label="Close" style="width: 32px; height: 32px; border: 0; border-radius: 8px; background: transparent; display: inline-flex; align-items: center; justify-content: center; cursor: pointer">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#111111" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><path d="{{I.x}}"></path></svg>
+            </button>
+          </div>
+          <div style="display: flex; gap: 6px; margin-bottom: 8px">
+            <button type="button" aria-label="Change icon" style="width: 40px; height: 40px; flex: none; border: 1px solid #E6E6E6; border-radius: 10px; background: #F6F6F6; display: inline-flex; align-items: center; justify-content: center; cursor: pointer">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#111111" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{p.icon}}"></path></svg>
+            </button>
+            <label style="flex: 1; display: flex"><span style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Property name</span>
+              <input type="text" value="{{p.name}}" style="width: 100%; height: 40px; box-sizing: border-box; padding: 0 12px; border: 1px solid #E6E6E6; border-radius: 10px; background: #F6F6F6; font-family: inherit; font-size: 14px; font-weight: 600; outline: none">
+            </label>
+          </div>
+          <sc-for list="{{p.rows}}" as="r" hint-placeholder-count="14">
+            <sc-if value="{{r.isLabel}}" hint-placeholder-val="{{false}}">
+              <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px 8px 4px">
+                <span style="font-size: 12px; font-weight: 600; color: #707070">{{r.label}}</span>
+                <sc-if value="{{r.add}}" hint-placeholder-val="{{false}}">
+                  <button type="button" aria-label="Add option" style="width: 24px; height: 24px; border: 0; border-radius: 6px; background: transparent; display: inline-flex; align-items: center; justify-content: center; cursor: pointer">
+                    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="#4A4A4A" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><path d="{{I.plus}}"></path></svg>
+                  </button>
+                </sc-if>
+              </div>
+            </sc-if>
+            <sc-if value="{{r.isDivider}}" hint-placeholder-val="{{false}}">
+              <div style="height: 1px; background: #F0F0F0; margin: 6px 0"></div>
+            </sc-if>
+            <sc-if value="{{r.isRow}}" hint-placeholder-val="{{true}}">
+              <button type="button" style="display: flex; align-items: center; gap: 10px; height: 38px; padding: 0 8px; border: 0; border-radius: 10px; background: transparent; font-family: inherit; font-size: 14px; font-weight: 500; color: {{r.color}}; text-align: left; cursor: pointer">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="{{r.color}}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{r.icon}}"></path></svg>
+                <span style="flex: 1; white-space: nowrap">{{r.label}}</span>
+                <span style="font-size: 13px; color: #707070; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 120px">{{r.value}}</span>
+                <sc-if value="{{r.chev}}" hint-placeholder-val="{{true}}">
+                  <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="#707070" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{I.chevR}}"></path></svg>
+                </sc-if>
+              </button>
+            </sc-if>
+            <sc-if value="{{r.isToggle}}" hint-placeholder-val="{{false}}">
+              <div style="display: flex; align-items: center; gap: 10px; height: 38px; padding: 0 8px">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#111111" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{r.icon}}"></path></svg>
+                <span style="flex: 1; font-size: 14px; font-weight: 500">{{r.label}}</span>
+                <button type="button" role="switch" aria-checked="{{r.checked}}" aria-label="{{r.label}}" style="{{r.track}}"><span style="width: 14px; height: 14px; border-radius: 999px; background: #FFFFFF"></span></button>
+              </div>
+            </sc-if>
+            <sc-if value="{{r.isSeg}}" hint-placeholder-val="{{false}}">
+              <div style="display: flex; flex-direction: column; gap: 6px; padding: 4px 8px 8px">
+                <span style="font-size: 13px; font-weight: 500; color: #3A3A3A">{{r.label}}</span>
+                <div role="group" aria-label="{{r.label}}" style="display: flex; padding: 3px; gap: 2px; border-radius: 10px; background: #F1F1F1">
+                  <sc-for list="{{r.opts}}" as="o" hint-placeholder-count="3">
+                    <button type="button" aria-pressed="{{o.pressed}}" style="{{o.style}}">{{o.t}}</button>
+                  </sc-for>
+                </div>
+              </div>
+            </sc-if>
+            <sc-if value="{{r.isOpt}}" hint-placeholder-val="{{false}}">
+              <div style="display: flex; align-items: center; gap: 8px; height: 36px; padding: 0 8px; border-radius: 10px">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#8A8A8A" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="{{I.drag}}"></path></svg>
+                <span style="flex: 1; display: flex"><span style="{{r.chip}}">{{r.label}}</span></span>
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="#707070" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{I.chevR}}"></path></svg>
+              </div>
+            </sc-if>
+            <sc-if value="{{r.isStepper}}" hint-placeholder-val="{{false}}">
+              <div style="display: flex; align-items: center; gap: 10px; height: 38px; padding: 0 8px">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#111111" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{r.icon}}"></path></svg>
+                <span style="flex: 1; font-size: 14px; font-weight: 500">{{r.label}}</span>
+                <div style="display: flex; align-items: center; border: 1px solid #E6E6E6; border-radius: 10px; overflow: hidden">
+                  <button type="button" aria-label="Fewer" style="width: 28px; height: 28px; border: 0; background: #F6F6F6; font-family: inherit; font-size: 15px; color: #111111; cursor: pointer">−</button>
+                  <span style="width: 28px; text-align: center; font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums">{{r.value}}</span>
+                  <button type="button" aria-label="More" style="width: 28px; height: 28px; border: 0; background: #F6F6F6; font-family: inherit; font-size: 15px; color: #111111; cursor: pointer">+</button>
+                </div>
+              </div>
+            </sc-if>
+            <sc-if value="{{r.isPreview}}" hint-placeholder-val="{{false}}">
+              <div style="display: flex; flex-direction: column; gap: 6px; margin: 4px 8px 6px; padding: 10px 12px; border-radius: 12px; background: #FAFAFA; border: 1px solid #F0F0F0">
+                <span style="font-size: 11px; font-weight: 600; color: #707070">Preview</span>
+                <div style="display: flex; align-items: center; gap: 8px">
+                  <sc-for list="{{r.parts}}" as="x" hint-placeholder-count="1"><span style="{{x.s}}">{{x.t}}</span></sc-for>
+                </div>
+              </div>
+            </sc-if>
+            <sc-if value="{{r.isRoles}}" hint-placeholder-val="{{false}}">
+              <div style="display: flex; flex-wrap: wrap; gap: 6px; padding: 2px 8px 6px">
+                <sc-for list="{{r.roles}}" as="o" hint-placeholder-count="4">
+                  <button type="button" aria-pressed="{{o.pressed}}" style="{{o.style}}">{{o.t}}</button>
+                </sc-for>
+              </div>
+            </sc-if>
+          </sc-for>
+        </aside>
+      </div>
+    </sc-for>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1180}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const I = {
+      back: 'M13 8H3M7 4L3 8l4 4', x: 'M4 4l8 8M12 4l-8 8', plus: 'M8 3v10M3 8h10', chevR: 'M6 4l4 4-4 4',
+      drag: 'M6 4h.01M6 8h.01M6 12h.01M10 4h.01M10 8h.01M10 12h.01'
+    };
+    const IC = {
+      select: 'M8 2.5a5.5 5.5 0 1 0 0 11a5.5 5.5 0 1 0 0-11zM5.5 7l2.5 2.5L10.5 7',
+      number: 'M6 2.5l-1.5 11M11.5 2.5L10 13.5M2.5 6h11M2 10h11',
+      date: 'M2.5 3.5h11v10h-11zM2.5 6.5h11M5.5 2v3M10.5 2v3',
+      person: 'M8 3.5a2.5 2.5 0 1 0 0 5a2.5 2.5 0 1 0 0-5zM3.5 13.5c.8-2.3 2.5-3.5 4.5-3.5s3.7 1.2 4.5 3.5',
+      swap: 'M3 5.5h10M10.5 3l2.5 2.5L10.5 8M13 10.5H3M5.5 8L3 10.5 5.5 13',
+      sort: 'M5 3v10M5 13l-2.5-2.5M5 13l2.5-2.5M11 13V3M11 3L8.5 5.5M11 3l2.5 2.5',
+      card: 'M2.5 3.5h11v9h-11zM5 6.5h6M5 9h3.5', req: 'M8 2.5v11M3.2 5.25l9.6 5.5M12.8 5.25l-9.6 5.5',
+      dup: 'M5.5 5.5h8v8h-8zM10.5 5.5v-3h-8v8h3', trash: 'M2.5 4.5h11M6 4.5V3h4v1.5M4 4.5l.7 9h6.6l.7-9',
+      dollar: 'M8 2v12M11 4.5H6.75a2 2 0 0 0 0 4h2.5a2 2 0 0 1 0 4H4.5', dec: 'M3 12h.01M6 4h3v8M12 4h-1.5v8',
+      sum: 'M12 3H4l4.5 5L4 13h8', clock: 'M8 2.5a5.5 5.5 0 1 0 0 11a5.5 5.5 0 1 0 0-11zM8 5v3l2 1.5',
+      end: 'M2.5 8h9M8.5 5l3 3-3 3M13.5 3.5v9', bell: 'M4 11.5V7a4 4 0 0 1 8 0v4.5l1 1H3zM6.5 14h3',
+      color: 'M8 2.5l6 10.5H2z', users: 'M6 3.5a2.25 2.25 0 1 0 0 4.5a2.25 2.25 0 1 0 0-4.5zM2 13c.7-2 2.2-3 4-3s3.3 1 4 3M10.5 3.75a2.25 2.25 0 0 1 0 4.25M12 10.2c1 .4 1.7 1.4 2 2.8',
+      mail: 'M2.5 4h11v8h-11zM2.5 4.5L8 9l5.5-4.5', limit: 'M3 8h10M3 4.5h10M3 11.5h5'
+    };
+    const T = { coral: ['#FDEDE5', '#933612'], pink: ['#FCE8EF', '#99224B'], violet: ['#F2EBFB', '#5B2A9E'] };
+    const chip = (k) => 'display: inline-flex; align-items: center; height: 24px; padding: 0 10px; border-radius: 999px; font-size: 12px; font-weight: 600; white-space: nowrap; background: ' + T[k][0] + '; color: ' + T[k][1] + ';';
+    const D = { isLabel: false, isDivider: false, isRow: false, isToggle: false, isSeg: false, isOpt: false, isStepper: false, isPreview: false, isRoles: false, add: false, chev: true, color: '#111111', value: '' };
+    const mk = (o) => Object.assign({}, D, o);
+    const lbl = (t, add) => mk({ isLabel: true, label: t, add: !!add });
+    const div = mk({ isDivider: true });
+    const row = (icon, label, value, extra) => mk(Object.assign({ isRow: true, icon: icon, label: label, value: value || '' }, extra || {}));
+    const tog = (icon, label, on) => mk({ isToggle: true, icon: icon, label: label, checked: on ? 'true' : 'false',
+      track: 'width: 30px; height: 18px; padding: 2px; border: 0; border-radius: 999px; display: flex; cursor: pointer; ' + (on ? 'background: #111111; justify-content: flex-end;' : 'background: #CFCFCF; justify-content: flex-start;') });
+    const seg = (label, opts, on) => mk({ isSeg: true, label: label, opts: opts.map((t) => ({ t: t, pressed: t === on ? 'true' : 'false',
+      style: 'flex: 1; height: 30px; border: 0; border-radius: 8px; font-family: inherit; font-size: 13px; font-weight: 600; cursor: pointer; ' + (t === on ? 'background: #FFFFFF; color: #111111; box-shadow: 0 1px 2px rgba(0,0,0,0.08);' : 'background: transparent; color: #4A4A4A;') })) });
+    const opt = (t, k) => mk({ isOpt: true, label: t, chip: chip(k) });
+    const roles = (on) => mk({ isRoles: true, roles: ['Super Admin', 'Editor', 'Designer', 'Sponsor'].map((r) => {
+      const a = on.indexOf(r) >= 0;
+      return { t: (a ? '✓ ' : '') + r, pressed: a ? 'true' : 'false', style: 'height: 30px; padding: 0 10px; border-radius: 999px; font-family: inherit; font-size: 12px; font-weight: 600; cursor: pointer; ' + (a ? 'border: 1px solid #111111; background: #111111; color: #FFFFFF;' : 'border: 1px solid #DCDCDC; background: #FFFFFF; color: #3A3A3A;') };
+    }) });
+    const tail = [div, row(IC.dup, 'Duplicate property', '', { chev: false }), row(IC.trash, 'Delete property', '', { chev: false, color: '#C42B2F' })];
+    const panels = [
+      { caption: 'Select', name: 'Content Type', icon: IC.select, rows: [
+        row(IC.swap, 'Type', 'Select'), row(IC.sort, 'Sort', 'Manual'),
+        lbl('Options', true), opt('YouTube Video', 'coral'), opt('YouTube Live', 'pink'), opt('Shortform', 'violet'),
+        div, seg('Show as', ['Pill', 'Block'], 'Pill'), tog(IC.card, 'Show on cards', true), tog(IC.req, 'Required', false),
+        lbl('Visible to'), roles(['Super Admin', 'Editor', 'Designer'])
+      ].concat(tail) },
+      { caption: 'Number', name: 'Sponsor Fee', icon: IC.number, rows: [
+        row(IC.swap, 'Type', 'Number'), row(IC.dollar, 'Format', 'US Dollar'), mk({ isStepper: true, icon: IC.dec, label: 'Decimals', value: '2' }),
+        seg('Show as', ['Number', 'Bar', 'Ring'], 'Number'),
+        mk({ isPreview: true, parts: [{ t: '$4,500.00', s: 'flex: 1; text-align: right; font-size: 15px; font-weight: 600; font-variant-numeric: tabular-nums; color: #2A2A2A;' }] }),
+        row(IC.sum, 'Footer total', 'Sum'), div, tog(IC.card, 'Show on cards', false), tog(IC.req, 'Required', false),
+        lbl('Visible to'), roles(['Super Admin', 'Sponsor'])
+      ].concat(tail) },
+      { caption: 'Date', name: 'Publishing Date', icon: IC.date, rows: [
+        row(IC.swap, 'Type', 'Date'), row(IC.date, 'Date format', 'Oct 28, 2026'), row(IC.clock, 'Time format', '12 hour'),
+        tog(IC.end, 'End date', false), tog(IC.clock, 'Include time', false),
+        lbl('Due states'), tog(IC.color, 'Late red, today amber', true),
+        mk({ isPreview: true, parts: [{ t: 'Oct 28', s: 'padding: 4px 10px; border-radius: 999px; font-size: 13px; color: #3A3A3A;' }, { t: 'Today', s: 'padding: 4px 10px; border-radius: 999px; font-size: 13px; font-weight: 600; background: #FFF4D9; color: #774F00;' }, { t: 'Oct 19', s: 'padding: 4px 10px; border-radius: 999px; font-size: 13px; font-weight: 600; background: #FDE8E5; color: #9B1C13;' }] }),
+        row(IC.bell, 'Reminder', '1 day before'), div, tog(IC.card, 'Show on cards', true),
+        lbl('Visible to'), roles(['Super Admin', 'Editor', 'Designer', 'Sponsor'])
+      ].concat(tail) },
+      { caption: 'Person', name: 'Editor', icon: IC.person, rows: [
+        row(IC.swap, 'Type', 'Person'), row(IC.users, 'People from', 'Editor role'), row(IC.limit, 'Limit', '1 person'),
+        tog(IC.mail, 'Email on assign', true), tog(IC.bell, 'Remind before due', true),
+        seg('Show as', ['Avatar + name', 'Avatar'], 'Avatar + name'),
+        mk({ isPreview: true, parts: [{ t: 'JR', s: 'width: 24px; height: 24px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; color: #FFFFFF; background: #2F5BD3;' }, { t: 'Jordan Reyes', s: 'font-size: 14px; color: #3A3A3A;' }] }),
+        div, tog(IC.card, 'Show on cards', true), tog(IC.req, 'Required', false),
+        lbl('Visible to'), roles(['Super Admin', 'Editor'])
+      ].concat(tail) }
+    ];
+    return { I: I, panels: panels };
+  }
+}
+</script>
+</body>
+</html>

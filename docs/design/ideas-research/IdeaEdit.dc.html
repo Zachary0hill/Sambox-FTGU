@@ -1,0 +1,256 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Edit idea</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Montserrat:wght@800;900&display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#111111}a:hover{color:#2A2A2A}
+.ie-ghost:hover{background:#F2F2F2}
+.ie-field:focus{border-color:#111111;outline:none;background:#FFFFFF}
+button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid #111111;outline-offset:2px}
+input[type=range]{accent-color:#111111}
+</style>
+</helmet>
+<div style="--surface: #FFFFFF; --surface-2: #FAFAFA; --ink: #111111; --ink-2: #2A2A2A; --ink-3: #444444; --muted: #666666; --border: #E6E6E6; --line: #ECECEC; --chip: #F0F0F0; --font-main: 'Inter', system-ui, sans-serif; --font-title: 'Montserrat', 'Inter', system-ui, sans-serif; min-height: 100vh; box-sizing: border-box; padding: 48px 16px; background: #8E8E8E; font-family: var(--font-main); color: var(--ink); display: flex; justify-content: center; align-items: flex-start">
+
+<section role="dialog" aria-modal="true" aria-labelledby="ie-h" style="width: 100%; max-width: 1120px; background: var(--surface); border-radius: 28px; box-shadow: 0 24px 80px rgba(0,0,0,0.28); overflow: hidden">
+
+<div onDragOver="{{onDragOver}}" onDragLeave="{{onDragLeave}}" onDrop="{{onDrop}}" style="{{bannerStyle}}">
+<button type="button" aria-label="Set the focal point. Click where the image should stay centered." onClick="{{setFocal}}" style="position: absolute; inset: 0; width: 100%; height: 100%; padding: 0; border: 0; background: transparent; cursor: crosshair"></button>
+<span aria-hidden="true" style="{{focalStyle}}"></span>
+<sc-if value="{{showHook}}" hint-placeholder-val="{{true}}"><span style="{{hookWrap}}"><span style="{{hiStyle}}">{{hookHi}}</span> {{hookRest}}</span></sc-if>
+<sc-if value="{{dragOver}}" hint-placeholder-val="{{false}}">
+<div aria-hidden="true" style="position: absolute; inset: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; border: 2px dashed #FFFFFF; border-radius: 18px; background: rgba(17,17,17,0.55); color: #FFFFFF; font-size: 16px; font-weight: 600; pointer-events: none"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4M7 9l5-5 5 5M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"></path></svg>Drop to replace the cover</div>
+</sc-if>
+<div style="position: absolute; top: 16px; left: 16px; right: 16px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; pointer-events: none">
+<span style="display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 12px; border-radius: 10px; background: rgba(17,17,17,0.7); color: #FFFFFF; font-size: 12px; font-weight: 600">Editing banner  ·  click to set focal point, drop an image to replace</span>
+<span style="flex: 1"></span>
+<a href="IdeaDetail.dc.html" aria-label="Close without saving" style="pointer-events: auto; width: 44px; height: 44px; display: inline-flex; align-items: center; justify-content: center; border-radius: 12px; background: #FFFFFF; color: #111111"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"></path></svg></a>
+</div>
+</div>
+
+<div role="toolbar" aria-label="Banner" style="display: flex; flex-wrap: wrap; align-items: center; gap: 16px 24px; padding: 14px 32px; border-bottom: 1px solid var(--line); background: var(--surface-2)">
+<div style="display: flex; align-items: center; gap: 8px">
+<label for="ie-file" class="ie-ghost" style="display: inline-flex; align-items: center; gap: 8px; min-height: 40px; padding: 0 14px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); font-size: 13px; font-weight: 600; cursor: pointer"><svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4M7 9l5-5 5 5M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"></path></svg>Replace image</label>
+<input id="ie-file" type="file" accept="image/*" onChange="{{onFile}}" style="position: absolute; width: 1px; height: 1px; opacity: 0">
+</div>
+<div style="display: flex; align-items: center; gap: 8px">
+<span id="ie-cv" style="font-size: 13px; color: var(--muted)">Style</span>
+<div role="group" aria-labelledby="ie-cv" style="display: inline-flex; padding: 3px; gap: 2px; border-radius: 12px; background: #EDEDED">
+<sc-for list="{{covers}}" as="c" hint-placeholder-count="3">
+<button type="button" aria-pressed="{{c.pressed}}" onClick="{{c.pick}}" style="{{c.style}}">{{c.label}}</button>
+</sc-for>
+</div>
+</div>
+<div style="display: flex; align-items: center; gap: 8px">
+<span id="ie-hl" style="font-size: 13px; color: var(--muted)">Highlight</span>
+<div role="group" aria-labelledby="ie-hl" style="display: flex; gap: 6px">
+<sc-for list="{{highlights}}" as="h" hint-placeholder-count="4">
+<button type="button" aria-pressed="{{h.pressed}}" aria-label="{{h.label}}" title="{{h.label}}" onClick="{{h.pick}}" style="{{h.style}}"></button>
+</sc-for>
+</div>
+</div>
+<div style="display: flex; align-items: center; gap: 8px">
+<span id="ie-pos" style="font-size: 13px; color: var(--muted)">Hook position</span>
+<div role="group" aria-labelledby="ie-pos" style="display: inline-flex; padding: 3px; gap: 2px; border-radius: 12px; background: #EDEDED">
+<sc-for list="{{positions}}" as="p" hint-placeholder-count="3">
+<button type="button" aria-pressed="{{p.pressed}}" onClick="{{p.pick}}" style="{{p.style}}">{{p.label}}</button>
+</sc-for>
+</div>
+</div>
+</div>
+
+<div style="display: flex; flex-wrap: wrap; align-items: flex-start">
+<div style="flex: 999 1 560px; min-width: 0; box-sizing: border-box; padding: 24px 32px 32px; display: flex; flex-direction: column; gap: 20px; border-right: 1px solid var(--line)">
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px">
+<span aria-hidden="true" style="width: 28px; height: 28px; border-radius: 8px; background: #FF0080; color: #FFFFFF; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700">C</span>
+<span style="font-size: 14px; font-weight: 600">Completeful</span>
+<span style="display: inline-flex; align-items: center; height: 24px; padding: 0 10px; background: #F0F0F0; color: #444444; font-size: 12px; font-weight: 600">Draft</span>
+<h2 id="ie-h" style="margin: 0 0 0 auto; font-size: 13px; font-weight: 600; color: var(--muted)">Edit idea</h2>
+</div>
+<div style="display: flex; flex-direction: column; gap: 6px">
+<label for="ie-title" style="font-size: 13px; font-weight: 600">Title</label>
+<input id="ie-title" class="ie-field" type="text" value="{{title}}" onChange="{{onTitle}}" style="min-height: 52px; box-sizing: border-box; padding: 0 14px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface-2); font-family: var(--font-title); font-weight: 900; font-size: 22px; letter-spacing: -0.02em; color: var(--ink)">
+</div>
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(200px, 100%), 1fr)); gap: 16px">
+<div style="display: flex; flex-direction: column; gap: 6px">
+<div style="display: flex; justify-content: space-between; align-items: baseline"><label for="ie-hook" style="font-size: 13px; font-weight: 600">Banner hook</label><span style="font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums">{{hookCount}}</span></div>
+<input id="ie-hook" class="ie-field" type="text" maxlength="24" value="{{hook}}" onChange="{{onHook}}" style="min-height: 44px; box-sizing: border-box; padding: 0 14px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface-2); font: inherit; font-size: 15px; color: var(--ink)">
+</div>
+<div style="display: flex; flex-direction: column; gap: 6px">
+<label for="ie-type" style="font-size: 13px; font-weight: 600">Type</label>
+<select id="ie-type" class="ie-field" onChange="{{touch}}" style="min-height: 44px; box-sizing: border-box; padding: 0 12px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface-2); font: inherit; font-size: 15px; color: var(--ink)"><option>Idea</option><option>Script</option><option>Research</option></select>
+</div>
+<div style="display: flex; flex-direction: column; gap: 6px">
+<label for="ie-pillar" style="font-size: 13px; font-weight: 600">Content pillar</label>
+<select id="ie-pillar" class="ie-field" onChange="{{touch}}" style="min-height: 44px; box-sizing: border-box; padding: 0 12px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface-2); font: inherit; font-size: 15px; color: var(--ink)"><option>Education</option><option>Behind the scenes</option><option>Product</option><option>Story</option><option>Trend</option></select>
+</div>
+<div style="display: flex; flex-direction: column; gap: 6px">
+<label for="ie-aud" style="font-size: 13px; font-weight: 600">Who it is for</label>
+<input id="ie-aud" class="ie-field" type="text" value="{{aud}}" onChange="{{onAud}}" style="min-height: 44px; box-sizing: border-box; padding: 0 14px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface-2); font: inherit; font-size: 15px; color: var(--ink)">
+</div>
+<div style="grid-column: 1 / -1; display: flex; flex-direction: column; gap: 6px">
+<label for="ie-promise" style="font-size: 13px; font-weight: 600">The viewer walks away with</label>
+<input id="ie-promise" class="ie-field" type="text" value="{{promise}}" onChange="{{onPromise}}" style="min-height: 44px; box-sizing: border-box; padding: 0 14px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface-2); font: inherit; font-size: 15px; color: var(--ink)">
+</div>
+</div>
+<div style="display: flex; flex-direction: column; gap: 6px">
+<label for="ie-body" style="font-size: 13px; font-weight: 600">Content</label>
+<textarea id="ie-body" class="ie-field" rows="7" value="{{body}}" onChange="{{onBody}}" style="box-sizing: border-box; padding: 12px 14px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface-2); font: inherit; font-size: 15px; line-height: 1.55; color: var(--ink); resize: vertical"></textarea>
+<span style="font-size: 12px; color: var(--muted)">Blank lines split paragraphs. Paste a link to add it to References.</span>
+</div>
+<div style="display: flex; flex-direction: column; gap: 8px">
+<span id="ie-tags-l" style="font-size: 13px; font-weight: 600">Tags</span>
+<div role="group" aria-labelledby="ie-tags-l" style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px; min-height: 52px; box-sizing: border-box; padding: 6px 8px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface-2)">
+<sc-for list="{{tags}}" as="t" hint-placeholder-count="3">
+<span style="display: inline-flex; align-items: center; gap: 4px; min-height: 32px; padding: 0 4px 0 12px; border-radius: 999px; background: #FFFFFF; border: 1px solid var(--border); font-size: 13px">{{t.label}}<button type="button" aria-label="{{t.removeLabel}}" onClick="{{t.remove}}" style="width: 26px; height: 26px; display: inline-flex; align-items: center; justify-content: center; padding: 0; border: 0; border-radius: 999px; background: transparent; color: #666666; cursor: pointer"><svg aria-hidden="true" width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"></path></svg></button></span>
+</sc-for>
+<label for="ie-tag-new" style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Add a tag</label>
+<input id="ie-tag-new" type="text" placeholder="Add tag, press Enter" value="{{tagDraft}}" onChange="{{onTagDraft}}" onKeyDown="{{onTagKey}}" style="flex: 1 1 140px; min-width: 0; min-height: 36px; padding: 0 6px; border: 0; background: transparent; font: inherit; font-size: 14px; color: var(--ink); outline: none">
+</div>
+</div>
+</div>
+
+<aside aria-label="Properties" style="flex: 1 1 300px; min-width: 0; box-sizing: border-box; padding: 24px 28px 32px; display: flex; flex-direction: column; gap: 18px; background: var(--surface-2)">
+<div style="display: flex; flex-direction: column; gap: 14px; padding: 16px; border-radius: 18px; background: #FFFFFF; border: 1px solid var(--border)">
+<div style="display: flex; align-items: center; justify-content: space-between"><span style="font-size: 13px; font-weight: 600; color: var(--muted)">ICE score</span><span style="font-family: var(--font-title); font-weight: 900; font-size: 28px; line-height: 1; font-variant-numeric: tabular-nums">{{iceScore}}</span></div>
+<sc-for list="{{ice}}" as="k" hint-placeholder-count="3">
+<div style="display: grid; grid-template-columns: 84px minmax(0, 1fr) 22px; align-items: center; gap: 10px">
+<label for="{{k.id}}" style="font-size: 13px; color: var(--ink-3)">{{k.label}}</label>
+<input id="{{k.id}}" type="range" min="1" max="10" step="1" value="{{k.value}}" onChange="{{k.onChange}}" style="width: 100%">
+<span style="font-size: 13px; font-weight: 700; text-align: right; font-variant-numeric: tabular-nums">{{k.value}}</span>
+</div>
+</sc-for>
+</div>
+<div style="display: flex; flex-direction: column; gap: 6px">
+<label for="ie-owner" style="font-size: 13px; font-weight: 600">Owner</label>
+<select id="ie-owner" class="ie-field" onChange="{{touch}}" style="min-height: 44px; box-sizing: border-box; padding: 0 12px; border: 1px solid var(--border); border-radius: 12px; background: #FFFFFF; font: inherit; font-size: 14px; color: var(--ink)"><option>Zachary</option><option>Avery K.</option><option>Jordan P.</option></select>
+</div>
+<div style="display: flex; flex-direction: column; gap: 8px">
+<span id="ie-pri-l" style="font-size: 13px; font-weight: 600">Priority</span>
+<div role="group" aria-labelledby="ie-pri-l" style="display: flex; padding: 3px; gap: 2px; border-radius: 12px; background: #EDEDED">
+<sc-for list="{{pris}}" as="p" hint-placeholder-count="3">
+<button type="button" aria-pressed="{{p.pressed}}" onClick="{{p.pick}}" style="{{p.style}}">{{p.label}}</button>
+</sc-for>
+</div>
+</div>
+<div style="display: flex; flex-direction: column; gap: 6px">
+<label for="ie-fmt" style="font-size: 13px; font-weight: 600">Format</label>
+<select id="ie-fmt" class="ie-field" onChange="{{touch}}" style="min-height: 44px; box-sizing: border-box; padding: 0 12px; border: 1px solid var(--border); border-radius: 12px; background: #FFFFFF; font: inherit; font-size: 14px; color: var(--ink)"><option>Long-form</option><option>Short</option><option>Reel</option><option>Livestream</option><option>Podcast clip</option></select>
+</div>
+<div style="display: flex; flex-direction: column; gap: 8px">
+<span id="ie-pl-l" style="font-size: 13px; font-weight: 600">Platforms</span>
+<div role="group" aria-labelledby="ie-pl-l" style="display: flex; flex-wrap: wrap; gap: 6px">
+<sc-for list="{{platforms}}" as="p" hint-placeholder-count="5">
+<button type="button" aria-pressed="{{p.pressed}}" onClick="{{p.pick}}" style="{{p.style}}">{{p.label}}</button>
+</sc-for>
+</div>
+</div>
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px">
+<div style="display: flex; flex-direction: column; gap: 6px">
+<label for="ie-eff" style="font-size: 13px; font-weight: 600">Effort</label>
+<select id="ie-eff" class="ie-field" onChange="{{touch}}" style="min-height: 44px; box-sizing: border-box; padding: 0 12px; border: 1px solid var(--border); border-radius: 12px; background: #FFFFFF; font: inherit; font-size: 14px; color: var(--ink)"><option>Small</option><option selected>Medium</option><option>Large</option></select>
+</div>
+<div style="display: flex; flex-direction: column; gap: 6px">
+<label for="ie-win" style="font-size: 13px; font-weight: 600">Window</label>
+<select id="ie-win" class="ie-field" onChange="{{touch}}" style="min-height: 44px; box-sizing: border-box; padding: 0 12px; border: 1px solid var(--border); border-radius: 12px; background: #FFFFFF; font: inherit; font-size: 14px; color: var(--ink)"><option>Nov 2026</option><option>Dec 2026</option><option>Q1 2027</option><option>None</option></select>
+</div>
+</div>
+<div style="display: flex; flex-direction: column; gap: 6px">
+<label for="ie-sp" style="font-size: 13px; font-weight: 600">Sponsor fit</label>
+<select id="ie-sp" class="ie-field" onChange="{{touch}}" style="min-height: 44px; box-sizing: border-box; padding: 0 12px; border: 1px solid var(--border); border-radius: 12px; background: #FFFFFF; font: inherit; font-size: 14px; color: var(--ink)"><option>None</option><option>[SPONSOR NAME]</option></select>
+</div>
+</aside>
+</div>
+
+<footer style="position: sticky; bottom: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding: 14px 32px; border-top: 1px solid var(--line); background: #FFFFFF">
+<span role="status" style="display: inline-flex; align-items: center; gap: 8px; font-size: 14px; color: var(--ink-3)"><span aria-hidden="true" style="{{dirtyDot}}"></span>{{dirtyLabel}}</span>
+<span style="flex: 1"></span>
+<span style="font-size: 12px; color: var(--muted)"><kbd style="padding: 2px 6px; border: 1px solid #DADADA; border-radius: 6px; background: #FFFFFF; font-family: var(--font-main); font-size: 12px">⌘ S</kbd> to save</span>
+<a href="IdeaDetail.dc.html" class="ie-ghost" style="display: inline-flex; align-items: center; min-height: 44px; padding: 0 18px; border-radius: 14px; font-size: 14px; font-weight: 500; color: var(--ink-3); text-decoration: none">Discard</a>
+<button type="button" onClick="{{save}}" style="{{saveStyle}}">{{saveLabel}}</button>
+</footer>
+</section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1500}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = {
+      title: 'Why we print on demand instead of holding stock', hook: 'No inventory', cover: 'both', hl: '#FFE14D', pos: 'bl',
+      fx: 50, fy: 40, imgUrl: '', dragOver: false, dirty: true, saved: false,
+      ice: [8, 7, 6], pri: 'P1', plats: ['YouTube', 'Shorts'], tags: ['#pod', '#education', '#cashflow'], tagDraft: '',
+      aud: 'First-time merch sellers weighing bulk orders',
+      promise: 'The break-even point where holding stock beats print on demand',
+      body: 'Open on the shelf of dead stock most first-time brands end up with. Walk through the real cost of 300 blanks sitting for a quarter, then show the same order printed on demand.\n\nClose with the cutoff: when a design sells steadily past [BREAK-EVEN UNITS] a month, bulk wins. Below that, print on demand protects cash.'
+    };
+  }
+  renderVals() {
+    const s = this.state;
+    const set = (p) => this.setState(Object.assign({ dirty: true, saved: false }, p));
+    const seg = (on) => 'flex: 1 1 auto; min-height: 36px; padding: 0 12px; border: 0; border-radius: 10px; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; ' + (on ? 'background: #FFFFFF; color: #111111; box-shadow: 0 1px 3px rgba(17,17,17,0.12);' : 'background: transparent; color: #666666;');
+    const chip = (on) => 'display: inline-flex; align-items: center; min-height: 36px; padding: 0 12px; border-radius: 999px; font: inherit; font-size: 13px; font-weight: 500; cursor: pointer; ' + (on ? 'background: #111111; border: 1px solid #111111; color: #FFFFFF;' : 'background: #FFFFFF; border: 1px solid #E6E6E6; color: #444444;');
+    const img = s.cover !== 'hook';
+    const bg = img
+      ? (s.imgUrl ? 'background: #222222 url("' + s.imgUrl + '") ' + s.fx + '% ' + s.fy + '% / cover no-repeat;' : 'background: repeating-linear-gradient(135deg, #2E2E2E 0 18px, #363636 18px 36px);')
+      : 'background: #FF0080;';
+    const POS = { bl: 'align-items: flex-end; justify-content: flex-start;', c: 'align-items: center; justify-content: center; text-align: center;', tl: 'align-items: flex-start; justify-content: flex-start; padding-top: 72px;' };
+    const take = (f) => {
+      if (!f || !/^image\//.test(f.type || '')) { this.setState({ dragOver: false }); return; }
+      let u = ''; try { u = URL.createObjectURL(f); } catch (e) {}
+      if (s.imgUrl) { try { URL.revokeObjectURL(s.imgUrl); } catch (e) {} }
+      set({ imgUrl: u, dragOver: false, cover: s.cover === 'hook' ? 'both' : s.cover, fx: 50, fy: 50 });
+    };
+    const hk = (s.hook || 'Your hook').split(' ');
+    const sc = (s.ice[0] + s.ice[1] + s.ice[2]) / 3;
+    const HL = [['#FFE14D', 'Yellow highlight'], ['#FFFFFF', 'White highlight'], ['#16FFDE', 'Mint highlight'], ['none', 'No highlight']];
+    const addTag = () => { const v = s.tagDraft.trim().replace(/^#?/, '#'); if (v.length > 1 && s.tags.indexOf(v) < 0) set({ tags: s.tags.concat([v]), tagDraft: '' }); else this.setState({ tagDraft: '' }); };
+    return {
+      bannerStyle: 'position: relative; display: flex; height: 340px; box-sizing: border-box; padding: 28px 32px; color: #FFFFFF; overflow: hidden; ' + bg + ' ' + POS[s.pos],
+      dragOver: s.dragOver,
+      onDragOver: (e) => { e.preventDefault(); if (!s.dragOver) this.setState({ dragOver: true }); },
+      onDragLeave: () => this.setState({ dragOver: false }),
+      onDrop: (e) => { e.preventDefault(); take(e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]); },
+      onFile: (e) => take(e.target.files && e.target.files[0]),
+      setFocal: (e) => { if (!img) return; const r = e.currentTarget.getBoundingClientRect(); set({ fx: Math.round((e.clientX - r.left) / r.width * 100), fy: Math.round((e.clientY - r.top) / r.height * 100) }); },
+      focalStyle: img ? 'position: absolute; left: ' + s.fx + '%; top: ' + s.fy + '%; width: 28px; height: 28px; margin: -14px 0 0 -14px; box-sizing: border-box; border: 2px solid #FFFFFF; border-radius: 999px; box-shadow: 0 0 0 2px rgba(17,17,17,0.5); pointer-events: none;' : 'display: none;',
+      showHook: s.cover !== 'image',
+      hookWrap: 'position: relative; max-width: 70%; font-family: var(--font-title); font-weight: 900; font-size: 52px; line-height: 1.02; letter-spacing: -0.03em; text-transform: uppercase; pointer-events: none;',
+      hiStyle: s.hl === 'none' ? '' : 'padding: 0 8px; background: ' + s.hl + '; color: #111111;',
+      hookHi: hk[0], hookRest: hk.slice(1).join(' '),
+      covers: [['hook', 'Brand color'], ['image', 'Image'], ['both', 'Image + hook']].map((c) => ({ label: c[1], pressed: s.cover === c[0] ? 'true' : 'false', style: seg(s.cover === c[0]), pick: () => set({ cover: c[0] }) })),
+      highlights: HL.map((h) => ({ label: h[1], pressed: s.hl === h[0] ? 'true' : 'false', pick: () => set({ hl: h[0] }),
+        style: 'width: 32px; height: 32px; padding: 0; border-radius: 999px; cursor: pointer; ' + (h[0] === 'none' ? 'background: repeating-linear-gradient(135deg, #FFFFFF 0 4px, #E0E0E0 4px 8px);' : 'background: ' + h[0] + ';') + (s.hl === h[0] ? ' border: 2px solid #111111; box-shadow: inset 0 0 0 2px #FFFFFF;' : ' border: 1px solid #CFCFCF;') })),
+      positions: [['bl', 'Bottom'], ['c', 'Center'], ['tl', 'Top']].map((p) => ({ label: p[1], pressed: s.pos === p[0] ? 'true' : 'false', style: seg(s.pos === p[0]), pick: () => set({ pos: p[0] }) })),
+      title: s.title, hook: s.hook, hookCount: s.hook.length + '/24',
+      onTitle: (e) => set({ title: e.target.value }), onHook: (e) => set({ hook: e.target.value.slice(0, 24) }),
+      touch: () => set({}),
+      aud: s.aud, promise: s.promise, body: s.body,
+      onAud: (e) => set({ aud: e.target.value }), onPromise: (e) => set({ promise: e.target.value }), onBody: (e) => set({ body: e.target.value }),
+      tags: s.tags.map((t) => ({ label: t, removeLabel: 'Remove tag ' + t, remove: () => set({ tags: s.tags.filter((x) => x !== t) }) })),
+      tagDraft: s.tagDraft, onTagDraft: (e) => this.setState({ tagDraft: e.target.value }),
+      onTagKey: (e) => { if (e.key === 'Enter' || e.key === ',') { e.preventDefault(); addTag(); } },
+      iceScore: sc.toFixed(1),
+      ice: [['Impact', 0], ['Confidence', 1], ['Ease', 2]].map((k) => ({ id: 'ie-ice-' + k[1], label: k[0], value: s.ice[k[1]], onChange: (e) => { const v = s.ice.slice(); v[k[1]] = Number(e.target.value); set({ ice: v }); } })),
+      pris: ['P1', 'P2', 'P3'].map((p) => ({ label: p, pressed: s.pri === p ? 'true' : 'false', style: seg(s.pri === p), pick: () => set({ pri: p }) })),
+      platforms: ['YouTube', 'Shorts', 'TikTok', 'Instagram', 'Facebook'].map((p) => { const on = s.plats.indexOf(p) >= 0; return { label: p, pressed: on ? 'true' : 'false', style: chip(on), pick: () => set({ plats: on ? s.plats.filter((x) => x !== p) : s.plats.concat([p]) }) }; }),
+      dirtyDot: 'width: 8px; height: 8px; border-radius: 999px; background: ' + (s.saved ? '#22844C' : s.dirty ? '#9A6A00' : '#BDBDBD') + ';',
+      dirtyLabel: s.saved ? 'All changes saved' : s.dirty ? 'Unsaved changes' : 'No changes',
+      save: () => this.setState({ dirty: false, saved: true }),
+      saveLabel: s.saved ? 'Saved' : 'Save changes',
+      saveStyle: 'min-height: 44px; padding: 0 20px; border: 0; border-radius: 14px; background: #111111; color: #FFFFFF; font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; opacity: ' + (s.dirty ? '1' : '0.5') + ';'
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,247 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Filter and sort</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Montserrat:wght@900&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#1E46A8}a:hover{color:#111111}
+</style>
+</helmet>
+<div style="width: 1440px; height: 1200px; box-sizing: border-box; padding: 64px; background: #EBEBEB; font-family: Inter, system-ui, sans-serif; color: #111111; display: flex; flex-direction: column; gap: 32px">
+
+  <header style="display: flex; flex-direction: column; gap: 8px">
+    <p style="margin: 0; font-size: 13px; font-weight: 600; color: #707070">FTGU Studio · Database components · 08</p>
+    <h1 style="margin: 0; font-family: Montserrat, Inter, sans-serif; font-weight: 900; font-size: 40px; line-height: 1.1; letter-spacing: -0.02em">Filter and sort</h1>
+    <p style="margin: 0; max-width: 860px; font-size: 16px; line-height: 1.5; color: #4A4A4A">Every active rule becomes a chip under the toolbar. Click a chip to edit it in place. Simple rules cover most needs. Advanced filters add and/or groups.</p>
+  </header>
+
+  <section style="display: flex; flex-direction: column; gap: 10px">
+    <p style="margin: 0; font-size: 13px; font-weight: 700">A. Toolbar with active rules</p>
+    <div style="background: #FFFFFF; border-radius: 20px; padding: 12px 16px; display: flex; flex-direction: column; gap: 10px">
+      <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap">
+        <div role="tablist" aria-label="Views" style="display: flex; gap: 2px; padding: 3px; border-radius: 12px; background: #F1F1F1">
+          <sc-for list="{{views}}" as="v" hint-placeholder-count="5">
+            <button type="button" role="tab" aria-selected="{{v.sel}}" style="{{v.style}}">{{v.t}}</button>
+          </sc-for>
+        </div>
+        <span style="flex: 1"></span>
+        <sc-for list="{{tools}}" as="t" hint-placeholder-count="5">
+          <button type="button" aria-label="{{t.label}}" style="{{t.style}}">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="{{t.color}}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{t.icon}}"></path></svg>
+            <sc-if value="{{t.badge}}" hint-placeholder-val="{{false}}"><span style="min-width: 18px; height: 18px; padding: 0 5px; box-sizing: border-box; border-radius: 999px; background: #111111; color: #FFFFFF; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center">{{t.badgeText}}</span></sc-if>
+          </button>
+        </sc-for>
+        <div style="display: flex">
+          <button type="button" style="height: 36px; padding: 0 14px; border: 0; border-radius: 10px 0 0 10px; background: #111111; color: #FFFFFF; font-family: inherit; font-size: 14px; font-weight: 600; cursor: pointer">New</button>
+          <button type="button" aria-label="New from template" style="width: 32px; height: 36px; border: 0; border-left: 1px solid #3A3A3A; border-radius: 0 10px 10px 0; background: #111111; display: inline-flex; align-items: center; justify-content: center; cursor: pointer">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="#FFFFFF" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{I.chevD}}"></path></svg>
+          </button>
+        </div>
+      </div>
+      <div style="height: 1px; background: #F0F0F0"></div>
+      <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap">
+        <sc-for list="{{chips}}" as="c" hint-placeholder-count="3">
+          <button type="button" style="display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 10px; border: 1px solid #111111; border-radius: 999px; background: #FFFFFF; font-family: inherit; font-size: 13px; color: #111111; cursor: pointer">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="#111111" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{c.icon}}"></path></svg>
+            <span style="font-weight: 600">{{c.prop}}</span><span style="color: #4A4A4A">{{c.val}}</span>
+            <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="#111111" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{I.chevD}}"></path></svg>
+          </button>
+        </sc-for>
+        <button type="button" style="display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 10px; border: 1px dashed #BDBDBD; border-radius: 999px; background: transparent; font-family: inherit; font-size: 13px; font-weight: 600; color: #4A4A4A; cursor: pointer">
+          <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="#4A4A4A" stroke-width="1.75" stroke-linecap="round" aria-hidden="true"><path d="{{I.plus}}"></path></svg>Filter
+        </button>
+        <span style="width: 1px; height: 20px; background: #E6E6E6; margin: 0 4px"></span>
+        <button type="button" style="display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 10px; border: 1px solid #111111; border-radius: 999px; background: #FFFFFF; font-family: inherit; font-size: 13px; color: #111111; cursor: pointer">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="#111111" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{I.up}}"></path></svg><span style="font-weight: 600">Publishing Date</span>
+          <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="#111111" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{I.chevD}}"></path></svg>
+        </button>
+        <span style="flex: 1"></span>
+        <button type="button" style="height: 32px; padding: 0 10px; border: 0; border-radius: 8px; background: transparent; font-family: inherit; font-size: 13px; font-weight: 600; color: #4A4A4A; cursor: pointer">Reset</button>
+        <button type="button" style="height: 32px; padding: 0 12px; border: 0; border-radius: 8px; background: #F1F1F1; font-family: inherit; font-size: 13px; font-weight: 600; color: #111111; cursor: pointer">Save for Editor view</button>
+      </div>
+    </div>
+  </section>
+
+  <div style="display: flex; gap: 40px; align-items: flex-start">
+
+    <div style="display: flex; flex-direction: column; gap: 10px; width: 250px">
+      <p style="margin: 0; font-size: 13px; font-weight: 700">B. Filter by</p>
+      <div style="background: #FFFFFF; border: 1px solid #ECECEC; border-radius: 16px; box-shadow: 0 16px 48px rgba(0,0,0,0.18); padding: 8px; display: flex; flex-direction: column; gap: 2px">
+        <label style="display: flex; margin-bottom: 4px"><span style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Filter by</span>
+          <input type="text" placeholder="Filter by…" style="width: 100%; height: 36px; box-sizing: border-box; padding: 0 10px; border: 2px solid #111111; border-radius: 10px; font-family: inherit; font-size: 14px; outline: none">
+        </label>
+        <sc-for list="{{props}}" as="p" hint-placeholder-count="7">
+          <button type="button" style="display: flex; align-items: center; gap: 10px; height: 34px; padding: 0 10px; border: 0; border-radius: 10px; background: {{p.bg}}; font-family: inherit; font-size: 14px; font-weight: 500; color: #111111; text-align: left; cursor: pointer">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#4A4A4A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{p.icon}}"></path></svg>{{p.label}}
+          </button>
+        </sc-for>
+        <div style="height: 1px; background: #F0F0F0; margin: 4px 0"></div>
+        <button type="button" style="display: flex; align-items: center; gap: 10px; height: 34px; padding: 0 10px; border: 0; border-radius: 10px; background: transparent; font-family: inherit; font-size: 14px; font-weight: 500; color: #4A4A4A; text-align: left; cursor: pointer">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#4A4A4A" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><path d="{{I.plus}}"></path></svg>Add advanced filter
+        </button>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 10px; width: 290px">
+      <p style="margin: 0; font-size: 13px; font-weight: 700">C. Rule editor · options</p>
+      <div style="background: #FFFFFF; border: 1px solid #ECECEC; border-radius: 16px; box-shadow: 0 16px 48px rgba(0,0,0,0.18); padding: 8px; display: flex; flex-direction: column; gap: 2px">
+        <div style="display: flex; align-items: center; gap: 4px; padding: 2px 4px 6px">
+          <span style="font-size: 13px; font-weight: 600">Status</span>
+          <button type="button" style="display: inline-flex; align-items: center; gap: 2px; height: 26px; padding: 0 6px; border: 0; border-radius: 6px; background: #F1F1F1; font-family: inherit; font-size: 13px; font-weight: 500; color: #3A3A3A; cursor: pointer">is
+            <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="#3A3A3A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{I.chevD}}"></path></svg>
+          </button>
+          <span style="flex: 1"></span>
+          <button type="button" aria-label="Rule options" style="width: 28px; height: 28px; border: 0; border-radius: 8px; background: transparent; display: inline-flex; align-items: center; justify-content: center; cursor: pointer">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="#111111" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M3.5 8h.01M8 8h.01M12.5 8h.01"></path></svg>
+          </button>
+        </div>
+        <label style="display: flex; margin-bottom: 4px"><span style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Select options</span>
+          <input type="text" placeholder="Select one or more options…" style="width: 100%; height: 36px; box-sizing: border-box; padding: 0 10px; border: 1px solid #E6E6E6; border-radius: 10px; background: #F6F6F6; font-family: inherit; font-size: 14px; outline: none">
+        </label>
+        <sc-for list="{{statusOpts}}" as="o" hint-placeholder-count="6">
+          <button type="button" aria-pressed="{{o.pressed}}" style="display: flex; align-items: center; gap: 10px; height: 34px; padding: 0 8px; border: 0; border-radius: 10px; background: {{o.bg}}; font-family: inherit; cursor: pointer">
+            <span style="{{o.box}}"><sc-if value="{{o.on}}" hint-placeholder-val="{{false}}"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="#FFFFFF" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{I.check}}"></path></svg></sc-if></span>
+            <span style="{{o.chip}}">{{o.name}}</span>
+          </button>
+        </sc-for>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 10px; width: 230px">
+      <p style="margin: 0; font-size: 13px; font-weight: 700">D. Operators · Date</p>
+      <div style="background: #FFFFFF; border: 1px solid #ECECEC; border-radius: 16px; box-shadow: 0 16px 48px rgba(0,0,0,0.18); padding: 8px; display: flex; flex-direction: column; gap: 2px">
+        <sc-for list="{{ops}}" as="o" hint-placeholder-count="8">
+          <button type="button" style="display: flex; align-items: center; gap: 10px; height: 34px; padding: 0 10px; border: 0; border-radius: 10px; background: {{o.bg}}; font-family: inherit; font-size: 14px; font-weight: 500; color: #111111; text-align: left; cursor: pointer">
+            <span style="flex: 1">{{o.t}}</span>
+            <sc-if value="{{o.on}}" hint-placeholder-val="{{false}}"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#111111" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{I.check}}"></path></svg></sc-if>
+          </button>
+        </sc-for>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 10px; flex: 1; min-width: 0">
+      <p style="margin: 0; font-size: 13px; font-weight: 700">E. Sort</p>
+      <div style="background: #FFFFFF; border: 1px solid #ECECEC; border-radius: 16px; box-shadow: 0 16px 48px rgba(0,0,0,0.18); padding: 8px; display: flex; flex-direction: column; gap: 2px">
+        <sc-for list="{{sorts}}" as="s" hint-placeholder-count="2">
+          <div style="display: flex; align-items: center; gap: 6px; height: 44px; padding: 0 4px">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#8A8A8A" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="{{I.drag}}"></path></svg>
+            <button type="button" style="flex: 1; min-width: 0; display: flex; align-items: center; gap: 6px; height: 34px; padding: 0 10px; border: 1px solid #E6E6E6; border-radius: 10px; background: #F6F6F6; font-family: inherit; font-size: 13px; font-weight: 600; color: #111111; cursor: pointer">
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="#4A4A4A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{s.icon}}"></path></svg>
+              <span style="flex: 1; text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{s.prop}}</span>
+              <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="#4A4A4A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{I.chevD}}"></path></svg>
+            </button>
+            <button type="button" style="display: flex; align-items: center; gap: 6px; height: 34px; padding: 0 10px; border: 1px solid #E6E6E6; border-radius: 10px; background: #F6F6F6; font-family: inherit; font-size: 13px; font-weight: 600; color: #111111; cursor: pointer">{{s.dir}}
+              <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="#4A4A4A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{I.chevD}}"></path></svg>
+            </button>
+            <button type="button" aria-label="Remove sort" style="width: 30px; height: 30px; border: 0; border-radius: 8px; background: transparent; display: inline-flex; align-items: center; justify-content: center; cursor: pointer">
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="#707070" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><path d="{{I.x}}"></path></svg>
+            </button>
+          </div>
+        </sc-for>
+        <div style="height: 1px; background: #F0F0F0; margin: 4px 0"></div>
+        <button type="button" style="display: flex; align-items: center; gap: 10px; height: 34px; padding: 0 10px; border: 0; border-radius: 10px; background: transparent; font-family: inherit; font-size: 14px; font-weight: 500; color: #111111; text-align: left; cursor: pointer">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#4A4A4A" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><path d="{{I.plus}}"></path></svg>Add sort
+        </button>
+        <button type="button" style="display: flex; align-items: center; gap: 10px; height: 34px; padding: 0 10px; border: 0; border-radius: 10px; background: transparent; font-family: inherit; font-size: 14px; font-weight: 500; color: #C42B2F; text-align: left; cursor: pointer">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#C42B2F" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{I.trash}}"></path></svg>Delete sort
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div style="display: flex; gap: 40px; align-items: flex-start">
+    <div style="display: flex; flex-direction: column; gap: 10px; width: 720px">
+      <p style="margin: 0; font-size: 13px; font-weight: 700">F. Advanced filter</p>
+      <div style="background: #FFFFFF; border: 1px solid #ECECEC; border-radius: 16px; box-shadow: 0 16px 48px rgba(0,0,0,0.18); padding: 12px; display: flex; flex-direction: column; gap: 6px">
+        <sc-for list="{{adv}}" as="a" hint-placeholder-count="3">
+          <div style="display: grid; grid-template-columns: 72px 170px 140px minmax(0, 1fr) 30px; gap: 6px; align-items: center; padding-left: {{a.indent}}">
+            <span style="{{a.joinStyle}}">{{a.join}}</span>
+            <sc-for list="{{a.fields}}" as="f" hint-placeholder-count="3">
+              <button type="button" style="display: flex; align-items: center; gap: 6px; height: 34px; padding: 0 10px; border: 1px solid #E6E6E6; border-radius: 10px; background: #F6F6F6; font-family: inherit; font-size: 13px; font-weight: 500; color: #111111; cursor: pointer; min-width: 0">
+                <span style="flex: 1; text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{f}}</span>
+                <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="#4A4A4A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{I.chevD}}"></path></svg>
+              </button>
+            </sc-for>
+            <button type="button" aria-label="Rule options" style="width: 30px; height: 30px; border: 0; border-radius: 8px; background: transparent; display: inline-flex; align-items: center; justify-content: center; cursor: pointer">
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="#111111" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M3.5 8h.01M8 8h.01M12.5 8h.01"></path></svg>
+            </button>
+          </div>
+        </sc-for>
+        <div style="height: 1px; background: #F0F0F0; margin: 6px 0"></div>
+        <div style="display: flex; gap: 6px">
+          <button type="button" style="display: flex; align-items: center; gap: 8px; height: 34px; padding: 0 10px; border: 0; border-radius: 10px; background: transparent; font-family: inherit; font-size: 14px; font-weight: 500; color: #111111; cursor: pointer"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="#4A4A4A" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><path d="{{I.plus}}"></path></svg>Add rule</button>
+          <button type="button" style="display: flex; align-items: center; gap: 8px; height: 34px; padding: 0 10px; border: 0; border-radius: 10px; background: transparent; font-family: inherit; font-size: 14px; font-weight: 500; color: #111111; cursor: pointer"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="#4A4A4A" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><path d="{{I.plus}}"></path></svg>Add group</button>
+          <span style="flex: 1"></span>
+          <button type="button" style="display: flex; align-items: center; gap: 8px; height: 34px; padding: 0 10px; border: 0; border-radius: 10px; background: transparent; font-family: inherit; font-size: 14px; font-weight: 500; color: #C42B2F; cursor: pointer">Delete filter</button>
+        </div>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 10px; flex: 1; min-width: 0">
+      <p style="margin: 0; font-size: 13px; font-weight: 700">G. No matches</p>
+      <div style="background: #FFFFFF; border-radius: 20px; padding: 32px; display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center">
+        <span style="width: 48px; height: 48px; border-radius: 14px; background: #F1F1F1; display: inline-flex; align-items: center; justify-content: center">
+          <svg width="20" height="20" viewBox="0 0 16 16" fill="none" stroke="#111111" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{I.filter}}"></path></svg>
+        </span>
+        <p style="margin: 0; font-size: 16px; font-weight: 700">No projects match these filters</p>
+        <p style="margin: 0; max-width: 300px; font-size: 14px; line-height: 1.5; color: #4A4A4A">3 rules active in Post Production.</p>
+        <div style="display: flex; gap: 8px">
+          <button type="button" style="height: 40px; padding: 0 14px; border: 0; border-radius: 12px; background: #F1F1F1; font-family: inherit; font-size: 14px; font-weight: 600; color: #111111; cursor: pointer">Edit filters</button>
+          <button type="button" style="height: 40px; padding: 0 14px; border: 0; border-radius: 12px; background: #111111; font-family: inherit; font-size: 14px; font-weight: 600; color: #FFFFFF; cursor: pointer">Clear all</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1200}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const I = {
+      chevD: 'M4 6l4 4 4-4', plus: 'M8 3v10M3 8h10', check: 'M3.5 8.5l3 3 6-7', x: 'M4 4l8 8M12 4l-8 8',
+      up: 'M8 13V3M4 7l4-4 4 4', drag: 'M6 4h.01M6 8h.01M6 12h.01M10 4h.01M10 8h.01M10 12h.01',
+      trash: 'M2.5 4.5h11M6 4.5V3h4v1.5M4 4.5l.7 9h6.6l.7-9', filter: 'M2.5 4h11M4.5 8h7M6.5 12h3'
+    };
+    const IC = {
+      text: 'M3 4.5h10M3 8h10M3 11.5h6', select: 'M8 2.5a5.5 5.5 0 1 0 0 11a5.5 5.5 0 1 0 0-11zM5.5 7l2.5 2.5L10.5 7',
+      status: 'M8 2v2M8 12v2M2 8h2M12 8h2M3.8 3.8l1.4 1.4M10.8 10.8l1.4 1.4M3.8 12.2l1.4-1.4M10.8 5.2l1.4-1.4',
+      date: 'M2.5 3.5h11v10h-11zM2.5 6.5h11M5.5 2v3M10.5 2v3', person: 'M8 3.5a2.5 2.5 0 1 0 0 5a2.5 2.5 0 1 0 0-5zM3.5 13.5c.8-2.3 2.5-3.5 4.5-3.5s3.7 1.2 4.5 3.5',
+      number: 'M6 2.5l-1.5 11M11.5 2.5L10 13.5M2.5 6h11M2 10h11', formula: 'M12 3H4l4.5 5L4 13h8'
+    };
+    const views = ['Table', 'Board', 'List', 'Timeline', 'Calendar'].map((t, i) => ({ t: t, sel: i === 0 ? 'true' : 'false',
+      style: 'height: 30px; padding: 0 12px; border: 0; border-radius: 9px; font-family: inherit; font-size: 13px; font-weight: 600; cursor: pointer; ' + (i === 0 ? 'background: #FFFFFF; color: #111111; box-shadow: 0 1px 2px rgba(0,0,0,0.08);' : 'background: transparent; color: #4A4A4A;') }));
+    const tool = (label, icon, active, badge) => ({ label: label, icon: icon, badge: !!badge, badgeText: badge || '', color: '#111111',
+      style: 'display: inline-flex; align-items: center; gap: 6px; height: 36px; min-width: 36px; padding: 0 9px; box-sizing: border-box; border: 0; border-radius: 10px; cursor: pointer; justify-content: center; background: ' + (active ? '#F1F1F1' : 'transparent') + ';' });
+    const tools = [
+      tool('Filter', I.filter, true, '2'), tool('Sort', 'M5 3v10M5 13l-2.5-2.5M5 13l2.5-2.5M11 13V3M11 3L8.5 5.5M11 3l2.5 2.5', true, '1'),
+      tool('Group', 'M2.5 4h11v3h-11zM2.5 9h11v3h-11z', false), tool('Search', 'M7 2.5a4.5 4.5 0 1 0 0 9a4.5 4.5 0 1 0 0-9zM10.5 10.5L13.5 13.5', false),
+      tool('Properties', 'M2.5 4.5h7M12.5 4.5h1M2.5 11.5h1M6.5 11.5h7M11 3v3M5 10v3', false)
+    ];
+    const chips = [{ icon: IC.status, prop: 'Status:', val: 'Filming, Editing' }, { icon: IC.select, prop: 'Type:', val: 'YouTube Video' }];
+    const props = [['Project', IC.text], ['Status', IC.status], ['Content Type', IC.select], ['Publishing Date', IC.date], ['Editor', IC.person], ['Sponsor Fee', IC.number], ['Days to publish', IC.formula]].map((p, i) => ({ label: p[0], icon: p[1], bg: i === 1 ? '#F3F3F3' : 'transparent' }));
+    const T = { gray: '#6B6B6B', coral: '#C2532A', blue: '#2F5BD3', violet: '#7A45C4', pink: '#B8335F', green: '#22844C' };
+    const statusOpts = [['Scripting', 'gray', false], ['Filming', 'coral', true], ['Editing', 'blue', true], ['Sponsor Review', 'violet', false], ['Scheduled', 'pink', false], ['Live', 'green', false]].map((o, i) => ({
+      name: o[0], on: o[2], pressed: o[2] ? 'true' : 'false', bg: i === 3 ? '#F3F3F3' : 'transparent',
+      chip: 'display: inline-flex; align-items: center; height: 24px; padding: 0 10px; border-radius: 4px; font-size: 12px; font-weight: 600; color: #FFFFFF; background: ' + T[o[1]] + ';',
+      box: 'width: 16px; height: 16px; box-sizing: border-box; border-radius: 5px; display: inline-flex; align-items: center; justify-content: center; ' + (o[2] ? 'background: #111111;' : 'background: #FFFFFF; border: 1.5px solid #BDBDBD;') }));
+    const ops = ['is', 'is before', 'is after', 'is on or before', 'is on or after', 'is within', 'is empty', 'is not empty'].map((t) => ({ t: t, on: t === 'is within', bg: t === 'is within' ? '#F3F3F3' : 'transparent' }));
+    const sorts = [{ prop: 'Publishing Date', dir: 'Ascending', icon: IC.date }, { prop: 'Status', dir: 'Descending', icon: IC.status }];
+    const joinBase = 'font-size: 13px; font-weight: 600; ';
+    const adv = [
+      { join: 'Where', joinStyle: joinBase + 'color: #4A4A4A; padding-left: 4px;', indent: '0px', fields: ['Status', 'is any of', 'Filming, Editing'] },
+      { join: 'And', joinStyle: joinBase + 'display: inline-flex; align-items: center; justify-content: center; height: 30px; border-radius: 8px; background: #F1F1F1; color: #111111;', indent: '0px', fields: ['Publishing Date', 'is within', 'Next 2 weeks'] },
+      { join: 'Or', joinStyle: joinBase + 'display: inline-flex; align-items: center; justify-content: center; height: 30px; border-radius: 8px; background: #F2EBFB; color: #5B2A9E;', indent: '0px', fields: ['Editor', 'is', 'Me'] }
+    ];
+    return { I: I, views: views, tools: tools, chips: chips, props: props, statusOpts: statusOpts, ops: ops, sorts: sorts, adv: adv };
+  }
+}
+</script>
+</body>
+</html>

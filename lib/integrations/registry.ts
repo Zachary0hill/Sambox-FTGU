@@ -3,9 +3,9 @@
 // integrations.config.
 
 export type ProviderId =
-  | 'anthropic' | 'openai' | 'gemini' | 'monday' | 'apify' | 'browserbase' | 'firecrawl' | 'slack' | 'youtube' | 'buffer';
+  | 'anthropic' | 'openai' | 'gemini' | 'monday' | 'apify' | 'browserbase' | 'firecrawl' | 'slack' | 'youtube' | 'buffer' | 'n8n';
 
-export type ProviderGroup = 'ai' | 'projects' | 'research' | 'inbox' | 'content';
+export type ProviderGroup = 'ai' | 'projects' | 'research' | 'inbox' | 'content' | 'automation';
 
 export type ProviderField = {
   key: string;
@@ -35,6 +35,7 @@ export const GROUPS: [ProviderGroup, string, string][] = [
   ['research', 'Research and agent tools', 'Let the research agent and assistant search, scrape and browse the web.'],
   ['inbox', 'Inbox', 'Bring messages from other tools into the Inbox.'],
   ['content', 'Content and analytics', 'Show posted videos and social performance on the Content page.'],
+  ['automation', 'Automation', 'Hand workflow events to other tools.'],
 ];
 
 export const AI_PROVIDERS: ProviderId[] = ['anthropic', 'openai', 'gemini'];
@@ -100,6 +101,7 @@ export const PROVIDERS: ProviderDef[] = [
       { key: 'botToken', label: 'Bot token', secret: true, placeholder: 'xoxb-...', help: 'From your Slack app\'s OAuth & Permissions page.' },
       { key: 'signingSecret', label: 'Signing secret', secret: true, optional: true, placeholder: 'For real-time events once deployed', help: 'Basic Information > App Credentials. Needed for live events at /api/webhooks/slack.' },
       { key: 'channels', label: 'Channels to watch', optional: true, placeholder: 'C0123ABCD, C0456EFGH', help: 'Channel IDs or names, comma separated. Blank watches every channel the bot is in. Mentions and DMs always come through.' },
+      { key: 'alertChannel', label: 'Alerts channel', optional: true, placeholder: 'C0123ABCD', help: 'Channel ID for automation and notification alerts. Needs the chat:write scope and the bot in the channel. Add users:read.email so alerts @mention people.' },
     ],
   },
   {
@@ -117,6 +119,15 @@ export const PROVIDERS: ProviderDef[] = [
       key: 'apiKey', label: 'API key', secret: true, placeholder: 'Buffer API key',
       help: 'In Buffer: Settings > API > create a key. Brings channels, sent posts and post metrics to the Content page. Buffer\'s API does not share comments or DMs, so those stay in Buffer.',
     }],
+  },
+  {
+    id: 'n8n', name: 'n8n', group: 'automation',
+    docs: 'https://docs.n8n.io/integrations/builtin/core-nodes/n8n-nodes-base.webhook/', keyUrl: 'https://docs.n8n.io/integrations/builtin/core-nodes/n8n-nodes-base.webhook/',
+    fields: [
+      { key: 'webhookUrl', label: 'Webhook URL', secret: true, placeholder: 'https://your-n8n/webhook/...', help: 'The Production URL of a Webhook node (POST). Activate the workflow first: saving sends a ping with type "ping".' },
+      { key: 'headerName', label: 'Header name', optional: true, placeholder: 'X-FTGU-Secret', help: 'Optional Header Auth. Leave blank to use X-FTGU-Secret.' },
+      { key: 'headerValue', label: 'Header value', secret: true, optional: true, placeholder: 'Shared secret', help: 'Optional. Sent with every webhook so n8n can reject other callers.' },
+    ],
   },
 ];
 

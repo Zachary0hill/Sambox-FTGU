@@ -11,7 +11,8 @@ import firecrawl from './firecrawl';
 import slack from './slack';
 import youtube from './youtube';
 import buffer from './buffer';
+import n8n from './n8n';
 
 export const MODULES: Record<ProviderId, ProviderModule> = {
-  anthropic, openai, gemini, monday, apify, browserbase, firecrawl, slack, youtube, buffer,
+  anthropic, openai, gemini, monday, apify, browserbase, firecrawl, slack, youtube, buffer, n8n,
 };

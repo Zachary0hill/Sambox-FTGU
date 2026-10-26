@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Properties, group and presets</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Montserrat:wght@900&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#1E46A8}a:hover{color:#111111}
+</style>
+</helmet>
+<div style="width: 1440px; height: 1040px; box-sizing: border-box; padding: 64px; background: #EBEBEB; font-family: Inter, system-ui, sans-serif; color: #111111; display: flex; flex-direction: column; gap: 36px">
+
+  <header style="display: flex; flex-direction: column; gap: 8px">
+    <p style="margin: 0; font-size: 13px; font-weight: 600; color: #707070">FTGU Studio · Database components · 09</p>
+    <h1 style="margin: 0; font-family: Montserrat, Inter, sans-serif; font-weight: 900; font-size: 40px; line-height: 1.1; letter-spacing: -0.02em">Properties, group and presets</h1>
+    <p style="margin: 0; max-width: 860px; font-size: 16px; line-height: 1.5; color: #4A4A4A">View-level settings. What shows, in what order, grouped how, and at what density. Presets map to the column sets already in the board: Essentials, Production, Post, Publishing, Sponsor.</p>
+  </header>
+
+  <div style="display: flex; gap: 44px; align-items: flex-start">
+
+    <div style="display: flex; flex-direction: column; gap: 10px; width: 320px">
+      <p style="margin: 0; font-size: 13px; font-weight: 700">A. Properties</p>
+      <div style="background: #FFFFFF; border: 1px solid #ECECEC; border-radius: 16px; box-shadow: 0 16px 48px rgba(0,0,0,0.18); padding: 8px; display: flex; flex-direction: column; gap: 2px">
+        <label style="display: flex; align-items: center; gap: 8px; height: 36px; padding: 0 10px; border: 1px solid #E6E6E6; border-radius: 10px; background: #F6F6F6; margin-bottom: 4px">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#707070" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{I.search}}"></path></svg>
+          <span style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Search properties</span>
+          <input type="text" placeholder="Search properties" style="flex: 1; min-width: 0; border: 0; background: transparent; font-family: inherit; font-size: 14px; outline: none">
+        </label>
+        <button type="button" style="display: flex; align-items: center; gap: 10px; height: 36px; padding: 0 10px; border: 0; border-radius: 10px; background: #F3F3F3; font-family: inherit; font-size: 14px; font-weight: 500; color: #111111; text-align: left; cursor: pointer">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#4A4A4A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{I.preset}}"></path></svg>
+          <span style="flex: 1">Column preset</span><span style="font-size: 13px; color: #707070">Essentials</span>
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="#707070" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{I.chevR}}"></path></svg>
+        </button>
+        <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px 10px 4px">
+          <span style="font-size: 12px; font-weight: 600; color: #707070">Shown in table</span>
+          <button type="button" style="height: 24px; padding: 0 6px; border: 0; border-radius: 6px; background: transparent; font-family: inherit; font-size: 12px; font-weight: 600; color: #1E46A8; cursor: pointer">Hide all</button>
+        </div>
+        <sc-for list="{{shown}}" as="p" hint-placeholder-count="6">
+          <div style="display: flex; align-items: center; gap: 8px; height: 36px; padding: 0 6px; border-radius: 10px; background: {{p.bg}}; box-shadow: {{p.shadow}}">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="{{p.dragColor}}" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="{{I.drag}}"></path></svg>
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#4A4A4A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{p.icon}}"></path></svg>
+            <span style="flex: 1; font-size: 14px; font-weight: 500">{{p.name}}</span>
+            <button type="button" aria-label="{{p.action}}" style="width: 28px; height: 28px; border: 0; border-radius: 8px; background: transparent; display: inline-flex; align-items: center; justify-content: center; cursor: pointer">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="{{p.eyeColor}}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{p.eye}}"></path></svg>
+            </button>
+          </div>
+        </sc-for>
+        <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px 10px 4px">
+          <span style="font-size: 12px; font-weight: 600; color: #707070">Hidden in this view</span>
+          <button type="button" style="height: 24px; padding: 0 6px; border: 0; border-radius: 6px; background: transparent; font-family: inherit; font-size: 12px; font-weight: 600; color: #1E46A8; cursor: pointer">Show all</button>
+        </div>
+        <sc-for list="{{hidden}}" as="p" hint-placeholder-count="4">
+          <div style="display: flex; align-items: center; gap: 8px; height: 36px; padding: 0 6px; border-radius: 10px">
+            <span style="width: 16px"></span>
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#707070" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{p.icon}}"></path></svg>
+            <span style="flex: 1; font-size: 14px; font-weight: 500; color: #4A4A4A">{{p.name}}</span>
+            <button type="button" aria-label="Show {{p.name}}" style="width: 28px; height: 28px; border: 0; border-radius: 8px; background: transparent; display: inline-flex; align-items: center; justify-content: center; cursor: pointer">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#707070" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{I.eyeOff}}"></path></svg>
+            </button>
+          </div>
+        </sc-for>
+        <div style="height: 1px; background: #F0F0F0; margin: 4px 0"></div>
+        <button type="button" style="display: flex; align-items: center; gap: 10px; height: 36px; padding: 0 10px; border: 0; border-radius: 10px; background: transparent; font-family: inherit; font-size: 14px; font-weight: 500; color: #111111; text-align: left; cursor: pointer">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#4A4A4A" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><path d="{{I.plus}}"></path></svg>New property
+        </button>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 10px; width: 250px">
+      <p style="margin: 0; font-size: 13px; font-weight: 700">B. Column presets</p>
+      <div style="background: #FFFFFF; border: 1px solid #ECECEC; border-radius: 16px; box-shadow: 0 16px 48px rgba(0,0,0,0.18); padding: 8px; display: flex; flex-direction: column; gap: 2px">
+        <sc-for list="{{presets}}" as="p" hint-placeholder-count="6">
+          <button type="button" style="display: flex; align-items: center; gap: 10px; height: 44px; padding: 0 10px; border: 0; border-radius: 10px; background: {{p.bg}}; font-family: inherit; text-align: left; cursor: pointer">
+            <span style="flex: 1; display: flex; flex-direction: column"><span style="font-size: 14px; font-weight: 500; color: #111111">{{p.name}}</span><span style="font-size: 12px; color: #707070">{{p.count}}</span></span>
+            <sc-if value="{{p.on}}" hint-placeholder-val="{{false}}"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#111111" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{I.check}}"></path></svg></sc-if>
+          </button>
+        </sc-for>
+        <div style="height: 1px; background: #F0F0F0; margin: 4px 0"></div>
+        <button type="button" style="display: flex; align-items: center; gap: 10px; height: 36px; padding: 0 10px; border: 0; border-radius: 10px; background: transparent; font-family: inherit; font-size: 14px; font-weight: 500; color: #111111; text-align: left; cursor: pointer">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#4A4A4A" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><path d="{{I.plus}}"></path></svg>Save current as preset
+        </button>
+        <button type="button" style="display: flex; align-items: center; gap: 10px; height: 36px; padding: 0 10px; border: 0; border-radius: 10px; background: transparent; font-family: inherit; font-size: 14px; font-weight: 500; color: #111111; text-align: left; cursor: pointer">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#4A4A4A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{I.sliders}}"></path></svg>Set default per role
+        </button>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 10px; width: 290px">
+      <p style="margin: 0; font-size: 13px; font-weight: 700">C. Group</p>
+      <div style="background: #FFFFFF; border: 1px solid #ECECEC; border-radius: 16px; box-shadow: 0 16px 48px rgba(0,0,0,0.18); padding: 8px; display: flex; flex-direction: column; gap: 2px">
+        <p style="margin: 0; padding: 6px 10px 4px; font-size: 12px; font-weight: 600; color: #707070">Group by</p>
+        <sc-for list="{{groupBy}}" as="g" hint-placeholder-count="6">
+          <button type="button" style="display: flex; align-items: center; gap: 10px; height: 34px; padding: 0 10px; border: 0; border-radius: 10px; background: {{g.bg}}; font-family: inherit; font-size: 14px; font-weight: 500; color: #111111; text-align: left; cursor: pointer">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#4A4A4A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{g.icon}}"></path></svg>
+            <span style="flex: 1">{{g.label}}</span>
+            <sc-if value="{{g.on}}" hint-placeholder-val="{{false}}"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#111111" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{I.check}}"></path></svg></sc-if>
+          </button>
+        </sc-for>
+        <div style="height: 1px; background: #F0F0F0; margin: 4px 0"></div>
+        <sc-for list="{{groupToggles}}" as="t" hint-placeholder-count="3">
+          <div style="display: flex; align-items: center; gap: 10px; height: 36px; padding: 0 10px">
+            <span style="flex: 1; font-size: 14px; font-weight: 500">{{t.label}}</span>
+            <button type="button" role="switch" aria-checked="{{t.checked}}" aria-label="{{t.label}}" style="{{t.track}}"><span style="width: 14px; height: 14px; border-radius: 999px; background: #FFFFFF"></span></button>
+          </div>
+        </sc-for>
+        <button type="button" style="display: flex; align-items: center; gap: 10px; height: 36px; padding: 0 10px; border: 0; border-radius: 10px; background: transparent; font-family: inherit; font-size: 14px; font-weight: 500; color: #111111; text-align: left; cursor: pointer">
+          <span style="flex: 1">Group order</span><span style="font-size: 13px; color: #707070">Manual</span>
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="#707070" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{I.chevR}}"></path></svg>
+        </button>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 10px; flex: 1; min-width: 0">
+      <p style="margin: 0; font-size: 13px; font-weight: 700">D. Layout</p>
+      <div style="background: #FFFFFF; border: 1px solid #ECECEC; border-radius: 16px; box-shadow: 0 16px 48px rgba(0,0,0,0.18); padding: 12px; display: flex; flex-direction: column; gap: 12px">
+        <sc-for list="{{segs}}" as="s" hint-placeholder-count="2">
+          <div style="display: flex; flex-direction: column; gap: 6px">
+            <span style="font-size: 13px; font-weight: 500; color: #3A3A3A">{{s.label}}</span>
+            <div role="group" aria-label="{{s.label}}" style="display: flex; padding: 3px; gap: 2px; border-radius: 10px; background: #F1F1F1">
+              <sc-for list="{{s.opts}}" as="o" hint-placeholder-count="3">
+                <button type="button" aria-pressed="{{o.pressed}}" style="{{o.style}}">{{o.t}}</button>
+              </sc-for>
+            </div>
+          </div>
+        </sc-for>
+        <div style="height: 1px; background: #F0F0F0"></div>
+        <sc-for list="{{layoutToggles}}" as="t" hint-placeholder-count="3">
+          <div style="display: flex; align-items: center; gap: 10px; height: 32px">
+            <span style="flex: 1; font-size: 14px; font-weight: 500">{{t.label}}</span>
+            <button type="button" role="switch" aria-checked="{{t.checked}}" aria-label="{{t.label}}" style="{{t.track}}"><span style="width: 14px; height: 14px; border-radius: 999px; background: #FFFFFF"></span></button>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1040}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const I = {
+      search: 'M7 2.5a4.5 4.5 0 1 0 0 9a4.5 4.5 0 1 0 0-9zM10.5 10.5L13.5 13.5', chevR: 'M6 4l4 4-4 4', check: 'M3.5 8.5l3 3 6-7', plus: 'M8 3v10M3 8h10',
+      drag: 'M6 4h.01M6 8h.01M6 12h.01M10 4h.01M10 8h.01M10 12h.01', preset: 'M2.5 2.5h4.5v4.5H2.5zM9 2.5h4.5v4.5H9zM2.5 9h4.5v4.5H2.5zM9 9h4.5v4.5H9z',
+      eye: 'M1.5 8s2.5-4.5 6.5-4.5S14.5 8 14.5 8s-2.5 4.5-6.5 4.5S1.5 8 1.5 8zM8 6a2 2 0 1 0 0 4a2 2 0 1 0 0-4z',
+      eyeOff: 'M2 2l12 12M6.6 6.6a2 2 0 0 0 2.8 2.8M4.2 4.7C2.6 5.8 1.5 8 1.5 8s2.5 4.5 6.5 4.5c1.3 0 2.4-.4 3.3-1M7 3.6c.3 0 .7-.1 1-.1 4 0 6.5 4.5 6.5 4.5s-.5.9-1.4 2',
+      lock: 'M4 7.5h8v6H4zM5.5 7.5V5a2.5 2.5 0 0 1 5 0v2.5', sliders: 'M2.5 4.5h7M12.5 4.5h1M2.5 11.5h1M6.5 11.5h7M11 3v3M5 10v3'
+    };
+    const IC = {
+      text: 'M3 4.5h10M3 8h10M3 11.5h6', select: 'M8 2.5a5.5 5.5 0 1 0 0 11a5.5 5.5 0 1 0 0-11zM5.5 7l2.5 2.5L10.5 7',
+      status: 'M8 2v2M8 12v2M2 8h2M12 8h2M3.8 3.8l1.4 1.4M10.8 10.8l1.4 1.4M3.8 12.2l1.4-1.4M10.8 5.2l1.4-1.4',
+      date: 'M2.5 3.5h11v10h-11zM2.5 6.5h11M5.5 2v3M10.5 2v3', person: 'M8 3.5a2.5 2.5 0 1 0 0 5a2.5 2.5 0 1 0 0-5zM3.5 13.5c.8-2.3 2.5-3.5 4.5-3.5s3.7 1.2 4.5 3.5',
+      url: 'M7 9a2.5 2.5 0 0 0 3.5 0l2-2a2.5 2.5 0 0 0-3.5-3.5l-.75.75M9 7a2.5 2.5 0 0 0-3.5 0l-2 2a2.5 2.5 0 0 0 3.5 3.5l.75-.75',
+      number: 'M6 2.5l-1.5 11M11.5 2.5L10 13.5M2.5 6h11M2 10h11', check: 'M2.5 2.5h11v11h-11zM5 8l2 2 4-4', stage: 'M2.5 4h11v3h-11zM2.5 9h11v3h-11z'
+    };
+    const shown = [['Project', IC.text, 'lock'], ['Job #', IC.number], ['Channel', IC.select], ['Content Type', IC.select], ['Status', IC.status], ['Publishing Date', IC.date], ['URL', IC.url]].map((p, i) => {
+      const locked = p[2] === 'lock', drag = i === 4;
+      return { name: p[0], icon: p[1], eye: locked ? I.lock : I.eye, eyeColor: locked ? '#707070' : '#111111', action: locked ? 'Always shown' : 'Hide ' + p[0],
+        bg: drag ? '#FFFFFF' : 'transparent', shadow: drag ? '0 8px 24px rgba(0,0,0,0.16), inset 0 0 0 1px #E6E6E6' : 'none', dragColor: drag ? '#111111' : '#BDBDBD' };
+    });
+    const hidden = [['Editor', IC.person], ['Edit Due', IC.date], ['Sponsor', IC.select], ['Newsletter', IC.check]].map((p) => ({ name: p[0], icon: p[1] }));
+    const presets = [['Essentials', '7 columns', true], ['All fields', '20 columns'], ['Production', '5 columns'], ['Post', '8 columns'], ['Publishing', '9 columns'], ['Sponsor', '6 columns']].map((p) => ({ name: p[0], count: p[1], on: !!p[2], bg: p[2] ? '#F3F3F3' : 'transparent' }));
+    const groupBy = [['Stage', IC.stage, true], ['Status', IC.status], ['Content Type', IC.select], ['Channel', IC.select], ['Editor', IC.person], ['None', 'M3.5 3.5l9 9M8 2.5a5.5 5.5 0 1 0 0 11a5.5 5.5 0 1 0 0-11z']].map((g) => ({ label: g[0], icon: g[1], on: !!g[2], bg: g[2] ? '#F3F3F3' : 'transparent' }));
+    const tog = (label, on) => ({ label: label, checked: on ? 'true' : 'false', track: 'width: 30px; height: 18px; padding: 2px; border: 0; border-radius: 999px; display: flex; cursor: pointer; ' + (on ? 'background: #111111; justify-content: flex-end;' : 'background: #CFCFCF; justify-content: flex-start;') });
+    const seg = (label, opts, on) => ({ label: label, opts: opts.map((t) => ({ t: t, pressed: t === on ? 'true' : 'false',
+      style: 'flex: 1; height: 30px; border: 0; border-radius: 8px; font-family: inherit; font-size: 13px; font-weight: 600; cursor: pointer; ' + (t === on ? 'background: #FFFFFF; color: #111111; box-shadow: 0 1px 2px rgba(0,0,0,0.08);' : 'background: transparent; color: #4A4A4A;') })) });
+    return {
+      I: I, shown: shown, hidden: hidden, presets: presets, groupBy: groupBy,
+      groupToggles: [tog('Collapse empty groups', true), tog('Show counts', true), tog('Color group headers', false)],
+      segs: [seg('Row height', ['Compact', 'Default', 'Tall'], 'Default'), seg('Open rows in', ['Side sheet', 'Center', 'Full page'], 'Side sheet')],
+      layoutToggles: [tog('Freeze first column', true), tog('Wrap all cells', false), tog('Show calculation row', true)]
+    };
+  }
+}
+</script>
+</body>
+</html>

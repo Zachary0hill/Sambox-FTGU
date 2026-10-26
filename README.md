@@ -126,12 +126,71 @@ Only a Super Admin connects integrations, in Workspace Settings > Integrations. 
 Server env: `CRON_SECRET` for scheduled syncs, optional `MONDAY_WEBHOOK_SECRET` (signs monday webhook URLs; falls back
 to `SUPABASE_SECRET_KEY`), and `APP_BASE_URL` as a public https URL for monday webhooks.
 
+## Automations
+
+Automations > New automation (or Edit on a workflow card) saves a structured trigger and up to two actions
+(`lib/automations/catalog.ts`). Database triggers queue an `automation_runs` row when a live workflow's trigger fires
+(status, Editor Status, Thumbnail, Sponsor Approval, a comment that @mentions a Super Admin), and every runner tick also
+queues "Publishing date is N days away". `POST /api/automations/run` (`lib/automations/run.ts`) claims due runs and
+performs them with the secret key:
+
+| Action | What happens |
+|---|---|
+| Notify Super Admin in Slack | Posts to the Slack integration's Alerts channel (needs `chat:write`) |
+| Email the assigned editor / designer | Emails them through Resend; fails without retrying when nobody is assigned |
+| Move Status to the next step | Moves the project one status on, checking sponsor approval and the Live lock itself |
+| Create a To-Do for Super Admin | Adds a high-priority To-Do for every active Super Admin |
+| Send a webhook to n8n | POSTs the run as JSON to the n8n integration's webhook URL |
+
+Runs keep their input, each step's result and any error (Automations > Run history). Pause all automations stops
+queueing and running; Retry failed runs tries twice more, 5 and 10 minutes later, without repeating steps that already
+worked; Alert on failures sends Super Admins an in-app alert, an email and (when connected) a Slack message; Test mode
+saves new workflows as drafts so Test run can show what they would do first; Run history removes finished runs after
+the chosen number of days. The Workload page's workflow rules are separate and run in the database.
+
+## Notifications
+
+The Automations > Settings > Notifications matrix is enforced: In-app off drops that event's notifications (the
+`route_notification` trigger), Slack on posts alerts for people who turned Slack alerts on in their Settings (through
+`notify_outbox`), and the Email column gates `email_outbox`. In Settings > My notifications, Daily email digest sends
+deadlines, publish dates and unread updates from 8 AM in the person's time zone (once a day, `digest_log`), Desktop
+push asks the browser for permission and shows system notifications while the board is open, and Quiet hours hold
+email and Slack alerts from 7 PM to 8 AM. Two-step sign in enrolls a Supabase Auth TOTP factor; once verified, the
+board asks for a code whenever the session has not passed it yet.
+
+## Finance
+
+Finance > Add budget / Add deal / New invoice / Add payout, and Edit on every row, create and change records. Send
+invoice and Send reminder email the invoice to its billing contact through Resend (with an optional payment link) and
+keep the Resend id or the error on the invoice. Payments are collected outside FTGU: Mark paid and Approve record what
+happened, they do not move money.
+
+## Templates
+
+Workspace Settings > Templates creates, edits, duplicates and deletes templates. A project made from a template gets
+its steps as a checklist in the drawer's Overview (`project_checklist`); the team ticks steps, Super Admins add and
+remove them, and older projects can start one from a template.
+
+## Schedules
+
+Nothing runs on a timer by itself. Point a scheduler (Railway cron, Vercel Cron, pg_cron with pg_net) at these with
+`Authorization: Bearer $CRON_SECRET`:
+
+| Endpoint | Suggested interval |
+|---|---|
+| `POST /api/automations/run` | Every 5 minutes (retries and "N days away" triggers) |
+| `POST /api/notifications/send` | Every 15 minutes (emails, Slack alerts, deadline reminders, the 8 AM digest) |
+| `POST /api/integrations/<provider>/sync` | Hourly for monday, Slack, YouTube and Buffer, within each provider's quota |
+
+The board also calls the first two after each change and on load, so a workspace with people signed in keeps moving
+without the scheduler; unattended reminders, digests and retries need it.
+
 ## Not built yet
 
-- Automation runner (pg_cron + pgmq + Edge Function) and a cron schedule for the integration syncs and
-  `/api/notifications/send`. The Automations page stores workflow configuration only.
-- Slack alerts, the daily email digest, desktop push and quiet hours: saved as preferences, not sent.
-- Integration OAuth (YouTube Analytics retention and impressions, Slack app install), and the Google Drive, Gmail,
-  Frame.io and n8n connectors.
-- Two-step sign in is saved as a preference; TOTP enrollment is not wired.
-- Brand kit and template editing, pgTAP and Playwright suites, Vercel deployment.
+- Google Drive, Gmail and Frame.io connectors (they need OAuth apps), YouTube Analytics retention and impressions,
+  publishing or scheduling to YouTube or Buffer, and replying to Slack or Buffer from the Inbox.
+- Payment collection and payout transfers (Finance records them; a billing provider would move the money).
+- Background desktop push (needs a service worker and push subscription); today's push works while the board is open.
+- Research runs still execute inside the request's `after()`; an interrupted run is marked failed (and can be run
+  again from the Research dialog) rather than resumed.
+- pgTAP and Playwright suites.

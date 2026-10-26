@@ -13,7 +13,7 @@ const isoOf = (d) => d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d
 const parse = (iso) => { const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso || ''); return m ? new Date(+m[1], +m[2] - 1, +m[3]) : null; };
 const shown = (d) => MONTHS[d.getMonth()].slice(0, 3) + ' ' + d.getDate() + ', ' + d.getFullYear();
 
-export default function DateField({ id, value, onChange, placeholder = 'Pick a date' }) {
+export default function DateField({ id, value, onChange, placeholder = 'Pick a date', weekStart = 0 }) {
   const sel = parse(value);
   const [open, setOpen] = useState(false);
   const [rect, setRect] = useState(null);
@@ -58,14 +58,16 @@ export default function DateField({ id, value, onChange, placeholder = 'Pick a d
     const map = { ArrowLeft: -1, ArrowRight: 1, ArrowUp: -7, ArrowDown: 7 };
     if (map[k]) { e.preventDefault(); return move(map[k]); }
     if (k === 'PageUp' || k === 'PageDown') { e.preventDefault(); return moveMonth(k === 'PageUp' ? -1 : 1); }
-    if (k === 'Home') { e.preventDefault(); return move(-focus.getDay()); }
-    if (k === 'End') { e.preventDefault(); return move(6 - focus.getDay()); }
+    if (k === 'Home') { e.preventDefault(); return move(-((focus.getDay() - weekStart + 7) % 7)); }
+    if (k === 'End') { e.preventDefault(); return move(6 - ((focus.getDay() - weekStart + 7) % 7)); }
   }
 
   const today = new Date();
   const todayIso = isoOf(today);
   const first = new Date(focus.getFullYear(), focus.getMonth(), 1);
-  const start = new Date(first.getFullYear(), first.getMonth(), 1 - first.getDay());
+  // weekStart 1 starts weeks on Monday (Workspace Settings > General).
+  const start = new Date(first.getFullYear(), first.getMonth(), 1 - ((first.getDay() - weekStart + 7) % 7));
+  const dow = DOW.slice(weekStart).concat(DOW.slice(0, weekStart));
   const days = Array.from({ length: 42 }, (_, i) => new Date(start.getFullYear(), start.getMonth(), start.getDate() + i));
 
   let panel = '';
@@ -95,7 +97,7 @@ export default function DateField({ id, value, onChange, placeholder = 'Pick a d
               <button type="button" className="fb-ni" aria-label="Next month" onClick={() => moveMonth(1)} style={css(navBtn)}><svg aria-hidden="true" width="16" height="16" viewBox="0 0 16 16"><path d="M6 4l4 4-4 4" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"></path></svg></button>
             </div>
             <div ref={gridRef} role="grid" aria-label={monthLabel} style={css('display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px;')}>
-              {DOW.map((d) => <span key={d} role="columnheader" style={css('height: 28px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; color: var(--muted);')}>{d}</span>)}
+              {dow.map((d) => <span key={d} role="columnheader" style={css('height: 28px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; color: var(--muted);')}>{d}</span>)}
               {days.map((d) => {
                 const iso = isoOf(d);
                 const inMonth = d.getMonth() === focus.getMonth();
