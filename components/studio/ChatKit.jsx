@@ -295,7 +295,7 @@ export function ModeToggle({ m }) {
   const opt = (id, label, d, tip) => {
     const on = m.mode === id;
     return (
-      <button type="button" role="radio" aria-checked={on ? 'true' : 'false'} title={tip} onClick={() => m.set(id)} style={css('display: inline-flex; align-items: center; gap: 5px; min-height: 28px; padding: 0 10px; border: 0; border-radius: 999px; cursor: pointer; font-size: 12px; font-weight: 600; ' + (on ? 'background: var(--surface); color: var(--ink); box-shadow: 0 1px 2px rgba(0,0,0,0.08), 0 2px 8px rgba(0,0,0,0.06);' : 'background: transparent; color: var(--muted-2);'))}>
+      <button type="button" role="radio" aria-checked={on ? 'true' : 'false'} title={tip} onClick={() => m.set(id)} style={css('display: inline-flex; align-items: center; gap: 5px; min-height: 28px; padding: 0 10px; border: 0; border-radius: 999px; cursor: pointer; font-size: 12px; font-weight: 600; ' + (on ? 'background: var(--surface); color: var(--ink); box-shadow: 0 1px 2px rgba(0,0,0,0.08), 0 2px 8px rgba(0,0,0,0.06);' : 'background: transparent; color: var(--muted);'))}>
         <Ico d={d} size={13} />{label}
       </button>
     );
@@ -373,7 +373,7 @@ function ProviderCard({ pr, admin, isDefault, A, after }) {
       {pr.error ? <p role="alert" style={css('margin: 0; font-size: 13px; color: var(--red-ink)')}>{pr.error}</p> : null}
       {admin ? (
         <>
-          <div style={css('display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px')}>
+          <div style={css('display: grid; grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr)); gap: 12px')}>
             <label style={css('display: flex; flex-direction: column; gap: 6px')}>
               <span style={css(LBL)}>API key</span>
               <span style={css('position: relative; display: flex')}>

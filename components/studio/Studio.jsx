@@ -74,7 +74,9 @@ export default function Studio({ initialPath, initialProject }) {
       setMfa(null);
       const c = await loadContext(sb);
       if (!c) { setError('no-access'); return; }
-      setCtx(c);
+      // Keep the same object when nothing changed: the realtime channel and other effects key on ctx, and a new
+      // object on every reload re-subscribed, which reloaded again (4-5 full loads per page visit).
+      setCtx((prev) => (prev && JSON.stringify(prev) === JSON.stringify(c) ? prev : c));
       const data = await loadWorkspace(sb, c, readAcct());
       // Older Activity Log pages loaded on demand survive the reload (the loader reads the newest 400).
       setD((prev) => ({ ...data, portalDetail: prev ? prev.portalDetail : {}, olderActivity: prev ? prev.olderActivity || [] : [], activityEnd: prev ? !!prev.activityEnd : false }));
@@ -122,16 +124,19 @@ export default function Studio({ initialPath, initialProject }) {
     if (openId && ctx && UI_ROLE[ctx.role] === 'sponsor') reloadPortal(openId);
   }, [openId, ctx, reloadPortal]);
 
-  // Realtime: RLS applies per subscriber, so each person only hears about rows they can read.
+  // Realtime: RLS applies per subscriber, so each person only hears about rows they can read. Keyed on the workspace
+  // and user, not the ctx object, so a reload that changes the profile does not re-subscribe (and reload again).
+  const rtWs = ctx ? ctx.workspace_id : '';
+  const rtUser = ctx ? ctx.user_id : '';
   useEffect(() => {
-    if (!ctx) return;
+    if (!rtWs) return;
     let t = null;
     const bump = () => { clearTimeout(t); t = setTimeout(() => reload(), 350); };
-    const ch = sb.channel('board-' + ctx.workspace_id);
+    const ch = sb.channel('board-' + rtWs);
     ['projects', 'project_edits', 'project_thumbnails', 'sponsorships', 'comments', 'project_assets', 'distribution_tasks', 'inbox_items', 'research_runs',
       'ideas', 'idea_comments', 'project_checklist', 'project_last_edit', 'automation_runs', 'project_publish', 'buffer_publications', 'content_entries'].forEach((table) =>
       ch.on('postgres_changes', { event: '*', schema: 'public', table }, bump));
-    ch.on('postgres_changes', { event: '*', schema: 'public', table: 'notifications', filter: 'user_id=eq.' + ctx.user_id }, bump);
+    ch.on('postgres_changes', { event: '*', schema: 'public', table: 'notifications', filter: 'user_id=eq.' + rtUser }, bump);
     // If the realtime connection drops, poll every 45 seconds while the tab is visible, and catch up when the tab
     // comes back or the network returns.
     let live = false;
@@ -144,7 +149,7 @@ export default function Studio({ initialPath, initialProject }) {
       clearTimeout(t); clearInterval(poll); sb.removeChannel(ch);
       document.removeEventListener('visibilitychange', wake); window.removeEventListener('online', wake);
     };
-  }, [ctx, sb, reload]);
+  }, [rtWs, rtUser, sb, reload]);
 
   // While a research run is going, check on it every 20 seconds. GET /api/research also marks runs that died with their
   // server process as failed, so an interrupted run never looks stuck, and progress shows even if realtime drops.

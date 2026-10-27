@@ -34,7 +34,7 @@ export default function StudioView({ V }) {
           <button type="button" aria-label="Close dialog" onClick={V.np.close} style={css("position: fixed; inset: 0; z-index: 40; border: 0; background: rgba(17,17,17,0.32); cursor: default")}></button>
           <dialog open aria-modal="true" aria-labelledby="np-title" onScroll={V.np.onScroll} style={css(V.ui.dialog + V.np.dialog)}>
             <div style={css("display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 20px")}><div><h2 id="np-title" style={css("margin: 0; font-family: var(--font-title); font-size: var(--text-h4); font-weight: var(--weight-black); letter-spacing: -0.02em")}>New project</h2><p style={css("margin: 6px 0 0; font-size: var(--text-body-sm); color: var(--muted)")}>A template sets the content type, default team and due dates.</p></div><button type="button" className="fb-ni" aria-label="Close" onClick={V.np.close} style={css(V.ui.iconBtn)}><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M18 6 6 18M6 6l12 12"></path></svg></button></div>
-            <div style={css("display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px")}><div style={css("grid-column: 1 / -1; display: flex; flex-direction: column; gap: 6px")}><label htmlFor="np-name" style={css(V.fieldLabel)}>Title</label><input id="np-name" type="text" autoComplete="off" placeholder="What is the video?" value={V.np.title} onChange={V.np.onTitle} style={css(V.fieldInput)} /></div><div style={css("display: flex; flex-direction: column; gap: 6px")}><label htmlFor="np-job" style={css(V.fieldLabel)}>Job #</label><input id="np-job" type="text" autoComplete="off" placeholder="DTF-PU5" value={V.np.job} onChange={V.np.onJob} style={css(V.fieldInput)} /></div><div style={css("display: flex; flex-direction: column; gap: 6px")}><label htmlFor="np-template" style={css(V.fieldLabel)}>Template</label><div style={css(V.dd.npTemplate.wrap)} onKeyDown={V.dd.npTemplate.onKey}><button type="button" id="np-template" aria-haspopup="listbox" aria-expanded={V.dd.npTemplate.exp} aria-label={V.dd.npTemplate.aria} onClick={V.dd.npTemplate.toggle} style={css(V.dd.npTemplate.btn)}><span style={css(V.dd.npTemplate.valueStyle)}>{V.dd.npTemplate.value}</span><svg aria-hidden="true" width="16" height="16" viewBox="0 0 16 16" style={css(V.dd.npTemplate.chev)}><path d="M4 6l4 4 4-4" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"></path></svg></button>{V.dd.npTemplate.open ? (<><button type="button" tabIndex="-1" aria-label="Close list" onClick={V.dd.npTemplate.close} style={css("position: fixed; inset: 0; z-index: 0; border: 0; background: transparent; cursor: default")}></button><div role="listbox" aria-label={V.dd.npTemplate.label} style={css(V.dd.npTemplate.pop)}>{(V.dd.npTemplate.items || []).map((o, i) => (<button key={i} type="button" role="option" className="mitem" aria-selected={o.sel} onClick={o.pick} style={css(o.style)}><span style={css(o.check)}><svg aria-hidden="true" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3.5 8.5l3 3 6-7"></path></svg></span><span style={css("flex: 1")}>{o.label}</span></button>))}</div></>) : null}</div></div><div style={css("display: flex; flex-direction: column; gap: 6px")}><label htmlFor="np-channel" style={css(V.fieldLabel)}>Channel</label><div style={css(V.dd.npChannel.wrap)} onKeyDown={V.dd.npChannel.onKey}><button type="button" id="np-channel" aria-haspopup="listbox" aria-expanded={V.dd.npChannel.exp} aria-label={V.dd.npChannel.aria} onClick={V.dd.npChannel.toggle} style={css(V.dd.npChannel.btn)}><span style={css(V.dd.npChannel.valueStyle)}>{V.dd.npChannel.value}</span><svg aria-hidden="true" width="16" height="16" viewBox="0 0 16 16" style={css(V.dd.npChannel.chev)}><path d="M4 6l4 4 4-4" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"></path></svg></button>{V.dd.npChannel.open ? (<><button type="button" tabIndex="-1" aria-label="Close list" onClick={V.dd.npChannel.close} style={css("position: fixed; inset: 0; z-index: 0; border: 0; background: transparent; cursor: default")}></button><div role="listbox" aria-label={V.dd.npChannel.label} style={css(V.dd.npChannel.pop)}>{(V.dd.npChannel.items || []).map((o, i) => (<button key={i} type="button" role="option" className="mitem" aria-selected={o.sel} onClick={o.pick} style={css(o.style)}><span style={css(o.check)}><svg aria-hidden="true" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3.5 8.5l3 3 6-7"></path></svg></span><span style={css("flex: 1")}>{o.label}</span></button>))}{/* app: quick add a channel from the New project dialog */}{V.dd.npChannel.empty ? <p style={css("margin: 0; padding: 8px 10px 4px; font-size: 13px; color: var(--muted)")}>No channels yet.</p> : null}{V.np.ch.canAdd ? (<div role="group" aria-label="Add channel" style={css("display: flex; flex-direction: column; gap: 6px; margin-top: 4px; padding: 8px 4px 2px; border-top: " + (V.dd.npChannel.empty ? "0" : "1px solid var(--line-4)"))}><div style={css("display: flex; gap: 6px")}><input type="text" autoComplete="off" aria-label="New channel name" placeholder="New channel name" value={V.np.ch.name} onChange={V.np.ch.onName} onKeyDown={V.np.ch.onKey} style={css("flex: 1; min-width: 0; min-height: 36px; box-sizing: border-box; padding: 0 10px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface-2); font-size: 13px; color: var(--ink)")} /><button type="button" onClick={V.np.ch.add} disabled={V.np.ch.busy || !V.np.ch.name.trim()} style={css("flex: none; display: inline-flex; align-items: center; gap: 4px; min-height: 36px; padding: 0 12px; border: 0; border-radius: 10px; background: var(--inv); color: var(--inv-ink); font-size: 13px; font-weight: 600; cursor: pointer; opacity: " + (V.np.ch.busy || !V.np.ch.name.trim() ? "0.5" : "1"))}><svg aria-hidden="true" width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M8 3v10M3 8h10"></path></svg>{V.np.ch.busy ? "Adding" : "Add channel"}</button></div>{V.np.ch.err ? <p role="alert" style={css("margin: 0; font-size: 12px; font-weight: 600; color: var(--red-ink)")}>{V.np.ch.err}</p> : null}</div>) : V.dd.npChannel.empty ? <p style={css("margin: 0; padding: 0 10px 8px; font-size: 13px; color: var(--muted)")}>Ask a Super Admin to add one.</p> : null}</div></>) : null}</div></div><div style={css("display: flex; flex-direction: column; gap: 6px")}><label htmlFor="np-type" style={css(V.fieldLabel)}>Content type</label><div style={css(V.dd.npType.wrap)} onKeyDown={V.dd.npType.onKey}><button type="button" id="np-type" aria-haspopup="listbox" aria-expanded={V.dd.npType.exp} aria-label={V.dd.npType.aria} onClick={V.dd.npType.toggle} style={css(V.dd.npType.btn)}><span style={css(V.dd.npType.valueStyle)}>{V.dd.npType.value}</span><svg aria-hidden="true" width="16" height="16" viewBox="0 0 16 16" style={css(V.dd.npType.chev)}><path d="M4 6l4 4 4-4" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"></path></svg></button>{V.dd.npType.open ? (<><button type="button" tabIndex="-1" aria-label="Close list" onClick={V.dd.npType.close} style={css("position: fixed; inset: 0; z-index: 0; border: 0; background: transparent; cursor: default")}></button><div role="listbox" aria-label={V.dd.npType.label} style={css(V.dd.npType.pop)}>{(V.dd.npType.items || []).map((o, i) => (<button key={i} type="button" role="option" className="mitem" aria-selected={o.sel} onClick={o.pick} style={css(o.style)}><span style={css(o.check)}><svg aria-hidden="true" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3.5 8.5l3 3 6-7"></path></svg></span><span style={css("flex: 1")}>{o.label}</span></button>))}</div></>) : null}</div></div><div style={css("display: flex; flex-direction: column; gap: 6px")}><label htmlFor="np-status" style={css(V.fieldLabel)}>Status</label><div style={css(V.dd.npStatus.wrap)} onKeyDown={V.dd.npStatus.onKey}><button type="button" id="np-status" aria-haspopup="listbox" aria-expanded={V.dd.npStatus.exp} aria-label={V.dd.npStatus.aria} onClick={V.dd.npStatus.toggle} style={css(V.dd.npStatus.btn)}><span style={css(V.dd.npStatus.valueStyle)}>{V.dd.npStatus.value}</span><svg aria-hidden="true" width="16" height="16" viewBox="0 0 16 16" style={css(V.dd.npStatus.chev)}><path d="M4 6l4 4 4-4" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"></path></svg></button>{V.dd.npStatus.open ? (<><button type="button" tabIndex="-1" aria-label="Close list" onClick={V.dd.npStatus.close} style={css("position: fixed; inset: 0; z-index: 0; border: 0; background: transparent; cursor: default")}></button><div role="listbox" aria-label={V.dd.npStatus.label} style={css(V.dd.npStatus.pop)}>{(V.dd.npStatus.items || []).map((o, i) => (<button key={i} type="button" role="option" className="mitem" aria-selected={o.sel} onClick={o.pick} style={css(o.style)}><span style={css(o.check)}><svg aria-hidden="true" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3.5 8.5l3 3 6-7"></path></svg></span><span style={css("flex: 1")}>{o.label}</span></button>))}</div></>) : null}</div></div><div style={css("display: flex; flex-direction: column; gap: 6px")}><label htmlFor="np-sponsor" style={css(V.fieldLabel)}>Sponsor</label><div style={css(V.dd.npSponsor.wrap)} onKeyDown={V.dd.npSponsor.onKey}><button type="button" id="np-sponsor" aria-haspopup="listbox" aria-expanded={V.dd.npSponsor.exp} aria-label={V.dd.npSponsor.aria} onClick={V.dd.npSponsor.toggle} style={css(V.dd.npSponsor.btn)}><span style={css(V.dd.npSponsor.valueStyle)}>{V.dd.npSponsor.value}</span><svg aria-hidden="true" width="16" height="16" viewBox="0 0 16 16" style={css(V.dd.npSponsor.chev)}><path d="M4 6l4 4 4-4" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"></path></svg></button>{V.dd.npSponsor.open ? (<><button type="button" tabIndex="-1" aria-label="Close list" onClick={V.dd.npSponsor.close} style={css("position: fixed; inset: 0; z-index: 0; border: 0; background: transparent; cursor: default")}></button><div role="listbox" aria-label={V.dd.npSponsor.label} style={css(V.dd.npSponsor.pop)}>{(V.dd.npSponsor.items || []).map((o, i) => (<button key={i} type="button" role="option" className="mitem" aria-selected={o.sel} onClick={o.pick} style={css(o.style)}><span style={css(o.check)}><svg aria-hidden="true" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3.5 8.5l3 3 6-7"></path></svg></span><span style={css("flex: 1")}>{o.label}</span></button>))}</div></>) : null}</div></div><div style={css("display: flex; flex-direction: column; gap: 6px")}><label htmlFor="np-film" style={css(V.fieldLabel)}>Film date</label><DateField weekStart={V.weekStart} id="np-film" value={V.np.film} onChange={V.np.onFilm} /></div><div style={css("display: flex; flex-direction: column; gap: 6px")}><label htmlFor="np-pub" style={css(V.fieldLabel)}>Publishing date</label><DateField weekStart={V.weekStart} id="np-pub" value={V.np.pub} onChange={V.np.onPub} /></div></div>
+            <div style={css("display: grid; grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr)); gap: 16px")}><div style={css("grid-column: 1 / -1; display: flex; flex-direction: column; gap: 6px")}><label htmlFor="np-name" style={css(V.fieldLabel)}>Title</label><input id="np-name" type="text" autoComplete="off" placeholder="What is the video?" value={V.np.title} onChange={V.np.onTitle} style={css(V.fieldInput)} /></div><div style={css("display: flex; flex-direction: column; gap: 6px")}><label htmlFor="np-job" style={css(V.fieldLabel)}>Job #</label><input id="np-job" type="text" autoComplete="off" placeholder="DTF-PU5" value={V.np.job} onChange={V.np.onJob} style={css(V.fieldInput)} /></div><div style={css("display: flex; flex-direction: column; gap: 6px")}><label htmlFor="np-template" style={css(V.fieldLabel)}>Template</label><div style={css(V.dd.npTemplate.wrap)} onKeyDown={V.dd.npTemplate.onKey}><button type="button" id="np-template" aria-haspopup="listbox" aria-expanded={V.dd.npTemplate.exp} aria-label={V.dd.npTemplate.aria} onClick={V.dd.npTemplate.toggle} style={css(V.dd.npTemplate.btn)}><span style={css(V.dd.npTemplate.valueStyle)}>{V.dd.npTemplate.value}</span><svg aria-hidden="true" width="16" height="16" viewBox="0 0 16 16" style={css(V.dd.npTemplate.chev)}><path d="M4 6l4 4 4-4" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"></path></svg></button>{V.dd.npTemplate.open ? (<><button type="button" tabIndex="-1" aria-label="Close list" onClick={V.dd.npTemplate.close} style={css("position: fixed; inset: 0; z-index: 0; border: 0; background: transparent; cursor: default")}></button><div role="listbox" aria-label={V.dd.npTemplate.label} style={css(V.dd.npTemplate.pop)}>{(V.dd.npTemplate.items || []).map((o, i) => (<button key={i} type="button" role="option" className="mitem" aria-selected={o.sel} onClick={o.pick} style={css(o.style)}><span style={css(o.check)}><svg aria-hidden="true" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3.5 8.5l3 3 6-7"></path></svg></span><span style={css("flex: 1")}>{o.label}</span></button>))}</div></>) : null}</div></div><div style={css("display: flex; flex-direction: column; gap: 6px")}><label htmlFor="np-channel" style={css(V.fieldLabel)}>Channel</label><div style={css(V.dd.npChannel.wrap)} onKeyDown={V.dd.npChannel.onKey}><button type="button" id="np-channel" aria-haspopup="listbox" aria-expanded={V.dd.npChannel.exp} aria-label={V.dd.npChannel.aria} onClick={V.dd.npChannel.toggle} style={css(V.dd.npChannel.btn)}><span style={css(V.dd.npChannel.valueStyle)}>{V.dd.npChannel.value}</span><svg aria-hidden="true" width="16" height="16" viewBox="0 0 16 16" style={css(V.dd.npChannel.chev)}><path d="M4 6l4 4 4-4" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"></path></svg></button>{V.dd.npChannel.open ? (<><button type="button" tabIndex="-1" aria-label="Close list" onClick={V.dd.npChannel.close} style={css("position: fixed; inset: 0; z-index: 0; border: 0; background: transparent; cursor: default")}></button><div role="listbox" aria-label={V.dd.npChannel.label} style={css(V.dd.npChannel.pop)}>{(V.dd.npChannel.items || []).map((o, i) => (<button key={i} type="button" role="option" className="mitem" aria-selected={o.sel} onClick={o.pick} style={css(o.style)}><span style={css(o.check)}><svg aria-hidden="true" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3.5 8.5l3 3 6-7"></path></svg></span><span style={css("flex: 1")}>{o.label}</span></button>))}{/* app: quick add a channel from the New project dialog */}{V.dd.npChannel.empty ? <p style={css("margin: 0; padding: 8px 10px 4px; font-size: 13px; color: var(--muted)")}>No channels yet.</p> : null}{V.np.ch.canAdd ? (<div role="group" aria-label="Add channel" style={css("display: flex; flex-direction: column; gap: 6px; margin-top: 4px; padding: 8px 4px 2px; border-top: " + (V.dd.npChannel.empty ? "0" : "1px solid var(--line-4)"))}><div style={css("display: flex; gap: 6px")}><input type="text" autoComplete="off" aria-label="New channel name" placeholder="New channel name" value={V.np.ch.name} onChange={V.np.ch.onName} onKeyDown={V.np.ch.onKey} style={css("flex: 1; min-width: 0; min-height: 36px; box-sizing: border-box; padding: 0 10px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface-2); font-size: 13px; color: var(--ink)")} /><button type="button" onClick={V.np.ch.add} disabled={V.np.ch.busy || !V.np.ch.name.trim()} style={css("flex: none; display: inline-flex; align-items: center; gap: 4px; min-height: 36px; padding: 0 12px; border: 0; border-radius: 10px; background: var(--inv); color: var(--inv-ink); font-size: 13px; font-weight: 600; cursor: pointer; opacity: " + (V.np.ch.busy || !V.np.ch.name.trim() ? "0.5" : "1"))}><svg aria-hidden="true" width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M8 3v10M3 8h10"></path></svg>{V.np.ch.busy ? "Adding" : "Add channel"}</button></div>{V.np.ch.err ? <p role="alert" style={css("margin: 0; font-size: 12px; font-weight: 600; color: var(--red-ink)")}>{V.np.ch.err}</p> : null}</div>) : V.dd.npChannel.empty ? <p style={css("margin: 0; padding: 0 10px 8px; font-size: 13px; color: var(--muted)")}>Ask a Super Admin to add one.</p> : null}</div></>) : null}</div></div><div style={css("display: flex; flex-direction: column; gap: 6px")}><label htmlFor="np-type" style={css(V.fieldLabel)}>Content type</label><div style={css(V.dd.npType.wrap)} onKeyDown={V.dd.npType.onKey}><button type="button" id="np-type" aria-haspopup="listbox" aria-expanded={V.dd.npType.exp} aria-label={V.dd.npType.aria} onClick={V.dd.npType.toggle} style={css(V.dd.npType.btn)}><span style={css(V.dd.npType.valueStyle)}>{V.dd.npType.value}</span><svg aria-hidden="true" width="16" height="16" viewBox="0 0 16 16" style={css(V.dd.npType.chev)}><path d="M4 6l4 4 4-4" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"></path></svg></button>{V.dd.npType.open ? (<><button type="button" tabIndex="-1" aria-label="Close list" onClick={V.dd.npType.close} style={css("position: fixed; inset: 0; z-index: 0; border: 0; background: transparent; cursor: default")}></button><div role="listbox" aria-label={V.dd.npType.label} style={css(V.dd.npType.pop)}>{(V.dd.npType.items || []).map((o, i) => (<button key={i} type="button" role="option" className="mitem" aria-selected={o.sel} onClick={o.pick} style={css(o.style)}><span style={css(o.check)}><svg aria-hidden="true" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3.5 8.5l3 3 6-7"></path></svg></span><span style={css("flex: 1")}>{o.label}</span></button>))}</div></>) : null}</div></div><div style={css("display: flex; flex-direction: column; gap: 6px")}><label htmlFor="np-status" style={css(V.fieldLabel)}>Status</label><div style={css(V.dd.npStatus.wrap)} onKeyDown={V.dd.npStatus.onKey}><button type="button" id="np-status" aria-haspopup="listbox" aria-expanded={V.dd.npStatus.exp} aria-label={V.dd.npStatus.aria} onClick={V.dd.npStatus.toggle} style={css(V.dd.npStatus.btn)}><span style={css(V.dd.npStatus.valueStyle)}>{V.dd.npStatus.value}</span><svg aria-hidden="true" width="16" height="16" viewBox="0 0 16 16" style={css(V.dd.npStatus.chev)}><path d="M4 6l4 4 4-4" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"></path></svg></button>{V.dd.npStatus.open ? (<><button type="button" tabIndex="-1" aria-label="Close list" onClick={V.dd.npStatus.close} style={css("position: fixed; inset: 0; z-index: 0; border: 0; background: transparent; cursor: default")}></button><div role="listbox" aria-label={V.dd.npStatus.label} style={css(V.dd.npStatus.pop)}>{(V.dd.npStatus.items || []).map((o, i) => (<button key={i} type="button" role="option" className="mitem" aria-selected={o.sel} onClick={o.pick} style={css(o.style)}><span style={css(o.check)}><svg aria-hidden="true" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3.5 8.5l3 3 6-7"></path></svg></span><span style={css("flex: 1")}>{o.label}</span></button>))}</div></>) : null}</div></div><div style={css("display: flex; flex-direction: column; gap: 6px")}><label htmlFor="np-sponsor" style={css(V.fieldLabel)}>Sponsor</label><div style={css(V.dd.npSponsor.wrap)} onKeyDown={V.dd.npSponsor.onKey}><button type="button" id="np-sponsor" aria-haspopup="listbox" aria-expanded={V.dd.npSponsor.exp} aria-label={V.dd.npSponsor.aria} onClick={V.dd.npSponsor.toggle} style={css(V.dd.npSponsor.btn)}><span style={css(V.dd.npSponsor.valueStyle)}>{V.dd.npSponsor.value}</span><svg aria-hidden="true" width="16" height="16" viewBox="0 0 16 16" style={css(V.dd.npSponsor.chev)}><path d="M4 6l4 4 4-4" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"></path></svg></button>{V.dd.npSponsor.open ? (<><button type="button" tabIndex="-1" aria-label="Close list" onClick={V.dd.npSponsor.close} style={css("position: fixed; inset: 0; z-index: 0; border: 0; background: transparent; cursor: default")}></button><div role="listbox" aria-label={V.dd.npSponsor.label} style={css(V.dd.npSponsor.pop)}>{(V.dd.npSponsor.items || []).map((o, i) => (<button key={i} type="button" role="option" className="mitem" aria-selected={o.sel} onClick={o.pick} style={css(o.style)}><span style={css(o.check)}><svg aria-hidden="true" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3.5 8.5l3 3 6-7"></path></svg></span><span style={css("flex: 1")}>{o.label}</span></button>))}</div></>) : null}</div></div><div style={css("display: flex; flex-direction: column; gap: 6px")}><label htmlFor="np-film" style={css(V.fieldLabel)}>Film date</label><DateField weekStart={V.weekStart} id="np-film" value={V.np.film} onChange={V.np.onFilm} /></div><div style={css("display: flex; flex-direction: column; gap: 6px")}><label htmlFor="np-pub" style={css(V.fieldLabel)}>Publishing date</label><DateField weekStart={V.weekStart} id="np-pub" value={V.np.pub} onChange={V.np.onPub} /></div></div>
             {V.np.hasErr ? <p role="alert" style={css("margin: 16px 0 0; padding: 10px 12px; border-radius: 10px; background: var(--red-soft); color: var(--red-ink); font-size: 13px; font-weight: 600")}>{V.np.err}</p> : null}
             <div style={css("display: flex; justify-content: flex-end; gap: 8px; margin-top: 24px")}><button type="button" className="fb-ni" onClick={V.np.close} style={css("min-height: 44px; padding: 0 18px; border: 0; border-radius: 14px; background: transparent; color: var(--ink-3); cursor: pointer")}>Cancel</button><button type="button" onClick={V.np.create} disabled={!!V.np.busy} style={css(V.ui.btnPrimary)}>{V.np.createLabel}</button></div>
           </dialog>
@@ -144,7 +144,8 @@ export default function StudioView({ V }) {
           </div>
         </aside>
         {" "}
-        <div style={css("flex: 1 1 0; min-width: 0; box-sizing: border-box")}>
+        {/* app: <main> landmark around each page (QA a11y: landmark-one-main, region) */}
+        <main style={css("flex: 1 1 0; min-width: 0; box-sizing: border-box")}>
           <nav className="fb-mobile" aria-label="Main compact" style={css("display: none; gap: 4px; padding: 5px; margin: 16px 16px 0; background: var(--track); border-radius: 16px; overflow-x: auto")}>
             {(V.navItems || []).map((n, n__i) => (
               <Fragment key={n__i}>
@@ -170,7 +171,7 @@ export default function StudioView({ V }) {
           {" "}
           {V.showAdmin ? (
             <>
-              <div style={css("padding: 32px 40px 40px; box-sizing: border-box; display: flex; flex-direction: column; gap: 24px")}>
+              <div className="fb-page" style={css("padding: 32px 40px 40px; box-sizing: border-box; display: flex; flex-direction: column; gap: 24px")}>
                 <header style={css("display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 20px")}>
                   <div style={css("display: flex; flex-direction: column; gap: 8px; max-width: 640px")}>
                     <p style={css("margin: 0; display: inline-flex; align-items: center; gap: 6px; font-size: var(--text-body-sm); color: var(--muted-2)")}>
@@ -225,7 +226,7 @@ export default function StudioView({ V }) {
                 {" "}
                 {V.adm.hasStats ? (
                   <>
-                    <div style={css("display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px")}>
+                    <div style={css("display: grid; grid-template-columns: repeat(auto-fit, minmax(min(180px, 100%), 1fr)); gap: 12px")}>
                       {(V.adm.stats || []).map((st, st__i) => (
                         <Fragment key={st__i}>
                           <div style={css(V.ui.stat)}>
@@ -266,7 +267,7 @@ export default function StudioView({ V }) {
                       ))}
                     </div>
                     {" "}
-                    <div style={css("overflow-x: auto; padding-bottom: 8px")}>
+                    <div style={css("position: relative; overflow-x: auto; padding-bottom: 8px")}>
                       <div role="table" aria-label="Users" style={css("min-width: 1080px; border: 1px solid var(--line); border-radius: 16px; background: var(--surface)")}>
                         <div role="row" style={css(V.teamHeadStyle)}>
                           <span role="columnheader" style={css(V.thStyle)}>Name</span>
@@ -377,7 +378,7 @@ export default function StudioView({ V }) {
                         <div role="radiogroup" aria-labelledby="nu-type-label" style={css("display: flex; flex-direction: column; gap: 8px")}>
                           <p id="nu-type-label" style={css(V.fieldLabel)}>User type</p>
                           {" "}
-                          <div style={css("display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 8px")}>
+                          <div style={css("display: grid; grid-template-columns: repeat(auto-fit, minmax(min(210px, 100%), 1fr)); gap: 8px")}>
                             {(V.nuTypes || []).map((ty, ty__i) => (
                               <Fragment key={ty__i}>
                                 <label className="fb-radio" style={css(ty.style)}>
@@ -467,7 +468,7 @@ export default function StudioView({ V }) {
                         <span style={css("font-size: 13px; color: var(--muted)")}>{V.adm.permNote}</span>
                       </div>
                       {" "}
-                      <div style={css("overflow-x: auto; padding-bottom: 8px")}>
+                      <div style={css("position: relative; overflow-x: auto; padding-bottom: 8px")}>
                         <div role="table" aria-label="Permissions" style={css("min-width: 760px; border: 1px solid var(--line); border-radius: 16px; background: var(--surface)")}>
                           <div role="row" style={css(V.adm.permHeadStyle)}>
                             <span role="columnheader" style={css(V.thStyle)}>Area</span>
@@ -515,7 +516,7 @@ export default function StudioView({ V }) {
                                       {" "}
                                       {pc.isNa ? (
                                         <>
-                                          <span style={css("font-size: 12px; color: var(--faint)")}>n/a</span>
+                                          <span style={css("font-size: 12px; color: var(--muted-2)")}>n/a</span>
                                         </>
                                       ) : null}
                                     </div>
@@ -528,7 +529,7 @@ export default function StudioView({ V }) {
                       </div>
                     </section>
                     {" "}
-                    <div style={css("display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px")}>
+                    <div style={css("display: grid; grid-template-columns: repeat(auto-fit, minmax(min(320px, 100%), 1fr)); gap: 16px")}>
                       <section aria-labelledby="rv-h" style={css(V.ui.panel)}>
                         <h2 id="rv-h" style={css(V.ui.h3)}>Board views</h2>
                         {" "}
@@ -575,7 +576,7 @@ export default function StudioView({ V }) {
                 {" "}
                 {V.adm.isPM ? (
                   <>
-                    <div style={css("display: grid; grid-template-columns: repeat(auto-fit, minmax(420px, 1fr)); gap: 16px; align-items: start")}>
+                    <div style={css("display: grid; grid-template-columns: repeat(auto-fit, minmax(min(420px, 100%), 1fr)); gap: 16px; align-items: start")}>
                       <section aria-labelledby="na-h" style={css(V.ui.panel)}>
                         <div style={css("display: flex; align-items: center; gap: 10px")}>
                           <h2 id="na-h" style={css(V.ui.h3)}>Needs attention</h2>
@@ -609,7 +610,7 @@ export default function StudioView({ V }) {
                       <section aria-labelledby="wl-h" style={css(V.ui.panel)}>
                         <h2 id="wl-h" style={css(V.ui.h3)}>Team workload</h2>
                         {" "}
-                        <div role="table" aria-label="Team workload" style={css("display: flex; flex-direction: column; margin: 0 -20px -20px; border-top: 1px solid var(--line)")}>
+                        <div role="table" aria-label="Team workload" style={css("position: relative; display: flex; flex-direction: column; margin: 0 -20px -20px; border-top: 1px solid var(--line); overflow-x: auto")}>
                           <div role="row" style={css(`${V.adm.wlGrid ?? ''} min-height: 40px; border-bottom: 1px solid var(--line)`)}>
                             <span role="columnheader" style={css(V.thStyle)}>Person</span>
                             {" "}
@@ -683,7 +684,7 @@ export default function StudioView({ V }) {
                         ))}
                       </ol>
                       {" "}
-                      <div style={css("display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 20px; padding-top: 16px; border-top: 1px solid var(--line)")}>
+                      <div style={css("display: grid; grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr)); gap: 20px; padding-top: 16px; border-top: 1px solid var(--line)")}>
                         <div style={css("display: flex; flex-direction: column; gap: 12px")}>
                           <p style={css("margin: 0; font-size: 13px; font-weight: 600; color: var(--ink-2)")}>Deadline defaults</p>
                           {" "}
@@ -753,7 +754,7 @@ export default function StudioView({ V }) {
                     </div>
                     {" "}
                     <div style={css("display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-start")}>
-                      <div style={css("flex: 1 1 560px; min-width: 0; overflow-x: auto; padding-bottom: 8px")}>
+                      <div style={css("position: relative; flex: 1 1 560px; min-width: 0; overflow-x: auto; padding-bottom: 8px")}>
                         <div role="table" aria-label="Accounts" style={css("min-width: 620px; border: 1px solid var(--line); border-radius: 16px; background: var(--surface)")}>
                           <div role="row" style={css(`${V.adm.acctGrid ?? ''} min-height: 44px`)}>
                             <span role="columnheader" style={css(V.thStyle)}>Account</span>
@@ -906,7 +907,7 @@ export default function StudioView({ V }) {
                             <div role="radiogroup" aria-labelledby="acct-type-label" style={css("display: flex; flex-direction: column; gap: 8px")}>
                               <p id="acct-type-label" style={css(V.fieldLabel)}>Account type</p>
                               {" "}
-                              <div style={css("display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 8px")}>
+                              <div style={css("display: grid; grid-template-columns: repeat(auto-fit, minmax(min(200px, 100%), 1fr)); gap: 8px")}>
                                 {(V.adm.acctTypes || []).map((ty, ty__i) => (
                                   <Fragment key={ty__i}>
                                     <label className="fb-radio" style={css(ty.style)}>
@@ -957,12 +958,13 @@ export default function StudioView({ V }) {
                       ))}
                     </div>
                     {" "}
-                    <div style={css("overflow-x: auto; padding-bottom: 8px")}>
+                    {/* app: focusable so the table can be scrolled by keyboard when it has no rows (QA a11y: scrollable-region-focusable) */}
+                    <div tabIndex={0} role="region" aria-label={V.adm.fin.label} style={css("position: relative; overflow-x: auto; padding-bottom: 8px")}>
                       <div role="table" aria-label={V.adm.fin.label} style={css(V.adm.fin.wrapStyle)}>
                         <div role="row" style={css(V.adm.fin.headStyle)}>
                           {(V.adm.fin.head || []).map((fh, fh__i) => (
                             <Fragment key={fh__i}>
-                              <span role="columnheader" style={css(fh.style)}>{fh.label}</span>
+                              <span role="columnheader" style={css(fh.style)}>{fh.label}{fh.srLabel ? <span style={css("position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap")}>{fh.srLabel}</span> : null}</span>
                             </Fragment>
                           ))}
                         </div>
@@ -1118,7 +1120,7 @@ export default function StudioView({ V }) {
                                 <span style={css("font-size: 13px; color: var(--muted-2)")}>{sec2.desc}</span>
                               </div>
                               {" "}
-                              <div style={css("display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px")}>
+                              <div style={css("display: grid; grid-template-columns: repeat(auto-fill, minmax(min(280px, 100%), 1fr)); gap: 16px")}>
                                 {(sec2.items || []).map((wc, wc__i) => (
                                   <Fragment key={wc__i}>
                                     <article className="fb-card" style={css(wc.cardStyle)}>
@@ -1253,7 +1255,7 @@ export default function StudioView({ V }) {
                       <>
                         <p style={css("margin: 0; font-size: 13px; color: var(--muted)")}>{V.adm.connNote}</p>
                         {" "}
-                        <div style={css("display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px")}>
+                        <div style={css("display: grid; grid-template-columns: repeat(auto-fill, minmax(min(260px, 100%), 1fr)); gap: 16px")}>
                           {(V.adm.integrations || []).map((ig, ig__i) => (
                             <Fragment key={ig__i}>
                               <article style={css("display: flex; flex-direction: column; gap: 14px; padding: 18px; border: 1px solid var(--line); border-radius: 18px; background: var(--surface)")}>
@@ -1280,7 +1282,7 @@ export default function StudioView({ V }) {
                     {" "}
                     {V.adm.isSetTab ? (
                       <>
-                        <div style={css("display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 16px; align-items: start")}>
+                        <div style={css("display: grid; grid-template-columns: repeat(auto-fit, minmax(min(340px, 100%), 1fr)); gap: 16px; align-items: start")}>
                           <section aria-labelledby="run-h" style={css(V.ui.panel)}>
                             <h2 id="run-h" style={css(V.ui.h3)}>Run settings</h2>
                             {" "}
@@ -1344,7 +1346,7 @@ export default function StudioView({ V }) {
                           <section aria-labelledby="nt-h" style={css("display: flex; flex-direction: column; gap: 12px; min-width: 0")}>
                             <h2 id="nt-h" style={css(V.ui.h3)}>Notifications</h2>
                             {" "}
-                            <div style={css("overflow-x: auto; padding-bottom: 8px")}>
+                            <div style={css("position: relative; overflow-x: auto; padding-bottom: 8px")}>
                               <div role="table" aria-label="Notification channels" style={css("min-width: 520px; border: 1px solid var(--line); border-radius: 16px; background: var(--surface)")}>
                                 <div role="row" style={css(`${V.adm.ntGrid ?? ''} min-height: 44px`)}>
                                   <span role="columnheader" style={css(V.thStyle)}>Event</span>
@@ -1429,7 +1431,7 @@ export default function StudioView({ V }) {
                             <span style={css(V.ui.countPill)}>{lg.countText}</span>
                           </div>
                           {" "}
-                          <div style={css("overflow-x: auto; padding-bottom: 4px")}>
+                          <div style={css("position: relative; overflow-x: auto; padding-bottom: 4px")}>
                             <div role="table" aria-label={lg.title} style={css("min-width: 860px; border: 1px solid var(--line); border-radius: 16px; background: var(--surface)")}>
                               {(lg.items || []).map((li, li__i) => (
                                 <Fragment key={li__i}>
@@ -1492,7 +1494,7 @@ export default function StudioView({ V }) {
                             <section aria-labelledby="ws-gen" style={css(V.ui.panel)}>
                               <h2 id="ws-gen" style={css(V.ui.h3)}>General</h2>
                               {" "}
-                              <div style={css("display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 18px")}>
+                              <div style={css("display: grid; grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr)); gap: 18px")}>
                                 <div style={css("display: flex; flex-direction: column; gap: 6px")}>
                                   <label htmlFor="ws-name" style={css(V.fieldLabel)}>Workspace name</label>
                                   {" "}
@@ -1680,7 +1682,7 @@ export default function StudioView({ V }) {
                               {" "}
                               <p style={css("margin: 0; font-size: 13px; color: var(--muted)")}>Extra columns on the board. Turn one off the board to keep its values without showing it, and pick which user types can see each one.</p>
                               {" "}
-                              <div style={css("overflow-x: auto; margin: 0 -20px")}>
+                              <div style={css("position: relative; overflow-x: auto; margin: 0 -20px")}>
                                 <div role="table" aria-label="Custom fields" style={css("min-width: 700px; border-top: 1px solid var(--line)")}>
                                   <div role="row" style={css("display: grid; grid-template-columns: minmax(180px, 1fr) 130px 80px minmax(260px, 1.4fr) 56px; align-items: center; min-height: 40px; border-bottom: 1px solid var(--line); padding-left: 4px")}>
                                     <span role="columnheader" style={css(V.thStyle)}>Field</span>
@@ -1786,7 +1788,7 @@ export default function StudioView({ V }) {
                             <section aria-labelledby="ws-tp" style={css("display: flex; flex-direction: column; gap: 12px")}>
                               <h2 id="ws-tp" style={css(V.ui.h3)}>Project templates</h2>
                               {" "}
-                              <div style={css("display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px")}>
+                              <div style={css("display: grid; grid-template-columns: repeat(auto-fill, minmax(min(240px, 100%), 1fr)); gap: 12px")}>
                                 {(V.adm.ws.templates || []).map((tp, tp__i) => (
                                   <Fragment key={tp__i}>
                                     <article style={css("display: flex; flex-direction: column; gap: 14px; padding: 18px; border: 1px solid var(--line); border-radius: 16px; background: var(--surface)")}>
@@ -1986,7 +1988,7 @@ export default function StudioView({ V }) {
                           <p style={css("margin: 0; max-width: 460px; font-size: var(--text-body-sm); color: var(--muted)")}>{V.chat.sub}</p>
                         </div>
                         {" "}
-                        <div role="list" aria-label="Today at a glance" style={css("width: 100%; max-width: 880px; display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px")}>
+                        <div role="list" aria-label="Today at a glance" style={css("width: 100%; max-width: 880px; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(190px, 100%), 1fr)); gap: 12px")}>
                           {(V.chat.cards || []).map((kc, kc__i) => (
                             <Fragment key={kc__i}>
                               <div role="listitem" className="fb-float" style={css(kc.style)}>
@@ -2087,7 +2089,7 @@ export default function StudioView({ V }) {
                           </div>
                         </div>
                         {" "}
-                        <div role="group" aria-label="Quick actions" style={css("width: 100%; max-width: 760px; display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px")}>
+                        <div role="group" aria-label="Quick actions" style={css("width: 100%; max-width: 760px; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(170px, 100%), 1fr)); gap: 10px")}>
                           {(V.chat.quick || []).map((qa, qa__i) => (
                             <Fragment key={qa__i}>
                               <button type="button" className="fb-qa" onClick={qa.pick} style={css(V.chat.qaStyle)}>
@@ -2300,7 +2302,7 @@ export default function StudioView({ V }) {
           {" "}
           {V.showPage ? (
             <>
-              <div style={css("padding: 32px 40px 40px; box-sizing: border-box; display: flex; flex-direction: column; gap: 24px")}>
+              <div className="fb-page" style={css("padding: 32px 40px 40px; box-sizing: border-box; display: flex; flex-direction: column; gap: 24px")}>
                 <header style={css("display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 20px")}>
                   <div style={css("display: flex; flex-direction: column; gap: 8px; max-width: 640px")}>
                     <p style={css("margin: 0; font-size: var(--text-body-sm); color: var(--muted-2)")}>{V.pg.eyebrow}</p>
@@ -2347,7 +2349,7 @@ export default function StudioView({ V }) {
                 {" "}
                 {V.pg.hasStats ? (
                   <>
-                    <div style={css("display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px")}>
+                    <div style={css("display: grid; grid-template-columns: repeat(auto-fit, minmax(min(180px, 100%), 1fr)); gap: 12px")}>
                       {(V.pg.stats || []).map((st, st__i) => (
                         <Fragment key={st__i}>
                           <div style={css(V.ui.stat)}>
@@ -2366,7 +2368,7 @@ export default function StudioView({ V }) {
                 {V.pg.isAlerts ? (
                   <>
                     <div style={css("display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding-bottom: 20px; border-bottom: 1px solid var(--line)")}>
-                      <div role="tablist" aria-label="Inbox sections" style={css("display: flex; gap: 4px; padding: 4px; background: var(--track); border-radius: 14px")}>
+                      <div role="tablist" aria-label="Inbox sections" style={css("display: flex; gap: 4px; padding: 4px; max-width: 100%; box-sizing: border-box; overflow-x: auto; scrollbar-width: none; background: var(--track); border-radius: 14px")}>
                         {(V.inbox.modes || []).map((md, md__i) => (
                           <Fragment key={md__i}>
                             <button type="button" role="tab" aria-selected={md.selected} onClick={md.pick} style={css(md.style)}>
@@ -2661,7 +2663,7 @@ export default function StudioView({ V }) {
                       ) : null}
                     </div>
                     {" "}
-                    <div style={css("display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px")}>
+                    <div style={css("display: grid; grid-template-columns: repeat(auto-fill, minmax(min(260px, 100%), 1fr)); gap: 16px")}>
                       {(V.lib.items || []).map((cv, cv__i) => (
                         <Fragment key={cv__i}>
                           <article style={css("display: flex; flex-direction: column; border: 1px solid var(--line); border-radius: 18px; background: var(--surface); overflow: hidden")}>
@@ -2904,7 +2906,7 @@ export default function StudioView({ V }) {
                         {V.lib.social.hasChannels ? (
                           <section aria-label="Channels, last 30 days" style={css("display: flex; flex-direction: column; gap: 10px")}>
                             <h2 style={css(V.ui.h3)}>Channels, last 30 days</h2>
-                            <div style={css("display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 16px")}>
+                            <div style={css("display: grid; grid-template-columns: repeat(auto-fill, minmax(min(240px, 100%), 1fr)); gap: 16px")}>
                               {(V.lib.social.channels || []).map((sc, sc__i) => (
                                 <button key={sc__i} type="button" aria-pressed={sc.pressed} onClick={sc.pick} style={css(sc.style)}>
                                   <span style={css("display: flex; align-items: center; gap: 10px; min-width: 0")}>
@@ -3019,7 +3021,7 @@ export default function StudioView({ V }) {
                                         <span style={css("flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px")}>
                                           <span style={css("font-size: 14px; font-weight: 600; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis")}>{bi.name}</span>
                                           {" "}
-                                          <span style={css("font-size: 12px; font-weight: 400; color: var(--muted-2)")}>{bi.sub}</span>
+                                          <span style={css("font-size: 12px; font-weight: 400; color: var(--muted)")}>{bi.sub}</span>
                                         </span>
                                       </button>
                                     </Fragment>
@@ -3050,7 +3052,7 @@ export default function StudioView({ V }) {
                           ) : null}
                         </div>
                         {" "}
-                        <div style={css("display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; align-items: start")}>
+                        <div style={css("display: grid; grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr)); gap: 16px; align-items: start")}>
                           <section aria-labelledby="br-logo" style={css(V.ui.panel)}>
                             <div style={css("display: flex; align-items: center; justify-content: space-between; gap: 8px")}>
                               <h3 id="br-logo" style={css(V.ui.h3)}>Logos</h3>
@@ -3059,7 +3061,7 @@ export default function StudioView({ V }) {
                               ) : null}
                             </div>
                             {" "}
-                            <div style={css("display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 8px")}>
+                            <div style={css("display: grid; grid-template-columns: repeat(auto-fill, minmax(min(120px, 100%), 1fr)); gap: 8px")}>
                               {(V.br.logos || []).map((lo, lo__i) => (
                                 <Fragment key={lo__i}>
                                   <div style={css("display: flex; flex-direction: column; border: 1px solid var(--line); border-radius: 12px; overflow: hidden")}>
@@ -3117,7 +3119,7 @@ export default function StudioView({ V }) {
                             <p style={css("margin: 0; font-size: 13px; color: var(--muted)")}>{V.br.colorsNote}</p>
                           ) : null}
                           {" "}
-                          <div style={css("display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px")}>
+                          <div style={css("display: grid; grid-template-columns: repeat(auto-fill, minmax(min(150px, 100%), 1fr)); gap: 10px")}>
                             {(V.br.colors || []).map((co, co__i) => (
                               <Fragment key={co__i}>
                                 <div style={css("display: flex; flex-direction: column; border: 1px solid var(--line); border-radius: 14px; overflow: hidden")}>
@@ -3144,7 +3146,7 @@ export default function StudioView({ V }) {
                           </section>
                         ) : null}
                         {" "}
-                        <div style={css("display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; align-items: start")}>
+                        <div style={css("display: grid; grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr)); gap: 16px; align-items: start")}>
                           {(V.br.rules || []).map((rl, rl__i) => (
                             <Fragment key={rl__i}>
                               <section style={css(V.ui.panel)}>
@@ -3177,7 +3179,7 @@ export default function StudioView({ V }) {
                           ))}
                         </div>
                         {" "}
-                        <div style={css("display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; align-items: start")}>
+                        <div style={css("display: grid; grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr)); gap: 16px; align-items: start")}>
                           <section aria-labelledby="br-refs" style={css(V.ui.panel)}>
                             <h3 id="br-refs" style={css(V.ui.h3)}>References</h3>
                             {/* app: empty state when the brand has nothing saved */}
@@ -3314,7 +3316,7 @@ export default function StudioView({ V }) {
                             <button type="button" className="fb-ni" aria-label="Close" onClick={V.br.edit.close} style={css(V.ui.iconBtn)}><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M18 6 6 18M6 6l12 12"></path></svg></button>
                           </div>
                           <div style={css("display: flex; flex-direction: column; gap: 16px")}>
-                            <div style={css("display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px")}>
+                            <div style={css("display: grid; grid-template-columns: repeat(auto-fit, minmax(min(200px, 100%), 1fr)); gap: 12px")}>
                               <div style={css("display: flex; flex-direction: column; gap: 6px")}>
                                 <label htmlFor="be-name" style={css(V.fieldLabel)}>Name</label>
                                 <input id="be-name" type="text" autoComplete="off" value={V.br.edit.name} onChange={V.br.edit.onName} style={css(V.fieldInput)} />
@@ -3369,7 +3371,7 @@ export default function StudioView({ V }) {
                                 <input id="be-tone" type="text" autoComplete="off" placeholder="Playful, direct, curious" value={V.br.edit.tone} onChange={V.br.edit.onTone} style={css(V.fieldInput)} />
                                 <p style={css("margin: 0; font-size: 12px; color: var(--muted-2)")}>Separate with commas.</p>
                               </div>
-                              <div style={css("display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px")}>
+                              <div style={css("display: grid; grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr)); gap: 12px")}>
                                 <div style={css("display: flex; flex-direction: column; gap: 6px")}>
                                   <label htmlFor="be-dos" style={css(V.fieldLabel)}>Do</label>
                                   <textarea id="be-dos" rows="4" placeholder="One per line" value={V.br.edit.dos} onChange={V.br.edit.onDos} style={css(V.ids.textarea)} />
@@ -3616,7 +3618,7 @@ export default function StudioView({ V }) {
                       </div>
                     ) : null}
                     {V.ids.isList ? (
-                      <div style={css("overflow-x: auto; border: 1px solid var(--border); border-radius: 16px")}>
+                      <div style={css("position: relative; overflow-x: auto; border: 1px solid var(--border); border-radius: 16px")}>
                         <table style={css("width: 100%; min-width: 860px; border-collapse: collapse; font-size: 14px; color: var(--ink)")}>
                           <thead>
                             <tr style={css("background: var(--surface-2); text-align: left")}>
@@ -4237,7 +4239,7 @@ export default function StudioView({ V }) {
                             <div role="group" aria-labelledby="rs-src-l" style={css("display: flex; flex-direction: column; gap: 8px")}>
                               <span id="rs-src-l" style={css(V.fieldLabel)}>Sources</span>
                               {" "}
-                              <div style={css("display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 8px")}>
+                              <div style={css("display: grid; grid-template-columns: repeat(auto-fill, minmax(min(240px, 100%), 1fr)); gap: 8px")}>
                                 {(V.ids.rs.sources || []).map((rss, rss__i) => (
                                   <Fragment key={rss__i}>
                                     <button type="button" aria-pressed={rss.pressed} aria-disabled={rss.disabled} onClick={rss.pick} style={css(rss.style)}>
@@ -4329,7 +4331,7 @@ export default function StudioView({ V }) {
                 {" "}
                 {V.pg.isSettings ? (
                   <>
-                    <div style={css("display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 16px; align-items: start")}>
+                    <div style={css("display: grid; grid-template-columns: repeat(auto-fit, minmax(min(340px, 100%), 1fr)); gap: 16px; align-items: start")}>
                       <section aria-labelledby="st-prof" style={css(V.ui.panel)}>
                         <h2 id="st-prof" style={css(V.ui.h3)}>Profile</h2>
                         {" "}
@@ -4475,7 +4477,7 @@ export default function StudioView({ V }) {
           {" "}
           {V.showBoard ? (
             <>
-              <div style={css("padding: 32px 40px 40px; box-sizing: border-box; display: flex; flex-direction: column; gap: 24px")}>
+              <div className="fb-page" style={css("padding: 32px 40px 40px; box-sizing: border-box; display: flex; flex-direction: column; gap: 24px")}>
                 <header style={css("display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 20px")}>
                   <div style={css("display: flex; flex-direction: column; gap: 8px")}>
                     <p style={css("margin: 0; font-size: var(--text-body-sm); color: var(--muted-2)")}>{V.todayFull}</p>
@@ -5072,7 +5074,7 @@ export default function StudioView({ V }) {
                 {" "}
                 {V.isKanban ? (
                   <>
-                    <div style={css("overflow-x: auto; padding-bottom: 8px")}>
+                    <div style={css("position: relative; overflow-x: auto; padding-bottom: 8px")}>
                       <div style={css("display: flex; gap: 16px; align-items: flex-start; width: 100%")}>
                         {(V.groups || []).map((g, g__i) => (
                           <Fragment key={g__i}>
@@ -5328,7 +5330,7 @@ export default function StudioView({ V }) {
                         <span style={css("font-size: var(--text-caption); color: var(--muted)")}>{V.tlNote}</span>
                       </div>
                       {" "}
-                      <div style={css("overflow-x: auto; border: 1px solid var(--line-3); border-radius: 20px; background: var(--surface)")}>
+                      <div style={css("position: relative; overflow-x: auto; border: 1px solid var(--line-3); border-radius: 20px; background: var(--surface)")}>
                         <div style={css(V.tl.wrapStyle)}>
                           <div style={css(V.tl.rowGrid)}>
                             <div style={css("position: sticky; left: 0; z-index: 3; background: var(--surface); border-right: 1px solid var(--col-line); border-bottom: 1px solid var(--line); display: flex; align-items: flex-end; padding: 0 20px 10px; font-size: var(--text-caption); font-weight: 600; color: var(--muted-2)")}>Project</div>
@@ -5425,7 +5427,7 @@ export default function StudioView({ V }) {
                         </div>
                       </div>
                       {" "}
-                      <div style={css("overflow-x: auto")}>
+                      <div style={css("position: relative; overflow-x: auto")}>
                         <div style={css("min-width: 840px; background: var(--surface); border: 1px solid var(--line-3); border-radius: 20px; overflow: hidden")}>
                           <div style={css("display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); border-bottom: 1px solid var(--col-line)")}>
                             {(V.cal.weekdays || []).map((wd, wd__i) => (
@@ -5815,7 +5817,7 @@ export default function StudioView({ V }) {
                                   <span style={css("flex: 1")}></span>
                                   {V.dr.filesPeek.more ? <button type="button" onClick={V.dr.filesPeek.seeAll} style={css(V.dLink + " padding: 0; min-height: 32px; border: 0; background: transparent; cursor: pointer;")}>{V.dr.filesPeek.more}</button> : null}
                                 </div>
-                                <div style={css("display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px")}>
+                                <div style={css("display: grid; grid-template-columns: repeat(auto-fill, minmax(min(140px, 100%), 1fr)); gap: 10px")}>
                                   {V.dr.filesPeek.items.map((fp) => (
                                     <a key={fp.key} href="#" onClick={fp.open} aria-label={"Open " + fp.name} style={css("display: flex; flex-direction: column; min-width: 0; border: 1px solid var(--line-4); border-radius: 12px; overflow: hidden; background: var(--surface); color: var(--ink); text-decoration: none")}>
                                       <span aria-hidden="true" style={css("aspect-ratio: 16 / 10; display: flex; align-items: center; justify-content: center; background: var(--panel); overflow: hidden")}>
@@ -5879,7 +5881,7 @@ export default function StudioView({ V }) {
                                 <span style={css("font-size: 13px; color: var(--muted)")}>{V.dr.fileCount}</span>
                               </div>
                               {V.dr.hasFiles && V.dr.isGrid ? (
-                                <ul style={css("margin: 0; padding: 0; list-style: none; display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 14px")}>
+                                <ul style={css("margin: 0; padding: 0; list-style: none; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(190px, 100%), 1fr)); gap: 14px")}>
                                   {(V.dr.assets || []).map((as) => (
                                     <li key={as.key} style={css("display: flex; flex-direction: column; min-width: 0; border: 1px solid var(--line-3); border-radius: 16px; overflow: hidden; background: var(--surface)")}>
                                       <a href="#" aria-label={as.aria} onClick={as.open} style={css("position: relative; display: flex; align-items: center; justify-content: center; aspect-ratio: 4 / 3; background: var(--panel); color: var(--ink-3); text-decoration: none")}>
@@ -6091,7 +6093,7 @@ export default function StudioView({ V }) {
               </div>
             </>
           ) : null}
-        </div>
+        </main>
       </div>
     </div>
   );
