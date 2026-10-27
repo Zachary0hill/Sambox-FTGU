@@ -99,6 +99,35 @@ textarea:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px }
   .fb-ifilter > button { min-width: 0 !important; width: 100% }
   .fb-ispacer { display: none }
 }
+/* Admin > Workload (components/studio/Workload.jsx). */
+.fb-wl-tile:hover:not(:disabled) { border-color: var(--border-strong) !important }
+.fb-wl-tile[aria-pressed="true"]:hover { border-color: var(--ink) !important }
+.fb-wl-row:hover { background: var(--surface-2) !important }
+.fb-wl-col:hover { background: var(--hover) !important }
+.fb-wl-cell:hover { box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--ink) !important }
+.fb-wl-assign:hover, .fb-wl-opt:hover, .fb-wl-chip:hover:not(:disabled) { border-color: var(--ink) !important; color: var(--ink) !important }
+.fb-wl-assign:hover { background: var(--surface) !important }
+.fb-wl-act:hover:not(:disabled) { filter: brightness(0.94) }
+.fb-wl-line:hover { background: var(--hover) !important }
+.fb-wl-dark:hover { background: rgba(255,255,255,0.12) !important }
+.fb-wl-dark:focus-visible { outline-color: #FFFFFF }
+.fb-wl-person:hover .fb-wl-pname, .fb-wl-title:hover { text-decoration: underline; text-underline-offset: 3px }
+.fb-wl-search:focus-within { border-color: var(--ink) !important }
+.fb-wl-search input:focus-visible { outline: none }
+/* Needs attention rows in a narrow card: title on its own line, then the issue, due date and action. */
+.fb-wl-att { container-type: inline-size }
+@container (max-width: 459px) {
+  .fb-wl-arow { flex-wrap: wrap; row-gap: 8px !important }
+  .fb-wl-arow > .fb-wl-atitle { order: -1; flex-basis: 100% !important }
+  .fb-wl-arow > span:first-child { min-width: 0 !important }
+  .fb-wl-arow > button { margin-left: auto }
+}
+.fb-wl-scroll { scrollbar-width: thin; scrollbar-color: var(--border-strong) transparent }
+.fb-wl-scroll::-webkit-scrollbar { height: 6px }
+.fb-wl-scroll::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 3px }
+@media (prefers-reduced-motion: no-preference) {
+  .fb-wl-anim { transition: width .25s ease, height .25s ease, background-color .2s ease, transform .2s ease, stroke-dasharray .25s ease }
+}
 /* Select picker rows (components/studio/SelectPicker.jsx): the option menu button shows on hover or highlight. */
 .fb-opt .fb-opt-more { opacity: 0 }
 .fb-opt:hover .fb-opt-more, .fb-opt[data-active] .fb-opt-more, .fb-opt-more:focus-visible { opacity: 1 }

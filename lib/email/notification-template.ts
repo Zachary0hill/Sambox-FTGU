@@ -3,7 +3,7 @@
 
 export type NotificationKind =
   | 'edit_assigned' | 'thumb_assigned' | 'edit_revision' | 'thumb_revision' | 'sponsor_changes'
-  | 'edit_review' | 'thumb_review' | 'edit_approved' | 'thumb_approved' | 'sponsor_requested' | 'sponsor_approved'
+  | 'edit_review' | 'thumb_review' | 'edit_approved' | 'thumb_approved' | 'sponsor_requested' | 'sponsor_reminder' | 'sponsor_approved'
   | 'edit_due' | 'thumb_due';
 
 const TONE = {
@@ -59,6 +59,8 @@ function copyFor(o: NotificationEmailInput): Copy {
       return { tone: 'approved', subject: 'Thumbnail approved: ' + t, heading: 'Your thumbnail is done', lead: o.actor + ' marked your thumbnail for ' + t + ' as done.' };
     case 'sponsor_requested':
       return { tone: 'review', subject: 'Approval needed: ' + t, heading: 'Your approval is needed', lead: o.workspace + ' sent ' + t + ' to ' + acct + ' for approval. Review the draft, then approve it or request changes.' };
+    case 'sponsor_reminder':
+      return { tone: 'review', subject: 'Reminder: approval needed for ' + t, heading: 'Your approval is still needed', lead: o.workspace + ' is waiting on ' + acct + ' to approve ' + t + '. Review the draft, then approve it or request changes.' };
     case 'sponsor_approved':
       return { tone: 'approved', subject: acct + ' approved ' + t, heading: acct + ' approved', lead: acct + ' approved ' + t + '. It can move to Scheduled.' };
     case 'edit_due':

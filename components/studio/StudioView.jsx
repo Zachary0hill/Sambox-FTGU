@@ -13,6 +13,7 @@ import { FilterBy, SortEditor, FilterChips, NoMatch } from './FilterBar';
 import { PropertiesPanel, GroupPanel, LayoutPanel } from './ViewPanels';
 import { AddColumnStep2, QuickAdd } from './AddColumn';
 import RecordDialog from './RecordDialog';
+import Workload from './Workload';
 import { RichText, Thinking, Steps, MsgActions, ModelPicker, ModeToggle, GearButton, AiSettings, ChatScroll } from './ChatKit';
 
 export default function StudioView({ V }) {
@@ -228,6 +229,18 @@ export default function StudioView({ V }) {
                       </>
                     ) : null}
                     {" "}
+                    {/* app: date pill (Workload) */}
+                    {V.ap.hasDate ? (
+                      <>
+                        <span style={css("display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 14px; box-sizing: border-box; border-radius: 12px; background: var(--chip); font-size: 14px; font-weight: 600; color: var(--ink-2); white-space: nowrap")}>
+                          <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M5 5h14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2zM3 10h18M8 3v4M16 3v4"></path>
+                          </svg>
+                          {V.ap.date}
+                        </span>
+                      </>
+                    ) : null}
+                    {" "}
                     {V.ap.hasGhost ? (
                       <>
                         <button type="button" onClick={V.ap.ghostPick} style={css(V.ui.btnGhost)}>{V.ap.ghost}</button>
@@ -243,6 +256,11 @@ export default function StudioView({ V }) {
                                 <path d="M8 3v10M3 8h10" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"></path>
                               </svg>
                             </>
+                          ) : null}
+                          {V.ap.hasIcon ? (
+                            <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <path d={V.ap.icon}></path>
+                            </svg>
                           ) : null}
                           {" "}{V.ap.primary}{" "}
                         </button>
@@ -601,159 +619,8 @@ export default function StudioView({ V }) {
                   </>
                 ) : null}
                 {" "}
-                {V.adm.isPM ? (
-                  <>
-                    <div style={css("display: grid; grid-template-columns: repeat(auto-fit, minmax(min(420px, 100%), 1fr)); gap: 16px; align-items: start")}>
-                      <section aria-labelledby="na-h" style={css(V.ui.panel)}>
-                        <div style={css("display: flex; align-items: center; gap: 10px")}>
-                          <h2 id="na-h" style={css(V.ui.h3)}>Needs attention</h2>
-                          {" "}
-                          <span style={css(V.ui.countPill)}>{V.adm.attnCount}</span>
-                        </div>
-                        {" "}
-                        <div style={css("display: flex; flex-direction: column; margin: 0 -20px -20px; border-top: 1px solid var(--line)")}>
-                          {(V.adm.attention || []).map((na, na__i) => (
-                            <Fragment key={na__i}>
-                              <div className="row" style={css("display: flex; align-items: center; gap: 12px; min-height: 56px; padding: 6px 12px 6px 20px; border-bottom: 1px solid var(--line); box-sizing: border-box")}>
-                                <span style={css(na.reasonStyle)}>{na.reason}</span>
-                                {" "}
-                                <span style={css("flex: 1; min-width: 0; font-size: 14px; font-weight: 600; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis")}>{na.title}</span>
-                                {" "}
-                                <span style={css(na.dueStyle)}>{na.due}</span>
-                                {" "}
-                                <button type="button" className="fb-ni" aria-label={na.aria} onClick={na.open} style={css(V.ui.ghostSm)}>Open</button>
-                              </div>
-                            </Fragment>
-                          ))}
-                          {" "}
-                          {V.adm.attnEmpty ? (
-                            <>
-                              <p style={css("margin: 0; padding: 20px; font-size: var(--text-body-sm); color: var(--muted)")}>Nothing is late or unassigned.</p>
-                            </>
-                          ) : null}
-                        </div>
-                      </section>
-                      {" "}
-                      <section aria-labelledby="wl-h" style={css(V.ui.panel)}>
-                        <h2 id="wl-h" style={css(V.ui.h3)}>Team workload</h2>
-                        {" "}
-                        <div role="table" aria-label="Team workload" style={css("position: relative; display: flex; flex-direction: column; margin: 0 -20px -20px; border-top: 1px solid var(--line); overflow-x: auto")}>
-                          <div role="row" style={css(`${V.adm.wlGrid ?? ''} min-height: 40px; border-bottom: 1px solid var(--line)`)}>
-                            <span role="columnheader" style={css(V.thStyle)}>Person</span>
-                            {" "}
-                            <span role="columnheader" style={css(V.thStyle)}>Active</span>
-                            {" "}
-                            <span role="columnheader" style={css(V.thStyle)}>Late</span>
-                            {" "}
-                            <span role="columnheader" style={css(V.thStyle)}>Next due</span>
-                            {" "}
-                            <span role="columnheader" style={css(V.thStyle)}>Load</span>
-                          </div>
-                          {" "}
-                          {(V.adm.workload || []).map((wl, wl__i) => (
-                            <Fragment key={wl__i}>
-                              <div role="row" className="row" style={css(V.adm.wlRow)}>
-                                <div role="cell" style={css("display: flex; align-items: center; gap: 10px; min-width: 0; padding: 0 16px")}>
-                                  <span aria-hidden="true" style={css(wl.avatarStyle)}>{wl.initials}</span>
-                                  {" "}
-                                  <span style={css("display: flex; flex-direction: column; min-width: 0")}>
-                                    <span style={css("font-size: 14px; font-weight: 600; color: var(--ink)")}>{wl.name}</span>
-                                    <span style={css("font-size: 12px; color: var(--muted-2)")}>{wl.role}</span>
-                                  </span>
-                                </div>
-                                {" "}
-                                <div role="cell" style={css("padding: 0 16px; font-size: 14px; font-weight: 600; font-variant-numeric: tabular-nums")}>{wl.active}</div>
-                                {" "}
-                                <div role="cell" style={css("padding: 0 16px")}>
-                                  <span style={css(wl.lateStyle)}>{wl.late}</span>
-                                </div>
-                                {" "}
-                                <div role="cell" style={css("padding: 0 16px; font-size: 13px; color: var(--ink-3); white-space: nowrap")}>{wl.next}</div>
-                                {" "}
-                                <div role="cell" style={css("display: flex; align-items: center; gap: 8px; padding: 0 16px")}>
-                                  <span aria-hidden="true" style={css("flex: 1; height: 8px; background: var(--chip-2)")}>
-                                    <span style={css(wl.barStyle)}></span>
-                                  </span>
-                                  {" "}
-                                  <span style={css("font-size: 12px; font-weight: 600; color: var(--muted); font-variant-numeric: tabular-nums")}>{wl.loadText}</span>
-                                </div>
-                              </div>
-                            </Fragment>
-                          ))}
-                        </div>
-                      </section>
-                    </div>
-                    {" "}
-                    <section aria-labelledby="wf-h" style={css(V.ui.panel)}>
-                      <h2 id="wf-h" style={css(V.ui.h3)}>Workflow</h2>
-                      {" "}
-                      <p style={css("margin: 0; font-size: 13px; color: var(--muted)")}>Every project moves through these statuses in order. Edit names and colors in Workspace Settings.</p>
-                      {" "}
-                      <ol style={css("margin: 0; padding: 0; list-style: none; display: flex; flex-wrap: wrap; align-items: center; gap: 10px 6px")}>
-                        {(V.adm.flow || []).map((fl, fl__i) => (
-                          <Fragment key={fl__i}>
-                            <li style={css("display: inline-flex; align-items: center; gap: 6px")}>
-                              <span style={css("display: inline-flex; flex-direction: column; gap: 4px")}>
-                                <span style={css(fl.style)}>{fl.label}</span>
-                                {" "}
-                                <span style={css("font-size: 11px; font-weight: 600; color: var(--muted-2)")}>{fl.stage}</span>
-                              </span>
-                              {" "}
-                              {fl.hasArrow ? (
-                                <>
-                                  <svg aria-hidden="true" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="var(--faint)" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" style={css("margin-bottom: 18px")}>
-                                    <path d="M3 8h10M9.5 4.5L13 8l-3.5 3.5"></path>
-                                  </svg>
-                                </>
-                              ) : null}
-                            </li>
-                          </Fragment>
-                        ))}
-                      </ol>
-                      {" "}
-                      <div style={css("display: grid; grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr)); gap: 20px; padding-top: 16px; border-top: 1px solid var(--line)")}>
-                        <div style={css("display: flex; flex-direction: column; gap: 12px")}>
-                          <p style={css("margin: 0; font-size: 13px; font-weight: 600; color: var(--ink-2)")}>Deadline defaults</p>
-                          {" "}
-                          {(V.adm.deadlines || []).map((dl, dl__i) => (
-                            <Fragment key={dl__i}>
-                              <div style={css("display: flex; align-items: center; justify-content: space-between; gap: 12px")}>
-                                <label htmlFor={dl.id} style={css("font-size: 14px; color: var(--ink-3)")}>{dl.label}</label>
-                                {" "}
-                                <span style={css("display: inline-flex; align-items: center; gap: 8px")}>
-                                  <input id={dl.id} type="number" min="0" max="60" value={dl.value ?? ''} onChange={dl.onChange} style={css("width: 72px; min-height: 44px; box-sizing: border-box; padding: 0 10px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface-2); font-size: 14px; color: var(--ink); text-align: center; font-variant-numeric: tabular-nums")} />
-                                  {" "}
-                                  <span style={css("font-size: 13px; color: var(--muted)")}>days</span>
-                                </span>
-                              </div>
-                            </Fragment>
-                          ))}
-                        </div>
-                        {" "}
-                        <div style={css("display: flex; flex-direction: column; gap: 4px")}>
-                          <p style={css("margin: 0 0 8px; font-size: 13px; font-weight: 600; color: var(--ink-2)")}>Rules</p>
-                          {" "}
-                          {(V.adm.rules || []).map((ru, ru__i) => (
-                            <Fragment key={ru__i}>
-                              <div style={css("display: flex; align-items: center; justify-content: space-between; gap: 12px")}>
-                                <span style={css("display: flex; flex-direction: column; gap: 2px")}>
-                                  <span style={css("font-size: 14px; color: var(--ink)")}>{ru.label}</span>
-                                  <span style={css("font-size: 12px; color: var(--muted-2)")}>{ru.desc}</span>
-                                </span>
-                                {" "}
-                                <button type="button" role="switch" aria-checked={ru.on} aria-label={ru.label} onClick={ru.toggle} style={css(V.ui.swBtn)}>
-                                  <span aria-hidden="true" style={css(ru.track)}>
-                                    <span style={css(ru.knob)}></span>
-                                  </span>
-                                </button>
-                              </div>
-                            </Fragment>
-                          ))}
-                        </div>
-                      </div>
-                    </section>
-                  </>
-                ) : null}
+                {/* app: Workload page (components/studio/Workload.jsx) */}
+                {V.adm.isPM ? <Workload w={V.adm.wl} /> : null}
                 {" "}
                 {V.adm.isClients ? (
                   <>
