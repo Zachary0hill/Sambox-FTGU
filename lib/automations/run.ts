@@ -7,6 +7,7 @@ import { postSlackAlert } from '@/lib/integrations/providers/slack';
 import { postN8n } from '@/lib/integrations/providers/n8n';
 import { publishProjectToBuffer, PublishSetupError } from '@/lib/integrations/buffer-publish';
 import { actionById, actionsOf, triggerOf, triggerText } from './catalog';
+import { isGraph, graphOf, fillTokens, delayText, FIELDS, type Node, type Crit } from './graph';
 
 // The automation runner. Database triggers queue automation_runs rows when a live workflow's trigger fires; each tick
 // (the board after a change, and a scheduler with CRON_SECRET) queues scheduled triggers, claims due runs, performs
@@ -17,15 +18,30 @@ import { actionById, actionsOf, triggerOf, triggerText } from './catalog';
 //   skipped  the workflow was turned off or deleted, or Pause all automations is on
 //   test     a Test run: actions described, nothing sent or changed
 // Actions that already worked are not repeated on a retry (output.done), so a retry never double-posts.
+//
+// Flows built in the flow builder (lib/automations/graph.ts) walk their graph instead: a split takes the first path
+// whose criteria match the project (remembered in output.paths, so a resumed run keeps its path), a delay parks the
+// run as retry with output.waiting until it is due, and a task adds a To-Do. output.done then lists node ids.
+// Processes and ideas never run.
 
 type Run = {
   id: string; automation_id: string; workspace_id: string; project_id: string | null; trigger_key: string | null; status: string;
-  payload: Record<string, unknown> | null; output: { done?: string[]; steps?: Step[] } | null; attempts: number; is_test: boolean;
+  payload: Record<string, unknown> | null; output: Output | null; attempts: number; is_test: boolean;
 };
-type Step = { action: string; ok: boolean; detail: string };
-type Automation = { id: string; workspace_id: string; name: string; enabled: boolean; is_draft: boolean; trigger: Record<string, string>; actions: unknown; run_count: number };
+// waitClaims: claims spent resuming from delays since the last manual retry; tries leave them out.
+type Output = { done?: string[]; steps?: Step[]; waited?: string[]; waitClaims?: number; paths?: Record<string, string>; waiting?: boolean };
+type Step = { id?: string; action: string; ok: boolean; detail: string };
+type Automation = { id: string; workspace_id: string; name: string; enabled: boolean; is_draft: boolean; trigger: Record<string, string>; actions: unknown; flow: unknown; run_count: number };
 type Settings = { workspace_id: string; automation: { paused?: boolean; retry?: boolean; failAlert?: boolean } | null; timezone: string };
-type Project = { id: string; workspace_id: string; title: string; job_code: string; status_id: string; publish_date: string | null; archived_at: string | null };
+type Project = {
+  id: string; workspace_id: string; title: string; job_code: string; status_id: string; publish_date: string | null; archived_at: string | null;
+  channel_id: string | null; content_type_id: string | null;
+};
+// What splits check and tokens fill: the project's people, sponsor and channel.
+type Facts = {
+  channel: string; sponsorId: string | null; sponsor: string; approval: string; editorId: string | null; editor: string; editStatus: string;
+  designerId: string | null; designer: string;
+};
 
 const MAX_TRIES = 3;
 const RETRY_MIN = 5;
@@ -33,11 +49,11 @@ const RETRY_MIN = 5;
 // A failure that trying again cannot fix.
 class Permanent extends Error {}
 
-export type RunSummary = { scheduled: number; done: number; retried: number; failed: number; skipped: number; pruned: number };
+export type RunSummary = { scheduled: number; done: number; retried: number; waiting: number; failed: number; skipped: number; pruned: number };
 
 export async function runAutomations(opts: { workspaceId: string | null; baseUrl: string; limit?: number }): Promise<RunSummary> {
   const admin = supabaseAdmin();
-  const out: RunSummary = { scheduled: 0, done: 0, retried: 0, failed: 0, skipped: 0, pruned: 0 };
+  const out: RunSummary = { scheduled: 0, done: 0, retried: 0, waiting: 0, failed: 0, skipped: 0, pruned: 0 };
   const sched = await admin.rpc('queue_scheduled_automations', { p_ws: opts.workspaceId });
   if (sched.error) throw new Error(sched.error.message);
   out.scheduled = Number(sched.data) || 0;
@@ -55,24 +71,26 @@ export async function runAutomations(opts: { workspaceId: string | null; baseUrl
 }
 
 // A Test run: the workflow's actions on a sample project (the most recently created), described but not performed.
-export async function testAutomation(workspaceId: string, automationId: string, baseUrl: string) {
+// flow: the builder's unsaved graph, so testing never has to save (and change) a live automation first.
+export async function testAutomation(workspaceId: string, automationId: string, baseUrl: string, flow?: unknown) {
   const admin = supabaseAdmin();
   const p = await admin.from('projects').select('id').eq('workspace_id', workspaceId).is('archived_at', null)
     .order('created_at', { ascending: false }).limit(1).maybeSingle();
   const a = await admin.from('automations').select('*').eq('id', automationId).eq('workspace_id', workspaceId).maybeSingle();
   if (a.error || !a.data) throw new Error('That workflow was not found.');
-  const t = triggerOf(a.data.trigger as Record<string, string>);
+  const draft = isGraph(flow) ? graphOf({ flow }) : null;
+  const t = draft ? { key: draft.trigger.key, value: draft.trigger.value } : triggerOf(a.data.trigger as Record<string, string>);
   const ins = await admin.from('automation_runs').insert({
     automation_id: automationId, workspace_id: workspaceId, project_id: p.data ? p.data.id : null, trigger_key: t.key,
     status: 'running', is_test: true, attempts: 1, payload: { value: t.value, sample: true },
   }).select('*').single();
   if (ins.error) throw new Error(ins.error.message);
-  await executeRun(ins.data as Run, baseUrl);
+  await executeRun(ins.data as Run, baseUrl, draft);
   const done = await admin.from('automation_runs').select('*').eq('id', ins.data.id).single();
   return done.data;
 }
 
-async function executeRun(r: Run, baseUrl: string): Promise<'done' | 'test' | 'retry' | 'failed' | 'skipped'> {
+async function executeRun(r: Run, baseUrl: string, draft?: ReturnType<typeof graphOf> | null): Promise<'done' | 'test' | 'retry' | 'waiting' | 'failed' | 'skipped'> {
   const admin = supabaseAdmin();
   const finish = async (status: string, patch: Record<string, unknown>) => {
     const res = await admin.from('automation_runs').update({ status, finished_at: status === 'retry' ? null : new Date().toISOString(), ...patch }).eq('id', r.id);
@@ -93,52 +111,173 @@ async function executeRun(r: Run, baseUrl: string): Promise<'done' | 'test' | 'r
     return 'skipped';
   }
 
-  const p = r.project_id ? ((await admin.from('projects').select('id, workspace_id, title, job_code, status_id, publish_date, archived_at').eq('id', r.project_id).maybeSingle()).data as Project | null) : null;
+  const graph = draft || (isGraph(a.flow) ? graphOf(a) : null);
+  if (graph && graph.kind !== 'automation') { await finish('skipped', { error: 'Processes and ideas do not run.' }); return 'skipped'; }
+
+  const p = r.project_id ? ((await admin.from('projects').select('id, workspace_id, title, job_code, status_id, publish_date, archived_at, channel_id, content_type_id').eq('id', r.project_id).maybeSingle()).data as Project | null) : null;
   const statuses = ((await admin.from('project_statuses').select('id, label, sort').eq('workspace_id', r.workspace_id).order('sort')).data || []) as { id: string; label: string; sort: number }[];
   const statusName = (id: string | null | undefined) => (statuses.find((x) => x.id === id) || { label: '' }).label;
-  const trig = triggerOf(a.trigger);
+  const trig = graph && r.is_test ? { key: graph.trigger.key, value: graph.trigger.value } : triggerOf(a.trigger);
   const why = triggerText(trig.key, trig.value);
   const link = p ? baseUrl.replace(/\/+$/, '') + '/projects?project=' + encodeURIComponent(p.job_code) : baseUrl.replace(/\/+$/, '') + '/projects';
   const subject = p ? p.title + ' (' + p.job_code + ')' : 'no project';
-  const ctx: Ctx = { r, a, p, statuses, statusName, why, link, subject, workspace, test: r.is_test };
+  // Splits and tokens read the project's people, sponsor and channel; older workflows use neither.
+  const facts = p && graph ? await factsOf(p) : null;
+  const tokens: Record<string, string> = {
+    'project.title': p ? p.title : '', 'project.job': p ? p.job_code : '', 'project.status': p ? statusName(p.status_id) : '',
+    'project.channel': facts ? facts.channel : '', 'project.publish_date': p && p.publish_date ? p.publish_date : '', 'project.link': link,
+    'project.sponsor': facts ? facts.sponsor : '', 'project.editor': facts ? facts.editor : '', 'project.designer': facts ? facts.designer : '',
+    trigger: why, 'flow.name': a.name, 'workspace.name': workspace,
+  };
+  const ctx: Ctx = { r, a, p, statuses, statusName, why, link, subject, workspace, test: r.is_test, tokens };
 
-  const prior = (r.output && r.output.done) || [];
-  const steps: Step[] = ((r.output && r.output.steps) || []).filter((x) => prior.includes(x.action));
+  const prev = r.output || {};
+  const prior = prev.done || [];
+  const steps: Step[] = (prev.steps || []).filter((x) => prior.includes(x.id || x.action));
   const done = prior.slice();
+  const waited = (prev.waited || []).slice();
+  const paths = { ...(prev.paths || {}) };
   let failure: Error | null = null;
-  for (const act of actionsOf(a.actions)) {
-    if (done.includes(act.key)) continue;
+  let waitMs = 0;
+  // One step: runs once, recorded under id (node id for flows, action key for older workflows).
+  const step = async (id: string, action: string, fn: () => Promise<string>) => {
+    if (done.includes(id)) return true;
     try {
-      const detail = await perform(act.key, act.message, ctx);
-      steps.push({ action: act.key, ok: true, detail });
-      done.push(act.key);
+      steps.push({ id, action, ok: true, detail: await fn() });
+      done.push(id);
+      return true;
     } catch (err) {
       failure = err instanceof Error ? err : new Error(String(err));
-      steps.push({ action: act.key, ok: false, detail: failure.message });
-      break;
+      steps.push({ id, action, ok: false, detail: failure.message });
+      return false;
     }
+  };
+  const walkSteps = async (list: Node[]): Promise<boolean> => {
+    for (const n of list) {
+      if (n.type === 'note') continue;
+      if (n.type === 'split') {
+        const all = n.paths || [];
+        let pick = all.find((x) => x.id === paths[n.id]);
+        if (!pick) {
+          pick = all.find((x, i) => i < all.length - 1 && x.when.length > 0 && x.when.every((c) => matches(c, p, facts, statusName))) || all[all.length - 1];
+          if (!pick) continue;
+          paths[n.id] = pick.id;
+          steps.push({ id: n.id, action: 'split', ok: true, detail: (n.name || 'Split') + ': took ' + pick.name + '.' });
+          done.push(n.id);
+        }
+        if (!(await walkSteps(pick.steps))) return false;
+        continue;
+      }
+      if (n.type === 'delay') {
+        if (done.includes(n.id)) continue;
+        const ms = (Number(n.amount) || 0) * (n.unit === 'minutes' ? 60000 : n.unit === 'hours' ? 3600000 : 86400000);
+        const text = delayText(n);
+        if (!r.is_test && ms > 0 && !waited.includes(n.id)) { waited.push(n.id); waitMs = ms; return false; }
+        await step(n.id, 'delay', async () => (r.is_test ? 'Would ' + text.toLowerCase() + '.' : text.replace(/^Wait/, 'Waited') + '.'));
+        continue;
+      }
+      if (n.type === 'task') {
+        if (!(await step(n.id, 'task', () => addTask(n, ctx)))) return false;
+        continue;
+      }
+      if (n.type === 'action' && n.key) {
+        const key = n.key;
+        if (!(await step(n.id, key, () => perform(key, n.message || '', ctx)))) return false;
+      }
+    }
+    return true;
+  };
+  if (graph) await walkSteps(graph.steps);
+  else for (const act of actionsOf(a.actions)) if (!(await step(act.key, act.key, () => perform(act.key, act.message, ctx)))) break;
+  const waitClaims = prev.waitClaims || 0;
+  const output: Output & Record<string, unknown> = { done, steps, waited, waitClaims, paths, trigger: why, project: p ? { id: p.id, job: p.job_code, title: p.title } : null };
+
+  // A delay: park the run until it is due. The claim counts it as a try, so tries below leave delays out.
+  if (waitMs && !failure) {
+    await finish('retry', { output: { ...output, waiting: true, waitClaims: waitClaims + 1 }, error: null, next_attempt_at: new Date(Date.now() + waitMs).toISOString() });
+    return 'waiting';
   }
-  const output = { done, steps, trigger: why, project: p ? { id: p.id, job: p.job_code, title: p.title } : null };
 
   if (!failure) {
     await finish(r.is_test ? 'test' : 'done', { output, error: null, next_attempt_at: null });
     if (!r.is_test) await admin.from('automations').update({ run_count: (a.run_count || 0) + 1, last_run_at: new Date().toISOString() }).eq('id', a.id);
     return r.is_test ? 'test' : 'done';
   }
-  const retry = !r.is_test && auto.retry !== false && !(failure instanceof Permanent) && r.attempts < MAX_TRIES;
+  const fail: Error = failure;
+  const tries = r.attempts - waitClaims;
+  const retry = !r.is_test && auto.retry !== false && !(fail instanceof Permanent) && tries < MAX_TRIES;
   if (retry) {
-    await finish('retry', { output, error: failure.message, next_attempt_at: new Date(Date.now() + RETRY_MIN * r.attempts * 60000).toISOString() });
+    await finish('retry', { output, error: fail.message, next_attempt_at: new Date(Date.now() + RETRY_MIN * Math.max(1, tries) * 60000).toISOString() });
     return 'retry';
   }
-  await finish('failed', { output, error: failure.message, next_attempt_at: null });
-  if (!r.is_test && auto.failAlert !== false) await alertFailure(ctx, failure.message);
+  await finish('failed', { output, error: fail.message, next_attempt_at: null });
+  if (!r.is_test && auto.failAlert !== false) await alertFailure(ctx, fail.message);
   return 'failed';
 }
 
 type Ctx = {
   r: Run; a: Automation; p: Project | null; statuses: { id: string; label: string; sort: number }[]; statusName: (id: string | null | undefined) => string;
-  why: string; link: string; subject: string; workspace: string; test: boolean;
+  why: string; link: string; subject: string; workspace: string; test: boolean; tokens: Record<string, string>;
 };
+
+async function factsOf(p: Project): Promise<Facts> {
+  const admin = supabaseAdmin();
+  const [ch, sp, ed, th] = await Promise.all([
+    p.channel_id ? admin.from('channels').select('name').eq('id', p.channel_id).maybeSingle() : Promise.resolve({ data: null }),
+    admin.from('sponsorships').select('account_id, approval_status').eq('project_id', p.id).limit(1).maybeSingle(),
+    admin.from('project_edits').select('editor_id, edit_status').eq('project_id', p.id).maybeSingle(),
+    admin.from('project_thumbnails').select('designer_id').eq('project_id', p.id).maybeSingle(),
+  ]);
+  const s = sp.data as { account_id: string; approval_status: string } | null;
+  const e = ed.data as { editor_id: string | null; edit_status: string | null } | null;
+  const t = th.data as { designer_id: string | null } | null;
+  const ids = [e && e.editor_id, t && t.designer_id].filter(Boolean) as string[];
+  const [acct, people] = await Promise.all([
+    s ? admin.from('accounts').select('name').eq('id', s.account_id).maybeSingle() : Promise.resolve({ data: null }),
+    ids.length ? admin.from('profiles').select('id, full_name, email').in('id', ids) : Promise.resolve({ data: [] }),
+  ]);
+  const nameOf = (id: string | null | undefined) => {
+    const x = ((people.data || []) as { id: string; full_name: string; email: string }[]).find((y) => y.id === id);
+    return x ? x.full_name || x.email : '';
+  };
+  return {
+    channel: ((ch.data || {}) as { name?: string }).name || '', sponsorId: s ? s.account_id : null, sponsor: ((acct.data || {}) as { name?: string }).name || '',
+    approval: s ? s.approval_status : '', editorId: e ? e.editor_id : null, editor: nameOf(e && e.editor_id), editStatus: (e && e.edit_status) || '',
+    designerId: t ? t.designer_id : null, designer: nameOf(t && t.designer_id),
+  };
+}
+
+// One split criterion against the project. Without a project nothing matches, so the run takes Everyone else.
+function matches(c: Crit, p: Project | null, f: Facts | null, statusName: (id: string | null | undefined) => string) {
+  if (!p || !f || !FIELDS.some((x) => x.key === c.field)) return false;
+  const v: Record<string, string | null> = {
+    status: statusName(p.status_id), channel: p.channel_id, type: p.content_type_id, sponsor: f.sponsorId, approval: f.approval || null,
+    editor: f.editorId, edit_status: f.editStatus || null, designer: f.designerId, publish_date: p.publish_date,
+  };
+  const have = v[c.field];
+  if (c.op === 'set') return !!have;
+  if (c.op === 'empty') return !have;
+  const same = (have || '').toLowerCase() === (c.value || '').toLowerCase();
+  return c.op === 'is' ? same : !same;
+}
+
+// A task step: a To-Do for its owner, or for every Super Admin when it has none.
+async function addTask(n: Node, ctx: Ctx): Promise<string> {
+  const admin = supabaseAdmin();
+  const note = fillTokens(n.note || '', ctx.tokens).trim();
+  const text = (fillTokens(n.title || ctx.a.name, ctx.tokens) + (ctx.p ? ': ' + ctx.p.title + ' (' + ctx.p.job_code + ')' : '') + (note ? ' — ' + note : '')).slice(0, 500);
+  let owners: string[] = [];
+  if (n.owner) {
+    const m = await admin.from('workspace_members').select('user_id').eq('workspace_id', ctx.r.workspace_id).eq('user_id', n.owner).eq('status', 'active').maybeSingle();
+    if (m.data) owners = [n.owner];
+  }
+  if (!owners.length) owners = (await admins(ctx.r.workspace_id)).map((x) => x.id);
+  if (!owners.length) throw new Permanent('There is nobody to give the task to.');
+  if (ctx.test) return 'Would add the task "' + text + '" for ' + owners.length + ' ' + (owners.length === 1 ? 'person' : 'people') + '.';
+  const ins = await admin.from('tasks').insert(owners.map((o) => ({ workspace_id: ctx.r.workspace_id, owner_id: o, text, priority: 'med', project_id: ctx.p ? ctx.p.id : null })));
+  if (ins.error) throw new Error(ins.error.message);
+  return 'Added the task "' + text + '" for ' + owners.length + ' ' + (owners.length === 1 ? 'person' : 'people') + '.';
+}
 
 async function admins(ws: string) {
   const admin = supabaseAdmin();
@@ -162,7 +301,7 @@ async function perform(key: string, message: string, ctx: Ctx): Promise<string> 
   const def = actionById(key);
   if (!def) throw new Permanent('Unknown action ' + key + '.');
   const { p, a } = ctx;
-  const note = (message || '').trim();
+  const note = fillTokens(message || '', ctx.tokens).trim();
 
   if (key === 'slack_admin') {
     const text = '*' + a.name + '*: ' + ctx.why + (p ? ' on ' + ctx.subject : '') + (note ? '\n' + note : '') + '\n' + ctx.link;

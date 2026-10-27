@@ -11,7 +11,10 @@ export async function POST(request: Request, ctx: RouteContext<'/api/automations
   if (!isSuperAdmin(m)) return deny('Only a Super Admin can retry automation runs.');
   const ws = m.ctx.workspace_id;
   const admin = supabaseAdmin();
-  const res = await admin.from('automation_runs').update({ status: 'queued', attempts: 0, next_attempt_at: null, error: null })
+  // Tries start over, so do the delay claims the runner leaves out of them (lib/automations/run.ts).
+  const cur = await admin.from('automation_runs').select('output').eq('id', id).eq('workspace_id', ws).maybeSingle();
+  const output = cur.data && cur.data.output ? { ...(cur.data.output as Record<string, unknown>), waitClaims: 0 } : null;
+  const res = await admin.from('automation_runs').update({ status: 'queued', attempts: 0, next_attempt_at: null, error: null, ...(output ? { output } : {}) })
     .eq('id', id).eq('workspace_id', ws).eq('status', 'failed').select('id');
   if (res.error) return deny(res.error.message, 400);
   if (!(res.data || []).length) return deny('Only failed runs can be retried.', 400);
