@@ -35,6 +35,8 @@ export default defineConfig({
     await page.getByLabel('Password', { exact: true }).fill(env.QA_PASSWORD);
     await page.getByRole('button', { name: 'Sign in', exact: true }).click();
     await page.waitForURL((url) => !url.pathname.startsWith('/login'), { timeout: 60_000 });
+    // Wait for the board itself, so the catch-all route is compiled before pages are visited in parallel.
+    await page.getByRole('button', { name: 'Sign out' }).or(page.getByText('Projects', { exact: true }).first()).first().waitFor({ timeout: 180_000 });
   },
   pages: PAGES.map(([id, path, label]) => ({ id, path, label })),
   viewports: ['desktop', 'mobile'],
@@ -55,5 +57,7 @@ export default defineConfig({
   sweep: {
     chromeSelectors: ['nav', 'header', 'aside'],
   },
-  concurrency: 3,
+  // The runner's container is slower than a laptop: Settings' sweep alone ran past 180s there.
+  limits: { pageMs: 300_000, runMs: 55 * 60_000 },
+  concurrency: 2,
 });
