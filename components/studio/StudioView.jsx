@@ -1446,9 +1446,9 @@ export default function StudioView({ V }) {
                 {V.adm.isUpdates ? (
                   <div style={css("display: flex; flex-direction: column; gap: 16px; max-width: 760px")}>
                     {(V.adm.releases || []).map((r) => (
-                      <article key={r.id} aria-labelledby={'rel-' + r.id} style={css("padding: 20px 24px; border: 1px solid var(--line); border-radius: 16px; background: var(--surface)")}>
+                      <article key={r.id} aria-labelledby={'rel-' + r.id} style={css("padding: 20px 24px 20px 28px; border: 1px solid var(--line); border-left: 3px solid #3DB46D; border-radius: 16px; background: var(--surface); box-shadow: 0 1px 2px rgba(0,0,0,0.05), 0 8px 24px rgba(0,0,0,0.06)")}>
                         <div style={css("display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-bottom: 4px")}>
-                          <span style={css("font-size: 13px; color: var(--muted-2); font-variant-numeric: tabular-nums")}>{r.date}</span>
+                          <time dateTime={r.at} style={css("font-size: 13px; color: var(--muted-2); font-variant-numeric: tabular-nums")}>{r.date}{r.time ? ' · ' + r.time : ''}</time>
                           {r.latest ? <span style={css(V.ui.countPill)}>Latest</span> : null}
                         </div>
                         <h2 id={'rel-' + r.id} style={css(V.ui.h3)}>{r.title}</h2>
