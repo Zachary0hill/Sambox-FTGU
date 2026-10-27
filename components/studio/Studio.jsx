@@ -14,7 +14,7 @@ import { UI_ROLE, first } from '@/lib/studio/model';
 import { css } from '@/lib/studio/css';
 
 const NAV_PATH = {
-  daily: '/daily', projects: '/projects', ideas: '/ideas', brand: '/brand', alerts: '/inbox', content: '/content', settings: '/settings',
+  daily: '/daily', projects: '/projects', ideas: '/ideas', brand: '/brand', alerts: '/inbox', content: '/content', perf: '/performance', settings: '/settings',
   team: '/admin/users', roles: '/admin/roles', pm: '/admin/workload', clients: '/admin/clients', finance: '/admin/finance',
   auto: '/admin/automations', logs: '/admin/logs', updates: '/admin/updates', workspace: '/admin/workspace',
 };
