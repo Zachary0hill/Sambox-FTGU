@@ -15,7 +15,7 @@ import { css } from '@/lib/studio/css';
 const NAV_PATH = {
   daily: '/daily', projects: '/projects', ideas: '/ideas', brand: '/brand', alerts: '/inbox', content: '/content', settings: '/settings',
   team: '/admin/users', roles: '/admin/roles', pm: '/admin/workload', clients: '/admin/clients', finance: '/admin/finance',
-  auto: '/admin/automations', logs: '/admin/logs', workspace: '/admin/workspace',
+  auto: '/admin/automations', logs: '/admin/logs', updates: '/admin/updates', workspace: '/admin/workspace',
 };
 const PATH_NAV = Object.fromEntries(Object.entries(NAV_PATH).map(([k, v]) => [v, k]));
 const ACCT_KEY = 'ftgu.account';
@@ -101,6 +101,13 @@ export default function Studio({ initialPath, initialProject }) {
   const switchAccount = useCallback((id) => { writeAcct(id); set({ openJob: '' }); reload(); }, [reload, set]);
 
   useEffect(() => { reload(); sb.rpc('touch_presence'); }, [reload, sb]);
+
+  // Connector cards open the matching credential form, including cards below the fold.
+  useEffect(() => {
+    if (s?.nav !== 'workspace' || s?.wsTab !== 'integ' || !s?.integFocus) return;
+    const card = document.getElementById('ig-card-' + s.integFocus);
+    if (card) { card.scrollIntoView({ block: 'center' }); card.focus({ preventScroll: true }); }
+  }, [s?.nav, s?.wsTab, s?.integFocus]);
 
   // Keep the URL in step with the page and the open project.
   useEffect(() => {

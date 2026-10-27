@@ -3,7 +3,7 @@
 // integrations.config.
 
 export type ProviderId =
-  | 'anthropic' | 'openai' | 'gemini' | 'monday' | 'apify' | 'browserbase' | 'firecrawl' | 'slack' | 'youtube' | 'buffer' | 'n8n';
+  | 'anthropic' | 'openai' | 'gemini' | 'monday' | 'apify' | 'browserbase' | 'firecrawl' | 'slack' | 'youtube' | 'buffer' | 'n8n' | 'drive' | 'gmail' | 'frame';
 
 export type ProviderGroup = 'ai' | 'projects' | 'research' | 'inbox' | 'content' | 'automation';
 
@@ -27,6 +27,9 @@ export type ProviderDef = {
   keyUrl: string;
   fields: ProviderField[];
   canSync?: boolean;
+  description?: string;
+  setupNote?: string;
+  credentialLabel?: string;
 };
 
 export const GROUPS: [ProviderGroup, string, string][] = [
@@ -41,6 +44,38 @@ export const GROUPS: [ProviderGroup, string, string][] = [
 export const AI_PROVIDERS: ProviderId[] = ['anthropic', 'openai', 'gemini'];
 
 export const PROVIDERS: ProviderDef[] = [
+  {
+    id: 'drive', name: 'Google Drive', group: 'projects',
+    description: 'Connect a Google account for project files and folders.',
+    docs: 'https://developers.google.com/identity/protocols/oauth2/web-server',
+    keyUrl: 'https://console.cloud.google.com/apis/credentials', credentialLabel: 'Set up OAuth credentials',
+    setupNote: 'Enable the Drive API and authorize your own Google OAuth client with offline access (drive.file scope). Enter its client ID, client secret and refresh token below. API keys cannot access private files. This connects and tests credentials; automatic project folders and uploads are not wired yet.',
+    fields: [
+      { key: 'clientId', label: 'OAuth client ID', secret: true, placeholder: '...apps.googleusercontent.com' },
+      { key: 'clientSecret', label: 'OAuth client secret', secret: true },
+      { key: 'refreshToken', label: 'OAuth refresh token', secret: true, help: 'Authorize with your own client in Google OAuth Playground; request offline access. See the setup guide for steps.' },
+    ],
+  },
+  {
+    id: 'gmail', name: 'Gmail', group: 'inbox',
+    description: 'Connect a Gmail account for workspace email.',
+    docs: 'https://developers.google.com/identity/protocols/oauth2/web-server',
+    keyUrl: 'https://console.cloud.google.com/apis/credentials', credentialLabel: 'Set up OAuth credentials',
+    setupNote: 'Enable the Gmail API and authorize your own Google OAuth client with offline access and gmail.send + gmail.metadata scopes. Enter its client ID, client secret and refresh token. This connects and tests credentials; sponsor links and invoices still use the existing email delivery service.',
+    fields: [
+      { key: 'clientId', label: 'OAuth client ID', secret: true, placeholder: '...apps.googleusercontent.com' },
+      { key: 'clientSecret', label: 'OAuth client secret', secret: true },
+      { key: 'refreshToken', label: 'OAuth refresh token', secret: true, help: 'Use your own client in Google OAuth Playground. A refresh token from another client will not work. See the setup guide for steps.' },
+    ],
+  },
+  {
+    id: 'frame', name: 'Frame.io', group: 'projects',
+    description: 'Connect a Frame.io V4 account for draft review.',
+    docs: 'https://developer.frame.io/platform/v4/docs/quick-start',
+    keyUrl: 'https://developer.adobe.com/console/', credentialLabel: 'Get Frame.io credentials',
+    setupNote: 'Use a Frame.io V4 OAuth access token from Adobe. Tokens expire; replace it here when it expires. Legacy V2 developer tokens are not supported. This tests account access; timecoded review import is not wired yet.',
+    fields: [{ key: 'accessToken', label: 'OAuth access token', secret: true, help: 'Generate a token for the Frame.io V4 API using Adobe Developer Console.' }],
+  },
   {
     id: 'anthropic', name: 'Claude', group: 'ai',
     docs: 'https://docs.claude.com/en/api/overview', keyUrl: 'https://console.anthropic.com/settings/keys',

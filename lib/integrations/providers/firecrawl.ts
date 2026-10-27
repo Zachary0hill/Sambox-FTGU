@@ -70,15 +70,16 @@ export async function firecrawlScrape(apiKey: string, url: string): Promise<Fire
   return { url: String(meta.url || meta.sourceURL || u.toString()), title: String(meta.title || ''), markdown: String(d.markdown || '') };
 }
 
-// Credit usage is a read-only call that needs a valid key. A 404 there means no usage record yet, not a bad key.
+// Only Firecrawl's documented missing-usage response is accepted as an authenticated 404.
 const provider: ProviderModule = {
   async verify(secret) {
     const res = await fetch(API + '/team/credit-usage', {
       headers: { Authorization: 'Bearer ' + secret.apiKey }, signal: AbortSignal.timeout(15000),
     });
-    if (res.ok || res.status === 404) return null;
-    if (res.status === 401 || res.status === 403) return 'The API key was not accepted.';
     const j = await res.json().catch(() => null);
+    if (res.ok && j?.success === true && j.data) return null;
+    if (res.status === 404 && j?.error === 'Could not find credit usage information') return null;
+    if (res.status === 401 || res.status === 403) return 'The API key was not accepted.';
     return (j && typeof j.error === 'string' && j.error) || 'Firecrawl returned HTTP ' + res.status + '.';
   },
 };

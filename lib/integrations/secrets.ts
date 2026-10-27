@@ -15,6 +15,7 @@ export async function getIntegration(workspaceId: string, provider: ProviderId):
     admin.from('integrations').select('config, status').eq('workspace_id', workspaceId).eq('provider', provider).maybeSingle(),
   ]);
   if (sec.error) throw new Error(sec.error.message);
+  if (row.error) throw new Error(row.error.message);
   if (!sec.data || !row.data || row.data.status !== 'connected') return null;
   return { secret: sec.data as Secret, config: (row.data.config || {}) as Config };
 }

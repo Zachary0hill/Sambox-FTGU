@@ -28,6 +28,32 @@ export default function StudioView({ V }) {
       {V.colDel.open ? <DeleteColumnDialog d={V.colDel} dark={V.dark} /> : null}
       {/* app: Edit property side sheet (components/studio/PropertySheet.jsx) */}
       {V.sheet.open ? <PropertySheet key={V.sheet.key} p={V.sheet} dark={V.dark} /> : null}
+      {/* app: What's New pop-up, shown once per Super Admin for the newest entry in lib/studio/releases.js */}
+      {V.wn.open ? (
+        <>
+          <button type="button" aria-label="Close dialog" onClick={V.wn.close} style={css("position: fixed; inset: 0; z-index: 40; border: 0; background: rgba(17,17,17,0.32); cursor: default")}></button>
+          <dialog open aria-modal="true" aria-labelledby="wn-title" onKeyDown={V.wn.onKey} style={css(V.ui.dialog + " width: 560px; max-height: calc(100vh - 64px); overflow-y: auto")}>
+            <div style={css("display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 16px")}>
+              <div>
+                <p style={css("margin: 0 0 6px; font-size: 12px; font-weight: 600; color: var(--muted-2); letter-spacing: 0.02em")}>What’s new · {V.wn.date}</p>
+                <h2 id="wn-title" style={css("margin: 0; font-family: var(--font-title); font-size: var(--text-h4); font-weight: var(--weight-black); letter-spacing: -0.02em")}>{V.wn.title}</h2>
+              </div>
+              <button type="button" className="fb-ni" aria-label="Close" onClick={V.wn.close} style={css(V.ui.iconBtn)}>
+                <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                  <path d="M18 6 6 18M6 6l12 12"></path>
+                </svg>
+              </button>
+            </div>
+            <ul style={css("margin: 0; padding: 0 0 0 20px; display: flex; flex-direction: column; gap: 10px; font-size: var(--text-body-sm); line-height: 1.5; color: var(--ink-3)")}>
+              {V.wn.items.map((it, i) => <li key={i}>{it}</li>)}
+            </ul>
+            <div style={css("display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; margin-top: 24px")}>
+              <button type="button" onClick={V.wn.viewAll} style={css(V.ui.btnGhost)}>See all updates</button>
+              <button type="button" autoFocus onClick={V.wn.close} style={css(V.ui.btnPrimary)}>Got it</button>
+            </div>
+          </dialog>
+        </>
+      ) : null}
       {/* app: New project dialog, built from the design's dialog, field and dropdown styles */}
       {V.np.open ? (
         <>
@@ -1477,6 +1503,24 @@ export default function StudioView({ V }) {
                   </>
                 ) : null}
                 {" "}
+                {/* app: What's New, every release in lib/studio/releases.js, newest first */}
+                {V.adm.isUpdates ? (
+                  <div style={css("display: flex; flex-direction: column; gap: 16px; max-width: 760px")}>
+                    {(V.adm.releases || []).map((r) => (
+                      <article key={r.id} aria-labelledby={'rel-' + r.id} style={css("padding: 20px 24px; border: 1px solid var(--line); border-radius: 16px; background: var(--surface)")}>
+                        <div style={css("display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-bottom: 4px")}>
+                          <span style={css("font-size: 13px; color: var(--muted-2); font-variant-numeric: tabular-nums")}>{r.date}</span>
+                          {r.latest ? <span style={css(V.ui.countPill)}>Latest</span> : null}
+                        </div>
+                        <h2 id={'rel-' + r.id} style={css(V.ui.h3)}>{r.title}</h2>
+                        <ul style={css("margin: 12px 0 0; padding: 0 0 0 20px; display: flex; flex-direction: column; gap: 8px; font-size: 14px; line-height: 1.5; color: var(--ink-3)")}>
+                          {r.items.map((it, i) => <li key={i}>{it}</li>)}
+                        </ul>
+                      </article>
+                    ))}
+                  </div>
+                ) : null}
+                {" "}
                 {V.adm.isWorkspace ? (
                   <>
                     <div style={css("display: flex; flex-wrap: wrap; gap: 24px; align-items: flex-start")}>
@@ -1834,7 +1878,7 @@ export default function StudioView({ V }) {
                                   </div>
                                   <div style={css("display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr)); gap: 16px; align-items: start")}>
                                     {igg.cards.map((ic) => (
-                                      <article key={ic.id} style={css("display: flex; flex-direction: column; gap: 14px; padding: 18px; box-sizing: border-box; border: 1px solid var(--line); border-radius: 18px; background: var(--surface); min-width: 0")}>
+                                      <article key={ic.id} id={'ig-card-' + ic.id} tabIndex={-1} aria-label={ic.name + ' connection settings'} style={css("display: flex; flex-direction: column; gap: 14px; padding: 18px; box-sizing: border-box; border: 1px solid var(--line); border-radius: 18px; background: var(--surface); min-width: 0")}>
                                         <div style={css("display: flex; align-items: center; gap: 12px")}>
                                           <span aria-hidden="true" style={css(ic.tileStyle)}>{ic.initials}</span>
                                           <span style={css("flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px")}>
@@ -1844,6 +1888,7 @@ export default function StudioView({ V }) {
                                           <span style={css(ic.statusStyle)}>{ic.status}</span>
                                         </div>
                                         <p style={css("margin: 0; font-size: 13px; line-height: 1.45; color: var(--muted)")}>{ic.desc}</p>
+                                        {ic.setupNote ? <p style={css("margin: 0; font-size: 12px; line-height: 1.5; color: var(--muted-2)")}>{ic.setupNote}</p> : null}
                                         {ic.hasErr ? (
                                           <p role="alert" style={css("margin: 0; font-size: 13px; line-height: 1.45; color: var(--red-ink)")}>{ic.err}</p>
                                         ) : null}
@@ -1855,13 +1900,13 @@ export default function StudioView({ V }) {
                                             <div key={fl.id} style={css("display: flex; flex-direction: column; gap: 6px")}>
                                               <label htmlFor={fl.id} style={css(V.fieldLabel)}>{fl.label}</label>
                                               {fl.isSelect ? (
-                                                <select id={fl.id} value={fl.value} onChange={fl.onInput} style={css(V.fieldInput)}>
+                                                <select id={fl.id} disabled={ic.disabled} value={fl.value} onChange={fl.onInput} style={css(V.fieldInput)}>
                                                   {fl.options.map((o) => (
                                                     <option key={o.value} value={o.value}>{o.label}</option>
                                                   ))}
                                                 </select>
                                               ) : (
-                                                <input id={fl.id} type={fl.type} value={fl.value} onChange={fl.onInput} placeholder={fl.placeholder} autoComplete={fl.auto} spellCheck={false} style={css(V.fieldInput)} />
+                                                <input id={fl.id} disabled={ic.disabled} type={fl.type} value={fl.value} onChange={fl.onInput} placeholder={fl.placeholder} autoComplete={fl.auto} spellCheck={false} style={css(V.fieldInput)} />
                                               )}
                                               {fl.hasHelp ? (
                                                 <span style={css("font-size: 12px; line-height: 1.4; color: var(--muted-2)")}>{fl.help}</span>
@@ -1869,17 +1914,17 @@ export default function StudioView({ V }) {
                                             </div>
                                           ))}
                                           <div style={css("display: flex; flex-wrap: wrap; gap: 8px")}>
-                                            <button type="submit" aria-label={ic.saveAria} style={css(V.ui.btnPrimary)}>{ic.saveLabel}</button>
+                                            <button type="submit" disabled={ic.disabled} aria-label={ic.saveAria} style={css(V.ui.btnPrimary)}>{ic.saveLabel}</button>
                                             {ic.canSync ? (
-                                              <button type="button" aria-label={ic.syncAria} onClick={ic.sync} style={css(V.ui.btnGhost)}>{ic.syncLabel}</button>
+                                              <button type="button" disabled={ic.disabled} aria-label={ic.syncAria} onClick={ic.sync} style={css(V.ui.btnGhost)}>{ic.syncLabel}</button>
                                             ) : null}
                                             {ic.canDisconnect ? (
-                                              <button type="button" aria-label={ic.disconnectAria} onClick={ic.disconnect} style={css(V.ui.btnDanger)}>Disconnect</button>
+                                              <button type="button" disabled={ic.disabled} aria-label={ic.disconnectAria} onClick={ic.disconnect} style={css(V.ui.btnDanger)}>Disconnect</button>
                                             ) : null}
                                           </div>
                                         </form>
                                         <div style={css("display: flex; flex-wrap: wrap; gap: 16px; font-size: 13px")}>
-                                          <a href={ic.keyUrl} target="_blank" rel="noreferrer" style={css("color: var(--link); text-decoration: underline; text-underline-offset: 3px")}>Get a key</a>
+                                          <a href={ic.keyUrl} target="_blank" rel="noreferrer" style={css("color: var(--link); text-decoration: underline; text-underline-offset: 3px")}>{ic.credentialLabel}</a>
                                           <a href={ic.docs} target="_blank" rel="noreferrer" style={css("color: var(--link); text-decoration: underline; text-underline-offset: 3px")}>API docs</a>
                                         </div>
                                       </article>
@@ -3139,6 +3184,43 @@ export default function StudioView({ V }) {
                           </div>
                         </section>
                         {" "}
+                        <section aria-labelledby="br-social" style={css(V.ui.panel)}>
+                          <div style={css("display: flex; align-items: center; justify-content: space-between; gap: 8px")}>
+                            <h3 id="br-social" style={css(V.ui.h3)}>Social links</h3>
+                            {V.br.canEdit && V.br.hasSocials ? (
+                              <button type="button" className="fb-ni" onClick={V.br.openEdit} style={css(V.ui.ghostSm)}>Edit links</button>
+                            ) : null}
+                          </div>
+                          {/* app: empty state when the brand has no links saved */}
+                          {!V.br.hasSocials ? (
+                            <div style={css("display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 20px 12px; text-align: center")}>
+                              <p style={css("margin: 0; font-size: 15px; font-weight: 600; color: var(--ink)")}>No social links added</p>
+                              <p style={css("margin: 0; max-width: 46ch; font-size: 13px; line-height: 1.5; color: var(--muted)")}>{V.br.socialsNote}</p>
+                              {V.br.canEdit ? (
+                                <button type="button" onClick={V.br.openEdit} style={css(V.ui.btnPrimary + " margin-top: 4px;")}>Add links</button>
+                              ) : null}
+                            </div>
+                          ) : (
+                            <div style={css("display: flex; flex-direction: column; margin: 0 -20px -20px; border-top: 1px solid var(--line)")}>
+                              {(V.br.socials || []).map((so, so__i) => (
+                                <Fragment key={so__i}>
+                                  <div className="row" style={css("display: flex; align-items: center; gap: 12px; min-height: 60px; padding: 8px 12px 8px 20px; border-bottom: 1px solid var(--line); box-sizing: border-box")}>
+                                    <span aria-hidden="true" style={css("width: 36px; height: 36px; flex: none; border-radius: 10px; display: inline-flex; align-items: center; justify-content: center; background: var(--chip-2); color: var(--ink-2); font-size: 14px; font-weight: 700")}>{so.initial}</span>
+                                    {" "}
+                                    <span style={css("flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px")}>
+                                      <span style={css("font-size: 14px; font-weight: 600; color: var(--ink)")}>{so.name}</span>
+                                      <span style={css("font-size: 12px; color: var(--muted-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis")}>{so.handle}</span>
+                                    </span>
+                                    {" "}
+                                    <button type="button" className="fb-ni" aria-label={so.copyAria} onClick={so.copy} style={css(V.ui.ghostSm)}>{so.btn}</button>
+                                    <a href={so.url} target="_blank" rel="noopener noreferrer" aria-label={so.openAria} style={css(V.ui.ghostSm + " text-decoration: none; display: inline-flex; align-items: center;")}>Open</a>
+                                  </div>
+                                </Fragment>
+                              ))}
+                            </div>
+                          )}
+                        </section>
+                        {" "}
                         {V.br.rulesNote ? (
                           <section aria-labelledby="br-voice" style={css(V.ui.panel)}>
                             <h3 id="br-voice" style={css(V.ui.h3)}>Voice and rules</h3>
@@ -3381,6 +3463,20 @@ export default function StudioView({ V }) {
                                   <textarea id="be-donts" rows="4" placeholder="One per line" value={V.br.edit.donts} onChange={V.br.edit.onDonts} style={css(V.ids.textarea)} />
                                 </div>
                               </div>
+                            </div>
+                            <div role="group" aria-labelledby="be-social" style={css("display: flex; flex-direction: column; gap: 8px; padding-top: 16px; border-top: 1px solid var(--line)")}>
+                              <h3 id="be-social" style={css(V.ui.h3)}>Social links</h3>
+                              <p style={css("margin: 0; font-size: 12px; color: var(--muted-2)")}>Paste a profile or channel link. The platform is detected from the link unless you pick one.</p>
+                              {(V.br.edit.socials || []).map((r, r__i) => (
+                                <div key={r__i} style={css("display: flex; flex-wrap: wrap; align-items: center; gap: 8px")}>
+                                  <select aria-label={"Link " + (r__i + 1) + " platform"} value={r.platform} onChange={r.onPlatform} style={css("flex: 1; min-width: 0; min-height: 40px; box-sizing: border-box; padding: 0 12px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface-2); font-size: 14px; color: var(--ink); flex: 0 0 160px; cursor: pointer")}>
+                                    {(V.br.edit.socialOpts || []).map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+                                  </select>
+                                  <input type="url" inputMode="url" autoComplete="off" aria-label={"Link " + (r__i + 1) + " address"} placeholder="instagram.com/yourbrand" value={r.url} onChange={r.onUrl} style={css("flex: 1; min-width: 0; min-height: 40px; box-sizing: border-box; padding: 0 12px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface-2); font-size: 14px; color: var(--ink); flex-basis: 200px")} />
+                                  <button type="button" className="fb-ni" aria-label={r.aria} onClick={r.remove} style={css(V.ui.iconBtn)}><svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M18 6 6 18M6 6l12 12"></path></svg></button>
+                                </div>
+                              ))}
+                              <button type="button" onClick={V.br.edit.addSocial} style={css("align-self: flex-start; min-height: 36px; padding: 0 12px; border: 1px dashed var(--border-strong); border-radius: 10px; background: transparent; color: var(--ink-2); font-size: 13px; font-weight: 600; cursor: pointer")}>Add link</button>
                             </div>
                             <div role="group" aria-labelledby="be-secs" style={css("display: flex; flex-direction: column; gap: 8px; padding-top: 16px; border-top: 1px solid var(--line)")}>
                               <h3 id="be-secs" style={css(V.ui.h3)}>More rules</h3>
@@ -5605,7 +5701,7 @@ export default function StudioView({ V }) {
                     <button type="button" aria-label="Close project details" onClick={V.closeDrawer} style={css("position: fixed; inset: 0; z-index: 44; border: 0; background: rgba(17,17,17,0.32); cursor: default")}></button>
                     {" "}
                     {/* app: wider drawer (Widen panel toggles it); files dropped anywhere on it upload, or attach on Comments */}
-                    <dialog open aria-modal="true" aria-labelledby="drawer-title" className={"fb-dlg" + (V.dr.split ? " fb-dlg-split" : "")} onDragOver={V.dr.onDragOver} onDragLeave={V.dr.onDragLeave} onDrop={V.dr.onDrop} style={css(V.dr.panelStyle)}>
+                    <dialog open aria-modal="true" aria-labelledby="drawer-title" className={"fb-dlg" + (V.dr.split ? " fb-dlg-split" : "")} onKeyDown={V.dr.onKey} onDragOver={V.dr.onDragOver} onDragLeave={V.dr.onDragLeave} onDrop={V.dr.onDrop} style={css(V.dr.panelStyle)}>
                       {V.dr.dragging ? (
                         <div aria-hidden="true" style={css("position: absolute; inset: 10px; z-index: 5; display: flex; align-items: center; justify-content: center; border: 2px dashed var(--ink); border-radius: 20px; background: color-mix(in srgb, var(--surface) 88%, transparent); font-size: 16px; font-weight: 700; color: var(--ink); pointer-events: none")}>{V.dr.dropText}</div>
                       ) : null}

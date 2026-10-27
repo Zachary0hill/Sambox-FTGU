@@ -49,7 +49,7 @@ async function call<T = Record<string, unknown>>(token: string, method: string, 
   const clean = Object.fromEntries(Object.entries(params).filter(([, v]) => v !== undefined && v !== '').map(([k, v]) => [k, String(v)]));
   for (let attempt = 0; ; attempt++) {
     const res = await fetch(API + method, {
-      method: 'POST', cache: 'no-store',
+      method: 'POST', cache: 'no-store', signal: AbortSignal.timeout(15000),
       headers: { Authorization: 'Bearer ' + token, 'Content-Type': json ? 'application/json; charset=utf-8' : 'application/x-www-form-urlencoded' },
       body: json ? JSON.stringify(clean) : new URLSearchParams(clean).toString(),
     });

@@ -12,7 +12,10 @@ import slack from './slack';
 import youtube from './youtube';
 import buffer from './buffer';
 import n8n from './n8n';
+import drive from './drive';
+import gmail from './gmail';
+import frame from './frame';
 
 export const MODULES: Record<ProviderId, ProviderModule> = {
-  anthropic, openai, gemini, monday, apify, browserbase, firecrawl, slack, youtube, buffer, n8n,
+  anthropic, openai, gemini, monday, apify, browserbase, firecrawl, slack, youtube, buffer, n8n, drive, gmail, frame,
 };
