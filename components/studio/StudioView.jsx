@@ -1187,7 +1187,7 @@ export default function StudioView({ V }) {
                                 {(sec2.items || []).map((wc, wc__i) => (
                                   <Fragment key={wc__i}>
                                     <article className="fb-card" style={css(wc.cardStyle)}>
-                                      <div aria-hidden="true" style={css("position: relative; height: 150px; background: var(--surface-2); border-bottom: 1px solid var(--line); overflow: hidden")}>
+                                      <div aria-hidden="true" onClick={wc.edit} style={css("position: relative; height: 150px; background: var(--surface-2); border-bottom: 1px solid var(--line); overflow: hidden; cursor: pointer")}>
                                         <svg viewBox="0 0 1000 150" preserveAspectRatio="none" style={css("position: absolute; inset: 0; width: 100%; height: 100%")}>
                                           <path d={wc.path} fill="none" stroke="var(--border-strong)" strokeWidth="1.5" vectorEffect="non-scaling-stroke"></path>
                                         </svg>
@@ -1202,7 +1202,7 @@ export default function StudioView({ V }) {
                                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                             <path d="M6 3a3 3 0 1 0 0 6 3 3 0 0 0 0-6zM18 15a3 3 0 1 0 0 6 3 3 0 0 0 0-6zM6 9v3a3 3 0 0 0 3 3h6"></path>
                                           </svg>
-                                          Workflow
+                                          {wc.kindLabel}
                                         </span>
                                         {" "}
                                         <span style={css(wc.chipR)}>{wc.app}</span>
@@ -1212,13 +1212,15 @@ export default function StudioView({ V }) {
                                         <div style={css("display: flex; align-items: center; gap: 4px")}>
                                           <h3 style={css(wc.titleStyle)}>{wc.name}</h3>
                                           {" "}
-                                          <button type="button" role="switch" aria-checked={wc.on} aria-label={wc.aria} onClick={wc.toggle} style={css(V.ui.swBtn)}>
-                                            <span aria-hidden="true" style={css(wc.track)}>
-                                              <span style={css(wc.knob)}></span>
-                                            </span>
-                                          </button>
+                                          {wc.runnable ? (
+                                            <button type="button" role="switch" aria-checked={wc.on} aria-label={wc.aria} onClick={wc.toggle} style={css(V.ui.swBtn)}>
+                                              <span aria-hidden="true" style={css(wc.track)}>
+                                                <span style={css(wc.knob)}></span>
+                                              </span>
+                                            </button>
+                                          ) : null}
                                           {" "}
-                                          {/* app: edit the workflow's trigger, actions and messages */}
+                                          {/* app: open the flow in the flow builder (components/studio/FlowBuilder.jsx) */}
                                           <button type="button" className="fb-ni" aria-label={wc.editAria} title="Edit" onClick={wc.edit} style={css("height: 40px; min-width: 40px; flex: none; padding: 0; border: 0; border-radius: 10px; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; background: transparent; color: var(--muted-2)")}>
                                             <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"></path></svg>
                                           </button>
@@ -1245,6 +1247,12 @@ export default function StudioView({ V }) {
                                           <span style={css("font-weight: 600; color: var(--ink-3)")}>Then</span>
                                           {" "}{wc.then}.
                                         </p>
+                                        {wc.tagText ? (
+                                          <p style={css("display: flex; align-items: center; gap: 6px; margin: 0; font-size: 12px; color: var(--muted-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis")}>
+                                            <svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={css("flex: none")}><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82zM7 7h.01"></path></svg>
+                                            <span style={css("overflow: hidden; text-overflow: ellipsis")}>{wc.tagText}</span>
+                                          </p>
+                                        ) : null}
                                         {" "}
                                         <div style={css("display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding-right: 6px")}>
                                           <span style={css(wc.statusStyle)}>{wc.status}</span>

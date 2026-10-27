@@ -5,6 +5,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import StudioView from './StudioView';
 import DevNotes from './DevNotes';
+import { FlowLayer } from './FlowBuilder';
 import { supabaseBrowser } from '@/lib/supabase/client';
 import { loadContext, loadWorkspace, loadPortalDetail } from '@/lib/studio/load';
 import { makeActions } from '@/lib/studio/actions';
@@ -34,6 +35,8 @@ const initialUi = (c, data, path, project) => {
     density: prefs.density || 'Comfortable', view: prefs.view || settings.default_view || 'table',
     person: 'All', ftype: {}, fchannel: {}, fstatus: {}, sort: 'default', hidden: {}, groupBy: 'stage', closed: {},
     q: '', menu: '', todos: false, added: {}, modal: '', mq: '', newColName: '',
+    // The flow builder stays open across a reload (/admin/automations?flow=<id>).
+    flowOpen: (typeof window === 'undefined' ? '' : new URLSearchParams(window.location.search).get('flow')) || '',
   };
 };
 const writeAcct = (id) => { try { window.localStorage.setItem(ACCT_KEY, id); } catch { /* storage off */ } };
@@ -112,13 +115,13 @@ export default function Studio({ initialPath, initialProject }) {
   // Keep the URL in step with the page and the open project.
   useEffect(() => {
     if (!s) return;
-    const url = (NAV_PATH[s.nav] || '/projects') + (s.openJob ? '?project=' + encodeURIComponent(s.openJob) : '');
+    const url = (NAV_PATH[s.nav] || '/projects') + (s.openJob ? '?project=' + encodeURIComponent(s.openJob) : s.nav === 'auto' && s.flowOpen && s.flowOpen !== 'new' ? '?flow=' + encodeURIComponent(s.flowOpen) : '');
     if (window.location.pathname + window.location.search !== url) window.history.pushState({ nav: s.nav, openJob: s.openJob }, '', url);
-  }, [s && s.nav, s && s.openJob]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [s && s.nav, s && s.openJob, s && s.flowOpen]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
     const onPop = () => {
       const p = new URLSearchParams(window.location.search).get('project') || '';
-      set({ nav: navFromPath(window.location.pathname), openJob: p });
+      set({ nav: navFromPath(window.location.pathname), openJob: p, flowOpen: new URLSearchParams(window.location.search).get('flow') || '' });
     };
     window.addEventListener('popstate', onPop);
     return () => window.removeEventListener('popstate', onPop);
@@ -232,6 +235,8 @@ export default function Studio({ initialPath, initialProject }) {
   hotkey.current = V.ids && V.ids.hotkey;
   // Dev Notes dock (press N), Super Admins only. Rendered inside the board root so it picks up the theme tokens.
   V.devNotes = me.uiRole === 'admin' ? <DevNotes sb={sb} me={me} workspaceId={ctx.workspace_id} /> : null;
+  // Automations > New flow and the flow builder canvas (s.flowOpen: 'new' or a workflow id).
+  V.flowLayer = me.uiRole === 'admin' && s.flowOpen ? <FlowLayer D={D} A={A} open={s.flowOpen} set={set} /> : null;
   return <StudioView V={V} />;
 }
 
