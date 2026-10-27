@@ -20,6 +20,7 @@ export default function StudioView({ V }) {
     <div style={css(V.rootStyle)} onClickCapture={(e) => { const a = e.target.closest && e.target.closest('a[href="#"]'); if (a) e.preventDefault(); }}>
       {/* app: Dev Notes floating dock for Super Admins (press N) */}
       {V.devNotes}
+      {V.flowLayer}
       {/* app: record dialogs (templates, finance records, automations, two-step sign in) */}
       {V.rec ? <RecordDialog d={V.rec} /> : null}
       {/* app: toast for save confirmations and database errors */}
@@ -835,11 +836,41 @@ export default function StudioView({ V }) {
                               <div style={css("flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px")}>
                                 <h2 id="acct-detail-h" style={css(V.ui.h3)}>{V.adm.acct.name}</h2>
                                 {" "}
-                                <span style={css("font-size: 13px; color: var(--muted-2)")}>{V.adm.acct.contact}</span>
+                                <span style={css("font-size: 13px; color: var(--muted-2); overflow-wrap: anywhere")}>{V.adm.acct.contactText}</span>
                               </div>
                               {" "}
                               <span style={css(V.adm.acct.typeStyle)}>{V.adm.acct.typeLabel}</span>
+                              {" "}
+                              {/* app: edit the account's name, contact email and type */}
+                              {!V.adm.acct.edit.on ? <button type="button" className="fb-ni" onClick={V.adm.acct.edit.start} style={css(V.ui.ghostSm)}>Edit</button> : null}
                             </div>
+                            {" "}
+                            {V.adm.acct.edit.on ? (
+                              <div role="group" aria-label="Edit account" style={css("display: flex; flex-direction: column; gap: 14px; padding: 16px; border: 1px solid var(--line); border-radius: 14px")}>
+                                <div style={css("display: flex; flex-direction: column; gap: 6px")}>
+                                  <label htmlFor="ae-name" style={css(V.fieldLabel)}>Account name</label>
+                                  <input id="ae-name" type="text" autoComplete="off" value={V.adm.acct.edit.name} onChange={V.adm.acct.edit.onName} style={css(V.fieldInput)} />
+                                </div>
+                                <div style={css("display: flex; flex-direction: column; gap: 6px")}>
+                                  <label htmlFor="ae-email" style={css(V.fieldLabel)}>Contact email</label>
+                                  <input id="ae-email" type="email" autoComplete="off" placeholder="name@company.com" value={V.adm.acct.edit.email} onChange={V.adm.acct.edit.onEmail} style={css(V.fieldInput)} />
+                                </div>
+                                <div role="group" aria-labelledby="ae-type-label" style={css("display: flex; flex-direction: column; gap: 6px")}>
+                                  <p id="ae-type-label" style={css(V.fieldLabel)}>Account type</p>
+                                  <div style={css("display: flex; gap: 8px")}>
+                                    {(V.adm.acct.edit.types || []).map((et, et__i) => (
+                                      <button key={et__i} type="button" aria-pressed={et.pressed} onClick={et.pick} style={css(et.style)}>{et.label}</button>
+                                    ))}
+                                  </div>
+                                  {V.adm.acct.edit.typeNote ? <p style={css("margin: 0; font-size: 12px; line-height: 1.4; color: var(--muted)")}>{V.adm.acct.edit.typeNote}</p> : null}
+                                </div>
+                                {V.adm.acct.edit.hasErr ? <p role="alert" style={css("margin: 0; padding: 10px 12px; border-radius: 10px; background: var(--red-soft); color: var(--red-ink); font-size: 13px; font-weight: 600")}>{V.adm.acct.edit.err}</p> : null}
+                                <div style={css("display: flex; justify-content: flex-end; gap: 8px")}>
+                                  <button type="button" className="fb-ni" onClick={V.adm.acct.edit.cancel} style={css(V.ui.btnGhost)}>Cancel</button>
+                                  <button type="button" onClick={V.adm.acct.edit.save} style={css(V.ui.btnPrimary)}>{V.adm.acct.edit.saveLabel}</button>
+                                </div>
+                              </div>
+                            ) : null}
                             {" "}
                             <div style={css("display: flex; flex-direction: column; gap: 8px")}>
                               <p style={css("margin: 0; font-size: 13px; font-weight: 600; color: var(--ink-2)")}>Projects</p>
@@ -951,6 +982,12 @@ export default function StudioView({ V }) {
                                 ))}
                               </div>
                             </div>
+                            {" "}
+                            {/* app: send the portal invite as soon as the account is added */}
+                            <label style={css("display: flex; align-items: center; gap: 10px; font-size: 14px; color: var(--ink); cursor: pointer")}>
+                              <input type="checkbox" checked={!!V.adm.naInvite} onChange={V.adm.onNaInvite} style={css("width: 16px; height: 16px; margin: 0; accent-color: var(--ink)")} />
+                              Send portal invite now
+                            </label>
                             {" "}
                             {V.adm.hasAcctErr ? (
                               <>
