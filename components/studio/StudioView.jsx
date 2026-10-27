@@ -873,25 +873,47 @@ export default function StudioView({ V }) {
                             ) : null}
                             {" "}
                             <div style={css("display: flex; flex-direction: column; gap: 8px")}>
-                              <p style={css("margin: 0; font-size: 13px; font-weight: 600; color: var(--ink-2)")}>Projects</p>
-                              {" "}
+                              <div style={css("display: flex; align-items: center; justify-content: space-between; gap: 8px")}>
+                                <p style={css("margin: 0; font-size: 13px; font-weight: 600; color: var(--ink-2)")}>{V.adm.acct.projectsLabel}</p>
+                                {/* app: link an unsponsored project to this sponsor */}
+                                {V.adm.acct.link.show ? <button type="button" className="fb-ni" aria-expanded={V.adm.acct.link.exp} onClick={V.adm.acct.link.toggle} style={css(V.ui.ghostSm)}>{V.adm.acct.link.open ? "Done" : "Link project"}</button> : null}
+                              </div>
+                              {V.adm.acct.link.open ? (
+                                <div style={css("display: flex; flex-direction: column; gap: 6px; padding: 10px; border: 1px solid var(--line); border-radius: 12px")}>
+                                  <label htmlFor="link-q" style={css("position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap")}>Search projects to link</label>
+                                  <input id="link-q" type="search" autoComplete="off" placeholder="Search unsponsored projects" value={V.adm.acct.link.q} onChange={V.adm.acct.link.onQ} style={css(V.fieldInput)} />
+                                  <div role="list" aria-label="Projects to link" style={css("display: flex; flex-direction: column")}>
+                                    {(V.adm.acct.link.items || []).map((li, li__i) => (
+                                      <div role="listitem" key={li__i}>
+                                        <button type="button" className="mitem" onClick={li.pick} aria-label={"Link " + li.title} style={css("width: 100%; display: flex; flex-direction: column; align-items: flex-start; gap: 2px; min-height: 44px; padding: 6px 8px; border: 0; border-radius: 8px; background: transparent; text-align: left; cursor: pointer")}>
+                                          <span style={css("font-size: 14px; color: var(--ink)")}>{li.title}</span>
+                                          <span style={css("font-size: 12px; color: var(--muted-2)")}>{li.sub}</span>
+                                        </button>
+                                      </div>
+                                    ))}
+                                  </div>
+                                  {V.adm.acct.link.empty ? <p style={css("margin: 0; padding: 4px 8px; font-size: 13px; color: var(--muted)")}>{V.adm.acct.link.emptyText}</p> : null}
+                                  {V.adm.acct.link.more ? <p style={css("margin: 0; padding: 0 8px; font-size: 12px; color: var(--muted-2)")}>{V.adm.acct.link.more}</p> : null}
+                                </div>
+                              ) : null}
                               {(V.adm.acct.projects || []).map((ap2, ap2__i) => (
                                 <Fragment key={ap2__i}>
-                                  <div style={css("display: flex; align-items: center; gap: 10px; min-height: 44px; border-bottom: 1px solid var(--line)")}>
-                                    <span style={css("flex: 1; min-width: 0; font-size: 14px; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis")}>{ap2.title}</span>
-                                    {" "}
-                                    <span style={css(ap2.statusStyle)}>{ap2.status}</span>
-                                    {" "}
-                                    <button type="button" className="fb-ni" aria-label={ap2.aria} onClick={ap2.open} style={css(V.ui.ghostSm)}>Open</button>
+                                  <div style={css("display: flex; flex-direction: column; gap: 4px; padding: 6px 0; border-bottom: 1px solid var(--line)")}>
+                                    <div style={css("display: flex; align-items: center; gap: 8px; min-height: 36px")}>
+                                      <span style={css("flex: 1; min-width: 0; font-size: 14px; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis")}>{ap2.title}</span>
+                                      {" "}
+                                      {ap2.hasApproval ? <span title="Sponsor approval" style={css(ap2.approvalStyle)}>{ap2.approval}</span> : null}
+                                      <span style={css(ap2.statusStyle)}>{ap2.status}</span>
+                                      {" "}
+                                      <button type="button" className="fb-ni" aria-label={ap2.aria} onClick={ap2.open} style={css(V.ui.ghostSm)}>Open</button>
+                                      {ap2.canUnlink ? <button type="button" className="fb-ni" aria-label={ap2.unlinkAria} onClick={ap2.unlink} style={css(V.ui.ghostSm + " color: var(--red-ink);")}>{ap2.unlinkLabel}</button> : null}
+                                    </div>
+                                    {ap2.hasDeliverables ? <p style={css("margin: 0; font-size: 12px; line-height: 1.4; color: var(--muted); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden")}>{ap2.deliverables}</p> : null}
+                                    {ap2.unlinkNote ? <p role="status" style={css("margin: 0; font-size: 12px; color: var(--red-ink)")}>{ap2.unlinkNote}</p> : null}
                                   </div>
                                 </Fragment>
                               ))}
-                              {" "}
-                              {V.adm.acct.noProjects ? (
-                                <>
-                                  <p style={css("margin: 0; font-size: 13px; color: var(--muted)")}>No projects linked yet.</p>
-                                </>
-                              ) : null}
+                              {V.adm.acct.noProjects ? <p style={css("margin: 0; font-size: 13px; color: var(--muted)")}>{V.adm.acct.emptyText}</p> : null}
                             </div>
                             {" "}
                             <div style={css("display: flex; flex-direction: column; gap: 4px")}>
