@@ -271,6 +271,8 @@ export default function StudioView({ V }) {
                 {" "}
                 {V.adm.isUsers ? (
                   <>
+                    {/* app: invite email health (app/api/email/health) */}
+                    {V.adm.mailWarn ? <p role="status" style={css("margin: 0 0 16px; padding: 12px 14px; border-radius: 12px; background: var(--amber-soft); color: var(--amber-ink); font-size: 13px; line-height: 1.45; font-weight: 600")}>{V.adm.mailWarn}</p> : null}
                     <div style={css("display: flex; flex-wrap: wrap; gap: 4px; align-items: center; padding-bottom: 20px; border-bottom: 1px solid var(--line)")}>
                       <div style={css("position: relative; display: flex; align-items: center; flex: 1 1 200px; max-width: 280px; margin-right: 4px")}>
                         <label htmlFor="team-search" style={css("position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap")}>Search users</label>
@@ -757,6 +759,8 @@ export default function StudioView({ V }) {
                 {" "}
                 {V.adm.isClients ? (
                   <>
+                    {/* app: invite email health (app/api/email/health) */}
+                    {V.adm.mailWarn ? <p role="status" style={css("margin: 0 0 16px; padding: 12px 14px; border-radius: 12px; background: var(--amber-soft); color: var(--amber-ink); font-size: 13px; line-height: 1.45; font-weight: 600")}>{V.adm.mailWarn}</p> : null}
                     <div style={css("display: flex; flex-wrap: wrap; gap: 4px; align-items: center; padding-bottom: 20px; border-bottom: 1px solid var(--line)")}>
                       <div style={css("position: relative; display: flex; align-items: center; flex: 1 1 200px; max-width: 280px; margin-right: 4px")}>
                         <label htmlFor="acct-search" style={css("position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap")}>Search accounts</label>

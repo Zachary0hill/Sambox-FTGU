@@ -3,6 +3,12 @@ import { Resend } from 'resend';
 
 const DEFAULT_FROM = 'FTGU Studio <onboarding@resend.dev>';
 
+// Whether invites can reach anyone: a Resend key is set, and the sender is not Resend's onboarding@resend.dev test address.
+export function emailHealth() {
+  const from = process.env.EMAIL_FROM || DEFAULT_FROM;
+  return { configured: !!process.env.RESEND_API_KEY, sandboxSender: /@resend\.dev>?\s*$/i.test(from) };
+}
+
 export type SendResult = { sent: true; id: string } | { sent: false; error: string };
 
 // Sends through Resend. Never throws: callers decide how to report a failed send.
