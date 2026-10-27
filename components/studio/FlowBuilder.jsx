@@ -13,8 +13,33 @@ import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
 import { css } from '@/lib/studio/css';
 import { TRIGGERS, ACTIONS, actionById, triggerById, triggerText } from '@/lib/automations/catalog';
 import {
-  KINDS, TAG_TYPES, FIELDS, OPS, TOKENS, ACTION_GROUPS, emptyGraph, graphOf, compile, issuesOf, newId, walk,
+  KINDS, TAG_TYPES, FIELDS, OPS, TOKENS, ACTION_GROUPS, emptyGraph, graphOf, compile, issuesOf, newId, walk, stepCount, delayText, plural,
 } from '@/lib/automations/graph';
+
+// Unsaved changes in the open builder. Studio.jsx checks it on browser Back and asks instead of closing the builder.
+export const flowGuard = { dirty: false, url: '', ask: null };
+
+// Modal layers: everything outside the layer is inert while it is open (no tabbing into the page underneath), focus
+// moves in on open and goes back where it was on close.
+function useModal(ref, focusSel) {
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return undefined;
+    const before = document.activeElement;
+    const off = [];
+    for (let n = el; n.parentElement && n !== document.body; n = n.parentElement) {
+      for (const sib of n.parentElement.children) {
+        if (sib !== n && !sib.hasAttribute('inert') && sib.tagName !== 'SCRIPT' && sib.tagName !== 'STYLE') { sib.setAttribute('inert', ''); off.push(sib); }
+      }
+    }
+    const first = (focusSel && el.querySelector(focusSel)) || el.querySelector('button, input, select, textarea');
+    if (first && !el.contains(document.activeElement)) first.focus({ preventScroll: true });
+    return () => {
+      off.forEach((x) => x.removeAttribute('inert'));
+      if (before && typeof before.focus === 'function' && document.contains(before)) before.focus({ preventScroll: true });
+    };
+  }, []);
+}
 
 // ---------- Icons ----------
 const IC = {
@@ -201,7 +226,7 @@ function MessageField({ id, label, value, onChange, placeholder, rows = 4 }) {
     requestAnimationFrame(() => { if (el) { el.focus(); el.setSelectionRange(at + tok.length, at + tok.length); } });
   };
   return (
-    <div style={css('position: relative; display: flex; flex-direction: column; gap: 6px;')}>
+    <div style={css('position: relative; display: flex; flex-direction: column; gap: 6px;')} onKeyDown={(e) => { if (e.key === 'Escape' && open) { e.stopPropagation(); setOpen(false); } }}>
       <div style={css('display: flex; align-items: center; gap: 8px;')}>
         <label htmlFor={id} style={css(S.label + ' flex: 1;')}>{label}</label>
         <button type="button" aria-haspopup="menu" aria-expanded={open} onClick={() => setOpen(!open)} style={css('display: inline-flex; align-items: center; gap: 4px; height: 28px; padding: 0 8px; border: 0; border-radius: 8px; background: var(--chip); color: var(--ink-2); font-size: 12px; font-weight: 600; cursor: pointer; font-family: inherit;')}>
@@ -293,6 +318,8 @@ export function CreateFlowDialog({ D, A, onCreated, onClose }) {
   const [tags, setTags] = useState([]);
   const [busy, setBusy] = useState(false);
   const sources = useMemo(() => tagSources(D).list, [D]);
+  const layer = useRef(null);
+  useModal(layer, '#cf-name');
   const create = async (e) => {
     e.preventDefault();
     if (!name.trim() || busy) return;
@@ -302,7 +329,7 @@ export function CreateFlowDialog({ D, A, onCreated, onClose }) {
     if (row) onCreated(row);
   };
   return (
-    <div style={css('position: fixed; inset: 0; z-index: 70; display: flex; align-items: center; justify-content: center; padding: 16px; box-sizing: border-box; background: rgba(0,0,0,0.45);')} onKeyDown={(e) => { if (e.key === 'Escape') onClose(); }}>
+    <div ref={layer} style={css('position: fixed; inset: 0; z-index: 70; display: flex; align-items: center; justify-content: center; padding: 16px; box-sizing: border-box; background: rgba(0,0,0,0.45);')} onKeyDown={(e) => { if (e.key === 'Escape') onClose(); }}>
       <form role="dialog" aria-modal="true" aria-labelledby="cf-title" onSubmit={create}
         style={css('width: 560px; max-width: 100%; max-height: calc(100vh - 32px); overflow-y: auto; box-sizing: border-box; padding: 28px 32px; background: var(--surface); border-radius: 20px; box-shadow: 0 24px 80px rgba(0,0,0,0.25); display: flex; flex-direction: column; gap: 20px; color: var(--ink); font-family: var(--font-main);')}>
         <div style={css('display: flex; align-items: center; gap: 12px;')}>
@@ -311,7 +338,7 @@ export function CreateFlowDialog({ D, A, onCreated, onClose }) {
         </div>
         <div style={css('display: flex; flex-direction: column; gap: 6px;')}>
           <label htmlFor="cf-name" style={css(S.label)}>Name</label>
-          <input id="cf-name" autoFocus autoComplete="off" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Filming kickoff, Sponsor review process" style={css(S.input + ' min-height: 44px;')} />
+          <input id="cf-name" autoComplete="off" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Filming kickoff, Sponsor review process" style={css(S.input + ' min-height: 44px;')} />
         </div>
         <fieldset style={css('margin: 0; padding: 0; border: 0; display: flex; flex-direction: column; gap: 6px;')}>
           <legend style={css(S.label + ' margin-bottom: 6px;')}>Type</legend>
@@ -338,7 +365,7 @@ export function CreateFlowDialog({ D, A, onCreated, onClose }) {
 }
 
 // ---------- The builder ----------
-export default function FlowBuilder({ D, A, row, onClose, goConnect }) {
+export default function FlowBuilder({ D, A, row, onClose, goConnect, review }) {
   const [g, setG] = useState(() => graphOf(row));
   const [name, setName] = useState(row.name);
   const [category, setCategory] = useState(row.category || 'custom');
@@ -348,13 +375,17 @@ export default function FlowBuilder({ D, A, row, onClose, goConnect }) {
   const [side, setSide] = useState(''); // right panel: alerts | test
   const [zoom, setZoom] = useState(1);
   const [busy, setBusy] = useState('');
-  const [confirm, setConfirm] = useState(''); // review | leave | delete:<id>
+  // review (turn on) | update (save a live automation) | leave | delete:<split id> | delpath:<path id>
+  const [confirm, setConfirm] = useState(review ? 'review' : '');
   const [testRun, setTestRun] = useState(null);
   const [dropAt, setDropAt] = useState('');
   // The Actions panel starts hidden on narrow screens, where it would cover the canvas.
   const [palette, setPalette] = useState(() => typeof window === 'undefined' || window.innerWidth > 860);
   const canvas = useRef(null);
+  const content = useRef(null);
   const pan = useRef(null);
+  const root = useRef(null);
+  useModal(root, 'button[aria-label="Back to automations"]');
 
   const sources = useMemo(() => tagSources(D).list, [D]);
   const connected = useMemo(() => Object.fromEntries((D.integrations || []).map((x) => [x.provider, x.status === 'connected'])), [D.integrations]);
@@ -401,13 +432,22 @@ export default function FlowBuilder({ D, A, row, onClose, goConnect }) {
     if (saved) setDirty(false);
     return saved;
   };
+  const live = runs && row.enabled && !row.is_draft;
+  const dialog = confirm === 'review' || confirm === 'update' || confirm === 'leave' ? confirm : '';
+  // Tests the graph on screen, saved or not, so testing never changes a live automation.
   const runTest = async () => {
-    if (dirty && !(await save())) return;
     setBusy('test'); setSide('test'); setTestRun(null);
-    try { setTestRun(await A.testAutomation(row.id)); } catch (err) { setTestRun({ error: err.message || String(err), output: {} }); }
+    try { setTestRun(await A.testAutomation(row.id, g)); } catch (err) { setTestRun({ error: err.message || String(err), output: {} }); }
     setBusy('');
   };
   const leave = () => { if (dirty) setConfirm('leave'); else onClose(); };
+
+  useEffect(() => {
+    flowGuard.dirty = dirty;
+    flowGuard.ask = () => setConfirm('leave');
+    if (!flowGuard.url) flowGuard.url = window.location.pathname + window.location.search;
+  }, [dirty]);
+  useEffect(() => () => { flowGuard.dirty = false; flowGuard.ask = null; flowGuard.url = ''; }, []);
 
   useEffect(() => {
     const onKey = (e) => {
@@ -415,12 +455,13 @@ export default function FlowBuilder({ D, A, row, onClose, goConnect }) {
       if (confirm) { setConfirm(''); return; }
       if (menu) { setMenu(''); return; }
       if (e.target instanceof Element && e.target.closest('input, textarea, select')) return;
+      if (side) { setSide(''); return; }
       if (sel) { setSel(''); return; }
       leave();
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [confirm, menu, sel, dirty]);
+  }, [confirm, menu, side, sel, dirty]);
   // Start centred on the trigger: a wide split makes the canvas scroll sideways.
   useEffect(() => {
     const el = canvas.current;
@@ -500,8 +541,8 @@ export default function FlowBuilder({ D, A, row, onClose, goConnect }) {
     const icon = n.type === 'action' ? ACTION_IC[n.key] || IC.bolt : STEP_DEF[n.type].icon;
     const owner = n.type === 'task' && n.owner ? (D.members || []).find((m) => m.user_id === n.owner) : null;
     const sub = n.type === 'action' ? (n.message ? n.message : def ? def.label : 'Choose an action')
-      : n.type === 'delay' ? 'Wait ' + (n.amount || 0) + ' ' + (n.unit || 'days')
-      : n.type === 'task' ? (owner ? 'For ' + ((owner.person && (owner.person.full_name || owner.person.name)) || 'a teammate') : 'For Super Admins') + (n.note ? ' · ' + n.note : '')
+      : n.type === 'delay' ? delayText(n)
+      : n.type === 'task' ? (owner ? 'For ' + ((owner.person && (owner.person.full_name || owner.person.name)) || 'a teammate') : runs ? 'For Super Admins' : 'Unassigned') + (n.note ? ' · ' + n.note : '')
       : n.type === 'note' ? n.note || 'Write the idea down'
       : (n.paths || []).length + ' paths';
     const needs = def && def.needs;
@@ -614,7 +655,7 @@ export default function FlowBuilder({ D, A, row, onClose, goConnect }) {
     if (!runs) groups.unshift(groups.pop());
     return (
       <div style={css('display: flex; flex-direction: column; gap: 4px;')}>
-        <p style={css(S.muted + ' padding: 0 2px 6px;')}>Drag a step onto a + in the flow, or click to add it {sel ? 'after the selected card' : 'at the end'}.</p>
+        <p style={css(S.muted + ' padding: 0 2px 6px;')}>Drag a step onto a + in the flow, or click one to add it at the end.</p>
         {groups.map((grp) => (
           <Fragment key={grp.head}>
             <p style={css('margin: 10px 0 2px; font-size: 13px; color: var(--muted-2);')}>{grp.head}</p>
@@ -690,7 +731,7 @@ export default function FlowBuilder({ D, A, row, onClose, goConnect }) {
               <label htmlFor="fb-ttl" style={css(S.label)}>Task</label>
               <input id="fb-ttl" value={n.title || ''} onChange={(e) => editNode(n.id, { title: e.target.value })} placeholder="Book the studio" style={css(S.input)} />
             </div>
-            <Pick id="fb-own" label="Owner" value={n.owner || ''} onChange={(v) => editNode(n.id, { owner: v })} placeholder="Every Super Admin"
+            <Pick id="fb-own" label="Owner" value={n.owner || ''} onChange={(v) => editNode(n.id, { owner: v })} placeholder={runs ? 'Every Super Admin' : 'Unassigned'}
               options={(D.members || []).filter((m) => m.status === 'active').map((m) => [m.user_id, (m.person && (m.person.full_name || m.person.name)) || 'Member'])} />
             <MessageField id="fb-tnote" label="Notes" rows={3} value={n.note} onChange={(v) => editNode(n.id, { note: v })} placeholder="Checklist, links, who to ask…" />
             {runs ? <p style={css(S.muted)}>When the flow runs, this adds a To-Do on the owner’s Daily page.</p> : null}
@@ -765,6 +806,7 @@ export default function FlowBuilder({ D, A, row, onClose, goConnect }) {
     const idx = split.paths.findIndex((x) => x.id === p.id);
     const last = idx === split.paths.length - 1;
     const editPath = (fn) => edit((x) => { const at2 = locate(x, p.id); if (at2 && at2.path) fn(at2.path, at2.split); });
+    const inner = stepCount({ steps: p.steps });
     return (
       <div style={css('display: flex; flex-direction: column; gap: 16px;')}>
         <div style={css('display: flex; flex-direction: column; gap: 6px;')}>
@@ -780,7 +822,7 @@ export default function FlowBuilder({ D, A, row, onClose, goConnect }) {
               return (
                 <div key={ci} role="group" aria-label={'Condition ' + (ci + 1)} style={css('display: flex; flex-direction: column; gap: 8px; padding: 12px; border: 1px solid var(--line-4); border-radius: 12px;')}>
                   {ci > 0 ? <span style={css('font-size: 12px; font-weight: 600; color: var(--muted-2);')}>AND</span> : null}
-                  <Pick id={'fb-cf' + ci} placeholder="Field" value={c.field} onChange={(v) => editPath((pp) => { const nf = FIELDS.find((x) => x.key === v); pp.when[ci] = { field: v, op: nf.ops[0], value: '' }; })} options={FIELDS.map((x) => [x.key, x.label])} />
+                  <Pick id={'fb-cf' + ci} placeholder="Field" value={c.field} onChange={(v) => editPath((pp) => { const nf = FIELDS.find((x) => x.key === v); pp.when[ci] = { field: v, op: nf.ops[0], value: ((optionsFor(nf.source)[0]) || [''])[0] }; })} options={FIELDS.map((x) => [x.key, x.label])} />
                   <div style={css('display: grid; grid-template-columns: ' + (needsValue ? '120px 1fr' : '1fr') + '; gap: 8px;')}>
                     <Pick id={'fb-co' + ci} placeholder="Operator" value={c.op} onChange={(v) => editPath((pp) => { pp.when[ci].op = v; })} options={f.ops.map((o) => [o, OPS[o]])} />
                     {needsValue ? <Pick id={'fb-cv' + ci} placeholder="Choose…" value={c.value} onChange={(v) => editPath((pp) => { pp.when[ci].value = v; })} options={optionsFor(f.source)} /> : null}
@@ -798,8 +840,11 @@ export default function FlowBuilder({ D, A, row, onClose, goConnect }) {
           <button type="button" onClick={() => setSel(split.id)} style={css(S.btn + S.ghost)}><Ico d={IC.back} /> Split</button>
           <span style={css('flex: 1;')} />
           {!last && split.paths.length > 2 ? (
-            <button type="button" onClick={() => { edit((x) => { const s2 = locate(x, split.id).node; s2.paths = s2.paths.filter((q) => q.id !== p.id); }); setSel(split.id); }} style={css(S.btn + ' border: 0; background: transparent; color: var(--red-ink);')}>
-              <Ico d={IC.trash} /> Delete path
+            <button type="button" onClick={() => {
+              if (inner && confirm !== 'delpath:' + p.id) { setConfirm('delpath:' + p.id); return; }
+              edit((x) => { const s2 = locate(x, split.id).node; s2.paths = s2.paths.filter((q) => q.id !== p.id); }); setSel(split.id); setConfirm('');
+            }} style={css(S.btn + ' border: 0; background: ' + (confirm === 'delpath:' + p.id ? 'var(--red-soft)' : 'transparent') + '; color: var(--red-ink);')}>
+              <Ico d={IC.trash} /> {confirm === 'delpath:' + p.id ? 'Delete path and ' + plural(inner, 'step') + '?' : 'Delete path'}
             </button>
           ) : null}
         </div>
@@ -821,34 +866,38 @@ export default function FlowBuilder({ D, A, row, onClose, goConnect }) {
   );
 
   // ---------- Layout ----------
-  const steps = (() => { let k = 0; walk(g.steps, () => { k++; }); return k; })();
+  const steps = stepCount(g);
   const warns = issues.filter((x) => x.level === 'warn').length;
-  const zoomBy = (d) => setZoom((z) => Math.min(1.5, Math.max(0.4, Math.round((z + d) * 10) / 10)));
+  const zoomBy = (d) => setZoom((z) => Math.min(1.5, Math.max(0.3, Math.round((z + d) * 10) / 10)));
+  // Fit: the flow's natural size (its on-screen size over the current zoom) against the canvas, width and height.
   const fit = () => {
-    const el = canvas.current;
-    if (!el) return;
-    const inner = el.firstChild;
-    const w = inner ? inner.scrollWidth : el.clientWidth;
-    setZoom(Math.min(1, Math.max(0.4, Math.floor(((el.clientWidth - 48) / w) * 10) / 10)));
-    el.scrollTo({ top: 0, left: 0 });
+    const el = canvas.current, box = content.current;
+    if (!el || !box) return;
+    const r = box.getBoundingClientRect();
+    const z = Math.min(1, (el.clientWidth - 48) / (r.width / zoom), (el.clientHeight - 120) / (r.height / zoom));
+    setZoom(Math.max(0.3, Math.floor(z * 10) / 10));
+    requestAnimationFrame(() => { el.scrollTop = 0; el.scrollLeft = (el.scrollWidth - el.clientWidth) / 2; });
   };
+  // Drag the background to pan; a click on it clears the selection. Touch keeps the browser's own scrolling.
+  const onBg = (t) => !(t instanceof Element && t.closest('button, input, textarea, select, a, [role=menu], [role=listbox]'));
   const onPanDown = (e) => {
-    if (e.button !== 0 || e.target !== e.currentTarget && !(e.target instanceof Element && e.target.dataset.pan)) return;
-    pan.current = { x: e.clientX, y: e.clientY, l: canvas.current.scrollLeft, t: canvas.current.scrollTop, moved: false };
-    e.currentTarget.setPointerCapture(e.pointerId);
+    if (e.button !== 0 || !onBg(e.target)) return;
+    pan.current = { x: e.clientX, y: e.clientY, l: canvas.current.scrollLeft, t: canvas.current.scrollTop, moved: false, touch: e.pointerType === 'touch' };
+    if (!pan.current.touch) e.currentTarget.setPointerCapture(e.pointerId);
   };
   const onPanMove = (e) => {
     const p = pan.current;
     if (!p) return;
     const dx = e.clientX - p.x, dy = e.clientY - p.y;
     if (Math.abs(dx) + Math.abs(dy) > 3) p.moved = true;
-    canvas.current.scrollLeft = p.l - dx; canvas.current.scrollTop = p.t - dy;
+    if (!p.touch) { canvas.current.scrollLeft = p.l - dx; canvas.current.scrollTop = p.t - dy; }
   };
   const onPanUp = () => { const p = pan.current; pan.current = null; if (p && !p.moved) { setSel(''); setMenu(''); } };
+  const onPanCancel = () => { pan.current = null; };
 
   const showPanel = palette || !!sel;
   return (
-    <div className="fbx" role="dialog" aria-modal="true" aria-label={'Flow builder: ' + name}
+    <div ref={root} className="fbx" role="dialog" aria-modal="true" aria-label={'Flow builder: ' + name}
       style={css('position: fixed; inset: 0; z-index: 60; display: flex; flex-direction: column; background: var(--page); color: var(--ink); font-family: var(--font-main);')}>
       <style>{`
         .fbx .mitem:hover { background: var(--hover); }
@@ -865,7 +914,7 @@ export default function FlowBuilder({ D, A, row, onClose, goConnect }) {
       `}</style>
 
       {/* Top bar */}
-      <header style={css('flex: none; display: flex; align-items: center; gap: 8px; min-height: 60px; padding: 8px 12px; box-sizing: border-box; flex-wrap: wrap;')}>
+      <header inert={!!dialog} style={css('flex: none; display: flex; align-items: center; gap: 8px; min-height: 60px; padding: 8px 12px; box-sizing: border-box; flex-wrap: wrap;')}>
         <button type="button" onClick={leave} aria-label="Back to automations" title="Back to automations" style={css(S.icon)}><Ico d={IC.back} size={20} /></button>
         <button type="button" onClick={() => setSel('flow')} title="Flow details" style={css('display: inline-flex; align-items: center; gap: 8px; min-width: 0; max-width: 46vw; height: 38px; padding: 0 8px; border: 0; border-radius: 10px; background: transparent; color: var(--ink); cursor: pointer; font-family: inherit;')}>
           <span style={css('font-size: 17px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;')}>{name || 'Untitled flow'}</span>
@@ -883,7 +932,7 @@ export default function FlowBuilder({ D, A, row, onClose, goConnect }) {
           {issues.length ? <span style={css('position: absolute; top: 3px; right: 2px; min-width: 18px; height: 18px; padding: 0 4px; box-sizing: border-box; border-radius: 99px; background: ' + (warns ? '#C42B2F' : 'var(--ink-3)') + '; color: #FFFFFF; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center;')}>{issues.length}</span> : null}
         </button>
         {runs ? <button type="button" onClick={runTest} disabled={!!busy} style={css(S.btn + S.ghost + (busy ? ' opacity: 0.6;' : ''))}><Ico d={IC.play} size={14} /> {busy === 'test' ? 'Testing…' : 'Test run'}</button> : null}
-        <button type="button" onClick={() => save()} disabled={!dirty || !!busy} style={css(S.btn + S.ghost + (!dirty || busy ? ' opacity: 0.5; cursor: default;' : ''))}>{busy === 'save' ? 'Saving…' : 'Save'}</button>
+        <button type="button" onClick={() => (live ? setConfirm('update') : save())} disabled={!dirty || !!busy} style={css(S.btn + S.ghost + (!dirty || busy ? ' opacity: 0.5; cursor: default;' : ''))}>{busy === 'save' ? 'Saving…' : 'Save'}</button>
         {runs ? (
           row.enabled && !row.is_draft
             ? <button type="button" onClick={() => save('off')} disabled={!!busy} style={css(S.btn + S.primary)}>Turn off</button>
@@ -891,7 +940,7 @@ export default function FlowBuilder({ D, A, row, onClose, goConnect }) {
         ) : null}
       </header>
 
-      <div className="fbx-body">
+      <div className="fbx-body" inert={!!dialog}>
         {/* Left panel: Actions palette, or the selected card's details */}
         {showPanel ? (
           <aside className="fbx-side" aria-label={panelTitle}>
@@ -911,10 +960,10 @@ export default function FlowBuilder({ D, A, row, onClose, goConnect }) {
           {!showPanel ? (
             <button type="button" onClick={() => setPalette(true)} aria-label="Show actions" title="Show actions" style={css(S.btn + S.ghost + ' position: absolute; z-index: 5; top: 12px; left: 12px;')}><Ico d={IC.panel} /> Actions</button>
           ) : null}
-          <div ref={canvas} onPointerDown={onPanDown} onPointerMove={onPanMove} onPointerUp={onPanUp}
+          <div ref={canvas} onPointerDown={onPanDown} onPointerMove={onPanMove} onPointerUp={onPanUp} onPointerCancel={onPanCancel} onLostPointerCapture={onPanCancel}
             style={css('flex: 1; overflow: auto; cursor: grab; background-image: radial-gradient(var(--line-4) 1px, transparent 1px); background-size: 20px 20px;')}>
-            <div data-pan="1" style={css('min-width: 100%; width: max-content; padding: 64px 24px 160px; box-sizing: border-box; display: flex; justify-content: center; zoom: ' + zoom + ';')}>
-              <div data-pan="1" style={css('display: flex; flex-direction: column; align-items: center;')}>
+            <div style={css('min-width: 100%; width: max-content; padding: 64px 24px 160px; box-sizing: border-box; display: flex; justify-content: center; zoom: ' + zoom + ';')}>
+              <div ref={content} style={css('display: flex; flex-direction: column; align-items: center;')}>
                 <button type="button" onClick={(e) => { e.stopPropagation(); setSel('trigger'); setMenu(''); }} aria-pressed={sel === 'trigger'} aria-label={'Trigger: ' + trigText}
                   style={css(S.card + ' width: 340px;' + cardRing(sel === 'trigger', warnIds.has('trigger')))}>
                   <span style={css('display: flex; align-items: center; gap: 10px;')}>
@@ -985,35 +1034,39 @@ export default function FlowBuilder({ D, A, row, onClose, goConnect }) {
         ) : null}
       </div>
 
-      {/* Confirmations */}
-      {confirm === 'review' || confirm === 'leave' ? (
+      {/* Confirmations: turning on, saving a live automation, and leaving with unsaved changes */}
+      {dialog ? (
         <div style={css('position: fixed; inset: 0; z-index: 75; display: flex; align-items: center; justify-content: center; padding: 16px; background: rgba(0,0,0,0.45);')}>
-          <div role="alertdialog" aria-modal="true" aria-labelledby="fb-cf-t" style={css('width: 520px; max-width: 100%; box-sizing: border-box; padding: 28px 32px; background: var(--surface); border-radius: 20px; box-shadow: 0 24px 80px rgba(0,0,0,0.25); display: flex; flex-direction: column; gap: 16px;')}>
+          <div role="alertdialog" aria-modal="true" aria-labelledby="fb-cf-t" aria-describedby="fb-cf-d" style={css('width: 520px; max-width: 100%; box-sizing: border-box; padding: 28px 32px; background: var(--surface); border-radius: 20px; box-shadow: 0 24px 80px rgba(0,0,0,0.25); display: flex; flex-direction: column; gap: 16px;')}>
             <div style={css('display: flex; align-items: center;')}>
-              <h2 id="fb-cf-t" style={css('flex: 1; margin: 0; font-size: 21px; font-weight: 700;')}>{confirm === 'leave' ? 'Leave without saving?' : 'Review and turn on'}</h2>
+              <h2 id="fb-cf-t" style={css('flex: 1; margin: 0; font-size: 21px; font-weight: 700;')}>{dialog === 'leave' ? 'Leave without saving?' : dialog === 'update' ? 'Update the live automation?' : 'Review and turn on'}</h2>
               <button type="button" aria-label="Close" onClick={() => setConfirm('')} style={css(S.icon)}><Ico d={IC.close} size={18} /></button>
             </div>
-            {confirm === 'leave' ? <p style={css('margin: 0; font-size: 15px; line-height: 1.5; color: var(--ink-3);')}>Your changes to this flow are not saved yet.</p> : (
+            {dialog === 'leave' ? <p id="fb-cf-d" style={css('margin: 0; font-size: 15px; line-height: 1.5; color: var(--ink-3);')}>Your changes to this flow are not saved yet.</p> : (
               <>
-                <p style={css('margin: 0; font-size: 15px; line-height: 1.5; color: var(--ink-3);')}>Once it is on, the flow runs each time its trigger fires. You can turn it off any time.</p>
+                <p id="fb-cf-d" style={css('margin: 0; font-size: 15px; line-height: 1.5; color: var(--ink-3);')}>
+                  {dialog === 'update' ? 'This flow is live. Saving changes what the next runs do; runs already waiting on a delay carry on from where they are.' : 'Once it is on, the flow runs each time its trigger fires. You can turn it off any time.'}
+                </p>
                 <div style={css('padding: 14px 16px; border-radius: 12px; background: var(--surface-2); display: flex; flex-direction: column; gap: 6px; font-size: 14px;')}>
                   <span><strong>Trigger:</strong> {g.trigger.key ? triggerText(g.trigger.key, g.trigger.value, statusName) : 'none yet'}</span>
                   <span><strong>Steps:</strong> {steps}{compile(g).actions.length ? ' (' + compile(g).actions.map((a) => a.label).join(', ') + ')' : ''}</span>
                   {paused ? <span style={css('color: var(--amber-ink);')}>Pause all automations is on, so nothing runs until you resume.</span> : null}
                 </div>
-                {warns ? <p role="alert" style={css('margin: 0; font-size: 14px; color: var(--red-ink);')}>Fix {warns} alert{warns === 1 ? '' : 's'} first: {issues.filter((x) => x.level === 'warn').map((x) => x.title).join(', ')}.</p> : null}
+                {warns ? <p role="alert" style={css('margin: 0; font-size: 14px; color: var(--red-ink);')}>Fix {plural(warns, 'alert')} first: {issues.filter((x) => x.level === 'warn').map((x) => x.title).join(', ')}.</p> : null}
               </>
             )}
             <div style={css('display: flex; justify-content: flex-end; gap: 10px;')}>
-              {confirm === 'leave' ? (
+              {dialog === 'leave' ? (
                 <>
                   <button type="button" onClick={onClose} style={css(S.btn + S.ghost + ' color: var(--red-ink);')}>Discard changes</button>
-                  <button type="button" onClick={async () => { if (await save()) onClose(); }} style={css(S.btn + S.primary)}>Save and leave</button>
+                  <button type="button" autoFocus onClick={async () => { if (await save(live && warns ? 'off' : undefined)) onClose(); }} style={css(S.btn + S.primary)}>{live && warns ? 'Save and turn off' : 'Save and leave'}</button>
                 </>
               ) : (
                 <>
-                  <button type="button" onClick={() => setConfirm('')} style={css(S.btn + S.ghost)}>Cancel</button>
-                  <button type="button" disabled={!!warns || !!busy} onClick={async () => { if (await save('live')) setConfirm(''); }} style={css(S.btn + S.primary + (warns || busy ? ' opacity: 0.45; cursor: default;' : ''))}>{busy === 'live' ? 'Turning on…' : 'Turn on'}</button>
+                  <button type="button" autoFocus onClick={() => setConfirm('')} style={css(S.btn + S.ghost)}>Cancel</button>
+                  <button type="button" disabled={!!warns || !!busy} onClick={async () => { if (await save(dialog === 'review' ? 'live' : undefined)) setConfirm(''); }} style={css(S.btn + S.primary + (warns || busy ? ' opacity: 0.45; cursor: default;' : ''))}>
+                    {dialog === 'update' ? (busy ? 'Saving…' : 'Save changes') : busy === 'live' ? 'Turning on…' : 'Turn on'}
+                  </button>
                 </>
               )}
             </div>
@@ -1024,11 +1077,25 @@ export default function FlowBuilder({ D, A, row, onClose, goConnect }) {
   );
 }
 
-// Mounted by Studio.jsx while s.flowOpen is set: the Create flow dialog ('new'), then the builder for that flow.
-export function FlowLayer({ D, A, open, set }) {
+// Mounted by Studio.jsx while s.flowOpen is set: the Create flow dialog ('new'), then the builder for that flow
+// (flowReview: open on Review and turn on, from a card's switch). After Connect sends you to Integrations,
+// s.flowReturn keeps a "Back to <flow>" button on screen.
+export function FlowLayer({ D, A, open, review, back, set }) {
   if (open === 'new') return <CreateFlowDialog D={D} A={A} onCreated={(row) => set({ flowOpen: row.id })} onClose={() => set({ flowOpen: '' })} />;
+  if (!open) {
+    const ret = (D.automations || []).find((a) => a.id === back);
+    if (!ret) return null;
+    return (
+      <div role="region" aria-label="Back to flow" style={css('position: fixed; z-index: 55; left: 50%; bottom: 20px; transform: translateX(-50%); display: flex; align-items: center; gap: 4px; padding: 6px; max-width: calc(100vw - 32px); box-sizing: border-box; border-radius: 14px; background: var(--inv); color: var(--inv-ink); box-shadow: 0 12px 40px rgba(0,0,0,0.25); font-family: var(--font-main);')}>
+        <button type="button" onClick={() => set({ nav: 'auto', flowOpen: ret.id, flowReturn: '' })} style={css(S.btn + ' border: 0; background: transparent; color: inherit; min-width: 0;')}>
+          <Ico d={IC.back} /> <span style={css('overflow: hidden; text-overflow: ellipsis;')}>Back to {ret.name}</span>
+        </button>
+        <button type="button" aria-label="Dismiss" onClick={() => set({ flowReturn: '' })} style={css(S.icon + ' width: 34px; height: 34px; color: inherit;')}><Ico d={IC.close} size={16} /></button>
+      </div>
+    );
+  }
   const row = (D.automations || []).find((a) => a.id === open);
   if (!row) return null;
-  return <FlowBuilder key={row.id} D={D} A={A} row={row} onClose={() => set({ flowOpen: '' })}
-    goConnect={(provider) => set({ flowOpen: '', nav: 'workspace', wsTab: 'integ', integFocus: provider })} />;
+  return <FlowBuilder key={row.id} D={D} A={A} row={row} review={review} onClose={() => set({ flowOpen: '', flowReview: false })}
+    goConnect={(provider) => set({ flowOpen: '', flowReview: false, flowReturn: row.id, nav: 'workspace', wsTab: 'integ', integFocus: provider })} />;
 }

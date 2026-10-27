@@ -5,7 +5,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import StudioView from './StudioView';
 import DevNotes from './DevNotes';
-import { FlowLayer } from './FlowBuilder';
+import { FlowLayer, flowGuard } from './FlowBuilder';
 import { supabaseBrowser } from '@/lib/supabase/client';
 import { loadContext, loadWorkspace, loadPortalDetail } from '@/lib/studio/load';
 import { makeActions } from '@/lib/studio/actions';
@@ -115,11 +115,17 @@ export default function Studio({ initialPath, initialProject }) {
   // Keep the URL in step with the page and the open project.
   useEffect(() => {
     if (!s) return;
-    const url = (NAV_PATH[s.nav] || '/projects') + (s.openJob ? '?project=' + encodeURIComponent(s.openJob) : s.nav === 'auto' && s.flowOpen && s.flowOpen !== 'new' ? '?flow=' + encodeURIComponent(s.flowOpen) : '');
-    if (window.location.pathname + window.location.search !== url) window.history.pushState({ nav: s.nav, openJob: s.openJob }, '', url);
+    const path = NAV_PATH[s.nav] || '/projects';
+    const url = path + (s.openJob ? '?project=' + encodeURIComponent(s.openJob) : s.nav === 'auto' && s.flowOpen && s.flowOpen !== 'new' ? '?flow=' + encodeURIComponent(s.flowOpen) : '');
+    if (window.location.pathname + window.location.search === url) return;
+    // Opening or closing the flow builder replaces the entry, so Back leaves the page instead of toggling the builder.
+    const flowOnly = window.location.pathname === path && !s.openJob && !new URLSearchParams(window.location.search).get('project');
+    window.history[flowOnly ? 'replaceState' : 'pushState']({ nav: s.nav, openJob: s.openJob }, '', url);
   }, [s && s.nav, s && s.openJob, s && s.flowOpen]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
     const onPop = () => {
+      // Unsaved flow builder changes: stay put and ask first (components/studio/FlowBuilder.jsx).
+      if (flowGuard.dirty && flowGuard.ask) { window.history.pushState(null, '', flowGuard.url); flowGuard.ask(); return; }
       const p = new URLSearchParams(window.location.search).get('project') || '';
       set({ nav: navFromPath(window.location.pathname), openJob: p, flowOpen: new URLSearchParams(window.location.search).get('flow') || '' });
     };
@@ -236,7 +242,8 @@ export default function Studio({ initialPath, initialProject }) {
   // Dev Notes dock (press N), Super Admins only. Rendered inside the board root so it picks up the theme tokens.
   V.devNotes = me.uiRole === 'admin' ? <DevNotes sb={sb} me={me} workspaceId={ctx.workspace_id} /> : null;
   // Automations > New flow and the flow builder canvas (s.flowOpen: 'new' or a workflow id).
-  V.flowLayer = me.uiRole === 'admin' && s.flowOpen ? <FlowLayer D={D} A={A} open={s.flowOpen} set={set} /> : null;
+  V.flowLayer = me.uiRole === 'admin' && (s.flowOpen || s.flowReturn)
+    ? <FlowLayer D={D} A={A} open={s.flowOpen} review={!!s.flowReview} back={s.flowReturn} set={set} /> : null;
   return <StudioView V={V} />;
 }
 

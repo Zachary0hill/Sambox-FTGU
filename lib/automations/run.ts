@@ -7,7 +7,7 @@ import { postSlackAlert } from '@/lib/integrations/providers/slack';
 import { postN8n } from '@/lib/integrations/providers/n8n';
 import { publishProjectToBuffer, PublishSetupError } from '@/lib/integrations/buffer-publish';
 import { actionById, actionsOf, triggerOf, triggerText } from './catalog';
-import { isGraph, graphOf, fillTokens, FIELDS, type Node, type Crit } from './graph';
+import { isGraph, graphOf, fillTokens, delayText, FIELDS, type Node, type Crit } from './graph';
 
 // The automation runner. Database triggers queue automation_runs rows when a live workflow's trigger fires; each tick
 // (the board after a change, and a scheduler with CRON_SECRET) queues scheduled triggers, claims due runs, performs
@@ -28,7 +28,8 @@ type Run = {
   id: string; automation_id: string; workspace_id: string; project_id: string | null; trigger_key: string | null; status: string;
   payload: Record<string, unknown> | null; output: Output | null; attempts: number; is_test: boolean;
 };
-type Output = { done?: string[]; steps?: Step[]; waited?: string[]; paths?: Record<string, string>; waiting?: boolean };
+// waitClaims: claims spent resuming from delays since the last manual retry; tries leave them out.
+type Output = { done?: string[]; steps?: Step[]; waited?: string[]; waitClaims?: number; paths?: Record<string, string>; waiting?: boolean };
 type Step = { id?: string; action: string; ok: boolean; detail: string };
 type Automation = { id: string; workspace_id: string; name: string; enabled: boolean; is_draft: boolean; trigger: Record<string, string>; actions: unknown; flow: unknown; run_count: number };
 type Settings = { workspace_id: string; automation: { paused?: boolean; retry?: boolean; failAlert?: boolean } | null; timezone: string };
@@ -70,24 +71,26 @@ export async function runAutomations(opts: { workspaceId: string | null; baseUrl
 }
 
 // A Test run: the workflow's actions on a sample project (the most recently created), described but not performed.
-export async function testAutomation(workspaceId: string, automationId: string, baseUrl: string) {
+// flow: the builder's unsaved graph, so testing never has to save (and change) a live automation first.
+export async function testAutomation(workspaceId: string, automationId: string, baseUrl: string, flow?: unknown) {
   const admin = supabaseAdmin();
   const p = await admin.from('projects').select('id').eq('workspace_id', workspaceId).is('archived_at', null)
     .order('created_at', { ascending: false }).limit(1).maybeSingle();
   const a = await admin.from('automations').select('*').eq('id', automationId).eq('workspace_id', workspaceId).maybeSingle();
   if (a.error || !a.data) throw new Error('That workflow was not found.');
-  const t = triggerOf(a.data.trigger as Record<string, string>);
+  const draft = isGraph(flow) ? graphOf({ flow }) : null;
+  const t = draft ? { key: draft.trigger.key, value: draft.trigger.value } : triggerOf(a.data.trigger as Record<string, string>);
   const ins = await admin.from('automation_runs').insert({
     automation_id: automationId, workspace_id: workspaceId, project_id: p.data ? p.data.id : null, trigger_key: t.key,
     status: 'running', is_test: true, attempts: 1, payload: { value: t.value, sample: true },
   }).select('*').single();
   if (ins.error) throw new Error(ins.error.message);
-  await executeRun(ins.data as Run, baseUrl);
+  await executeRun(ins.data as Run, baseUrl, draft);
   const done = await admin.from('automation_runs').select('*').eq('id', ins.data.id).single();
   return done.data;
 }
 
-async function executeRun(r: Run, baseUrl: string): Promise<'done' | 'test' | 'retry' | 'waiting' | 'failed' | 'skipped'> {
+async function executeRun(r: Run, baseUrl: string, draft?: ReturnType<typeof graphOf> | null): Promise<'done' | 'test' | 'retry' | 'waiting' | 'failed' | 'skipped'> {
   const admin = supabaseAdmin();
   const finish = async (status: string, patch: Record<string, unknown>) => {
     const res = await admin.from('automation_runs').update({ status, finished_at: status === 'retry' ? null : new Date().toISOString(), ...patch }).eq('id', r.id);
@@ -108,17 +111,18 @@ async function executeRun(r: Run, baseUrl: string): Promise<'done' | 'test' | 'r
     return 'skipped';
   }
 
-  const graph = isGraph(a.flow) ? graphOf(a) : null;
+  const graph = draft || (isGraph(a.flow) ? graphOf(a) : null);
   if (graph && graph.kind !== 'automation') { await finish('skipped', { error: 'Processes and ideas do not run.' }); return 'skipped'; }
 
   const p = r.project_id ? ((await admin.from('projects').select('id, workspace_id, title, job_code, status_id, publish_date, archived_at, channel_id, content_type_id').eq('id', r.project_id).maybeSingle()).data as Project | null) : null;
   const statuses = ((await admin.from('project_statuses').select('id, label, sort').eq('workspace_id', r.workspace_id).order('sort')).data || []) as { id: string; label: string; sort: number }[];
   const statusName = (id: string | null | undefined) => (statuses.find((x) => x.id === id) || { label: '' }).label;
-  const trig = triggerOf(a.trigger);
+  const trig = graph && r.is_test ? { key: graph.trigger.key, value: graph.trigger.value } : triggerOf(a.trigger);
   const why = triggerText(trig.key, trig.value);
   const link = p ? baseUrl.replace(/\/+$/, '') + '/projects?project=' + encodeURIComponent(p.job_code) : baseUrl.replace(/\/+$/, '') + '/projects';
   const subject = p ? p.title + ' (' + p.job_code + ')' : 'no project';
-  const facts = p ? await factsOf(p) : null;
+  // Splits and tokens read the project's people, sponsor and channel; older workflows use neither.
+  const facts = p && graph ? await factsOf(p) : null;
   const tokens: Record<string, string> = {
     'project.title': p ? p.title : '', 'project.job': p ? p.job_code : '', 'project.status': p ? statusName(p.status_id) : '',
     'project.channel': facts ? facts.channel : '', 'project.publish_date': p && p.publish_date ? p.publish_date : '', 'project.link': link,
@@ -167,9 +171,9 @@ async function executeRun(r: Run, baseUrl: string): Promise<'done' | 'test' | 'r
       if (n.type === 'delay') {
         if (done.includes(n.id)) continue;
         const ms = (Number(n.amount) || 0) * (n.unit === 'minutes' ? 60000 : n.unit === 'hours' ? 3600000 : 86400000);
-        const text = 'Wait ' + (n.amount || 0) + ' ' + (n.unit || 'days');
+        const text = delayText(n);
         if (!r.is_test && ms > 0 && !waited.includes(n.id)) { waited.push(n.id); waitMs = ms; return false; }
-        await step(n.id, 'delay', async () => (r.is_test ? 'Would ' + text.toLowerCase() + '.' : 'Waited ' + (n.amount || 0) + ' ' + (n.unit || 'days') + '.'));
+        await step(n.id, 'delay', async () => (r.is_test ? 'Would ' + text.toLowerCase() + '.' : text.replace(/^Wait/, 'Waited') + '.'));
         continue;
       }
       if (n.type === 'task') {
@@ -185,11 +189,12 @@ async function executeRun(r: Run, baseUrl: string): Promise<'done' | 'test' | 'r
   };
   if (graph) await walkSteps(graph.steps);
   else for (const act of actionsOf(a.actions)) if (!(await step(act.key, act.key, () => perform(act.key, act.message, ctx)))) break;
-  const output: Output & Record<string, unknown> = { done, steps, waited, paths, trigger: why, project: p ? { id: p.id, job: p.job_code, title: p.title } : null };
+  const waitClaims = prev.waitClaims || 0;
+  const output: Output & Record<string, unknown> = { done, steps, waited, waitClaims, paths, trigger: why, project: p ? { id: p.id, job: p.job_code, title: p.title } : null };
 
   // A delay: park the run until it is due. The claim counts it as a try, so tries below leave delays out.
   if (waitMs && !failure) {
-    await finish('retry', { output: { ...output, waiting: true }, error: null, next_attempt_at: new Date(Date.now() + waitMs).toISOString() });
+    await finish('retry', { output: { ...output, waiting: true, waitClaims: waitClaims + 1 }, error: null, next_attempt_at: new Date(Date.now() + waitMs).toISOString() });
     return 'waiting';
   }
 
@@ -199,7 +204,7 @@ async function executeRun(r: Run, baseUrl: string): Promise<'done' | 'test' | 'r
     return r.is_test ? 'test' : 'done';
   }
   const fail: Error = failure;
-  const tries = r.attempts - waited.length;
+  const tries = r.attempts - waitClaims;
   const retry = !r.is_test && auto.retry !== false && !(fail instanceof Permanent) && tries < MAX_TRIES;
   if (retry) {
     await finish('retry', { output, error: fail.message, next_attempt_at: new Date(Date.now() + RETRY_MIN * Math.max(1, tries) * 60000).toISOString() });
@@ -259,7 +264,8 @@ function matches(c: Crit, p: Project | null, f: Facts | null, statusName: (id: s
 // A task step: a To-Do for its owner, or for every Super Admin when it has none.
 async function addTask(n: Node, ctx: Ctx): Promise<string> {
   const admin = supabaseAdmin();
-  const text = fillTokens(n.title || ctx.a.name, ctx.tokens) + (ctx.p ? ': ' + ctx.p.title + ' (' + ctx.p.job_code + ')' : '');
+  const note = fillTokens(n.note || '', ctx.tokens).trim();
+  const text = (fillTokens(n.title || ctx.a.name, ctx.tokens) + (ctx.p ? ': ' + ctx.p.title + ' (' + ctx.p.job_code + ')' : '') + (note ? ' — ' + note : '')).slice(0, 500);
   let owners: string[] = [];
   if (n.owner) {
     const m = await admin.from('workspace_members').select('user_id').eq('workspace_id', ctx.r.workspace_id).eq('user_id', n.owner).eq('status', 'active').maybeSingle();

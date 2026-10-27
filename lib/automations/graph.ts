@@ -86,10 +86,16 @@ export function graphOf(row: { flow?: unknown; trigger?: unknown; actions?: unkn
     const g = row.flow;
     return { v: 2, kind: g.kind || 'automation', tags: g.tags || [], trigger: Object.assign({ key: '', value: '', text: '', tags: [] }, g.trigger), steps: g.steps || [] };
   }
+  // Converted steps keep their action key as id, the same key older runs list in output.done, so a run waiting to
+  // retry when the workflow is first saved in the builder does not repeat a step that already worked.
   const t = triggerOf((row && row.trigger) as { key?: string; value?: string; label?: string });
+  const seen: Record<string, number> = {};
   return {
     v: 2, kind: 'automation', tags: [], trigger: { key: t.key, value: t.value, text: '', tags: [] },
-    steps: actionsOf(row && row.actions).map((a) => ({ id: newId(), type: 'action' as const, key: a.key, message: a.message, tags: [] })),
+    steps: actionsOf(row && row.actions).map((a) => {
+      seen[a.key] = (seen[a.key] || 0) + 1;
+      return { id: seen[a.key] === 1 ? a.key : a.key + ':' + seen[a.key], type: 'action' as const, key: a.key, message: a.message, tags: [] };
+    }),
   };
 }
 
@@ -100,22 +106,29 @@ export function walk(steps: Node[], fn: (n: Node, depth: number) => void, depth 
   }
 }
 
-export function nodeCount(g: Graph) {
-  let n = 1;
+// Steps below the trigger.
+export function stepCount(g: Graph) {
+  let n = 0;
   walk(g.steps, () => { n++; });
   return n;
 }
+export const plural = (n: number, one: string, many = one + 's') => n + ' ' + (n === 1 ? one : many);
+// "Wait 1 day", "Wait 3 hours".
+export const delayText = (n: Node) => 'Wait ' + plural(Number(n.amount) || 0, (n.unit || 'days').replace(/s$/, ''));
 
 // What the row stores besides the graph: the runner's trigger, the card's summary, and preview columns for the
 // workflow card thumbnail (t trigger, a step, c split path).
 export function compile(g: Graph, statusLabel?: (v: string) => string) {
   const acts: { key: string; label: string; message: string }[] = [];
   const apps = new Set<string>();
+  const said: string[] = []; // the card's "Then …": actions and tasks in order
   walk(g.steps, (n) => {
+    if (n.type === 'task') said.push('Task: ' + (n.title || 'untitled'));
     if (n.type !== 'action' || !n.key) return;
     const def = actionById(n.key);
     if (!def) return;
     acts.push({ key: n.key, label: def.label, message: n.message || '' });
+    said.push(def.label);
     apps.add(def.app);
   });
   const cols: string[][] = [['t']];
@@ -128,7 +141,7 @@ export function compile(g: Graph, statusLabel?: (v: string) => string) {
   lay(g.steps);
   const runs = g.kind === 'automation';
   const when = runs ? (g.trigger.key ? triggerText(g.trigger.key, g.trigger.value, statusLabel) : 'No trigger yet') : (g.trigger.text || (g.kind === 'process' ? 'Started by hand' : 'An idea'));
-  const then = acts.length ? acts.map((a) => a.label).join(', then ') : nodeCount(g) - 1 + ' step' + (nodeCount(g) === 2 ? '' : 's');
+  const then = said.length ? said.join(', then ') : stepCount(g) ? plural(stepCount(g), 'step') : 'nothing yet';
   return {
     trigger: runs ? { key: g.trigger.key, value: g.trigger.value, label: when } : { key: 'manual', value: '', label: when },
     actions: runs ? acts : [],
@@ -138,24 +151,29 @@ export function compile(g: Graph, statusLabel?: (v: string) => string) {
   };
 }
 
-// Problems the builder flags in its Alerts panel. connected: provider keys with a working connection.
+// Problems the builder flags in its Alerts panel; warnings block turning an automation on. Processes and ideas never
+// run, so they only get gentle notes about unfinished cards. connected: provider keys with a working connection.
 export function issuesOf(g: Graph, connected: Record<string, boolean>) {
   const out: { id: string; level: 'warn' | 'info'; title: string; body: string }[] = [];
-  if (g.kind === 'automation' && !g.trigger.key) out.push({ id: 'trigger', level: 'warn', title: 'Pick a trigger', body: 'An automation needs a trigger before it can turn on.' });
-  let actions = 0;
+  const runs = g.kind === 'automation';
+  const warn = runs ? 'warn' as const : 'info' as const;
+  if (runs && !g.trigger.key) out.push({ id: 'trigger', level: 'warn', title: 'Pick a trigger', body: 'An automation needs a trigger before it can turn on.' });
+  let work = 0;
   walk(g.steps, (n) => {
+    if (n.type === 'action' || n.type === 'task') work++;
     if (n.type === 'action') {
       const def = n.key ? actionById(n.key) : null;
-      actions++;
-      if (!def) out.push({ id: n.id, level: 'warn', title: 'Choose an action', body: 'This step has no action yet.' });
-      else if (def.needs && !connected[def.needs]) out.push({ id: n.id, level: 'warn', title: 'Connect ' + def.app, body: '"' + def.label + '" needs ' + def.app + ' connected in Workspace Settings > Integrations.' });
+      if (!def) out.push({ id: n.id, level: warn, title: 'Choose an action', body: 'This step has no action yet.' });
+      else if (runs && def.needs && !connected[def.needs]) out.push({ id: n.id, level: 'warn', title: 'Connect ' + def.app, body: '"' + def.label + '" needs ' + def.app + ' connected in Workspace Settings > Integrations.' });
     }
     if (n.type === 'split') (n.paths || []).slice(0, -1).forEach((p) => {
-      if (!p.when.length) out.push({ id: p.id, level: 'warn', title: 'Add path criteria', body: p.name + ' has no criteria, so everything goes down it.' });
+      if (!p.when.length) out.push({ id: p.id, level: warn, title: 'Add path criteria', body: p.name + ' has no criteria yet, so nothing goes down it.' });
+      else if (p.when.some((c) => (c.op === 'is' || c.op === 'is_not') && !c.value)) out.push({ id: p.id, level: warn, title: 'Finish the criteria', body: p.name + ' has a condition with no value picked.' });
     });
+    if (n.type === 'delay' && runs && !(Number(n.amount) > 0)) out.push({ id: n.id, level: 'info', title: 'Set the wait', body: 'A wait of 0 does nothing.' });
     if (n.type === 'task' && !n.title) out.push({ id: n.id, level: 'info', title: 'Name the task', body: 'Give this task a short title.' });
   });
-  if (g.kind === 'automation' && !actions) out.push({ id: 'end', level: 'info', title: 'Add an action', body: 'Nothing happens yet when the trigger fires.' });
+  if (runs && !work) out.push({ id: 'end', level: 'warn', title: 'Add a step', body: 'Add an action or a task, or nothing happens when the trigger fires.' });
   return out;
 }
 
