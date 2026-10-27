@@ -13,6 +13,7 @@ import { FilterBy, SortEditor, FilterChips, NoMatch } from './FilterBar';
 import { PropertiesPanel, GroupPanel, LayoutPanel } from './ViewPanels';
 import { AddColumnStep2, QuickAdd } from './AddColumn';
 import RecordDialog from './RecordDialog';
+import Performance from './Performance';
 import Workload from './Workload';
 import { RichText, Thinking, Steps, MsgActions, ModelPicker, ModeToggle, GearButton, AiSettings, ChatScroll } from './ChatKit';
 
@@ -2937,6 +2938,9 @@ export default function StudioView({ V }) {
                     ) : null}
                   </>
                 ) : null}
+                {" "}
+                {/* app: Performance page (components/studio/Performance.jsx) */}
+                {V.pg.isPerf && V.perf ? <Performance p={V.perf} ui={V.ui} /> : null}
                 {" "}
                 {V.pg.isBrand ? (
                   <>

@@ -14,6 +14,7 @@ const PAGES: [id: string, path: string, label: string][] = [
   ['brand', '/brand', 'Brand'],
   ['inbox', '/inbox', 'Inbox'],
   ['content', '/content', 'Content'],
+  ['performance', '/performance', 'Performance'],
   ['settings', '/settings', 'Settings'],
   ['team', '/admin/users', 'Admin › Team'],
   ['roles', '/admin/roles', 'Admin › Roles'],
