@@ -271,6 +271,8 @@ export default function StudioView({ V }) {
                 {" "}
                 {V.adm.isUsers ? (
                   <>
+                    {/* app: invite email health (app/api/email/health) */}
+                    {V.adm.mailWarn ? <p role="status" style={css("margin: 0 0 16px; padding: 12px 14px; border-radius: 12px; background: var(--amber-soft); color: var(--amber-ink); font-size: 13px; line-height: 1.45; font-weight: 600")}>{V.adm.mailWarn}</p> : null}
                     <div style={css("display: flex; flex-wrap: wrap; gap: 4px; align-items: center; padding-bottom: 20px; border-bottom: 1px solid var(--line)")}>
                       <div style={css("position: relative; display: flex; align-items: center; flex: 1 1 200px; max-width: 280px; margin-right: 4px")}>
                         <label htmlFor="team-search" style={css("position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap")}>Search users</label>
@@ -757,6 +759,8 @@ export default function StudioView({ V }) {
                 {" "}
                 {V.adm.isClients ? (
                   <>
+                    {/* app: invite email health (app/api/email/health) */}
+                    {V.adm.mailWarn ? <p role="status" style={css("margin: 0 0 16px; padding: 12px 14px; border-radius: 12px; background: var(--amber-soft); color: var(--amber-ink); font-size: 13px; line-height: 1.45; font-weight: 600")}>{V.adm.mailWarn}</p> : null}
                     <div style={css("display: flex; flex-wrap: wrap; gap: 4px; align-items: center; padding-bottom: 20px; border-bottom: 1px solid var(--line)")}>
                       <div style={css("position: relative; display: flex; align-items: center; flex: 1 1 200px; max-width: 280px; margin-right: 4px")}>
                         <label htmlFor="acct-search" style={css("position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap")}>Search accounts</label>
@@ -830,11 +834,11 @@ export default function StudioView({ V }) {
                       {V.adm.hasAcct ? (
                         <>
                           <aside aria-labelledby="acct-detail-h" style={css("flex: 1 1 340px; max-width: 100%; box-sizing: border-box; display: flex; flex-direction: column; gap: 20px; padding: 20px; border: 1px solid var(--line); border-radius: 16px; background: var(--surface)")}>
-                            <div style={css("display: flex; align-items: center; gap: 12px")}>
+                            <div style={css("display: flex; flex-wrap: wrap; align-items: center; gap: 12px")}>
                               <span aria-hidden="true" style={css(V.adm.acct.tileStyle)}>{V.adm.acct.initials}</span>
                               {" "}
-                              <div style={css("flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px")}>
-                                <h2 id="acct-detail-h" style={css(V.ui.h3)}>{V.adm.acct.name}</h2>
+                              <div style={css("flex: 1 1 140px; min-width: 0; display: flex; flex-direction: column; gap: 4px")}>
+                                <h2 id="acct-detail-h" style={css(V.ui.h3 + " overflow-wrap: anywhere;")}>{V.adm.acct.name}</h2>
                                 {" "}
                                 <span style={css("font-size: 13px; color: var(--muted-2); overflow-wrap: anywhere")}>{V.adm.acct.contactText}</span>
                               </div>
