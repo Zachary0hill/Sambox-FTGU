@@ -17,7 +17,7 @@ import 'server-only';
 //   https://docs.slack.dev/reference/events/app_mention
 import { supabaseAdmin } from '@/lib/supabase/admin';
 import { getIntegration, connectedWorkspaces, markChecked, type Secret, type Config } from '../secrets';
-import type { ProviderModule } from './types';
+import type { ProviderModule, SyncPick } from './types';
 import {
   signatureOk, isPersonMessage, toRow, plainText, mentionedIds, kindOf, externalId, WINDOW_SECONDS,
   type SlackMessage, type SlackUser, type InboxRow,
@@ -156,10 +156,17 @@ async function watchedChannels(token: string, config: Config): Promise<Chan[]> {
   return want.map((w) => mine.find((c) => c.id === w || c.name === w) || { id: w, name: w, label: '#' + w });
 }
 
-async function sync(ws: string, secret: Secret, config: Config) {
+async function preview(_ws: string, secret: Secret, config: Config) {
+  const channels = await watchedChannels(secret.botToken, config);
+  return { groups: [{ id: 'channels', label: 'Channels', hint: 'New messages from each checked channel go to the inbox.', items: channels.map((c) => ({ id: c.id, label: c.label, on: true })) }] };
+}
+
+async function sync(ws: string, secret: Secret, config: Config, pick?: SyncPick) {
   const token = secret.botToken;
   const team = await ensureTeam(ws, token, config, true);
-  const channels = await watchedChannels(token, config);
+  const watched = await watchedChannels(token, config);
+  const channels = pick && pick.channels ? watched.filter((c) => pick.channels.includes(c.id)) : watched;
+  if (watched.length && !channels.length) return { summary: 'No channels picked, nothing changed.' };
   if (!channels.length) return { summary: 'The bot is not in any channels yet. Invite it with /invite in Slack, then sync again.' };
   const admin = supabaseAdmin();
   const users = userCache(token);
@@ -191,8 +198,8 @@ async function sync(ws: string, secret: Secret, config: Config) {
     await upsert(rows);
     added += rows.length;
   }
-  const watched = channels.length - skipped.length;
-  let summary = added + ' new message' + (added === 1 ? '' : 's') + ' from ' + watched + ' channel' + (watched === 1 ? '' : 's') + '.';
+  const read = channels.length - skipped.length;
+  let summary = added + ' new message' + (added === 1 ? '' : 's') + ' from ' + read + ' channel' + (read === 1 ? '' : 's') + '.';
   if (skipped.length) summary += ' Invite the bot to ' + skipped.join(', ') + ' to include ' + (skipped.length === 1 ? 'it' : 'them') + '.';
   return { summary };
 }
@@ -206,6 +213,7 @@ const provider: ProviderModule = {
     return r.bot_id ? null : 'this token is not a bot token.';
   },
   sync,
+  preview,
 };
 
 export default provider;

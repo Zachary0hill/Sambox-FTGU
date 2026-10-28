@@ -1,7 +1,7 @@
 import 'server-only';
 import { supabaseAdmin } from '@/lib/supabase/admin';
-import type { ProviderModule } from './types';
-import type { Secret } from '../secrets';
+import type { ProviderModule, SyncPick } from './types';
+import type { Secret, Config } from '../secrets';
 import { channelRow, postRow, rateLeft, waitText, chunk } from './buffer-parse';
 
 // Buffer GraphQL API with a personal API key (the legacy REST API at api.bufferapp.com/1 is closed). Docs used:
@@ -162,12 +162,19 @@ const provider: ProviderModule = {
     }
   },
 
-  async sync(ws: string, secret: Secret) {
+  async preview(_ws: string, secret: Secret) {
+    const { orgs } = await organizations(secret.apiKey);
+    return { groups: [{ id: 'orgs', label: 'Organizations', hint: 'Channels and sent posts from each checked organization.', items: orgs.map((o) => ({ id: o.id, label: o.name || o.id, on: true })) }] };
+  },
+
+  // With a pick, only the picked organizations are read, so nothing is removed this run (see below).
+  async sync(ws: string, secret: Secret, _config: Config, pick?: SyncPick) {
     const key = secret.apiKey;
     const admin = supabaseAdmin();
     const now = new Date().toISOString();
     const start = await organizations(key);
-    const orgs = start.orgs;
+    const orgs = pick && pick.orgs ? start.orgs.filter((o) => pick.orgs.includes(o.id)) : start.orgs;
+    if (!orgs.length) return { summary: 'No organizations picked, nothing changed.' };
     let left = start.left;
     let calls = 1;
     let stopped = '';
@@ -213,7 +220,7 @@ const provider: ProviderModule = {
     }
 
     // Channels removed from Buffer, and their posts. Only when every organization was read this run.
-    if (!stopped && seenOrgs.length === orgs.length) {
+    if (!stopped && seenOrgs.length === start.orgs.length) {
       const live = channels.map((c) => String(c.channel_id));
       for (const t of ['buffer_channels', 'buffer_posts']) {
         let q = admin.from(t).delete().eq('workspace_id', ws);

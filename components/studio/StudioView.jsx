@@ -14,6 +14,8 @@ import { PropertiesPanel, GroupPanel, LayoutPanel } from './ViewPanels';
 import { AddColumnStep2, QuickAdd } from './AddColumn';
 import RecordDialog from './RecordDialog';
 import InlineAdd from './InlineAdd';
+import { PickBox } from './Prims';
+import SyncPicker from './SyncPicker';
 import Performance from './Performance';
 import Workload from './Workload';
 import { RichText, Thinking, Steps, MsgActions, ModelPicker, ModeToggle, GearButton, AiSettings, ChatScroll } from './ChatKit';
@@ -27,6 +29,7 @@ export default function StudioView({ V }) {
       {/* app: record dialogs (templates, finance records, automations, two-step sign in) */}
       {V.rec ? <RecordDialog d={V.rec} /> : null}
       {/* app: toast for save confirmations and database errors */}
+      {V.syncPick ? <SyncPicker p={V.syncPick} /> : null}
       {V.hasToast ? <div role="status" className="fb-toast" style={css("position: fixed; z-index: 80; left: 50%; bottom: 24px; transform: translateX(-50%); max-width: calc(100vw - 32px); box-sizing: border-box; padding: 12px 18px; border-radius: 14px; background: var(--inv); color: var(--inv-ink); font-size: 14px; font-weight: 600; box-shadow: 0 12px 40px rgba(0,0,0,0.2)" + (V.hasToastAction ? "; display: flex; align-items: center; gap: 14px; padding-right: 8px" : ""))}><span>{V.toast}</span>{V.hasToastAction ? <button type="button" onClick={V.toastAct} style={css("height: 32px; padding: 0 12px; border: 0; border-radius: 10px; background: var(--inv-faint); color: var(--inv); font-size: 13px; font-weight: 700; cursor: pointer")}>{V.toastActionLabel}</button> : null}</div> : null}
       {/* app: delete confirm from the column header menu */}
       {V.colDel.open ? <DeleteColumnDialog d={V.colDel} dark={V.dark} /> : null}
@@ -4970,6 +4973,7 @@ export default function StudioView({ V }) {
                                                   <div className={c.cls} style={css(c.style)}>
                                                     {c.isTitle ? (
                                                       <>
+                                                        {c.pick ? <PickBox p={c.pick} /> : null}
                                                         <button type="button" className="fb-title" onClick={c.open} style={css(V.titleBtn)}>
                                                           <span style={css(c.titleTextStyle)}>{c.text}</span>
                                                         </button>
@@ -5107,6 +5111,8 @@ export default function StudioView({ V }) {
                           <div aria-hidden="true" style={css("position: absolute; top: 0; right: 0; bottom: 8px; width: 48px; z-index: 3; pointer-events: none; background: linear-gradient(to right, transparent, var(--surface))")}></div>
                         </>
                       ) : null}
+                      {/* app: bulk actions for the table checkboxes */}
+                      {V.bulk ? <BulkBar b={V.bulk} /> : null}
                     </div>
                   </>
                 ) : null}
@@ -6211,6 +6217,30 @@ function DrRail({ V }) {
 
 // app: the board's cell editor popover, shared by table cells and the project modal's header and properties rail.
 // Select fields use SelectPicker, Status the StatusPicker, typed fields CellEditor, the rest the list / date / text panel.
+const BAR_BTN = 'flex: none; min-height: 36px; padding: 0 12px; border: 0; border-radius: 10px; font-size: 13px; font-weight: 700; cursor: pointer; white-space: nowrap;';
+function BulkBar({ b }) {
+  return (
+    <div role="region" aria-label="Selected projects" style={css("position: fixed; z-index: 81; left: 50%; bottom: 28px; transform: translateX(-50%); max-width: calc(100vw - 32px); box-sizing: border-box; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 8px 8px 8px 16px; border-radius: 14px; background: var(--inv); color: var(--inv-ink); font-size: 14px; box-shadow: 0 12px 32px rgba(0,0,0,0.24)")}>
+      {b.confirm ? (
+        <>
+          <span role="alert" style={css("min-width: 0; max-width: 460px; font-weight: 600")}>{b.confirmText}</span>
+          <button type="button" onClick={b.cancelDelete} style={css(BAR_BTN + " background: var(--inv-faint); color: var(--inv);")}>Cancel</button>
+          <button type="button" onClick={b.del} style={css(BAR_BTN + " background: #D93025; color: #FFFFFF;")}>{b.deleteText}</button>
+        </>
+      ) : (
+        <>
+          <span style={css("font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap")}>{b.countText}</span>
+          {b.canSelectAll ? <button type="button" onClick={b.selectAll} style={css(BAR_BTN + " background: transparent; color: var(--inv-ink); text-decoration: underline; text-underline-offset: 3px;")}>{b.selectAllText}</button> : null}
+          <span aria-hidden="true" style={css("width: 1px; height: 20px; background: var(--inv-faint)")}></span>
+          <button type="button" onClick={b.archive} style={css(BAR_BTN + " background: var(--inv-faint); color: var(--inv);")}>{b.archiveText}</button>
+          <button type="button" onClick={b.askDelete} style={css(BAR_BTN + " background: #D93025; color: #FFFFFF;")}>Delete</button>
+          <button type="button" aria-label="Clear selection" onClick={b.clear} style={css(BAR_BTN + " width: 36px; padding: 0; background: transparent; color: var(--inv-ink); font-size: 18px; line-height: 1;")}>×</button>
+        </>
+      )}
+    </div>
+  );
+}
+
 function CellPop({ ce, popStyle, close, dark }) {
   if (ce.isPicker) return <SelectPicker p={ce.picker} dark={dark} />;
   if (ce.isStatusPicker) return <StatusPicker p={ce.status} dark={dark} />;

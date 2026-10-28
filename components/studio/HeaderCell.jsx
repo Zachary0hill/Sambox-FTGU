@@ -4,7 +4,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { css } from '@/lib/studio/css';
 import { srOnly } from '@/lib/studio/prims';
-import { Popover, MenuRow, MenuLabel, Divider, Field, Segmented, Icon, IC, Button } from './Prims';
+import { Popover, MenuRow, MenuLabel, Divider, Field, Segmented, Icon, IC, Button, PickBox } from './Prims';
 import { OptionsBlock, OptionMenu, SortMenu } from './SelectPicker';
 
 const HI = {
@@ -116,6 +116,7 @@ export default function HeaderCell({ h, dark }) {
 
   return (
     <div ref={ref} className={'fb-th' + (h.cls ? ' ' + h.cls : '')} data-col={h.col} style={css(h.style)}>
+      {h.pickAll ? <PickBox p={h.pickAll} style="align-self: center; margin-left: 12px;" /> : null}
       {h.interactive ? (
         <button type="button" className="fb-th-btn" aria-haspopup="dialog" aria-expanded={h.open} onClick={onClick}
           onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onCancel} style={css(h.btnStyle + (ghost ? ' opacity: 0.45;' : ''))}>

@@ -1,6 +1,6 @@
 import 'server-only';
 import { supabaseAdmin } from '@/lib/supabase/admin';
-import type { ProviderModule } from './types';
+import type { ProviderModule, SyncPick } from './types';
 import type { Secret, Config } from '../secrets';
 import { videoIdOf, durationSeconds, channelRefsOf, chunk, countOf, type ChannelRef } from './youtube-parse';
 
@@ -181,12 +181,20 @@ const provider: ProviderModule = {
     }
   },
 
-  async sync(ws: string, secret: Secret, config: Config) {
+  async preview(_ws: string, secret: Secret, config: Config) {
+    const { channels } = await channelsFor(secret.apiKey, config);
+    return { groups: [{ id: 'channels', label: 'Channels', hint: 'Uploads and view counts from each checked channel.', items: channels.map((c) => ({ id: c.id, label: c.title || c.id, note: c.id, on: true })) }] };
+  },
+
+  async sync(ws: string, secret: Secret, config: Config, pick?: SyncPick) {
     const key = secret.apiKey;
     const admin = supabaseAdmin();
-    const { channels, units: u0 } = await channelsFor(key, config);
+    const { channels: all, units: u0 } = await channelsFor(key, config);
     let units = u0;
-    const chIds = channels.map((c) => c.id);
+    // Every configured channel stays stored; a pick only limits which ones are read this time.
+    const chIds = all.map((c) => c.id);
+    const channels = pick && pick.channels ? all.filter((c) => pick.channels.includes(c.id)) : all;
+    if (!channels.length) return { summary: 'No channels picked, nothing changed.' };
 
     const stored = await selectAll<{ video_id: string; channel_id: string }>('youtube_videos', 'video_id, channel_id', ws);
     const want = new Set<string>();

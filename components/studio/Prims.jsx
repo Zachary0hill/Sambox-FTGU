@@ -148,6 +148,20 @@ export function Toggle({ on, onChange, label, size = 'sm', disabled }) {
   );
 }
 
+// Row checkbox for board selection. p: { on, mixed, disabled, aria, toggle(event) }. The label gives a 32px hit area.
+export function PickBox({ p, style }) {
+  const ref = useRef(null);
+  useEffect(() => { if (ref.current) ref.current.indeterminate = !!p.mixed; }, [p.mixed]);
+  return (
+    <label className="fb-pick" style={css('flex: none; width: 32px; height: 32px; margin-left: -8px; display: inline-flex; align-items: center; justify-content: center; border-radius: 8px; cursor: ' + (p.disabled ? 'default' : 'pointer') + ';' + (style ? ' ' + style : ''))}
+      onClick={(e) => e.stopPropagation()}>
+      <input ref={ref} type="checkbox" checked={!!p.on} disabled={p.disabled} aria-label={p.aria}
+        onChange={() => {}} onClick={(e) => { e.stopPropagation(); p.toggle(e); }}
+        style={css('width: 16px; height: 16px; margin: 0; accent-color: var(--ink); cursor: inherit;')} />
+    </label>
+  );
+}
+
 // Segmented control. Options are strings or { id, label }. Left and right arrows move the selection.
 export function Segmented({ label, caption, options, value, onChange, size = 'md' }) {
   const opts = options.map((o) => (typeof o === 'string' ? { id: o, label: o } : o));

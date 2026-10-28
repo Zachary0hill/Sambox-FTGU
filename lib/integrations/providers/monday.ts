@@ -2,8 +2,8 @@ import 'server-only';
 import { createHash, createHmac, timingSafeEqual } from 'node:crypto';
 import { supabaseAdmin } from '@/lib/supabase/admin';
 import type { Secret, Config } from '../secrets';
-import type { ProviderModule } from './types';
-import { parseStatusMap, statusLabels, toMondayLabel, planItem, type Item, type Project, type Status, type Label } from './monday-map';
+import type { ProviderModule, SyncPreview } from './types';
+import { parseStatusMap, statusLabels, toMondayLabel, planItem, type Item, type Plan, type Project, type Status, type Label } from './monday-map';
 
 // monday.com GraphQL API. Docs used:
 // https://developer.monday.com/api-reference/docs/authentication (raw token in Authorization, POST /v2)
@@ -105,9 +105,55 @@ async function itemsById(c: Ctx, ids: string[]): Promise<Item[]> {
 
 const count = (n: number, one: string, many = one + 's') => n + ' ' + (n === 1 ? one : many);
 
+// Drops the fields the Super Admin left out of a sync from one item's plan.
+function limitPlan(plan: Plan, fields: Set<string>, statuses: Status[]): Plan {
+  if (plan.kind === 'create') return fields.has('status') ? plan : { ...plan, status: statuses[0] };
+  if (plan.kind === 'same') return plan;
+  const patch = { ...plan.patch }, diff = { ...plan.diff };
+  if (!fields.has('title')) { delete patch.title; delete diff.title; }
+  if (!fields.has('status')) { delete patch.status_id; delete diff.status; }
+  if (plan.kind === 'update' && !Object.keys(patch).length) return { kind: 'same', item: plan.item, project: plan.project };
+  return { ...plan, patch, diff };
+}
+
+// What a sync would do with each item on the board, for the picker in Settings. Changes nothing.
+async function previewItems(ws: string, config: Config, items: Item[]): Promise<SyncPreview> {
+  const admin = supabaseAdmin();
+  const [stRes, prRes] = await Promise.all([
+    admin.from('project_statuses').select('id, label').eq('workspace_id', ws).order('sort'),
+    admin.from('projects').select('id, title, job_code, status_id, monday_item_id').eq('workspace_id', ws),
+  ]);
+  for (const r of [stRes, prRes]) if (r.error) throw new Error(r.error.message);
+  const statuses = (stRes.data || []) as Status[];
+  if (!statuses.length) throw new Error('Add a project status in Settings before syncing.');
+  const projects = (prRes.data || []) as Project[];
+  const byItem = new Map(projects.filter((p) => p.monday_item_id).map((p) => [p.monday_item_id as string, p]));
+  const byJob = new Map(projects.map((p) => [p.job_code.toLowerCase(), p]));
+  const pairs = parseStatusMap(config.statusMap);
+  const seen = new Set<string>();
+  const rows = items.filter((i) => !seen.has(i.id) && !!seen.add(i.id)).map((item) => {
+    const { plan } = planItem(item, byItem, byJob, pairs, statuses);
+    const what = plan.kind === 'create' ? 'New project' + (plan.jobCode ? ' · ' + plan.jobCode : '')
+      : plan.kind === 'same' ? 'Up to date'
+      : (plan.kind === 'link' ? 'Links to ' + plan.project.job_code : 'Updates') + (Object.keys(plan.diff).length ? ' · ' + Object.keys(plan.diff).join(', ') : '');
+    return { id: item.id, label: item.name.trim() || 'Untitled monday item', note: (item.status ? item.status + ' · ' : '') + what, on: plan.kind !== 'same', order: plan.kind === 'same' ? 1 : 0 };
+  }).sort((a, b) => a.order - b.order).map(({ order, ...r }) => { void order; return r; });
+  return {
+    groups: [
+      { id: 'fields', label: 'Fields', hint: 'Which monday values update projects already on the board.', items: [
+        { id: 'title', label: 'Item name', note: 'Project title', on: true },
+        { id: 'status', label: 'Status column', note: 'Project status', on: true },
+      ] },
+      { id: 'items', label: 'Items', hint: 'Unchecked items are skipped this time. Projects are never deleted.', items: rows },
+    ],
+  };
+}
+
 // Writes monday items into the workspace's projects with the secret-key client. Idempotent: linked projects only
 // change when monday differs. Projects are never deleted.
-async function applyItems(ws: string, config: Config, items: Item[], full: boolean): Promise<string> {
+// `only` limits which monday values reach linked projects (title, status); null means both. New projects always
+// take the item name, and the first board status when status is left out.
+async function applyItems(ws: string, config: Config, items: Item[], full: boolean, only: Set<string> | null = null): Promise<string> {
   const admin = supabaseAdmin();
   const [stRes, prRes, setRes, spRes] = await Promise.all([
     admin.from('project_statuses').select('id, label').eq('workspace_id', ws).order('sort'),
@@ -136,8 +182,9 @@ async function applyItems(ws: string, config: Config, items: Item[], full: boole
   for (const item of items) {
     if (seen.has(item.id)) continue;
     seen.add(item.id);
-    const { plan, unmatched: um } = planItem(item, byItem, byJob, pairs, statuses);
-    if (um) unmatched.set(um, (unmatched.get(um) || 0) + 1);
+    const { plan: planned, unmatched: um } = planItem(item, byItem, byJob, pairs, statuses);
+    const plan = only ? limitPlan(planned, only, statuses) : planned;
+    if (um && (!only || only.has('status'))) unmatched.set(um, (unmatched.get(um) || 0) + 1);
     if (plan.kind === 'same') { same++; continue; }
     if (plan.kind === 'create') {
       const title = item.name.trim() || 'Untitled monday item';
@@ -292,9 +339,16 @@ const provider: ProviderModule = {
       return err instanceof Error ? err.message : String(err);
     }
   },
-  async sync(ws, secret, config) {
+  async preview(ws, secret, config) {
     const c = await boardContext(secret, config);
-    const summary = await applyItems(ws, config, await allItems(c), true);
+    return previewItems(ws, config, await allItems(c));
+  },
+  async sync(ws, secret, config, pick) {
+    const c = await boardContext(secret, config);
+    let items = await allItems(c);
+    if (pick && pick.items) { const want = new Set(pick.items); items = items.filter((i) => want.has(i.id)); }
+    const fields = pick && pick.fields ? new Set(pick.fields) : null;
+    const summary = items.length ? await applyItems(ws, config, items, !(pick && pick.items), fields) : 'No items picked, nothing changed.';
     const hooks = await ensureWebhooks(ws, c, config).catch((err) => 'Real-time updates not set up: ' + (err instanceof Error ? err.message : String(err)));
     return { summary: summary + ' ' + hooks };
   },

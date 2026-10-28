@@ -4,11 +4,23 @@ import { getIntegration, connectedWorkspaces, markChecked } from '@/lib/integrat
 import { providerById } from '@/lib/integrations/registry';
 import { MODULES } from '@/lib/integrations/providers';
 import { cleanupBufferMedia } from '@/lib/integrations/buffer-publish';
+import type { SyncPick } from '@/lib/integrations/providers/types';
 
 export const maxDuration = 300;
 
+// Group id -> item ids, from the request body. Anything malformed is dropped, so a bad pick syncs everything.
+function pickOf(raw: unknown): SyncPick | undefined {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return undefined;
+  const out: SyncPick = {};
+  for (const [k, v] of Object.entries(raw as Record<string, unknown>)) {
+    if (Array.isArray(v)) out[k] = v.filter((x): x is string => typeof x === 'string').slice(0, 5000);
+  }
+  return Object.keys(out).length ? out : undefined;
+}
+
 // Pull now. A Super Admin syncs their own workspace from Settings; a scheduled caller with CRON_SECRET syncs every
-// workspace that has this provider connected.
+// workspace that has this provider connected. A Super Admin can first ask for { preview: true } to see what the sync
+// would bring over, then send { pick } with what to keep.
 export async function POST(request: Request, ctx: RouteContext<'/api/integrations/[provider]/sync'>) {
   const { provider } = await ctx.params;
   const def = providerById(provider);
@@ -16,12 +28,25 @@ export async function POST(request: Request, ctx: RouteContext<'/api/integration
   if (!def || !mod || !mod.sync) return deny('This integration has nothing to sync.', 404);
 
   let workspaces: string[];
+  let pick: SyncPick | undefined;
   if (isCron(request)) {
     workspaces = await connectedWorkspaces(def.id);
   } else {
     const m = await getMember();
     if (!isSuperAdmin(m)) return deny('Only a Super Admin can run a sync.');
     workspaces = [m.ctx.workspace_id];
+    const body = (await request.json().catch(() => ({}))) as { preview?: boolean; pick?: unknown };
+    if (body.preview) {
+      if (!mod.preview) return NextResponse.json({ groups: [] });
+      try {
+        const conn = await getIntegration(m.ctx.workspace_id, def.id);
+        if (!conn) return deny(def.name + ' is not connected.', 400);
+        return NextResponse.json(await mod.preview(m.ctx.workspace_id, conn.secret, conn.config));
+      } catch (err) {
+        return NextResponse.json({ error: err instanceof Error ? err.message : String(err) }, { status: 502 });
+      }
+    }
+    pick = pickOf(body.pick);
   }
 
   const results: { workspaceId: string; summary?: string; error?: string }[] = [];
@@ -29,7 +54,7 @@ export async function POST(request: Request, ctx: RouteContext<'/api/integration
     try {
       const conn = await getIntegration(ws, def.id);
       if (!conn) { results.push({ workspaceId: ws, error: def.name + ' is not connected.' }); continue; }
-      const r = await mod.sync(ws, conn.secret, conn.config);
+      const r = await mod.sync(ws, conn.secret, conn.config, pick);
       // Sent posts no longer need their public media copy (lib/integrations/buffer-publish.ts).
       if (def.id === 'buffer') await cleanupBufferMedia(ws).catch((e) => console.warn('buffer-media cleanup', e));
       await markChecked(ws, def.id, null, true);
