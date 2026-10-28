@@ -95,6 +95,44 @@ export function fromWeb(items: { url: string; title: string; description: string
   }));
 }
 
+// vidIQ outliers results. The MCP tool returns JSON as text with no published schema, so this walks the result for
+// objects that look like videos (a title plus a video ID or watch URL) and reads the common count field names.
+export function fromVidiq(text: string, topic: string): Draft[] {
+  let data: unknown;
+  try { data = JSON.parse(text); } catch { return []; }
+  const out: Draft[] = [];
+  const seen = new Set<string>();
+  const pick = (o: Raw, ...keys: string[]) => keys.map((k) => get(o, k)).find((v) => v != null && v !== '');
+  const walk = (node: unknown, depth: number) => {
+    if (!node || typeof node !== 'object' || depth > 8 || out.length >= 50) return;
+    if (Array.isArray(node)) { node.forEach((n) => walk(n, depth + 1)); return; }
+    const o = node as Raw;
+    const title = str(pick(o, 'title', 'videoTitle', 'video_title', 'name'));
+    const id = str(pick(o, 'videoId', 'video_id', 'id'));
+    const link = str(pick(o, 'url', 'link', 'videoUrl', 'video_url'));
+    const url = /youtu\.?be/.test(link) ? link : /^[\w-]{11}$/.test(id) ? 'https://www.youtube.com/watch?v=' + id : '';
+    if (title && url) {
+      if (!seen.has(url)) {
+        seen.add(url);
+        const score = num(pick(o, 'outlierScore', 'outlier_score', 'multiplier', 'score'));
+        out.push({
+          source: 'vidiq', topic, title: clip(title, 200), url,
+          author: str(pick(o, 'channelTitle', 'channel_title', 'channelName', 'channel_name', 'channel.title', 'channel')) || undefined,
+          views: num(pick(o, 'views', 'viewCount', 'view_count', 'statistics.viewCount')),
+          likes: num(pick(o, 'likes', 'likeCount', 'like_count')),
+          comments: num(pick(o, 'comments', 'commentCount', 'comment_count')),
+          date: str(pick(o, 'publishedAt', 'published_at', 'publishDate', 'published')).slice(0, 10) || undefined,
+          snippet: score ? 'Outlier score ' + score + 'x' : undefined,
+        });
+      }
+      return;
+    }
+    for (const k in o) walk(o[k], depth + 1);
+  };
+  walk(data, 0);
+  return out;
+}
+
 // Canonical form for comparing URLs: lowercase host without www, no hash, no tracking params, no trailing slash.
 // YouTube watch URLs keep only v=.
 export function urlKey(raw: string): string {

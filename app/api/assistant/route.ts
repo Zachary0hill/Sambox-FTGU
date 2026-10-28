@@ -5,6 +5,8 @@ import { getIntegration } from '@/lib/integrations/secrets';
 import { providerById, type ProviderId } from '@/lib/integrations/registry';
 import { workspaceModel } from '@/lib/ai/model';
 import { assistantTools, urlsIn } from '@/lib/ai/tools';
+import { vidiqClient, vidiqTools } from '@/lib/integrations/providers/vidiq';
+import type { MCPClient } from '@ai-sdk/mcp';
 import { systemPrompt } from '@/lib/ai/prompt';
 import { aiProviders, readPrefs, type AssistantMode } from '@/lib/ai/settings';
 
@@ -121,10 +123,11 @@ export async function POST(request: Request) {
   const um = await sb.from('ai_messages').insert({ thread_id: threadId, role: 'user', body: text });
   if (um.error) return deny(um.error.message, 400);
 
-  const [hist, st, fc] = await Promise.all([
+  const [hist, st, fc, vq] = await Promise.all([
     sb.from('ai_messages').select('role, body, created_at').eq('thread_id', threadId).order('created_at', { ascending: false }).limit(HISTORY),
     sb.from('workspace_settings').select('*').eq('workspace_id', ws).maybeSingle(),
     getIntegration(ws, 'firecrawl').catch(() => null),
+    getIntegration(ws, 'vidiq').catch(() => null),
   ]);
   // Oldest first, capped by size, consecutive turns of the same role merged (older threads hold user turns only).
   const rows = ((hist.data || []) as { role: string; body: string }[]).reverse();
@@ -149,6 +152,18 @@ export async function POST(request: Request) {
   const day = todayIn(String(settings.timezone || 'America/Chicago'));
   const userUrls = rows.filter((r) => r.role === 'user').flatMap((r) => urlsIn(r.body));
   const tools = assistantTools({ member: m, today: day.iso, firecrawlKey: fc ? fc.secret.apiKey || null : null, userUrls });
+  // vidIQ tools come from its MCP server. If it is down the assistant answers without them.
+  let mcp: MCPClient | null = null;
+  if (vq && vq.secret.apiKey) {
+    try {
+      mcp = await vidiqClient(vq.secret.apiKey, 8000);
+      Object.assign(tools, await vidiqTools(mcp, vq.config));
+    } catch (err) {
+      console.warn('assistant vidiq', err instanceof Error ? err.message : err);
+      await mcp?.close().catch(() => {});
+      mcp = null;
+    }
+  }
   const name = providerName(wm.provider);
   const accounts = ((ctx as unknown as { accounts?: { name: string }[] }).accounts || []).map((a) => a.name);
 
@@ -225,6 +240,7 @@ export async function POST(request: Request) {
         if (saved.error) console.warn('assistant save', saved.error.message);
         await sb.from('ai_threads').update({ updated_at: new Date().toISOString() }).eq('id', threadId);
       }
+      await mcp?.close().catch(() => {});
       if (error) send({ t: 'error', message: error });
       send({ t: 'done' });
       if (!closed) { closed = true; try { controller.close(); } catch { /* already closed */ } }
