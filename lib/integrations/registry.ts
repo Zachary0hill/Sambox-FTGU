@@ -3,7 +3,7 @@
 // integrations.config.
 
 export type ProviderId =
-  | 'anthropic' | 'openai' | 'gemini' | 'monday' | 'apify' | 'browserbase' | 'firecrawl' | 'slack' | 'youtube' | 'buffer' | 'n8n' | 'drive' | 'gmail' | 'frame';
+  | 'anthropic' | 'openai' | 'gemini' | 'monday' | 'apify' | 'browserbase' | 'firecrawl' | 'slack' | 'youtube' | 'buffer' | 'n8n' | 'drive' | 'gmail' | 'frame' | 'vidiq';
 
 export type ProviderGroup = 'ai' | 'projects' | 'research' | 'inbox' | 'content' | 'automation';
 
@@ -128,6 +128,16 @@ export const PROVIDERS: ProviderDef[] = [
     id: 'firecrawl', name: 'Firecrawl', group: 'research',
     docs: 'https://docs.firecrawl.dev', keyUrl: 'https://www.firecrawl.dev/app/api-keys',
     fields: [{ key: 'apiKey', label: 'API key', secret: true, placeholder: 'fc-...' }],
+  },
+  {
+    id: 'vidiq', name: 'vidIQ', group: 'research',
+    description: 'YouTube keyword research, outliers, trends and transcripts for the assistant and research agent.',
+    docs: 'https://vidiq.com/mcp/', keyUrl: 'https://app.vidiq.com/account/settings/mcp', credentialLabel: 'Create an MCP API key',
+    setupNote: 'Uses vidIQ\'s MCP server with a read-only API key, so it can research but never edit your channels. Each research call spends vidIQ credits (most cost 5).',
+    fields: [
+      { key: 'apiKey', label: 'MCP API key', secret: true, help: 'vidIQ > Account settings > MCP > Create API key. Works on every vidIQ plan, including Free.' },
+      { key: 'tools', label: 'Tools', optional: true, placeholder: 'keyword_research, outliers, trending_videos, subscriber_insights, video_transcript, generate_titles', help: 'vidIQ tool names the assistant may call, comma separated. Leave blank for the defaults shown.' },
+    ],
   },
   {
     id: 'slack', name: 'Slack', group: 'inbox', canSync: true,

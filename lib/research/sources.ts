@@ -3,9 +3,10 @@ import type { Page } from 'playwright-core';
 import { runActor, type ApifyLimits } from '@/lib/integrations/providers/apify';
 import { withBrowser } from '@/lib/integrations/providers/browserbase';
 import { firecrawlSearch } from '@/lib/integrations/providers/firecrawl';
+import { vidiqClient, callVidiq } from '@/lib/integrations/providers/vidiq';
 import type { Connection } from '@/lib/integrations/secrets';
 import { LIMITS, type SourceId } from './catalog';
-import { fromGoogle, fromReddit, fromTiktok, fromWeb, fromYoutube, fromYoutubePage, type Finding } from './normalize';
+import { fromGoogle, fromReddit, fromTiktok, fromVidiq, fromWeb, fromYoutube, fromYoutubePage, type Finding } from './normalize';
 
 // Apify Store actors, inputs checked against each actor's published input schema (latest build, Oct 2026):
 // https://apify.com/streamers/youtube-scraper/input-schema
@@ -22,7 +23,7 @@ export type SourceCtx = {
   onActorRun: (runId: string) => void | Promise<void>;
   cancelled: () => Promise<boolean>;
 };
-export type Conns = { apify: Connection | null; browserbase: Connection | null; firecrawl: Connection | null };
+export type Conns = { apify: Connection | null; browserbase: Connection | null; firecrawl: Connection | null; vidiq: Connection | null };
 
 const per = LIMITS.perTopic;
 const capFor = (topics: string[]): ApifyLimits => ({ timeoutSecs: 150, maxItems: per * topics.length, maxTotalChargeUsd: 0.5 });
@@ -89,6 +90,28 @@ const RUNNERS: Record<SourceId, (c: Conns, ctx: SourceCtx) => Promise<Draft[]>> 
       out.push(...fromWeb(hits, topic));
     }
     return out;
+  },
+  // vidIQ's outliers tool, one call (5 credits) per topic. The query argument is read from the tool's own schema.
+  async vidiq(c, ctx) {
+    const client = await vidiqClient(c.vidiq!.secret.apiKey);
+    try {
+      const def = (await client.listTools({ options: { timeout: 15000 } })).tools.find((t) => t.name === 'outliers');
+      if (!def) throw new Error('vidIQ no longer offers the outliers tool.');
+      const props = (def.inputSchema?.properties || {}) as Record<string, { type?: string }>;
+      const required = (def.inputSchema as { required?: string[] } | undefined)?.required || [];
+      const key = Object.keys(props).find((k) => /^(query|keywords?|topic|search|q|term)$/i.test(k))
+        || required.find((k) => props[k]?.type === 'string') || Object.keys(props).find((k) => props[k]?.type === 'string');
+      if (!key) throw new Error('Could not tell which vidIQ outliers field takes the search topic.');
+      const out: Draft[] = [];
+      for (const topic of ctx.topics) {
+        if (Date.now() > ctx.deadline - 15000 || (await ctx.cancelled())) break;
+        const text = await callVidiq(client, 'outliers', { [key]: topic }, Math.min(60000, ctx.deadline - Date.now()));
+        out.push(...fromVidiq(text, topic).slice(0, per));
+      }
+      return out;
+    } finally {
+      await client.close().catch(() => {});
+    }
   },
 };
 

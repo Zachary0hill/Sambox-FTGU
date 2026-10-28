@@ -1,7 +1,7 @@
 // Research sources the agent can use, shared by the Ideas page and the server. Nothing secret here.
 import type { ProviderId } from '@/lib/integrations/registry';
 
-export type SourceId = 'youtube' | 'tiktok' | 'reddit' | 'google' | 'youtube_browser' | 'web';
+export type SourceId = 'youtube' | 'tiktok' | 'reddit' | 'google' | 'youtube_browser' | 'web' | 'vidiq';
 
 export type SourceDef = { id: SourceId; label: string; via: ProviderId; viaName: string; desc: string };
 
@@ -12,9 +12,10 @@ export const SOURCES: SourceDef[] = [
   { id: 'google', label: 'Google', via: 'apify', viaName: 'Apify', desc: 'First page of Google results' },
   { id: 'youtube_browser', label: 'YouTube search', via: 'browserbase', viaName: 'Browserbase', desc: 'Live YouTube search page in a cloud browser' },
   { id: 'web', label: 'Web articles', via: 'firecrawl', viaName: 'Firecrawl', desc: 'Web search with page summaries' },
+  { id: 'vidiq', label: 'YouTube outliers', via: 'vidiq', viaName: 'vidIQ', desc: 'Videos beating their channel average (vidIQ credits)' },
 ];
 
-export const RESEARCH_PROVIDERS: ProviderId[] = ['apify', 'browserbase', 'firecrawl'];
+export const RESEARCH_PROVIDERS: ProviderId[] = ['apify', 'browserbase', 'firecrawl', 'vidiq'];
 
 export const LIMITS = {
   maxTopics: 3,
