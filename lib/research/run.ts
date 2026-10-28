@@ -18,10 +18,10 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 // What the workspace can run right now. Keys stay on the server; only booleans leave this module.
 export async function availability(ws: string) {
-  const [ai, apify, browserbase, firecrawl, vidiq] = await Promise.all([
-    assistantProvider(ws), getIntegration(ws, 'apify'), getIntegration(ws, 'browserbase'), getIntegration(ws, 'firecrawl'), getIntegration(ws, 'vidiq'),
+  const [ai, apify, browserbase, firecrawl, vidiq, virlo] = await Promise.all([
+    assistantProvider(ws), getIntegration(ws, 'apify'), getIntegration(ws, 'browserbase'), getIntegration(ws, 'firecrawl'), getIntegration(ws, 'vidiq'), getIntegration(ws, 'virlo'),
   ]);
-  return { ai: !!ai, conns: { apify, browserbase, firecrawl, vidiq } as Conns };
+  return { ai: !!ai, conns: { apify, browserbase, firecrawl, vidiq, virlo } as Conns };
 }
 
 // Runs left as queued or running after the route's time limit died with their function. Mark them failed.
@@ -41,7 +41,7 @@ export async function createRun(m: Member, body: Record<string, unknown>) {
 
   const { ai, conns } = await availability(ws);
   if (!ai) return { error: 'Connect an AI model in Workspace Settings > Integrations first.', status: 400 };
-  if (!conns.apify && !conns.browserbase && !conns.firecrawl && !conns.vidiq) return { error: 'Connect Apify, Browserbase, Firecrawl or vidIQ in Workspace Settings > Integrations first.', status: 400 };
+  if (!conns.apify && !conns.browserbase && !conns.firecrawl && !conns.vidiq && !conns.virlo) return { error: 'Connect Apify, Browserbase, Firecrawl, vidIQ or Virlo in Workspace Settings > Integrations first.', status: 400 };
 
   const asked = Array.isArray(body.sources) ? body.sources.map(String).filter((s) => sourceById(s)) as SourceId[] : [];
   if (!asked.length) return { error: 'Pick at least one source.', status: 400 };

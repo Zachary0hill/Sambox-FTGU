@@ -29,7 +29,7 @@ export async function GET() {
     m.supabase.from('research_runs').select('*').eq('workspace_id', ws).order('created_at', { ascending: false }).limit(10),
   ]);
   return NextResponse.json({
-    connected: { ai, apify: !!conns.apify, browserbase: !!conns.browserbase, firecrawl: !!conns.firecrawl, vidiq: !!conns.vidiq },
+    connected: { ai, apify: !!conns.apify, browserbase: !!conns.browserbase, firecrawl: !!conns.firecrawl, vidiq: !!conns.vidiq, virlo: !!conns.virlo },
     runs: runs.data || [],
   });
 }

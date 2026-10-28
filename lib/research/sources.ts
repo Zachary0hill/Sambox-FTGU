@@ -4,9 +4,10 @@ import { runActor, type ApifyLimits } from '@/lib/integrations/providers/apify';
 import { withBrowser } from '@/lib/integrations/providers/browserbase';
 import { firecrawlSearch } from '@/lib/integrations/providers/firecrawl';
 import { vidiqClient, callVidiq } from '@/lib/integrations/providers/vidiq';
+import { virloSearch, type VirloPlatform } from '@/lib/integrations/providers/virlo';
 import type { Connection } from '@/lib/integrations/secrets';
 import { LIMITS, type SourceId } from './catalog';
-import { fromGoogle, fromReddit, fromTiktok, fromVidiq, fromWeb, fromYoutube, fromYoutubePage, type Finding } from './normalize';
+import { fromGoogle, fromReddit, fromTiktok, fromVidiq, fromVirlo, fromWeb, fromYoutube, fromYoutubePage, type Finding } from './normalize';
 
 // Apify Store actors, inputs checked against each actor's published input schema (latest build, Oct 2026):
 // https://apify.com/streamers/youtube-scraper/input-schema
@@ -23,7 +24,7 @@ export type SourceCtx = {
   onActorRun: (runId: string) => void | Promise<void>;
   cancelled: () => Promise<boolean>;
 };
-export type Conns = { apify: Connection | null; browserbase: Connection | null; firecrawl: Connection | null; vidiq: Connection | null };
+export type Conns = { apify: Connection | null; browserbase: Connection | null; firecrawl: Connection | null; vidiq: Connection | null; virlo: Connection | null };
 
 const per = LIMITS.perTopic;
 const capFor = (topics: string[]): ApifyLimits => ({ timeoutSecs: 150, maxItems: per * topics.length, maxTotalChargeUsd: 0.5 });
@@ -112,6 +113,21 @@ const RUNNERS: Record<SourceId, (c: Conns, ctx: SourceCtx) => Promise<Draft[]>> 
     } finally {
       await client.close().catch(() => {});
     }
+  },
+  // Virlo live search on TikTok, YouTube Shorts and Instagram Reels, one $0.01 call each per topic. The most-viewed
+  // videos across the three platforms are kept. One platform failing only drops that platform.
+  async virlo(c, ctx) {
+    const platforms: VirloPlatform[] = ['tiktok', 'youtube', 'instagram'];
+    const out: Draft[] = [];
+    for (const topic of ctx.topics) {
+      if (Date.now() > ctx.deadline - 15000 || (await ctx.cancelled())) break;
+      const timeout = Math.min(30000, ctx.deadline - Date.now());
+      const got = await Promise.allSettled(platforms.map((p) => virloSearch(c.virlo!.secret.apiKey, p, topic, timeout)));
+      const ok = got.flatMap((g) => (g.status === 'fulfilled' ? [g.value] : []));
+      if (!ok.length) throw (got[0] as PromiseRejectedResult).reason;
+      out.push(...fromVirlo(ok.flat(), topic).sort((a, b) => (b.views || 0) - (a.views || 0)).slice(0, per));
+    }
+    return out;
   },
 };
 

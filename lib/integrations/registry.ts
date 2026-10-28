@@ -3,7 +3,7 @@
 // integrations.config.
 
 export type ProviderId =
-  | 'anthropic' | 'openai' | 'gemini' | 'monday' | 'apify' | 'browserbase' | 'firecrawl' | 'slack' | 'youtube' | 'buffer' | 'n8n' | 'drive' | 'gmail' | 'frame' | 'vidiq';
+  | 'anthropic' | 'openai' | 'gemini' | 'monday' | 'apify' | 'browserbase' | 'firecrawl' | 'slack' | 'youtube' | 'buffer' | 'n8n' | 'drive' | 'gmail' | 'frame' | 'vidiq' | 'virlo';
 
 export type ProviderGroup = 'ai' | 'projects' | 'research' | 'inbox' | 'content' | 'automation';
 
@@ -137,6 +137,16 @@ export const PROVIDERS: ProviderDef[] = [
     fields: [
       { key: 'apiKey', label: 'MCP API key', secret: true, help: 'vidIQ > Account settings > MCP > Create API key. Works on every vidIQ plan, including Free.' },
       { key: 'tools', label: 'Tools', optional: true, placeholder: 'keyword_research, outliers, trending_videos, subscriber_insights, video_transcript, generate_titles', help: 'vidIQ tool names the assistant may call, comma separated. Leave blank for the defaults shown.' },
+    ],
+  },
+  {
+    id: 'virlo', name: 'Virlo', group: 'research',
+    description: 'TikTok, YouTube Shorts and Instagram Reels trends, hooks, sounds and live search for the assistant and research agent.',
+    docs: 'https://dev.virlo.ai/docs', keyUrl: 'https://dev.virlo.ai/dashboard/api-keys', credentialLabel: 'Create an API key',
+    setupNote: 'Billed from your prepaid Virlo balance: live search is $0.01 a call, trends, hooks and sounds $0.05 to $0.25. The assistant can read data but never creates agents or tracking on your Virlo account.',
+    fields: [
+      { key: 'apiKey', label: 'API key', secret: true, placeholder: 'virlo_tkn_...', help: 'dev.virlo.ai > Dashboard > API keys.' },
+      { key: 'tools', label: 'Tools', optional: true, placeholder: 'get_trends_digest, get_trending_videos, get_content_trends, get_trending_hooks, search_hashtags, get_trending_sounds, raw_search, raw_transcript', help: 'Virlo MCP tool names the assistant may call, comma separated. Leave blank for the defaults shown. Paid lookups like lookup_creator ($0.50+) can be added here.' },
     ],
   },
   {

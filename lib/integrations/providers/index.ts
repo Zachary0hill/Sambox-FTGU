@@ -16,7 +16,8 @@ import drive from './drive';
 import gmail from './gmail';
 import frame from './frame';
 import vidiq from './vidiq';
+import virlo from './virlo';
 
 export const MODULES: Record<ProviderId, ProviderModule> = {
-  anthropic, openai, gemini, monday, apify, browserbase, firecrawl, slack, youtube, buffer, n8n, drive, gmail, frame, vidiq,
+  anthropic, openai, gemini, monday, apify, browserbase, firecrawl, slack, youtube, buffer, n8n, drive, gmail, frame, vidiq, virlo,
 };

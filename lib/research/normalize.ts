@@ -133,6 +133,24 @@ export function fromVidiq(text: string, topic: string): Draft[] {
   return out;
 }
 
+// Virlo raw search videos (same schema on TikTok, YouTube Shorts and Instagram Reels; counts are numbers or null).
+export function fromVirlo(items: Raw[], topic: string): Draft[] {
+  return items.filter((i) => str(i.url)).map((i) => {
+    const author = (i.author || {}) as Raw;
+    const stats = (i.stats || {}) as Raw;
+    const caption = str(i.caption);
+    const platform = { tiktok: 'TikTok', youtube: 'YouTube Shorts', instagram: 'Instagram' }[str(i.platform)] || '';
+    return {
+      source: 'virlo' as const, topic, url: str(i.url),
+      title: clip(firstLine(caption) || platform + ' video', 200),
+      snippet: caption.length > 200 || caption.includes('\n') ? clip([platform, caption.replace(/\s+/g, ' ')].filter(Boolean).join(': '), 400) : platform || undefined,
+      author: str(author.handle) ? '@' + str(author.handle) : str(author.display_name) || undefined,
+      views: num(stats.views), likes: num(stats.likes), comments: num(stats.comments),
+      date: str(i.published_at).slice(0, 10) || undefined,
+    };
+  });
+}
+
 // Canonical form for comparing URLs: lowercase host without www, no hash, no tracking params, no trailing slash.
 // YouTube watch URLs keep only v=.
 export function urlKey(raw: string): string {
