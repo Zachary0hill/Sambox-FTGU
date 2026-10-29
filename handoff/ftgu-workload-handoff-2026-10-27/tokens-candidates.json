@@ -1,0 +1,411 @@
+{
+  "colors": [
+    {
+      "value": "#FFFFFF",
+      "count": 140
+    },
+    {
+      "value": "#666666",
+      "count": 103
+    },
+    {
+      "value": "#8A8A8A",
+      "count": 90
+    },
+    {
+      "value": "#F2F2F2",
+      "count": 80
+    },
+    {
+      "value": "#111111",
+      "count": 75
+    },
+    {
+      "value": "#EFEFEF",
+      "count": 56
+    },
+    {
+      "value": "#2A2A2A",
+      "count": 54
+    },
+    {
+      "value": "#E6E6E6",
+      "count": 37
+    },
+    {
+      "value": "#2F5BD8",
+      "count": 34
+    },
+    {
+      "value": "#7A3FD0",
+      "count": 18
+    },
+    {
+      "value": "#707070",
+      "count": 17
+    },
+    {
+      "value": "#B9461F",
+      "count": 15
+    },
+    {
+      "value": "#C9D6FA",
+      "count": 15
+    },
+    {
+      "value": "#1D3A8A",
+      "count": 14
+    },
+    {
+      "value": "#C42B1C",
+      "count": 13
+    },
+    {
+      "value": "#F2A93B",
+      "count": 13
+    },
+    {
+      "value": "#F0F0F0",
+      "count": 12
+    },
+    {
+      "value": "#5F5F5F",
+      "count": 12
+    },
+    {
+      "value": "#FAFAFA",
+      "count": 11
+    },
+    {
+      "value": "#9B1C13",
+      "count": 11
+    },
+    {
+      "value": "#9A6500",
+      "count": 10
+    },
+    {
+      "value": "#B8264F",
+      "count": 8
+    },
+    {
+      "value": "#1E7A3C",
+      "count": 7
+    },
+    {
+      "value": "#F4F4F4",
+      "count": 6
+    },
+    {
+      "value": "#1B653B",
+      "count": 6
+    },
+    {
+      "value": "#E6F5EC",
+      "count": 6
+    },
+    {
+      "value": "#7A4E00",
+      "count": 6
+    },
+    {
+      "value": "#FCF1DC",
+      "count": 6
+    },
+    {
+      "value": "rgba(255,255,255,0.22)",
+      "count": 6
+    },
+    {
+      "value": "#D4D4D4",
+      "count": 5
+    },
+    {
+      "value": "#9A9A9A",
+      "count": 5
+    },
+    {
+      "value": "#FDE8E5",
+      "count": 4
+    },
+    {
+      "value": "rgba(0,0,0,0.2)",
+      "count": 4
+    },
+    {
+      "value": "#EDEDED",
+      "count": 3
+    },
+    {
+      "value": "#EBEBEB",
+      "count": 2
+    },
+    {
+      "value": "#CFCFCF",
+      "count": 2
+    },
+    {
+      "value": "rgba(0,0,0,0.08)",
+      "count": 2
+    },
+    {
+      "value": "#BDBDBD",
+      "count": 1
+    },
+    {
+      "value": "#2F5BD81A",
+      "count": 1
+    },
+    {
+      "value": "#C42B1C1A",
+      "count": 1
+    }
+  ],
+  "fontFamilies": [
+    {
+      "value": "Montserrat, sans-serif",
+      "count": 29
+    },
+    {
+      "value": "Inter,system-ui,sans-serif",
+      "count": 1
+    },
+    {
+      "value": "inherit",
+      "count": 1
+    }
+  ],
+  "fontSizes": [
+    {
+      "value": "11px",
+      "count": 159
+    },
+    {
+      "value": "12px",
+      "count": 116
+    },
+    {
+      "value": "13px",
+      "count": 112
+    },
+    {
+      "value": "14px",
+      "count": 73
+    },
+    {
+      "value": "15px",
+      "count": 20
+    },
+    {
+      "value": "10px",
+      "count": 16
+    },
+    {
+      "value": "18px",
+      "count": 13
+    },
+    {
+      "value": "30px",
+      "count": 7
+    },
+    {
+      "value": "34px",
+      "count": 5
+    },
+    {
+      "value": "22px",
+      "count": 3
+    },
+    {
+      "value": "38px",
+      "count": 1
+    },
+    {
+      "value": "26px",
+      "count": 1
+    }
+  ],
+  "radii": [
+    {
+      "value": "6px",
+      "count": 123
+    },
+    {
+      "value": "4px",
+      "count": 77
+    },
+    {
+      "value": "10px",
+      "count": 40
+    },
+    {
+      "value": "50%",
+      "count": 38
+    },
+    {
+      "value": "5px",
+      "count": 27
+    },
+    {
+      "value": "12px",
+      "count": 14
+    },
+    {
+      "value": "8px",
+      "count": 14
+    },
+    {
+      "value": "3px",
+      "count": 11
+    },
+    {
+      "value": "16px",
+      "count": 11
+    },
+    {
+      "value": "14px",
+      "count": 10
+    },
+    {
+      "value": "9px",
+      "count": 8
+    },
+    {
+      "value": "11px",
+      "count": 2
+    },
+    {
+      "value": "20px",
+      "count": 1
+    },
+    {
+      "value": "7px",
+      "count": 1
+    }
+  ],
+  "spacing": [
+    {
+      "value": "0",
+      "count": 111
+    },
+    {
+      "value": "12px",
+      "count": 66
+    },
+    {
+      "value": "8px",
+      "count": 46
+    },
+    {
+      "value": "6px",
+      "count": 44
+    },
+    {
+      "value": "0 10px",
+      "count": 38
+    },
+    {
+      "value": "2px",
+      "count": 36
+    },
+    {
+      "value": "4px",
+      "count": 36
+    },
+    {
+      "value": "0 12px",
+      "count": 34
+    },
+    {
+      "value": "0 8px",
+      "count": 32
+    },
+    {
+      "value": "10px",
+      "count": 22
+    },
+    {
+      "value": "0 4px 0",
+      "count": 14
+    },
+    {
+      "value": "1px",
+      "count": 14
+    },
+    {
+      "value": "8px 20px",
+      "count": 14
+    },
+    {
+      "value": "16px",
+      "count": 10
+    },
+    {
+      "value": "10px 20px",
+      "count": 10
+    },
+    {
+      "value": "14px",
+      "count": 8
+    },
+    {
+      "value": "6px 20px",
+      "count": 6
+    },
+    {
+      "value": "5px",
+      "count": 6
+    },
+    {
+      "value": "0 6px 0 12px",
+      "count": 6
+    },
+    {
+      "value": "0 5px",
+      "count": 6
+    },
+    {
+      "value": "16px 18px",
+      "count": 5
+    },
+    {
+      "value": "0 7px",
+      "count": 4
+    },
+    {
+      "value": "3px",
+      "count": 3
+    },
+    {
+      "value": "7px",
+      "count": 3
+    },
+    {
+      "value": "0 11px",
+      "count": 3
+    },
+    {
+      "value": "0 16px",
+      "count": 2
+    },
+    {
+      "value": "18px 20px 14px",
+      "count": 2
+    },
+    {
+      "value": "18px 20px 20px",
+      "count": 2
+    },
+    {
+      "value": "12px 14px",
+      "count": 2
+    },
+    {
+      "value": "20px 16px 40px !important",
+      "count": 1
+    }
+  ],
+  "googleFonts": [
+    "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Montserrat:wght@800;900&display=swap"
+  ]
+}

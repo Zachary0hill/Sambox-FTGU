@@ -1,0 +1,21 @@
+{
+  "project": "/tmp/claude-0/-home-claude/966af66e-e8dd-5af6-b8e8-05ef0e2ed692/scratchpad/artifact-files/db895208-01b1-47f8-9476-0b7846de8139/project",
+  "title": "FTGU Workload",
+  "artboards": [
+    {
+      "file": "Main.dc.html",
+      "name": "Main",
+      "title": "Workload overview",
+      "w": 1440,
+      "h": 3400,
+      "fluid": true,
+      "html": "html/Main.html",
+      "png": "screenshots/Main.png",
+      "imports": [],
+      "warnings": [],
+      "tweaks": [
+        "capacity"
+      ]
+    }
+  ]
+}

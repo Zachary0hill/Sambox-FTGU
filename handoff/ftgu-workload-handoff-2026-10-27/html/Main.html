@@ -1,0 +1,971 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Workload overview</title>
+<!-- Generated from Main.dc.html by zz-handoff-design. Frame 1440x3400 (fluid page). -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Montserrat:wght@800;900&amp;display=swap">
+<style>
+body{margin:0;background:#EBEBEB}
+a{color:#111111}a:hover{color:#2A2A2A}
+.wl{font-family:Inter,system-ui,sans-serif;color:#111111;-webkit-font-smoothing:antialiased}
+.wl button{font-family:inherit;letter-spacing:-0.01em}
+.wl button:focus-visible,.wl a:focus-visible,.wl input:focus-visible{outline:2px solid #111111;outline-offset:2px}
+.wl-nav:hover{background:#F0F0F0 !important;color:#111111 !important}
+.wl-tile:hover{border-color:#BDBDBD !important}
+.wl-row:hover{background:#FAFAFA !important}
+.wl-ghost:hover{background:#F2F2F2 !important}
+.wl-primary:hover{background:#2A2A2A !important;color:#FFFFFF !important}
+.wl-col:hover{background:#F4F4F4 !important}
+.wl-cell:hover{box-shadow:0 0 0 2px #111111}
+.wl-assign:hover{border-color:#111111 !important;color:#111111 !important;background:#FFFFFF !important}
+.wl-opt:hover{border-color:#111111 !important}
+.wl-chip:hover{border-color:#111111 !important}
+.wl-person:hover .wl-pname{text-decoration:underline;text-underline-offset:3px}
+.wl-scroll{scrollbar-width:thin;scrollbar-color:#CFCFCF transparent}
+.wl-scroll::-webkit-scrollbar{height:6px}.wl-scroll::-webkit-scrollbar-thumb{background:#CFCFCF;border-radius:3px}
+@media (prefers-reduced-motion:no-preference){.wl-anim{transition:width .25s ease,height .25s ease,background-color .2s ease,transform .2s ease}}
+@media (max-width:720px){.wl-side{display:none !important}.wl-mob{display:flex !important}.wl-main{padding:20px 16px 40px !important}.wl-h1{font-size:30px !important}}
+</style>
+</head>
+<body>
+<div class="wl" style="min-height: 100vh; box-sizing: border-box; padding: 8px; background: #EBEBEB;">
+<div style="display: flex; flex-wrap: wrap; align-items: stretch; background: #FFFFFF; border-radius: 20px; overflow: hidden;">
+
+<!-- Mobile top bar -->
+<div class="wl-mob" style="display: none; flex: 1 1 100%; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 16px; border-bottom: 1px solid #E6E6E6; background: #FAFAFA;">
+<div style="display: flex; align-items: center; gap: 10px;">
+<span style="display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 9px; background: #111111; color: #FFFFFF; font-family: Montserrat, sans-serif; font-weight: 900; font-size: 10px;">FTGU</span>
+<span style="font-family: Montserrat, sans-serif; font-weight: 900; font-size: 15px;">FTGU Studio</span>
+</div>
+<button type="button" aria-label="Open menu" style="width: 44px; height: 44px; border: 1px solid #E6E6E6; border-radius: 12px; background: #FFFFFF; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; color: #111111;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"></path></svg></button>
+</div>
+
+<!-- Sidebar -->
+<nav class="wl-side" aria-label="Main" style="flex: 0 0 264px; box-sizing: border-box; background: #FAFAFA; border-right: 1px solid #E6E6E6; padding: 18px 14px 14px; display: flex; flex-direction: column; gap: 2px;">
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 4px 6px 16px; margin-bottom: 12px; border-bottom: 1px solid #E6E6E6;">
+<div style="display: flex; align-items: center; gap: 12px;">
+<span style="display: inline-flex; align-items: center; justify-content: center; width: 38px; height: 38px; border-radius: 10px; background: #111111; color: #FFFFFF; font-family: Montserrat, sans-serif; font-weight: 900; font-size: 11px; letter-spacing: -0.02em;">FTGU</span>
+<span style="display: flex; flex-direction: column; line-height: 1.25;"><span style="font-family: Montserrat, sans-serif; font-weight: 900; font-size: 15px;">FTGU Studio</span><span style="font-size: 13px; color: #666666;">Production board</span></span>
+</div>
+<button type="button" aria-label="Collapse sidebar" style="width: 36px; height: 36px; border: 0; border-radius: 10px; background: transparent; color: #707070; display: inline-flex; align-items: center; justify-content: center; cursor: pointer;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"></rect><path d="M9 4v16M15 10l-2 2 2 2"></path></svg></button>
+</div>
+<a class="wl-nav" href="#" style="display: flex; align-items: center; gap: 12px; min-height: 44px; padding: 0 12px; border-radius: 10px; text-decoration: none; color: #2A2A2A; font-size: 15px; font-weight: 500;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5V21h-6v-6H9v6H3z"></path></svg>Daily</a>
+<a class="wl-nav" href="#" style="display: flex; align-items: center; gap: 12px; min-height: 44px; padding: 0 12px; border-radius: 10px; text-decoration: none; color: #2A2A2A; font-size: 15px; font-weight: 500;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="15" rx="2"></rect><path d="M3 10h18M8 3v4M16 3v4"></path></svg>Projects</a>
+<a class="wl-nav" href="#" style="display: flex; align-items: center; gap: 12px; min-height: 44px; padding: 0 12px; border-radius: 10px; text-decoration: none; color: #2A2A2A; font-size: 15px; font-weight: 500;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-4 10.5c.7.7 1 1.5 1 2.5h6c0-1 .3-1.8 1-2.5A6 6 0 0 0 12 3z"></path></svg>Ideas &amp; Research</a>
+<a class="wl-nav" href="#" style="display: flex; align-items: center; gap: 12px; min-height: 44px; padding: 0 12px; border-radius: 10px; text-decoration: none; color: #2A2A2A; font-size: 15px; font-weight: 500;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3a9 9 0 1 0 0 18c1 0 1.5-.8 1.5-1.5 0-1-.8-1.3-.8-2.2 0-.8.7-1.3 1.5-1.3H17a4 4 0 0 0 4-4C21 6.6 17 3 12 3z"></path><circle cx="7.5" cy="11" r="1"></circle><circle cx="10" cy="7" r="1"></circle><circle cx="15" cy="7" r="1"></circle></svg>Brand</a>
+<a class="wl-nav" href="#" style="display: flex; align-items: center; gap: 12px; min-height: 44px; padding: 0 12px; border-radius: 10px; text-decoration: none; color: #2A2A2A; font-size: 15px; font-weight: 500;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 16v-5a6 6 0 0 1 12 0v5l2 2H4z"></path><path d="M10 21h4"></path></svg>Inbox</a>
+<a class="wl-nav" href="#" style="display: flex; align-items: center; gap: 12px; min-height: 44px; padding: 0 12px; border-radius: 10px; text-decoration: none; color: #2A2A2A; font-size: 15px; font-weight: 500;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="9" width="18" height="12" rx="2"></rect><path d="M3 9l1.5-4.5L20 4l1 5M8.5 4.3 7 9M14.5 4.1 13 9"></path></svg>Content</a>
+<div style="display: flex; align-items: center; justify-content: space-between; padding: 22px 12px 8px; font-size: 13px; font-weight: 600; color: #666666;">Admin<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 15 6-6 6 6"></path></svg></div>
+<a class="wl-nav" href="#" style="display: flex; align-items: center; gap: 12px; min-height: 44px; padding: 0 12px; border-radius: 10px; text-decoration: none; color: #2A2A2A; font-size: 15px; font-weight: 500;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="4"></circle><path d="M2 21c0-4 3-6 7-6s7 2 7 6M16 4a4 4 0 0 1 0 8M22 21c0-3-1.5-5-4-5.5"></path></svg><span style="flex: 1;">Users</span><span style="display: inline-flex; align-items: center; justify-content: center; min-width: 22px; height: 22px; border-radius: 11px; background: #EDEDED; font-size: 12px; font-weight: 700;">6</span></a>
+<a class="wl-nav" href="#" style="display: flex; align-items: center; gap: 12px; min-height: 44px; padding: 0 12px; border-radius: 10px; text-decoration: none; color: #2A2A2A; font-size: 15px; font-weight: 500;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 4 6v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V6z"></path><path d="m9 12 2 2 4-4"></path></svg>Roles &amp; Permissions</a>
+<a class="wl-nav" href="#" aria-current="page" style="display: flex; align-items: center; gap: 12px; min-height: 44px; padding: 0 12px; border-radius: 10px; text-decoration: none; color: #111111; font-size: 15px; font-weight: 600; background: #EDEDED;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"></rect><path d="M8 8v8M12 8v5M16 8v8"></path></svg><span style="flex: 1;">Workload</span><span style="display: inline-flex; align-items: center; justify-content: center; min-width: 22px; height: 22px; padding: 0 6px; box-sizing: border-box; border-radius: 11px; background: #111111; color: #FFFFFF; font-size: 12px; font-weight: 700;">8</span></a>
+<a class="wl-nav" href="#" style="display: flex; align-items: center; gap: 12px; min-height: 44px; padding: 0 12px; border-radius: 10px; text-decoration: none; color: #2A2A2A; font-size: 15px; font-weight: 500;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="7" width="18" height="13" rx="2"></rect><path d="M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2M3 13h18"></path></svg>Clients &amp; Sponsors</a>
+<a class="wl-nav" href="#" style="display: flex; align-items: center; gap: 12px; min-height: 44px; padding: 0 12px; border-radius: 10px; text-decoration: none; color: #2A2A2A; font-size: 15px; font-weight: 500;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2v20M17 6H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>Finance</a>
+<a class="wl-nav" href="#" style="display: flex; align-items: center; gap: 12px; min-height: 44px; padding: 0 12px; border-radius: 10px; text-decoration: none; color: #2A2A2A; font-size: 15px; font-weight: 500;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 2 4 14h7l-1 8 9-12h-7z"></path></svg>Automations</a>
+<a class="wl-nav" href="#" style="display: flex; align-items: center; gap: 12px; min-height: 44px; padding: 0 12px; border-radius: 10px; text-decoration: none; color: #2A2A2A; font-size: 15px; font-weight: 500;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7L3 8M3 3v5h5M12 7v5l3 2"></path></svg>Activity Log</a>
+<a class="wl-nav" href="#" style="display: flex; align-items: center; gap: 12px; min-height: 44px; padding: 0 12px; border-radius: 10px; text-decoration: none; color: #2A2A2A; font-size: 15px; font-weight: 500;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"></circle><path d="M12 2v3M12 19v3M4.9 4.9 7 7M17 17l2.1 2.1M2 12h3M19 12h3M4.9 19.1 7 17M17 7l2.1-2.1"></path></svg>Workspace Settings</a>
+<div style="flex: 1; min-height: 24px;"></div>
+<a class="wl-nav" href="#" style="display: flex; align-items: center; gap: 12px; min-height: 48px; padding: 0 12px; border-radius: 10px; text-decoration: none; color: #2A2A2A; font-size: 15px; font-weight: 500; border-top: 1px solid #E6E6E6;"><span style="display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 50%; background: #EDEDED; font-size: 12px; font-weight: 700;">Z</span>Account</a>
+</nav>
+
+<!-- Main -->
+<main class="wl-main" style="flex: 999 1 560px; min-width: 0; box-sizing: border-box; padding: 36px 40px 64px;">
+<div style="max-width: 1240px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px;">
+
+<!-- Header -->
+<header style="display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 16px;">
+<div style="display: flex; flex-direction: column; gap: 6px; min-width: 0;">
+<div style="display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 500; color: #666666;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"></rect><path d="M8 11V7a4 4 0 0 1 8 0v4"></path></svg>Admin · Super Admin only</div>
+<h1 class="wl-h1" style="margin: 0; font-family: Montserrat, sans-serif; font-weight: 900; font-size: 38px; line-height: 1.1; letter-spacing: -0.02em;">Workload</h1>
+<p style="margin: 0; font-size: 15px; color: #666666;">Assignments, deadlines, team capacity and workflow rules across every open project.</p>
+</div>
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 10px;">
+<span style="display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 14px; box-sizing: border-box; border-radius: 12px; background: #F4F4F4; font-size: 14px; font-weight: 600; color: #2A2A2A;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"></rect><path d="M3 10h18M8 3v4M16 3v4"></path></svg>Tue, Oct 27</span>
+<a class="wl-ghost" href="#" style="display: inline-flex; align-items: center; min-height: 44px; padding: 0 16px; box-sizing: border-box; border: 1px solid #E6E6E6; border-radius: 12px; background: #FFFFFF; font-size: 14px; font-weight: 600; color: #111111; text-decoration: none;">Open board</a>
+<a class="wl-primary" href="#attention" style="display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 16px; box-sizing: border-box; border-radius: 12px; background: #111111; font-size: 14px; font-weight: 600; color: #FFFFFF; text-decoration: none;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="4"></circle><path d="M2 21c0-4 3-6 7-6 1.5 0 2.8.3 3.9.8M19 14v6M16 17h6"></path></svg>Assign open work</a>
+</div>
+</header>
+
+<!-- Undo banner -->
+
+
+<!-- KPI tiles -->
+<section aria-label="Key numbers" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(188px, 1fr)); gap: 12px;">
+
+<button type="button" class="wl-tile" aria-pressed="false" style="display: flex; flex-direction: column; align-items: flex-start; gap: 12px; min-height: 136px; box-sizing: border-box; text-align: left; background: #FFFFFF; border-radius: 16px; cursor: pointer; color: #111111; border: 1px solid #E6E6E6; padding: 16px 18px;">
+<span style="display: flex; align-items: center; justify-content: space-between; width: 100%; gap: 8px;"><span style="font-size: 13px; font-weight: 600; color: #2A2A2A;">Active projects</span><span style="display: block; width: 8px; height: 8px; border-radius: 50%; background: #111111;"></span></span>
+<span style="display: flex; align-items: flex-end; justify-content: space-between; gap: 8px; width: 100%;">
+<span style="font-family: Montserrat, sans-serif; font-weight: 900; font-size: 34px; line-height: 1; font-variant-numeric: tabular-nums;">14</span>
+<svg width="96" height="34" viewBox="0 0 96 34" aria-hidden="true"><polyline points="4,34 4,30 16.6,25.2 29.1,15.6 41.7,20.4 54.3,10.8 66.9,15.6 79.4,10.8 92,6 92,34" fill="rgba(17,17,17,0.06)" stroke="none"></polyline><polyline points="4,30 16.6,25.2 29.1,15.6 41.7,20.4 54.3,10.8 66.9,15.6 79.4,10.8 92,6" fill="none" stroke="#111111" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"></polyline><circle cx="92" cy="6" r="3.2" fill="#111111"></circle></svg>
+</span>
+<span style="display: flex; flex-wrap: wrap; gap: 6px; font-size: 12px; color: #666666;"><span style="font-weight: 700; color: #666666;">+1 wk</span><span>5 went live this month</span></span>
+</button>
+
+<button type="button" class="wl-tile" aria-pressed="false" style="display: flex; flex-direction: column; align-items: flex-start; gap: 12px; min-height: 136px; box-sizing: border-box; text-align: left; background: #FFFFFF; border-radius: 16px; cursor: pointer; color: #111111; border: 1px solid #E6E6E6; padding: 16px 18px;">
+<span style="display: flex; align-items: center; justify-content: space-between; width: 100%; gap: 8px;"><span style="font-size: 13px; font-weight: 600; color: #2A2A2A;">Due in 7 days</span><span style="display: block; width: 8px; height: 8px; border-radius: 50%; background: #2F5BD8;"></span></span>
+<span style="display: flex; align-items: flex-end; justify-content: space-between; gap: 8px; width: 100%;">
+<span style="font-family: Montserrat, sans-serif; font-weight: 900; font-size: 34px; line-height: 1; font-variant-numeric: tabular-nums;">14</span>
+<svg width="96" height="34" viewBox="0 0 96 34" aria-hidden="true"><polyline points="4,34 4,30 16.6,18 29.1,26 41.7,14 54.3,22 66.9,10 79.4,14 92,6 92,34" fill="#2F5BD81A" stroke="none"></polyline><polyline points="4,30 16.6,18 29.1,26 41.7,14 54.3,22 66.9,10 79.4,14 92,6" fill="none" stroke="#2F5BD8" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"></polyline><circle cx="92" cy="6" r="3.2" fill="#2F5BD8"></circle></svg>
+</span>
+<span style="display: flex; flex-wrap: wrap; gap: 6px; font-size: 12px; color: #666666;"><span style="font-weight: 700; color: #666666;">+2 wk</span><span>edits, thumbs, publishes</span></span>
+</button>
+
+<button type="button" class="wl-tile" aria-pressed="false" style="display: flex; flex-direction: column; align-items: flex-start; gap: 12px; min-height: 136px; box-sizing: border-box; text-align: left; background: #FFFFFF; border-radius: 16px; cursor: pointer; color: #111111; border: 1px solid #E6E6E6; padding: 16px 18px;">
+<span style="display: flex; align-items: center; justify-content: space-between; width: 100%; gap: 8px;"><span style="font-size: 13px; font-weight: 600; color: #2A2A2A;">Late deadlines</span><span style="display: block; width: 8px; height: 8px; border-radius: 50%; background: #C42B1C;"></span></span>
+<span style="display: flex; align-items: flex-end; justify-content: space-between; gap: 8px; width: 100%;">
+<span style="font-family: Montserrat, sans-serif; font-weight: 900; font-size: 34px; line-height: 1; font-variant-numeric: tabular-nums;">2</span>
+<svg width="96" height="34" viewBox="0 0 96 34" aria-hidden="true"><polyline points="4,34 4,14 16.6,30 29.1,22 41.7,6 54.3,22 66.9,14 79.4,30 92,22 92,34" fill="#C42B1C1A" stroke="none"></polyline><polyline points="4,14 16.6,30 29.1,22 41.7,6 54.3,22 66.9,14 79.4,30 92,22" fill="none" stroke="#C42B1C" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"></polyline><circle cx="92" cy="22" r="3.2" fill="#C42B1C"></circle></svg>
+</span>
+<span style="display: flex; flex-wrap: wrap; gap: 6px; font-size: 12px; color: #666666;"><span style="font-weight: 700; color: #9B1C13;">+1 wk</span><span>past due</span></span>
+</button>
+
+<button type="button" class="wl-tile" aria-pressed="false" style="display: flex; flex-direction: column; align-items: flex-start; gap: 12px; min-height: 136px; box-sizing: border-box; text-align: left; background: #FFFFFF; border-radius: 16px; cursor: pointer; color: #111111; border: 1px solid #E6E6E6; padding: 16px 18px;">
+<span style="display: flex; align-items: center; justify-content: space-between; width: 100%; gap: 8px;"><span style="font-size: 13px; font-weight: 600; color: #2A2A2A;">Unassigned</span><span style="display: block; width: 8px; height: 8px; border-radius: 50%; background: #9A6500;"></span></span>
+<span style="display: flex; align-items: flex-end; justify-content: space-between; gap: 8px; width: 100%;">
+<span style="font-family: Montserrat, sans-serif; font-weight: 900; font-size: 34px; line-height: 1; font-variant-numeric: tabular-nums;">3</span>
+<svg width="96" height="34" viewBox="0 0 96 34" aria-hidden="true"><polyline points="4,34 4,30 16.6,18 29.1,18 41.7,30 54.3,6 66.9,18 79.4,18 92,6 92,34" fill="#9A65001A" stroke="none"></polyline><polyline points="4,30 16.6,18 29.1,18 41.7,30 54.3,6 66.9,18 79.4,18 92,6" fill="none" stroke="#9A6500" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"></polyline><circle cx="92" cy="6" r="3.2" fill="#9A6500"></circle></svg>
+</span>
+<span style="display: flex; flex-wrap: wrap; gap: 6px; font-size: 12px; color: #666666;"><span style="font-weight: 700; color: #9B1C13;">+1 wk</span><span>need an editor or designer</span></span>
+</button>
+
+<button type="button" class="wl-tile" aria-pressed="false" style="display: flex; flex-direction: column; align-items: flex-start; gap: 12px; min-height: 136px; box-sizing: border-box; text-align: left; background: #FFFFFF; border-radius: 16px; cursor: pointer; color: #111111; border: 1px solid #E6E6E6; padding: 16px 18px;">
+<span style="display: flex; align-items: center; justify-content: space-between; width: 100%; gap: 8px;"><span style="font-size: 13px; font-weight: 600; color: #2A2A2A;">Awaiting sponsor</span><span style="display: block; width: 8px; height: 8px; border-radius: 50%; background: #7A3FD0;"></span></span>
+<span style="display: flex; align-items: flex-end; justify-content: space-between; gap: 8px; width: 100%;">
+<span style="font-family: Montserrat, sans-serif; font-weight: 900; font-size: 34px; line-height: 1; font-variant-numeric: tabular-nums;">2</span>
+<svg width="96" height="34" viewBox="0 0 96 34" aria-hidden="true"><polyline points="4,34 4,30 16.6,18 29.1,18 41.7,6 54.3,18 66.9,18 79.4,18 92,6 92,34" fill="#7A3FD01A" stroke="none"></polyline><polyline points="4,30 16.6,18 29.1,18 41.7,6 54.3,18 66.9,18 79.4,18 92,6" fill="none" stroke="#7A3FD0" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"></polyline><circle cx="92" cy="6" r="3.2" fill="#7A3FD0"></circle></svg>
+</span>
+<span style="display: flex; flex-wrap: wrap; gap: 6px; font-size: 12px; color: #666666;"><span style="font-weight: 700; color: #9B1C13;">+1 wk</span><span>approvals open</span></span>
+</button>
+
+</section>
+
+<!-- Row: attention + due chart -->
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 460px), 1fr)); gap: 16px; align-items: start;">
+
+<!-- Needs attention -->
+<section id="attention" aria-labelledby="att-h" style="background: #FFFFFF; border: 1px solid #E6E6E6; border-radius: 16px; min-width: 0; overflow: hidden;">
+<div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding: 18px 20px 14px;">
+<div style="display: flex; align-items: center; gap: 10px;"><h2 id="att-h" style="margin: 0; font-family: Montserrat, sans-serif; font-weight: 900; font-size: 18px;">Needs attention</h2><span style="display: inline-flex; align-items: center; justify-content: center; min-width: 24px; height: 24px; padding: 0 7px; box-sizing: border-box; border-radius: 12px; background: #F0F0F0; font-size: 12px; font-weight: 700;">8</span></div>
+<div role="tablist" aria-label="Filter attention items" style="display: flex; flex-wrap: wrap; gap: 4px; padding: 3px; background: #F4F4F4; border-radius: 12px;">
+
+<button type="button" role="tab" aria-selected="true" style="display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 0 10px; border: 0; border-radius: 9px; cursor: pointer; font-size: 13px; font-weight: 600; background: #FFFFFF; color: #111111; box-shadow: 0 1px 2px rgba(0,0,0,0.08);">All<span style="font-size: 11px; font-weight: 700; color: #111111;">8</span></button>
+
+<button type="button" role="tab" aria-selected="false" style="display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 0 10px; border: 0; border-radius: 9px; cursor: pointer; font-size: 13px; font-weight: 600; background: transparent; color: #666666;">Deadlines<span style="font-size: 11px; font-weight: 700; color: #8A8A8A;">3</span></button>
+
+<button type="button" role="tab" aria-selected="false" style="display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 0 10px; border: 0; border-radius: 9px; cursor: pointer; font-size: 13px; font-weight: 600; background: transparent; color: #666666;">Unassigned<span style="font-size: 11px; font-weight: 700; color: #8A8A8A;">3</span></button>
+
+<button type="button" role="tab" aria-selected="false" style="display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 0 10px; border: 0; border-radius: 9px; cursor: pointer; font-size: 13px; font-weight: 600; background: transparent; color: #666666;">Sponsor<span style="font-size: 11px; font-weight: 700; color: #8A8A8A;">2</span></button>
+
+</div>
+</div>
+<div>
+
+<div style="border-top: 1px solid #EFEFEF;">
+<div class="wl-row" style="display: flex; align-items: center; gap: 12px; min-height: 64px; padding: 10px 20px; box-sizing: border-box; background: #FFFFFF;">
+<span style="display: inline-flex; align-items: center; height: 26px; padding: 0 10px; box-sizing: border-box; border-radius: 4px; background: #C42B1C; color: #FFFFFF; font-size: 12px; font-weight: 600; white-space: nowrap; min-width: 118px; justify-content: center; flex: none;">Late edit</span>
+<div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px;">
+<span style="font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Why I quit my 9 to 5</span>
+<span style="font-size: 12px; color: #666666; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Editing · ZZ / Priya</span>
+</div>
+<span style="flex: none; font-size: 12px; font-weight: 600; white-space: nowrap; color: #9B1C13;">Edit due Oct 26</span>
+
+<a href="#assignments" style="display: inline-flex; align-items: center; justify-content: center; min-height: 36px; min-width: 76px; padding: 0 12px; box-sizing: border-box; border-radius: 10px; font-size: 13px; font-weight: 600; text-decoration: none; cursor: pointer; flex: none; border: 1px solid #E6E6E6; background: #FFFFFF; color: #111111;">Open</a>
+
+
+</div>
+
+</div>
+
+<div style="border-top: 1px solid #EFEFEF;">
+<div class="wl-row" style="display: flex; align-items: center; gap: 12px; min-height: 64px; padding: 10px 20px; box-sizing: border-box; background: #FFFFFF;">
+<span style="display: inline-flex; align-items: center; height: 26px; padding: 0 10px; box-sizing: border-box; border-radius: 4px; background: #C42B1C; color: #FFFFFF; font-size: 12px; font-weight: 600; white-space: nowrap; min-width: 118px; justify-content: center; flex: none;">Late edit</span>
+<div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px;">
+<span style="font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Building a $40k shop from scratch</span>
+<span style="font-size: 12px; color: #666666; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Editing · Marcus / Priya</span>
+</div>
+<span style="flex: none; font-size: 12px; font-weight: 600; white-space: nowrap; color: #9B1C13;">Edit due Oct 25</span>
+
+<a href="#assignments" style="display: inline-flex; align-items: center; justify-content: center; min-height: 36px; min-width: 76px; padding: 0 12px; box-sizing: border-box; border-radius: 10px; font-size: 13px; font-weight: 600; text-decoration: none; cursor: pointer; flex: none; border: 1px solid #E6E6E6; background: #FFFFFF; color: #111111;">Open</a>
+
+
+</div>
+
+</div>
+
+<div style="border-top: 1px solid #EFEFEF;">
+<div class="wl-row" style="display: flex; align-items: center; gap: 12px; min-height: 64px; padding: 10px 20px; box-sizing: border-box; background: #FFFFFF;">
+<span style="display: inline-flex; align-items: center; height: 26px; padding: 0 10px; box-sizing: border-box; border-radius: 4px; background: #9A6500; color: #FFFFFF; font-size: 12px; font-weight: 600; white-space: nowrap; min-width: 118px; justify-content: center; flex: none;">Thumb due today</span>
+<div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px;">
+<span style="font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Tool haul under $500</span>
+<span style="font-size: 12px; color: #666666; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Scheduled · Theo / Leo</span>
+</div>
+<span style="flex: none; font-size: 12px; font-weight: 600; white-space: nowrap; color: #666666;">Today</span>
+
+<a href="#assignments" style="display: inline-flex; align-items: center; justify-content: center; min-height: 36px; min-width: 76px; padding: 0 12px; box-sizing: border-box; border-radius: 10px; font-size: 13px; font-weight: 600; text-decoration: none; cursor: pointer; flex: none; border: 1px solid #E6E6E6; background: #FFFFFF; color: #111111;">Open</a>
+
+
+</div>
+
+</div>
+
+<div style="border-top: 1px solid #EFEFEF;">
+<div class="wl-row" style="display: flex; align-items: center; gap: 12px; min-height: 64px; padding: 10px 20px; box-sizing: border-box; background: #FFFFFF;">
+<span style="display: inline-flex; align-items: center; height: 26px; padding: 0 10px; box-sizing: border-box; border-radius: 4px; background: #9A6500; color: #FFFFFF; font-size: 12px; font-weight: 600; white-space: nowrap; min-width: 118px; justify-content: center; flex: none;">No designer</span>
+<div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px;">
+<span style="font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Framing the second floor</span>
+<span style="font-size: 12px; color: #666666; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Editing · Dani / No designer</span>
+</div>
+<span style="flex: none; font-size: 12px; font-weight: 600; white-space: nowrap; color: #666666;">Pub Nov 5</span>
+
+
+<button type="button" disabled="false" aria-expanded="false" style="display: inline-flex; align-items: center; justify-content: center; min-height: 36px; min-width: 76px; padding: 0 12px; box-sizing: border-box; border-radius: 10px; font-size: 13px; font-weight: 600; text-decoration: none; cursor: pointer; flex: none; border: 0; background: #111111; color: #FFFFFF;">Assign</button>
+
+</div>
+
+</div>
+
+<div style="border-top: 1px solid #EFEFEF;">
+<div class="wl-row" style="display: flex; align-items: center; gap: 12px; min-height: 64px; padding: 10px 20px; box-sizing: border-box; background: #FFFFFF;">
+<span style="display: inline-flex; align-items: center; height: 26px; padding: 0 10px; box-sizing: border-box; border-radius: 4px; background: #9A6500; color: #FFFFFF; font-size: 12px; font-weight: 600; white-space: nowrap; min-width: 118px; justify-content: center; flex: none;">No editor</span>
+<div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px;">
+<span style="font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Day 1 of the cabin build</span>
+<span style="font-size: 12px; color: #666666; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Filming · No editor / Leo</span>
+</div>
+<span style="flex: none; font-size: 12px; font-weight: 600; white-space: nowrap; color: #666666;">Pub Nov 10</span>
+
+
+<button type="button" disabled="false" aria-expanded="false" style="display: inline-flex; align-items: center; justify-content: center; min-height: 36px; min-width: 76px; padding: 0 12px; box-sizing: border-box; border-radius: 10px; font-size: 13px; font-weight: 600; text-decoration: none; cursor: pointer; flex: none; border: 0; background: #111111; color: #FFFFFF;">Assign</button>
+
+</div>
+
+</div>
+
+<div style="border-top: 1px solid #EFEFEF;">
+<div class="wl-row" style="display: flex; align-items: center; gap: 12px; min-height: 64px; padding: 10px 20px; box-sizing: border-box; background: #FFFFFF;">
+<span style="display: inline-flex; align-items: center; height: 26px; padding: 0 10px; box-sizing: border-box; border-radius: 4px; background: #9A6500; color: #FFFFFF; font-size: 12px; font-weight: 600; white-space: nowrap; min-width: 118px; justify-content: center; flex: none;">No designer</span>
+<div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px;">
+<span style="font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Electrical rough-in basics</span>
+<span style="font-size: 12px; color: #666666; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Filming · Marcus / No designer</span>
+</div>
+<span style="flex: none; font-size: 12px; font-weight: 600; white-space: nowrap; color: #666666;">Pub Nov 11</span>
+
+
+<button type="button" disabled="false" aria-expanded="false" style="display: inline-flex; align-items: center; justify-content: center; min-height: 36px; min-width: 76px; padding: 0 12px; box-sizing: border-box; border-radius: 10px; font-size: 13px; font-weight: 600; text-decoration: none; cursor: pointer; flex: none; border: 0; background: #111111; color: #FFFFFF;">Assign</button>
+
+</div>
+
+</div>
+
+<div style="border-top: 1px solid #EFEFEF;">
+<div class="wl-row" style="display: flex; align-items: center; gap: 12px; min-height: 64px; padding: 10px 20px; box-sizing: border-box; background: #FFFFFF;">
+<span style="display: inline-flex; align-items: center; height: 26px; padding: 0 10px; box-sizing: border-box; border-radius: 4px; background: #7A3FD0; color: #FFFFFF; font-size: 12px; font-weight: 600; white-space: nowrap; min-width: 118px; justify-content: center; flex: none;">Sponsor pending</span>
+<div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px;">
+<span style="font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Concrete pour gone wrong</span>
+<span style="font-size: 12px; color: #666666; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Sponsor Review · Northline Lumber</span>
+</div>
+<span style="flex: none; font-size: 12px; font-weight: 600; white-space: nowrap; color: #666666;">Pub Nov 1</span>
+
+
+<button type="button" disabled="false" aria-expanded="false" style="display: inline-flex; align-items: center; justify-content: center; min-height: 36px; min-width: 76px; padding: 0 12px; box-sizing: border-box; border-radius: 10px; font-size: 13px; font-weight: 600; text-decoration: none; cursor: pointer; flex: none; border: 1px solid #E6E6E6; background: #FFFFFF; color: #111111;">Nudge</button>
+
+</div>
+
+</div>
+
+<div style="border-top: 1px solid #EFEFEF;">
+<div class="wl-row" style="display: flex; align-items: center; gap: 12px; min-height: 64px; padding: 10px 20px; box-sizing: border-box; background: #FFFFFF;">
+<span style="display: inline-flex; align-items: center; height: 26px; padding: 0 10px; box-sizing: border-box; border-radius: 4px; background: #7A3FD0; color: #FFFFFF; font-size: 12px; font-weight: 600; white-space: nowrap; min-width: 118px; justify-content: center; flex: none;">Sponsor pending</span>
+<div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px;">
+<span style="font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">First client job breakdown</span>
+<span style="font-size: 12px; color: #666666; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Sponsor Review · Brightwire</span>
+</div>
+<span style="flex: none; font-size: 12px; font-weight: 600; white-space: nowrap; color: #666666;">Pub Nov 3</span>
+
+
+<button type="button" disabled="false" aria-expanded="false" style="display: inline-flex; align-items: center; justify-content: center; min-height: 36px; min-width: 76px; padding: 0 12px; box-sizing: border-box; border-radius: 10px; font-size: 13px; font-weight: 600; text-decoration: none; cursor: pointer; flex: none; border: 1px solid #E6E6E6; background: #FFFFFF; color: #111111;">Nudge</button>
+
+</div>
+
+</div>
+
+
+</div>
+</section>
+
+<!-- Due next 14 days -->
+<section aria-labelledby="due-h" style="background: #FFFFFF; border: 1px solid #E6E6E6; border-radius: 16px; min-width: 0; padding: 18px 20px 20px; box-sizing: border-box; display: flex; flex-direction: column; gap: 16px;">
+<div style="display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 12px;">
+<div style="display: flex; flex-direction: column; gap: 4px;"><h2 id="due-h" style="margin: 0; font-family: Montserrat, sans-serif; font-weight: 900; font-size: 18px;">Due next 14 days</h2><span style="font-size: 13px; color: #666666;">27 deadlines across edits, thumbnails and publishes. Hover or tap a day.</span></div>
+<div style="display: flex; flex-wrap: wrap; gap: 6px;">
+
+<button type="button" class="wl-chip" aria-pressed="true" style="display: inline-flex; align-items: center; gap: 7px; min-height: 34px; padding: 0 11px; border: 1px solid #E6E6E6; border-radius: 10px; background: #FFFFFF; font-size: 12px; font-weight: 600; cursor: pointer; color: #111111; "><span style="display: block; width: 10px; height: 10px; border-radius: 3px; background: #F2A93B;"></span>Thumbnail</button>
+
+<button type="button" class="wl-chip" aria-pressed="true" style="display: inline-flex; align-items: center; gap: 7px; min-height: 34px; padding: 0 11px; border: 1px solid #E6E6E6; border-radius: 10px; background: #FFFFFF; font-size: 12px; font-weight: 600; cursor: pointer; color: #111111; "><span style="display: block; width: 10px; height: 10px; border-radius: 3px; background: #2F5BD8;"></span>Edit</button>
+
+<button type="button" class="wl-chip" aria-pressed="true" style="display: inline-flex; align-items: center; gap: 7px; min-height: 34px; padding: 0 11px; border: 1px solid #E6E6E6; border-radius: 10px; background: #FFFFFF; font-size: 12px; font-weight: 600; cursor: pointer; color: #111111; "><span style="display: block; width: 10px; height: 10px; border-radius: 3px; background: #111111;"></span>Publish</button>
+
+</div>
+</div>
+
+<div style="display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 12px; background: #FDE8E5; color: #9B1C13; font-size: 13px; font-weight: 600;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path></svg>2 items already past due: Why I quit my 9 to 5, Building a $40k shop from scratch</div>
+
+<div style="display: flex; gap: 8px;">
+<div aria-hidden="true" style="display: flex; flex-direction: column; justify-content: space-between; height: 176px; padding-bottom: 0; font-size: 11px; font-weight: 600; color: #8A8A8A; text-align: right; width: 14px; flex: none;">
+<span style="line-height: 1; transform: translateY(-50%);">4</span><span style="line-height: 1; transform: translateY(-50%);">3</span><span style="line-height: 1; transform: translateY(-50%);">2</span><span style="line-height: 1; transform: translateY(-50%);">1</span><span style="line-height: 1; transform: translateY(-50%);">0</span>
+</div>
+<div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px;">
+<div style="position: relative; height: 176px;">
+<div aria-hidden="true" style="position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: space-between;">
+<span style="display: block; height: 1px; background: #EFEFEF;"></span><span style="display: block; height: 1px; background: #EFEFEF;"></span><span style="display: block; height: 1px; background: #EFEFEF;"></span><span style="display: block; height: 1px; background: #EFEFEF;"></span><span style="display: block; height: 1px; background: #EFEFEF;"></span>
+</div>
+<div role="group" aria-label="Deadlines per day" style="position: relative; height: 100%; display: grid; grid-template-columns: repeat(14, minmax(0, 1fr)); gap: 4px;">
+
+<button type="button" class="wl-col" aria-label="Tue, Oct 27: 1 deadline" aria-pressed="true" style="display: flex; flex-direction: column; justify-content: flex-end; height: 100%; padding: 0 4px 0; box-sizing: border-box; border: 0; border-radius: 8px; cursor: pointer; background: #EFEFEF;">
+<span class="wl-anim" style="display: block; width: 100%; height: 41px; margin-top: 3px; border-radius: 5px; background: #F2A93B;"></span>
+</button>
+
+<button type="button" class="wl-col" aria-label="Wed, Oct 28: 1 deadline" aria-pressed="false" style="display: flex; flex-direction: column; justify-content: flex-end; height: 100%; padding: 0 4px 0; box-sizing: border-box; border: 0; border-radius: 8px; cursor: pointer; background: transparent;">
+<span class="wl-anim" style="display: block; width: 100%; height: 41px; margin-top: 3px; border-radius: 5px; background: #2F5BD8;"></span>
+</button>
+
+<button type="button" class="wl-col" aria-label="Thu, Oct 29: 2 deadlines" aria-pressed="false" style="display: flex; flex-direction: column; justify-content: flex-end; height: 100%; padding: 0 4px 0; box-sizing: border-box; border: 0; border-radius: 8px; cursor: pointer; background: transparent;">
+<span class="wl-anim" style="display: block; width: 100%; height: 41px; margin-top: 3px; border-radius: 5px; background: #F2A93B;"></span><span class="wl-anim" style="display: block; width: 100%; height: 41px; margin-top: 3px; border-radius: 5px; background: #111111;"></span>
+</button>
+
+<button type="button" class="wl-col" aria-label="Fri, Oct 30: 3 deadlines" aria-pressed="false" style="display: flex; flex-direction: column; justify-content: flex-end; height: 100%; padding: 0 4px 0; box-sizing: border-box; border: 0; border-radius: 8px; cursor: pointer; background: transparent;">
+<span class="wl-anim" style="display: block; width: 100%; height: 41px; margin-top: 3px; border-radius: 5px; background: #F2A93B;"></span><span class="wl-anim" style="display: block; width: 100%; height: 41px; margin-top: 3px; border-radius: 5px; background: #2F5BD8;"></span><span class="wl-anim" style="display: block; width: 100%; height: 41px; margin-top: 3px; border-radius: 5px; background: #111111;"></span>
+</button>
+
+<button type="button" class="wl-col" aria-label="Sat, Oct 31: 2 deadlines" aria-pressed="false" style="display: flex; flex-direction: column; justify-content: flex-end; height: 100%; padding: 0 4px 0; box-sizing: border-box; border: 0; border-radius: 8px; cursor: pointer; background: #FAFAFA;">
+<span class="wl-anim" style="display: block; width: 100%; height: 41px; margin-top: 3px; border-radius: 5px; background: #F2A93B;"></span><span class="wl-anim" style="display: block; width: 100%; height: 41px; margin-top: 3px; border-radius: 5px; background: #111111;"></span>
+</button>
+
+<button type="button" class="wl-col" aria-label="Sun, Nov 1: 3 deadlines" aria-pressed="false" style="display: flex; flex-direction: column; justify-content: flex-end; height: 100%; padding: 0 4px 0; box-sizing: border-box; border: 0; border-radius: 8px; cursor: pointer; background: #FAFAFA;">
+<span class="wl-anim" style="display: block; width: 100%; height: 41px; margin-top: 3px; border-radius: 5px; background: #F2A93B;"></span><span class="wl-anim" style="display: block; width: 100%; height: 41px; margin-top: 3px; border-radius: 5px; background: #2F5BD8;"></span><span class="wl-anim" style="display: block; width: 100%; height: 41px; margin-top: 3px; border-radius: 5px; background: #111111;"></span>
+</button>
+
+<button type="button" class="wl-col" aria-label="Mon, Nov 2: 2 deadlines" aria-pressed="false" style="display: flex; flex-direction: column; justify-content: flex-end; height: 100%; padding: 0 4px 0; box-sizing: border-box; border: 0; border-radius: 8px; cursor: pointer; background: transparent;">
+<span class="wl-anim" style="display: block; width: 100%; height: 41px; margin-top: 3px; border-radius: 5px; background: #F2A93B;"></span><span class="wl-anim" style="display: block; width: 100%; height: 41px; margin-top: 3px; border-radius: 5px; background: #111111;"></span>
+</button>
+
+<button type="button" class="wl-col" aria-label="Tue, Nov 3: 2 deadlines" aria-pressed="false" style="display: flex; flex-direction: column; justify-content: flex-end; height: 100%; padding: 0 4px 0; box-sizing: border-box; border: 0; border-radius: 8px; cursor: pointer; background: transparent;">
+<span class="wl-anim" style="display: block; width: 100%; height: 41px; margin-top: 3px; border-radius: 5px; background: #F2A93B;"></span><span class="wl-anim" style="display: block; width: 100%; height: 41px; margin-top: 3px; border-radius: 5px; background: #111111;"></span>
+</button>
+
+<button type="button" class="wl-col" aria-label="Wed, Nov 4: 1 deadline" aria-pressed="false" style="display: flex; flex-direction: column; justify-content: flex-end; height: 100%; padding: 0 4px 0; box-sizing: border-box; border: 0; border-radius: 8px; cursor: pointer; background: transparent;">
+<span class="wl-anim" style="display: block; width: 100%; height: 41px; margin-top: 3px; border-radius: 5px; background: #111111;"></span>
+</button>
+
+<button type="button" class="wl-col" aria-label="Thu, Nov 5: 2 deadlines" aria-pressed="false" style="display: flex; flex-direction: column; justify-content: flex-end; height: 100%; padding: 0 4px 0; box-sizing: border-box; border: 0; border-radius: 8px; cursor: pointer; background: transparent;">
+<span class="wl-anim" style="display: block; width: 100%; height: 41px; margin-top: 3px; border-radius: 5px; background: #F2A93B;"></span><span class="wl-anim" style="display: block; width: 100%; height: 41px; margin-top: 3px; border-radius: 5px; background: #111111;"></span>
+</button>
+
+<button type="button" class="wl-col" aria-label="Fri, Nov 6: 1 deadline" aria-pressed="false" style="display: flex; flex-direction: column; justify-content: flex-end; height: 100%; padding: 0 4px 0; box-sizing: border-box; border: 0; border-radius: 8px; cursor: pointer; background: transparent;">
+<span class="wl-anim" style="display: block; width: 100%; height: 41px; margin-top: 3px; border-radius: 5px; background: #2F5BD8;"></span>
+</button>
+
+<button type="button" class="wl-col" aria-label="Sat, Nov 7: 3 deadlines" aria-pressed="false" style="display: flex; flex-direction: column; justify-content: flex-end; height: 100%; padding: 0 4px 0; box-sizing: border-box; border: 0; border-radius: 8px; cursor: pointer; background: #FAFAFA;">
+<span class="wl-anim" style="display: block; width: 100%; height: 41px; margin-top: 3px; border-radius: 5px; background: #F2A93B;"></span><span class="wl-anim" style="display: block; width: 100%; height: 41px; margin-top: 3px; border-radius: 5px; background: #2F5BD8;"></span><span class="wl-anim" style="display: block; width: 100%; height: 41px; margin-top: 3px; border-radius: 5px; background: #111111;"></span>
+</button>
+
+<button type="button" class="wl-col" aria-label="Sun, Nov 8: 2 deadlines" aria-pressed="false" style="display: flex; flex-direction: column; justify-content: flex-end; height: 100%; padding: 0 4px 0; box-sizing: border-box; border: 0; border-radius: 8px; cursor: pointer; background: #FAFAFA;">
+<span class="wl-anim" style="display: block; width: 100%; height: 41px; margin-top: 3px; border-radius: 5px; background: #F2A93B;"></span><span class="wl-anim" style="display: block; width: 100%; height: 41px; margin-top: 3px; border-radius: 5px; background: #2F5BD8;"></span>
+</button>
+
+<button type="button" class="wl-col" aria-label="Mon, Nov 9: 2 deadlines" aria-pressed="false" style="display: flex; flex-direction: column; justify-content: flex-end; height: 100%; padding: 0 4px 0; box-sizing: border-box; border: 0; border-radius: 8px; cursor: pointer; background: transparent;">
+<span class="wl-anim" style="display: block; width: 100%; height: 41px; margin-top: 3px; border-radius: 5px; background: #F2A93B;"></span><span class="wl-anim" style="display: block; width: 100%; height: 41px; margin-top: 3px; border-radius: 5px; background: #111111;"></span>
+</button>
+
+</div>
+</div>
+<div aria-hidden="true" style="display: grid; grid-template-columns: repeat(14, minmax(0, 1fr)); gap: 4px;">
+<span style="display: flex; flex-direction: column; align-items: center; gap: 1px; font-size: 11px; line-height: 1.2; font-weight: 800; color: #111111;"><span>T</span><span>27</span></span><span style="display: flex; flex-direction: column; align-items: center; gap: 1px; font-size: 11px; line-height: 1.2; font-weight: 600; color: #666666;"><span>W</span><span>28</span></span><span style="display: flex; flex-direction: column; align-items: center; gap: 1px; font-size: 11px; line-height: 1.2; font-weight: 600; color: #666666;"><span>T</span><span>29</span></span><span style="display: flex; flex-direction: column; align-items: center; gap: 1px; font-size: 11px; line-height: 1.2; font-weight: 600; color: #666666;"><span>F</span><span>30</span></span><span style="display: flex; flex-direction: column; align-items: center; gap: 1px; font-size: 11px; line-height: 1.2; font-weight: 600; color: #8A8A8A;"><span>S</span><span>31</span></span><span style="display: flex; flex-direction: column; align-items: center; gap: 1px; font-size: 11px; line-height: 1.2; font-weight: 600; color: #8A8A8A;"><span>S</span><span>1</span></span><span style="display: flex; flex-direction: column; align-items: center; gap: 1px; font-size: 11px; line-height: 1.2; font-weight: 600; color: #666666;"><span>M</span><span>2</span></span><span style="display: flex; flex-direction: column; align-items: center; gap: 1px; font-size: 11px; line-height: 1.2; font-weight: 600; color: #666666;"><span>T</span><span>3</span></span><span style="display: flex; flex-direction: column; align-items: center; gap: 1px; font-size: 11px; line-height: 1.2; font-weight: 600; color: #666666;"><span>W</span><span>4</span></span><span style="display: flex; flex-direction: column; align-items: center; gap: 1px; font-size: 11px; line-height: 1.2; font-weight: 600; color: #666666;"><span>T</span><span>5</span></span><span style="display: flex; flex-direction: column; align-items: center; gap: 1px; font-size: 11px; line-height: 1.2; font-weight: 600; color: #666666;"><span>F</span><span>6</span></span><span style="display: flex; flex-direction: column; align-items: center; gap: 1px; font-size: 11px; line-height: 1.2; font-weight: 600; color: #8A8A8A;"><span>S</span><span>7</span></span><span style="display: flex; flex-direction: column; align-items: center; gap: 1px; font-size: 11px; line-height: 1.2; font-weight: 600; color: #8A8A8A;"><span>S</span><span>8</span></span><span style="display: flex; flex-direction: column; align-items: center; gap: 1px; font-size: 11px; line-height: 1.2; font-weight: 600; color: #666666;"><span>M</span><span>9</span></span>
+</div>
+</div>
+</div>
+<div style="display: flex; flex-direction: column; gap: 8px; padding: 14px; border-radius: 12px; background: #FAFAFA; border: 1px solid #EFEFEF;">
+<span style="font-size: 13px; font-weight: 700;">Today · Tue, Oct 27 · 1 deadline</span>
+
+<div style="display: flex; align-items: center; gap: 10px; min-height: 28px; font-size: 13px;"><span style="display: block; width: 10px; height: 10px; border-radius: 3px; flex: none; background: #F2A93B;"></span><span style="width: 92px; flex: none; font-weight: 600; color: #2A2A2A;">Thumbnail due</span><span style="flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Tool haul under $500</span><span style="flex: none; font-size: 12px; color: #666666;">Leo</span></div>
+
+
+</div>
+</section>
+</div>
+
+<!-- Pipeline -->
+<section aria-labelledby="pipe-h" style="background: #FFFFFF; border: 1px solid #E6E6E6; border-radius: 16px; padding: 18px 20px 20px; box-sizing: border-box; display: flex; flex-direction: column; gap: 16px; min-width: 0;">
+<div style="display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 12px;">
+<div style="display: flex; flex-direction: column; gap: 4px;"><h2 id="pipe-h" style="margin: 0; font-family: Montserrat, sans-serif; font-weight: 900; font-size: 18px;">Pipeline</h2><span style="font-size: 13px; color: #666666;">14 open projects · Sponsor Review is running over target. Select a status to filter assignments.</span></div>
+<div style="display: flex; flex-wrap: wrap; gap: 16px;">
+<span style="display: flex; flex-direction: column; gap: 2px;"><span style="font-size: 11px; font-weight: 600; color: #666666;">In Production</span><span style="font-size: 18px; font-weight: 800; font-family: Montserrat, sans-serif; font-variant-numeric: tabular-nums;">5</span></span><span style="display: flex; flex-direction: column; gap: 2px;"><span style="font-size: 11px; font-weight: 600; color: #666666;">Post Production</span><span style="font-size: 18px; font-weight: 800; font-family: Montserrat, sans-serif; font-variant-numeric: tabular-nums;">7</span></span><span style="display: flex; flex-direction: column; gap: 2px;"><span style="font-size: 11px; font-weight: 600; color: #666666;">Publishing</span><span style="font-size: 18px; font-weight: 800; font-family: Montserrat, sans-serif; font-variant-numeric: tabular-nums;">2</span></span>
+</div>
+</div>
+<div aria-hidden="true" style="display: flex; gap: 3px; height: 14px; border-radius: 7px; overflow: hidden; background: #F0F0F0;">
+<span class="wl-anim" title="Scripting: 2" style="display: block; height: 100%; flex: 2 1 0; background: #5F5F5F; opacity: 1;"></span><span class="wl-anim" title="Filming: 3" style="display: block; height: 100%; flex: 3 1 0; background: #B9461F; opacity: 1;"></span><span class="wl-anim" title="Editing: 5" style="display: block; height: 100%; flex: 5 1 0; background: #2F5BD8; opacity: 1;"></span><span class="wl-anim" title="Sponsor Review: 2" style="display: block; height: 100%; flex: 2 1 0; background: #7A3FD0; opacity: 1;"></span><span class="wl-anim" title="Scheduled: 2" style="display: block; height: 100%; flex: 2 1 0; background: #B8264F; opacity: 1;"></span>
+</div>
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px;">
+
+<button type="button" class="wl-tile" disabled="false" aria-pressed="false" style="display: flex; flex-direction: column; align-items: flex-start; gap: 12px; box-sizing: border-box; text-align: left; background: #FFFFFF; border-radius: 14px; color: #111111; cursor: pointer; border: 1px solid #E6E6E6; padding: 14px;">
+<span style="display: flex; align-items: center; justify-content: space-between; gap: 6px; width: 100%;"><span style="display: inline-flex; align-items: center; height: 26px; padding: 0 10px; box-sizing: border-box; border-radius: 4px; background: #5F5F5F; color: #FFFFFF; font-size: 12px; font-weight: 600; white-space: nowrap;">Scripting</span></span>
+<span style="display: flex; align-items: baseline; gap: 6px;"><span style="font-family: Montserrat, sans-serif; font-weight: 900; font-size: 30px; line-height: 1; font-variant-numeric: tabular-nums;">2</span><span style="font-size: 12px; color: #666666;">projects</span></span>
+<span style="display: flex; flex-direction: column; gap: 6px; width: 100%;">
+<span style="display: flex; justify-content: space-between; font-size: 12px; color: #666666;"><span>Avg 3.2d here</span><span>Target 5d</span></span>
+<span style="display: block; height: 6px; border-radius: 3px; background: #F0F0F0; overflow: hidden;"><span class="wl-anim" style="display: block; height: 100%; width: 64%; background: #111111;"></span></span>
+</span>
+<span style="font-size: 11px; font-weight: 600; color: #707070;">In Production</span>
+</button>
+
+<button type="button" class="wl-tile" disabled="false" aria-pressed="false" style="display: flex; flex-direction: column; align-items: flex-start; gap: 12px; box-sizing: border-box; text-align: left; background: #FFFFFF; border-radius: 14px; color: #111111; cursor: pointer; border: 1px solid #E6E6E6; padding: 14px;">
+<span style="display: flex; align-items: center; justify-content: space-between; gap: 6px; width: 100%;"><span style="display: inline-flex; align-items: center; height: 26px; padding: 0 10px; box-sizing: border-box; border-radius: 4px; background: #B9461F; color: #FFFFFF; font-size: 12px; font-weight: 600; white-space: nowrap;">Filming</span></span>
+<span style="display: flex; align-items: baseline; gap: 6px;"><span style="font-family: Montserrat, sans-serif; font-weight: 900; font-size: 30px; line-height: 1; font-variant-numeric: tabular-nums;">3</span><span style="font-size: 12px; color: #666666;">projects</span></span>
+<span style="display: flex; flex-direction: column; gap: 6px; width: 100%;">
+<span style="display: flex; justify-content: space-between; font-size: 12px; color: #666666;"><span>Avg 4.0d here</span><span>Target 5d</span></span>
+<span style="display: block; height: 6px; border-radius: 3px; background: #F0F0F0; overflow: hidden;"><span class="wl-anim" style="display: block; height: 100%; width: 80%; background: #111111;"></span></span>
+</span>
+<span style="font-size: 11px; font-weight: 600; color: #707070;">In Production</span>
+</button>
+
+<button type="button" class="wl-tile" disabled="false" aria-pressed="false" style="display: flex; flex-direction: column; align-items: flex-start; gap: 12px; box-sizing: border-box; text-align: left; background: #FFFFFF; border-radius: 14px; color: #111111; cursor: pointer; border: 1px solid #E6E6E6; padding: 14px;">
+<span style="display: flex; align-items: center; justify-content: space-between; gap: 6px; width: 100%;"><span style="display: inline-flex; align-items: center; height: 26px; padding: 0 10px; box-sizing: border-box; border-radius: 4px; background: #2F5BD8; color: #FFFFFF; font-size: 12px; font-weight: 600; white-space: nowrap;">Editing</span></span>
+<span style="display: flex; align-items: baseline; gap: 6px;"><span style="font-family: Montserrat, sans-serif; font-weight: 900; font-size: 30px; line-height: 1; font-variant-numeric: tabular-nums;">5</span><span style="font-size: 12px; color: #666666;">projects</span></span>
+<span style="display: flex; flex-direction: column; gap: 6px; width: 100%;">
+<span style="display: flex; justify-content: space-between; font-size: 12px; color: #666666;"><span>Avg 8.5d here</span><span>Target 10d</span></span>
+<span style="display: block; height: 6px; border-radius: 3px; background: #F0F0F0; overflow: hidden;"><span class="wl-anim" style="display: block; height: 100%; width: 85%; background: #111111;"></span></span>
+</span>
+<span style="font-size: 11px; font-weight: 600; color: #707070;">Post Production</span>
+</button>
+
+<button type="button" class="wl-tile" disabled="false" aria-pressed="false" style="display: flex; flex-direction: column; align-items: flex-start; gap: 12px; box-sizing: border-box; text-align: left; background: #FFFFFF; border-radius: 14px; color: #111111; cursor: pointer; border: 1px solid #E6E6E6; padding: 14px;">
+<span style="display: flex; align-items: center; justify-content: space-between; gap: 6px; width: 100%;"><span style="display: inline-flex; align-items: center; height: 26px; padding: 0 10px; box-sizing: border-box; border-radius: 4px; background: #7A3FD0; color: #FFFFFF; font-size: 12px; font-weight: 600; white-space: nowrap;">Sponsor Review</span><span style="font-size: 11px; font-weight: 700; color: #9B1C13; background: #FDE8E5; padding: 3px 7px; border-radius: 6px;">Slow</span></span>
+<span style="display: flex; align-items: baseline; gap: 6px;"><span style="font-family: Montserrat, sans-serif; font-weight: 900; font-size: 30px; line-height: 1; font-variant-numeric: tabular-nums;">2</span><span style="font-size: 12px; color: #666666;">projects</span></span>
+<span style="display: flex; flex-direction: column; gap: 6px; width: 100%;">
+<span style="display: flex; justify-content: space-between; font-size: 12px; color: #666666;"><span>Avg 5.5d here</span><span>Target 3d</span></span>
+<span style="display: block; height: 6px; border-radius: 3px; background: #F0F0F0; overflow: hidden;"><span class="wl-anim" style="display: block; height: 100%; width: 100%; background: #C42B1C;"></span></span>
+</span>
+<span style="font-size: 11px; font-weight: 600; color: #707070;">Post Production</span>
+</button>
+
+<button type="button" class="wl-tile" disabled="false" aria-pressed="false" style="display: flex; flex-direction: column; align-items: flex-start; gap: 12px; box-sizing: border-box; text-align: left; background: #FFFFFF; border-radius: 14px; color: #111111; cursor: pointer; border: 1px solid #E6E6E6; padding: 14px;">
+<span style="display: flex; align-items: center; justify-content: space-between; gap: 6px; width: 100%;"><span style="display: inline-flex; align-items: center; height: 26px; padding: 0 10px; box-sizing: border-box; border-radius: 4px; background: #B8264F; color: #FFFFFF; font-size: 12px; font-weight: 600; white-space: nowrap;">Scheduled</span></span>
+<span style="display: flex; align-items: baseline; gap: 6px;"><span style="font-family: Montserrat, sans-serif; font-weight: 900; font-size: 30px; line-height: 1; font-variant-numeric: tabular-nums;">2</span><span style="font-size: 12px; color: #666666;">projects</span></span>
+<span style="display: flex; flex-direction: column; gap: 6px; width: 100%;">
+<span style="display: flex; justify-content: space-between; font-size: 12px; color: #666666;"><span>Avg 2.1d here</span><span>Target 4d</span></span>
+<span style="display: block; height: 6px; border-radius: 3px; background: #F0F0F0; overflow: hidden;"><span class="wl-anim" style="display: block; height: 100%; width: 53%; background: #111111;"></span></span>
+</span>
+<span style="font-size: 11px; font-weight: 600; color: #707070;">Publishing</span>
+</button>
+
+<button type="button" class="wl-tile" disabled="true" aria-pressed="false" style="display: flex; flex-direction: column; align-items: flex-start; gap: 12px; box-sizing: border-box; text-align: left; background: #FAFAFA; border-radius: 14px; color: #111111; cursor: default; border: 1px solid #E6E6E6; padding: 14px;">
+<span style="display: flex; align-items: center; justify-content: space-between; gap: 6px; width: 100%;"><span style="display: inline-flex; align-items: center; height: 26px; padding: 0 10px; box-sizing: border-box; border-radius: 4px; background: #1E7A3C; color: #FFFFFF; font-size: 12px; font-weight: 600; white-space: nowrap;">Live</span></span>
+<span style="display: flex; align-items: baseline; gap: 6px;"><span style="font-family: Montserrat, sans-serif; font-weight: 900; font-size: 30px; line-height: 1; font-variant-numeric: tabular-nums;">5</span><span style="font-size: 12px; color: #666666;">live this month</span></span>
+<span style="display: flex; flex-direction: column; gap: 6px; width: 100%;">
+<span style="display: flex; justify-content: space-between; font-size: 12px; color: #666666;"><span>Published</span><span></span></span>
+<span style="display: block; height: 6px; border-radius: 3px; background: #F0F0F0; overflow: hidden;"><span class="wl-anim" style="display: block; height: 100%; width: 100%; background: #1E7A3C;"></span></span>
+</span>
+<span style="font-size: 11px; font-weight: 600; color: #707070;">Publishing</span>
+</button>
+
+</div>
+</section>
+
+<!-- Team capacity -->
+<section aria-labelledby="team-h" style="background: #FFFFFF; border: 1px solid #E6E6E6; border-radius: 16px; min-width: 0; overflow: hidden;">
+<div style="display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 16px; padding: 18px 20px 16px;">
+<div style="display: flex; flex-direction: column; gap: 4px;"><h2 id="team-h" style="margin: 0; font-family: Montserrat, sans-serif; font-weight: 900; font-size: 18px;">Team capacity</h2><span style="font-size: 13px; color: #666666;">Each slot is one active project. Select a person to filter assignments, or a day to see what is due.</span></div>
+<div role="tablist" aria-label="Role" style="display: flex; gap: 4px; padding: 3px; background: #F4F4F4; border-radius: 12px;">
+<button type="button" role="tab" aria-selected="true" style="min-height: 36px; padding: 0 12px; border: 0; border-radius: 9px; cursor: pointer; font-size: 13px; font-weight: 600; background: #FFFFFF; color: #111111; box-shadow: 0 1px 2px rgba(0,0,0,0.08);">All</button><button type="button" role="tab" aria-selected="false" style="min-height: 36px; padding: 0 12px; border: 0; border-radius: 9px; cursor: pointer; font-size: 13px; font-weight: 600; background: transparent; color: #666666;">Editors</button><button type="button" role="tab" aria-selected="false" style="min-height: 36px; padding: 0 12px; border: 0; border-radius: 9px; cursor: pointer; font-size: 13px; font-weight: 600; background: transparent; color: #666666;">Designers</button>
+</div>
+</div>
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 28px; padding: 0 20px 18px;">
+<div style="display: flex; align-items: center; gap: 14px;">
+<svg width="68" height="68" viewBox="0 0 68 68" role="img" aria-label="Team utilization 57 percent"><circle cx="34" cy="34" r="26" fill="none" stroke="#F0F0F0" stroke-width="10"></circle><circle cx="34" cy="34" r="26" fill="none" stroke="#2F5BD8" stroke-width="10" stroke-linecap="round" stroke-dasharray="92.6 164" transform="rotate(-90 34 34)"></circle></svg>
+<span style="display: flex; flex-direction: column; gap: 2px;"><span style="font-family: Montserrat, sans-serif; font-weight: 900; font-size: 26px; line-height: 1;">57%</span><span style="font-size: 12px; font-weight: 600; color: #666666;">Team utilization</span></span>
+</div>
+
+<span style="display: flex; flex-direction: column; gap: 2px; padding-left: 20px; border-left: 1px solid #EFEFEF;"><span style="font-family: Montserrat, sans-serif; font-weight: 900; font-size: 22px; line-height: 1.1;">17/30</span><span style="font-size: 12px; font-weight: 600; color: #666666;">Slots in use</span></span>
+
+<span style="display: flex; flex-direction: column; gap: 2px; padding-left: 20px; border-left: 1px solid #EFEFEF;"><span style="font-family: Montserrat, sans-serif; font-weight: 900; font-size: 22px; line-height: 1.1;">1</span><span style="font-size: 12px; font-weight: 600; color: #666666;">At capacity</span></span>
+
+<span style="display: flex; flex-direction: column; gap: 2px; padding-left: 20px; border-left: 1px solid #EFEFEF;"><span style="font-family: Montserrat, sans-serif; font-weight: 900; font-size: 22px; line-height: 1.1;">13</span><span style="font-size: 12px; font-weight: 600; color: #666666;">Open slots</span></span>
+
+<span style="flex: 1;"></span>
+<span style="display: flex; flex-wrap: wrap; align-items: center; gap: 10px; font-size: 11px; font-weight: 600; color: #666666;">Due per day<span style="display: inline-block; width: 14px; height: 14px; border-radius: 4px; background: #F2F2F2;"></span>0<span style="display: inline-block; width: 14px; height: 14px; border-radius: 4px; background: #C9D6FA;"></span>1<span style="display: inline-block; width: 14px; height: 14px; border-radius: 4px; background: #7F9CF0;"></span>2<span style="display: inline-block; width: 14px; height: 14px; border-radius: 4px; background: #2F5BD8;"></span>3+<span style="display: inline-block; width: 14px; height: 14px; border-radius: 4px; background: #C42B1C;"></span>Late</span>
+</div>
+<div class="wl-scroll" style="overflow-x: auto; border-top: 1px solid #EFEFEF;">
+<div style="min-width: 960px;">
+<div style="display: grid; grid-template-columns: minmax(160px, 1fr) 172px 52px 52px 82px 446px; gap: 12px; align-items: end; padding: 10px 20px; font-size: 12px; font-weight: 600; color: #666666;">
+<span>Person</span><span>Load</span><span>Active</span><span>Late</span><span>Next due</span>
+<span style="display: flex; gap: 4px;">
+<span style="display: flex; flex-direction: column; align-items: center; width: 26px; flex: none; font-size: 10px; font-weight: 700; color: #9B1C13; line-height: 1.2;"><span>Late</span><span></span></span><span style="display: flex; flex-direction: column; align-items: center; width: 26px; flex: none; font-size: 10px; line-height: 1.2; font-weight: 800; color: #111111;"><span>T</span><span>27</span></span><span style="display: flex; flex-direction: column; align-items: center; width: 26px; flex: none; font-size: 10px; line-height: 1.2; font-weight: 600; color: #666666;"><span>W</span><span>28</span></span><span style="display: flex; flex-direction: column; align-items: center; width: 26px; flex: none; font-size: 10px; line-height: 1.2; font-weight: 600; color: #666666;"><span>T</span><span>29</span></span><span style="display: flex; flex-direction: column; align-items: center; width: 26px; flex: none; font-size: 10px; line-height: 1.2; font-weight: 600; color: #666666;"><span>F</span><span>30</span></span><span style="display: flex; flex-direction: column; align-items: center; width: 26px; flex: none; font-size: 10px; line-height: 1.2; font-weight: 600; color: #8A8A8A;"><span>S</span><span>31</span></span><span style="display: flex; flex-direction: column; align-items: center; width: 26px; flex: none; font-size: 10px; line-height: 1.2; font-weight: 600; color: #8A8A8A;"><span>S</span><span>1</span></span><span style="display: flex; flex-direction: column; align-items: center; width: 26px; flex: none; font-size: 10px; line-height: 1.2; font-weight: 600; color: #666666;"><span>M</span><span>2</span></span><span style="display: flex; flex-direction: column; align-items: center; width: 26px; flex: none; font-size: 10px; line-height: 1.2; font-weight: 600; color: #666666;"><span>T</span><span>3</span></span><span style="display: flex; flex-direction: column; align-items: center; width: 26px; flex: none; font-size: 10px; line-height: 1.2; font-weight: 600; color: #666666;"><span>W</span><span>4</span></span><span style="display: flex; flex-direction: column; align-items: center; width: 26px; flex: none; font-size: 10px; line-height: 1.2; font-weight: 600; color: #666666;"><span>T</span><span>5</span></span><span style="display: flex; flex-direction: column; align-items: center; width: 26px; flex: none; font-size: 10px; line-height: 1.2; font-weight: 600; color: #666666;"><span>F</span><span>6</span></span><span style="display: flex; flex-direction: column; align-items: center; width: 26px; flex: none; font-size: 10px; line-height: 1.2; font-weight: 600; color: #8A8A8A;"><span>S</span><span>7</span></span><span style="display: flex; flex-direction: column; align-items: center; width: 26px; flex: none; font-size: 10px; line-height: 1.2; font-weight: 600; color: #8A8A8A;"><span>S</span><span>8</span></span><span style="display: flex; flex-direction: column; align-items: center; width: 26px; flex: none; font-size: 10px; line-height: 1.2; font-weight: 600; color: #666666;"><span>M</span><span>9</span></span>
+</span>
+</div>
+
+<div style="display: grid; grid-template-columns: minmax(160px, 1fr) 172px 52px 52px 82px 446px; gap: 12px; align-items: center; min-height: 60px; padding: 6px 20px; box-sizing: border-box; border-top: 1px solid #EFEFEF; background: #FFFFFF;">
+<button type="button" class="wl-person" aria-pressed="false" style="display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 0; border: 0; background: transparent; cursor: pointer; text-align: left; color: #111111;"><span style="display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 50%; background: #7A3FD0; color: #FFFFFF; font-size: 13px; font-weight: 700; flex: none;">P</span><span style="display: flex; flex-direction: column; line-height: 1.3;"><span class="wl-pname" style="font-size: 14px; font-weight: 600;">Priya</span><span style="font-size: 12px; color: #666666;">Designer</span></span></button>
+<span style="display: flex; align-items: center; gap: 10px;"><span style="display: flex; gap: 4px;"><span class="wl-anim" title="Building a $40k shop from scratch (Editing)" style="display: block; width: 26px; height: 14px; border-radius: 4px; background: #2F5BD8;"></span><span class="wl-anim" title="Concrete pour gone wrong (Sponsor Review)" style="display: block; width: 26px; height: 14px; border-radius: 4px; background: #7A3FD0;"></span><span class="wl-anim" title="First client job breakdown (Sponsor Review)" style="display: block; width: 26px; height: 14px; border-radius: 4px; background: #7A3FD0;"></span><span class="wl-anim" title="Why I quit my 9 to 5 (Editing)" style="display: block; width: 26px; height: 14px; border-radius: 4px; background: #2F5BD8;"></span><span class="wl-anim" title="Deck build timelapse (Editing)" style="display: block; width: 26px; height: 14px; border-radius: 4px; background: #2F5BD8;"></span></span><span style="font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums; color: #9B1C13;">5/5</span></span>
+<span style="font-size: 14px; font-weight: 700; font-variant-numeric: tabular-nums;">5</span>
+<span style="font-size: 14px; color: #8A8A8A;">0</span>
+<span style="font-size: 13px; color: #2A2A2A;">Oct 29</span>
+<span style="display: flex; gap: 4px;">
+<button type="button" class="wl-cell" aria-label="Priya, late: 0 items" aria-pressed="false" style="width: 26px; height: 26px; flex: none; padding: 0; border: 0; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; background: #F2F2F2; color: #8A8A8A;"></button><button type="button" class="wl-cell" aria-label="Priya, Tue, Oct 27: 0 items" aria-pressed="false" style="width: 26px; height: 26px; flex: none; padding: 0; border: 0; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; background: #F2F2F2; color: #8A8A8A;"></button><button type="button" class="wl-cell" aria-label="Priya, Wed, Oct 28: 0 items" aria-pressed="false" style="width: 26px; height: 26px; flex: none; padding: 0; border: 0; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; background: #F2F2F2; color: #8A8A8A;"></button><button type="button" class="wl-cell" aria-label="Priya, Thu, Oct 29: 1 item" aria-pressed="false" style="width: 26px; height: 26px; flex: none; padding: 0; border: 0; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; background: #C9D6FA; color: #1D3A8A;">1</button><button type="button" class="wl-cell" aria-label="Priya, Fri, Oct 30: 1 item" aria-pressed="false" style="width: 26px; height: 26px; flex: none; padding: 0; border: 0; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; background: #C9D6FA; color: #1D3A8A;">1</button><button type="button" class="wl-cell" aria-label="Priya, Sat, Oct 31: 1 item" aria-pressed="false" style="width: 26px; height: 26px; flex: none; padding: 0; border: 0; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; background: #C9D6FA; color: #1D3A8A;">1</button><button type="button" class="wl-cell" aria-label="Priya, Sun, Nov 1: 1 item" aria-pressed="false" style="width: 26px; height: 26px; flex: none; padding: 0; border: 0; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; background: #C9D6FA; color: #1D3A8A;">1</button><button type="button" class="wl-cell" aria-label="Priya, Mon, Nov 2: 0 items" aria-pressed="false" style="width: 26px; height: 26px; flex: none; padding: 0; border: 0; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; background: #F2F2F2; color: #8A8A8A;"></button><button type="button" class="wl-cell" aria-label="Priya, Tue, Nov 3: 0 items" aria-pressed="false" style="width: 26px; height: 26px; flex: none; padding: 0; border: 0; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; background: #F2F2F2; color: #8A8A8A;"></button><button type="button" class="wl-cell" aria-label="Priya, Wed, Nov 4: 0 items" aria-pressed="false" style="width: 26px; height: 26px; flex: none; padding: 0; border: 0; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; background: #F2F2F2; color: #8A8A8A;"></button><button type="button" class="wl-cell" aria-label="Priya, Thu, Nov 5: 1 item" aria-pressed="false" style="width: 26px; height: 26px; flex: none; padding: 0; border: 0; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; background: #C9D6FA; color: #1D3A8A;">1</button><button type="button" class="wl-cell" aria-label="Priya, Fri, Nov 6: 0 items" aria-pressed="false" style="width: 26px; height: 26px; flex: none; padding: 0; border: 0; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; background: #F2F2F2; color: #8A8A8A;"></button><button type="button" class="wl-cell" aria-label="Priya, Sat, Nov 7: 0 items" aria-pressed="false" style="width: 26px; height: 26px; flex: none; padding: 0; border: 0; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; background: #F2F2F2; color: #8A8A8A;"></button><button type="button" class="wl-cell" aria-label="Priya, Sun, Nov 8: 0 items" aria-pressed="false" style="width: 26px; height: 26px; flex: none; padding: 0; border: 0; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; background: #F2F2F2; color: #8A8A8A;"></button><button type="button" class="wl-cell" aria-label="Priya, Mon, Nov 9: 0 items" aria-pressed="false" style="width: 26px; height: 26px; flex: none; padding: 0; border: 0; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; background: #F2F2F2; color: #8A8A8A;"></button>
+</span>
+</div>
+
+<div style="display: grid; grid-template-columns: minmax(160px, 1fr) 172px 52px 52px 82px 446px; gap: 12px; align-items: center; min-height: 60px; padding: 6px 20px; box-sizing: border-box; border-top: 1px solid #EFEFEF; background: #FFFFFF;">
+<button type="button" class="wl-person" aria-pressed="false" style="display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 0; border: 0; background: transparent; cursor: pointer; text-align: left; color: #111111;"><span style="display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 50%; background: #2F5BD8; color: #FFFFFF; font-size: 13px; font-weight: 700; flex: none;">M</span><span style="display: flex; flex-direction: column; line-height: 1.3;"><span class="wl-pname" style="font-size: 14px; font-weight: 600;">Marcus</span><span style="font-size: 12px; color: #666666;">Editor</span></span></button>
+<span style="display: flex; align-items: center; gap: 10px;"><span style="display: flex; gap: 4px;"><span class="wl-anim" title="Building a $40k shop from scratch (Editing)" style="display: block; width: 26px; height: 14px; border-radius: 4px; background: #2F5BD8;"></span><span class="wl-anim" title="Shop tour 2026 (Editing)" style="display: block; width: 26px; height: 14px; border-radius: 4px; background: #2F5BD8;"></span><span class="wl-anim" title="Electrical rough-in basics (Filming)" style="display: block; width: 26px; height: 14px; border-radius: 4px; background: #B9461F;"></span><span class="wl-anim" title="Deck build timelapse (Editing)" style="display: block; width: 26px; height: 14px; border-radius: 4px; background: #2F5BD8;"></span><span class="wl-anim" title="Open slot" style="display: block; width: 26px; height: 14px; border-radius: 4px; background: #EFEFEF;"></span></span><span style="font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums; color: #2A2A2A;">4/5</span></span>
+<span style="font-size: 14px; font-weight: 700; font-variant-numeric: tabular-nums;">4</span>
+<span style="display: inline-flex; align-items: center; justify-content: center; min-width: 24px; height: 24px; padding: 0 7px; box-sizing: border-box; border-radius: 4px; background: #C42B1C; color: #FFFFFF; font-size: 12px; font-weight: 700; justify-self: start;">1</span>
+<span style="font-size: 13px; color: #2A2A2A;">Oct 28</span>
+<span style="display: flex; gap: 4px;">
+<button type="button" class="wl-cell" aria-label="Marcus, late: 1 item" aria-pressed="false" style="width: 26px; height: 26px; flex: none; padding: 0; border: 0; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; background: #C42B1C; color: #FFFFFF;">1</button><button type="button" class="wl-cell" aria-label="Marcus, Tue, Oct 27: 0 items" aria-pressed="false" style="width: 26px; height: 26px; flex: none; padding: 0; border: 0; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; background: #F2F2F2; color: #8A8A8A;"></button><button type="button" class="wl-cell" aria-label="Marcus, Wed, Oct 28: 1 item" aria-pressed="false" style="width: 26px; height: 26px; flex: none; padding: 0; border: 0; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; background: #C9D6FA; color: #1D3A8A;">1</button><button type="button" class="wl-cell" aria-label="Marcus, Thu, Oct 29: 0 items" aria-pressed="false" style="width: 26px; height: 26px; flex: none; padding: 0; border: 0; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; background: #F2F2F2; color: #8A8A8A;"></button><button type="button" class="wl-cell" aria-label="Marcus, Fri, Oct 30: 0 items" aria-pressed="false" style="width: 26px; height: 26px; flex: none; padding: 0; border: 0; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; background: #F2F2F2; color: #8A8A8A;"></button><button type="button" class="wl-cell" aria-label="Marcus, Sat, Oct 31: 0 items" aria-pressed="false" style="width: 26px; height: 26px; flex: none; padding: 0; border: 0; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; background: #F2F2F2; color: #8A8A8A;"></button><button type="button" class="wl-cell" aria-label="Marcus, Sun, Nov 1: 1 item" aria-pressed="false" style="width: 26px; height: 26px; flex: none; padding: 0; border: 0; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; background: #C9D6FA; color: #1D3A8A;">1</button><button type="button" class="wl-cell" aria-label="Marcus, Mon, Nov 2: 0 items" aria-pressed="false" style="width: 26px; height: 26px; flex: none; padding: 0; border: 0; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; background: #F2F2F2; color: #8A8A8A;"></button><button type="button" class="wl-cell" aria-label="Marcus, Tue, Nov 3: 0 items" aria-pressed="false" style="width: 26px; height: 26px; flex: none; padding: 0; border: 0; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; background: #F2F2F2; color: #8A8A8A;"></button><button type="button" class="wl-cell" aria-label="Marcus, Wed, Nov 4: 0 items" aria-pressed="false" style="width: 26px; height: 26px; flex: none; padding: 0; border: 0; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; background: #F2F2F2; color: #8A8A8A;"></button><button type="button" class="wl-cell" aria-label="Marcus, Thu, Nov 5: 0 items" aria-pressed="false" style="width: 26px; height: 26px; flex: none; padding: 0; border: 0; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; background: #F2F2F2; color: #8A8A8A;"></button><button type="button" class="wl-cell" aria-label="Marcus, Fri, Nov 6: 0 items" aria-pressed="false" style="width: 26px; height: 26px; flex: none; padding: 0; border: 0; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; background: #F2F2F2; color: #8A8A8A;"></button><button type="button" class="wl-cell" aria-label="Marcus, Sat, Nov 7: 1 item" aria-pressed="false" style="width: 26px; height: 26px; flex: none; padding: 0; border: 0; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; background: #C9D6FA; color: #1D3A8A;">1</button><button type="button" class="wl-cell" aria-label="Marcus, Sun, Nov 8: 0 items" aria-pressed="false" style="width: 26px; height: 26px; flex: none; padding: 0; border: 0; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; background: #F2F2F2; color: #8A8A8A;"></button><button type="button" class="wl-cell" aria-label="Marcus, Mon, Nov 9: 0 items" aria-pressed="false" style="width: 26px; height: 26px; flex: none; padding: 0; border: 0; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; background: #F2F2F2; color: #8A8A8A;"></button>
+</span>
+</div>
+
+<div style="display: grid; grid-template-columns: minmax(160px, 1fr) 172px 52px 52px 82px 446px; gap: 12px; align-items: center; min-height: 60px; padding: 6px 20px; box-sizing: border-box; border-top: 1px solid #EFEFEF; background: #FFFFFF;">
+<button type="button" class="wl-person" aria-pressed="false" style="display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 0; border: 0; background: transparent; cursor: pointer; text-align: left; color: #111111;"><span style="display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 50%; background: #5F5F5F; color: #FFFFFF; font-size: 13px; font-weight: 700; flex: none;">L</span><span style="display: flex; flex-direction: column; line-height: 1.3;"><span class="wl-pname" style="font-size: 14px; font-weight: 600;">Leo</span><span style="font-size: 12px; color: #666666;">Designer</span></span></button>
+<span style="display: flex; align-items: center; gap: 10px;"><span style="display: flex; gap: 4px;"><span class="wl-anim" title="Day 1 of the cabin build (Filming)" style="display: block; width: 26px; height: 14px; border-radius: 4px; background: #B9461F;"></span><span class="wl-anim" title="Tool haul under $500 (Scheduled)" style="display: block; width: 26px; height: 14px; border-radius: 4px; background: #B8264F;"></span><span class="wl-anim" title="Shop tour 2026 (Editing)" style="display: block; width: 26px; height: 14px; border-radius: 4px; background: #2F5BD8;"></span><span class="wl-anim" title="Siding install start to finish (Filming)" style="display: block; width: 26px; height: 14px; border-radius: 4px; background: #B9461F;"></span><span class="wl-anim" title="Open slot" style="display: block; width: 26px; height: 14px; border-radius: 4px; background: #EFEFEF;"></span></span><span style="font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums; color: #2A2A2A;">4/5</span></span>
+<span style="font-size: 14px; font-weight: 700; font-variant-numeric: tabular-nums;">4</span>
+<span style="font-size: 14px; color: #8A8A8A;">0</span>
+<span style="font-size: 13px; color: #2A2A2A;">Oct 27</span>
+<span style="display: flex; gap: 4px;">
+<button type="button" class="wl-cell" aria-label="Leo, late: 0 items" aria-pressed="false" style="width: 26px; height: 26px; flex: none; padding: 0; border: 0; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; background: #F2F2F2; color: #8A8A8A;"></button><button type="button" class="wl-cell" aria-label="Leo, Tue, Oct 27: 1 item" aria-pressed="false" style="width: 26px; height: 26px; flex: none; padding: 0; border: 0; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; background: #C9D6FA; color: #1D3A8A;">1</button><button type="button" class="wl-cell" aria-label="Leo, Wed, Oct 28: 0 items" aria-pressed="false" style="width: 26px; height: 26px; flex: none; padding: 0; border: 0; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; background: #F2F2F2; color: #8A8A8A;"></button><button type="button" class="wl-cell" aria-label="Leo, Thu, Oct 29: 0 items" aria-pressed="false" style="width: 26px; height: 26px; flex: none; padding: 0; border: 0; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; background: #F2F2F2; color: #8A8A8A;"></button><button type="button" class="wl-cell" aria-label="Leo, Fri, Oct 30: 0 items" aria-pressed="false" style="width: 26px; height: 26px; flex: none; padding: 0; border: 0; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; background: #F2F2F2; color: #8A8A8A;"></button><button type="button" class="wl-cell" aria-label="Leo, Sat, Oct 31: 0 items" aria-pressed="false" style="width: 26px; height: 26px; flex: none; padding: 0; border: 0; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; background: #F2F2F2; color: #8A8A8A;"></button><button type="button" class="wl-cell" aria-label="Leo, Sun, Nov 1: 0 items" aria-pressed="false" style="width: 26px; height: 26px; flex: none; padding: 0; border: 0; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; background: #F2F2F2; color: #8A8A8A;"></button><button type="button" class="wl-cell" aria-label="Leo, Mon, Nov 2: 1 item" aria-pressed="false" style="width: 26px; height: 26px; flex: none; padding: 0; border: 0; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; background: #C9D6FA; color: #1D3A8A;">1</button><button type="button" class="wl-cell" aria-label="Leo, Tue, Nov 3: 0 items" aria-pressed="false" style="width: 26px; height: 26px; flex: none; padding: 0; border: 0; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; background: #F2F2F2; color: #8A8A8A;"></button><button type="button" class="wl-cell" aria-label="Leo, Wed, Nov 4: 0 items" aria-pressed="false" style="width: 26px; height: 26px; flex: none; padding: 0; border: 0; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; background: #F2F2F2; color: #8A8A8A;"></button><button type="button" class="wl-cell" aria-label="Leo, Thu, Nov 5: 0 items" aria-pressed="false" style="width: 26px; height: 26px; flex: none; padding: 0; border: 0; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; background: #F2F2F2; color: #8A8A8A;"></button><button type="button" class="wl-cell" aria-label="Leo, Fri, Nov 6: 0 items" aria-pressed="false" style="width: 26px; height: 26px; flex: none; padding: 0; border: 0; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; background: #F2F2F2; color: #8A8A8A;"></button><button type="button" class="wl-cell" aria-label="Leo, Sat, Nov 7: 1 item" aria-pressed="false" style="width: 26px; height: 26px; flex: none; padding: 0; border: 0; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; background: #C9D6FA; color: #1D3A8A;">1</button><button type="button" class="wl-cell" aria-label="Leo, Sun, Nov 8: 1 item" aria-pressed="false" style="width: 26px; height: 26px; flex: none; padding: 0; border: 0; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; background: #C9D6FA; color: #1D3A8A;">1</button><button type="button" class="wl-cell" aria-label="Leo, Mon, Nov 9: 0 items" aria-pressed="false" style="width: 26px; height: 26px; flex: none; padding: 0; border: 0; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; background: #F2F2F2; color: #8A8A8A;"></button>
+</span>
+</div>
+
+<div style="display: grid; grid-template-columns: minmax(160px, 1fr) 172px 52px 52px 82px 446px; gap: 12px; align-items: center; min-height: 60px; padding: 6px 20px; box-sizing: border-box; border-top: 1px solid #EFEFEF; background: #FFFFFF;">
+<button type="button" class="wl-person" aria-pressed="false" style="display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 0; border: 0; background: transparent; cursor: pointer; text-align: left; color: #111111;"><span style="display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 50%; background: #B9461F; color: #FFFFFF; font-size: 13px; font-weight: 700; flex: none;">D</span><span style="display: flex; flex-direction: column; line-height: 1.3;"><span class="wl-pname" style="font-size: 14px; font-weight: 600;">Dani</span><span style="font-size: 12px; color: #666666;">Editor</span></span></button>
+<span style="display: flex; align-items: center; gap: 10px;"><span style="display: flex; gap: 4px;"><span class="wl-anim" title="Framing the second floor (Editing)" style="display: block; width: 26px; height: 14px; border-radius: 4px; background: #2F5BD8;"></span><span class="wl-anim" title="Siding install start to finish (Filming)" style="display: block; width: 26px; height: 14px; border-radius: 4px; background: #B9461F;"></span><span class="wl-anim" title="Open slot" style="display: block; width: 26px; height: 14px; border-radius: 4px; background: #EFEFEF;"></span><span class="wl-anim" title="Open slot" style="display: block; width: 26px; height: 14px; border-radius: 4px; background: #EFEFEF;"></span><span class="wl-anim" title="Open slot" style="display: block; width: 26px; height: 14px; border-radius: 4px; background: #EFEFEF;"></span></span><span style="font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums; color: #2A2A2A;">2/5</span></span>
+<span style="font-size: 14px; font-weight: 700; font-variant-numeric: tabular-nums;">2</span>
+<span style="font-size: 14px; color: #8A8A8A;">0</span>
+<span style="font-size: 13px; color: #2A2A2A;">Oct 30</span>
+<span style="display: flex; gap: 4px;">
+<button type="button" class="wl-cell" aria-label="Dani, late: 0 items" aria-pressed="false" style="width: 26px; height: 26px; flex: none; padding: 0; border: 0; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; background: #F2F2F2; color: #8A8A8A;"></button><button type="button" class="wl-cell" aria-label="Dani, Tue, Oct 27: 0 items" aria-pressed="false" style="width: 26px; height: 26px; flex: none; padding: 0; border: 0; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; background: #F2F2F2; color: #8A8A8A;"></button><button type="button" class="wl-cell" aria-label="Dani, Wed, Oct 28: 0 items" aria-pressed="false" style="width: 26px; height: 26px; flex: none; padding: 0; border: 0; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; background: #F2F2F2; color: #8A8A8A;"></button><button type="button" class="wl-cell" aria-label="Dani, Thu, Oct 29: 0 items" aria-pressed="false" style="width: 26px; height: 26px; flex: none; padding: 0; border: 0; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; background: #F2F2F2; color: #8A8A8A;"></button><button type="button" class="wl-cell" aria-label="Dani, Fri, Oct 30: 1 item" aria-pressed="false" style="width: 26px; height: 26px; flex: none; padding: 0; border: 0; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; background: #C9D6FA; color: #1D3A8A;">1</button><button type="button" class="wl-cell" aria-label="Dani, Sat, Oct 31: 0 items" aria-pressed="false" style="width: 26px; height: 26px; flex: none; padding: 0; border: 0; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; background: #F2F2F2; color: #8A8A8A;"></button><button type="button" class="wl-cell" aria-label="Dani, Sun, Nov 1: 0 items" aria-pressed="false" style="width: 26px; height: 26px; flex: none; padding: 0; border: 0; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; background: #F2F2F2; color: #8A8A8A;"></button><button type="button" class="wl-cell" aria-label="Dani, Mon, Nov 2: 0 items" aria-pressed="false" style="width: 26px; height: 26px; flex: none; padding: 0; border: 0; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; background: #F2F2F2; color: #8A8A8A;"></button><button type="button" class="wl-cell" aria-label="Dani, Tue, Nov 3: 0 items" aria-pressed="false" style="width: 26px; height: 26px; flex: none; padding: 0; border: 0; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; background: #F2F2F2; color: #8A8A8A;"></button><button type="button" class="wl-cell" aria-label="Dani, Wed, Nov 4: 0 items" aria-pressed="false" style="width: 26px; height: 26px; flex: none; padding: 0; border: 0; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; background: #F2F2F2; color: #8A8A8A;"></button><button type="button" class="wl-cell" aria-label="Dani, Thu, Nov 5: 0 items" aria-pressed="false" style="width: 26px; height: 26px; flex: none; padding: 0; border: 0; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; background: #F2F2F2; color: #8A8A8A;"></button><button type="button" class="wl-cell" aria-label="Dani, Fri, Nov 6: 1 item" aria-pressed="false" style="width: 26px; height: 26px; flex: none; padding: 0; border: 0; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; background: #C9D6FA; color: #1D3A8A;">1</button><button type="button" class="wl-cell" aria-label="Dani, Sat, Nov 7: 0 items" aria-pressed="false" style="width: 26px; height: 26px; flex: none; padding: 0; border: 0; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; background: #F2F2F2; color: #8A8A8A;"></button><button type="button" class="wl-cell" aria-label="Dani, Sun, Nov 8: 0 items" aria-pressed="false" style="width: 26px; height: 26px; flex: none; padding: 0; border: 0; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; background: #F2F2F2; color: #8A8A8A;"></button><button type="button" class="wl-cell" aria-label="Dani, Mon, Nov 9: 0 items" aria-pressed="false" style="width: 26px; height: 26px; flex: none; padding: 0; border: 0; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; background: #F2F2F2; color: #8A8A8A;"></button>
+</span>
+</div>
+
+<div style="display: grid; grid-template-columns: minmax(160px, 1fr) 172px 52px 52px 82px 446px; gap: 12px; align-items: center; min-height: 60px; padding: 6px 20px; box-sizing: border-box; border-top: 1px solid #EFEFEF; background: #FFFFFF;">
+<button type="button" class="wl-person" aria-pressed="false" style="display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 0; border: 0; background: transparent; cursor: pointer; text-align: left; color: #111111;"><span style="display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 50%; background: #1E7A3C; color: #FFFFFF; font-size: 13px; font-weight: 700; flex: none;">T</span><span style="display: flex; flex-direction: column; line-height: 1.3;"><span class="wl-pname" style="font-size: 14px; font-weight: 600;">Theo</span><span style="font-size: 12px; color: #666666;">Editor</span></span></button>
+<span style="display: flex; align-items: center; gap: 10px;"><span style="display: flex; gap: 4px;"><span class="wl-anim" title="Viewer Q&A #12 (Scripting)" style="display: block; width: 26px; height: 14px; border-radius: 4px; background: #5F5F5F;"></span><span class="wl-anim" title="Open slot" style="display: block; width: 26px; height: 14px; border-radius: 4px; background: #EFEFEF;"></span><span class="wl-anim" title="Open slot" style="display: block; width: 26px; height: 14px; border-radius: 4px; background: #EFEFEF;"></span><span class="wl-anim" title="Open slot" style="display: block; width: 26px; height: 14px; border-radius: 4px; background: #EFEFEF;"></span><span class="wl-anim" title="Open slot" style="display: block; width: 26px; height: 14px; border-radius: 4px; background: #EFEFEF;"></span></span><span style="font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums; color: #2A2A2A;">1/5</span></span>
+<span style="font-size: 14px; font-weight: 700; font-variant-numeric: tabular-nums;">1</span>
+<span style="font-size: 14px; color: #8A8A8A;">0</span>
+<span style="font-size: 13px; color: #2A2A2A;">Nov 14</span>
+<span style="display: flex; gap: 4px;">
+<button type="button" class="wl-cell" aria-label="Theo, late: 0 items" aria-pressed="false" style="width: 26px; height: 26px; flex: none; padding: 0; border: 0; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; background: #F2F2F2; color: #8A8A8A;"></button><button type="button" class="wl-cell" aria-label="Theo, Tue, Oct 27: 0 items" aria-pressed="false" style="width: 26px; height: 26px; flex: none; padding: 0; border: 0; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; background: #F2F2F2; color: #8A8A8A;"></button><button type="button" class="wl-cell" aria-label="Theo, Wed, Oct 28: 0 items" aria-pressed="false" style="width: 26px; height: 26px; flex: none; padding: 0; border: 0; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; background: #F2F2F2; color: #8A8A8A;"></button><button type="button" class="wl-cell" aria-label="Theo, Thu, Oct 29: 0 items" aria-pressed="false" style="width: 26px; height: 26px; flex: none; padding: 0; border: 0; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; background: #F2F2F2; color: #8A8A8A;"></button><button type="button" class="wl-cell" aria-label="Theo, Fri, Oct 30: 0 items" aria-pressed="false" style="width: 26px; height: 26px; flex: none; padding: 0; border: 0; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; background: #F2F2F2; color: #8A8A8A;"></button><button type="button" class="wl-cell" aria-label="Theo, Sat, Oct 31: 0 items" aria-pressed="false" style="width: 26px; height: 26px; flex: none; padding: 0; border: 0; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; background: #F2F2F2; color: #8A8A8A;"></button><button type="button" class="wl-cell" aria-label="Theo, Sun, Nov 1: 0 items" aria-pressed="false" style="width: 26px; height: 26px; flex: none; padding: 0; border: 0; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; background: #F2F2F2; color: #8A8A8A;"></button><button type="button" class="wl-cell" aria-label="Theo, Mon, Nov 2: 0 items" aria-pressed="false" style="width: 26px; height: 26px; flex: none; padding: 0; border: 0; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; background: #F2F2F2; color: #8A8A8A;"></button><button type="button" class="wl-cell" aria-label="Theo, Tue, Nov 3: 0 items" aria-pressed="false" style="width: 26px; height: 26px; flex: none; padding: 0; border: 0; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; background: #F2F2F2; color: #8A8A8A;"></button><button type="button" class="wl-cell" aria-label="Theo, Wed, Nov 4: 0 items" aria-pressed="false" style="width: 26px; height: 26px; flex: none; padding: 0; border: 0; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; background: #F2F2F2; color: #8A8A8A;"></button><button type="button" class="wl-cell" aria-label="Theo, Thu, Nov 5: 0 items" aria-pressed="false" style="width: 26px; height: 26px; flex: none; padding: 0; border: 0; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; background: #F2F2F2; color: #8A8A8A;"></button><button type="button" class="wl-cell" aria-label="Theo, Fri, Nov 6: 0 items" aria-pressed="false" style="width: 26px; height: 26px; flex: none; padding: 0; border: 0; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; background: #F2F2F2; color: #8A8A8A;"></button><button type="button" class="wl-cell" aria-label="Theo, Sat, Nov 7: 0 items" aria-pressed="false" style="width: 26px; height: 26px; flex: none; padding: 0; border: 0; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; background: #F2F2F2; color: #8A8A8A;"></button><button type="button" class="wl-cell" aria-label="Theo, Sun, Nov 8: 0 items" aria-pressed="false" style="width: 26px; height: 26px; flex: none; padding: 0; border: 0; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; background: #F2F2F2; color: #8A8A8A;"></button><button type="button" class="wl-cell" aria-label="Theo, Mon, Nov 9: 0 items" aria-pressed="false" style="width: 26px; height: 26px; flex: none; padding: 0; border: 0; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; background: #F2F2F2; color: #8A8A8A;"></button>
+</span>
+</div>
+
+<div style="display: grid; grid-template-columns: minmax(160px, 1fr) 172px 52px 52px 82px 446px; gap: 12px; align-items: center; min-height: 60px; padding: 6px 20px; box-sizing: border-box; border-top: 1px solid #EFEFEF; background: #FFFFFF;">
+<button type="button" class="wl-person" aria-pressed="false" style="display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 0; border: 0; background: transparent; cursor: pointer; text-align: left; color: #111111;"><span style="display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 50%; background: #B8264F; color: #FFFFFF; font-size: 13px; font-weight: 700; flex: none;">Z</span><span style="display: flex; flex-direction: column; line-height: 1.3;"><span class="wl-pname" style="font-size: 14px; font-weight: 600;">ZZ</span><span style="font-size: 12px; color: #666666;">Editor</span></span></button>
+<span style="display: flex; align-items: center; gap: 10px;"><span style="display: flex; gap: 4px;"><span class="wl-anim" title="Why I quit my 9 to 5 (Editing)" style="display: block; width: 26px; height: 14px; border-radius: 4px; background: #2F5BD8;"></span><span class="wl-anim" title="Open slot" style="display: block; width: 26px; height: 14px; border-radius: 4px; background: #EFEFEF;"></span><span class="wl-anim" title="Open slot" style="display: block; width: 26px; height: 14px; border-radius: 4px; background: #EFEFEF;"></span><span class="wl-anim" title="Open slot" style="display: block; width: 26px; height: 14px; border-radius: 4px; background: #EFEFEF;"></span><span class="wl-anim" title="Open slot" style="display: block; width: 26px; height: 14px; border-radius: 4px; background: #EFEFEF;"></span></span><span style="font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums; color: #2A2A2A;">1/5</span></span>
+<span style="font-size: 14px; font-weight: 700; font-variant-numeric: tabular-nums;">1</span>
+<span style="display: inline-flex; align-items: center; justify-content: center; min-width: 24px; height: 24px; padding: 0 7px; box-sizing: border-box; border-radius: 4px; background: #C42B1C; color: #FFFFFF; font-size: 12px; font-weight: 700; justify-self: start;">1</span>
+<span style="font-size: 13px; color: #2A2A2A;">None</span>
+<span style="display: flex; gap: 4px;">
+<button type="button" class="wl-cell" aria-label="ZZ, late: 1 item" aria-pressed="false" style="width: 26px; height: 26px; flex: none; padding: 0; border: 0; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; background: #C42B1C; color: #FFFFFF;">1</button><button type="button" class="wl-cell" aria-label="ZZ, Tue, Oct 27: 0 items" aria-pressed="false" style="width: 26px; height: 26px; flex: none; padding: 0; border: 0; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; background: #F2F2F2; color: #8A8A8A;"></button><button type="button" class="wl-cell" aria-label="ZZ, Wed, Oct 28: 0 items" aria-pressed="false" style="width: 26px; height: 26px; flex: none; padding: 0; border: 0; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; background: #F2F2F2; color: #8A8A8A;"></button><button type="button" class="wl-cell" aria-label="ZZ, Thu, Oct 29: 0 items" aria-pressed="false" style="width: 26px; height: 26px; flex: none; padding: 0; border: 0; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; background: #F2F2F2; color: #8A8A8A;"></button><button type="button" class="wl-cell" aria-label="ZZ, Fri, Oct 30: 0 items" aria-pressed="false" style="width: 26px; height: 26px; flex: none; padding: 0; border: 0; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; background: #F2F2F2; color: #8A8A8A;"></button><button type="button" class="wl-cell" aria-label="ZZ, Sat, Oct 31: 0 items" aria-pressed="false" style="width: 26px; height: 26px; flex: none; padding: 0; border: 0; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; background: #F2F2F2; color: #8A8A8A;"></button><button type="button" class="wl-cell" aria-label="ZZ, Sun, Nov 1: 0 items" aria-pressed="false" style="width: 26px; height: 26px; flex: none; padding: 0; border: 0; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; background: #F2F2F2; color: #8A8A8A;"></button><button type="button" class="wl-cell" aria-label="ZZ, Mon, Nov 2: 0 items" aria-pressed="false" style="width: 26px; height: 26px; flex: none; padding: 0; border: 0; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; background: #F2F2F2; color: #8A8A8A;"></button><button type="button" class="wl-cell" aria-label="ZZ, Tue, Nov 3: 0 items" aria-pressed="false" style="width: 26px; height: 26px; flex: none; padding: 0; border: 0; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; background: #F2F2F2; color: #8A8A8A;"></button><button type="button" class="wl-cell" aria-label="ZZ, Wed, Nov 4: 0 items" aria-pressed="false" style="width: 26px; height: 26px; flex: none; padding: 0; border: 0; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; background: #F2F2F2; color: #8A8A8A;"></button><button type="button" class="wl-cell" aria-label="ZZ, Thu, Nov 5: 0 items" aria-pressed="false" style="width: 26px; height: 26px; flex: none; padding: 0; border: 0; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; background: #F2F2F2; color: #8A8A8A;"></button><button type="button" class="wl-cell" aria-label="ZZ, Fri, Nov 6: 0 items" aria-pressed="false" style="width: 26px; height: 26px; flex: none; padding: 0; border: 0; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; background: #F2F2F2; color: #8A8A8A;"></button><button type="button" class="wl-cell" aria-label="ZZ, Sat, Nov 7: 0 items" aria-pressed="false" style="width: 26px; height: 26px; flex: none; padding: 0; border: 0; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; background: #F2F2F2; color: #8A8A8A;"></button><button type="button" class="wl-cell" aria-label="ZZ, Sun, Nov 8: 0 items" aria-pressed="false" style="width: 26px; height: 26px; flex: none; padding: 0; border: 0; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; background: #F2F2F2; color: #8A8A8A;"></button><button type="button" class="wl-cell" aria-label="ZZ, Mon, Nov 9: 0 items" aria-pressed="false" style="width: 26px; height: 26px; flex: none; padding: 0; border: 0; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; background: #F2F2F2; color: #8A8A8A;"></button>
+</span>
+</div>
+
+</div>
+</div>
+
+</section>
+
+<!-- Assignments -->
+<section id="assignments" aria-labelledby="asg-h" style="background: #FFFFFF; border: 1px solid #E6E6E6; border-radius: 16px; min-width: 0; overflow: hidden;">
+<div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding: 18px 20px 14px;">
+<div style="display: flex; align-items: center; gap: 10px;"><h2 id="asg-h" style="margin: 0; font-family: Montserrat, sans-serif; font-weight: 900; font-size: 18px;">Assignments</h2><span style="display: inline-flex; align-items: center; justify-content: center; min-width: 24px; height: 24px; padding: 0 7px; box-sizing: border-box; border-radius: 12px; background: #F0F0F0; font-size: 12px; font-weight: 700;">14</span></div>
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 10px;">
+<label style="display: flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 12px; box-sizing: border-box; border: 1px solid #E6E6E6; border-radius: 12px; background: #FAFAFA; color: #707070;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg><span style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0);">Search projects</span><input type="search" value="" placeholder="Search projects" style="border: 0; outline: none; background: transparent; font-size: 14px; width: 180px; color: #111111;"></label>
+<label style="display: flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 12px; box-sizing: border-box; border: 1px solid #E6E6E6; border-radius: 12px; font-size: 14px; font-weight: 600; cursor: pointer;"><input type="checkbox" checked="false" style="width: 16px; height: 16px; accent-color: #111111; margin: 0;">Only issues</label>
+</div>
+</div>
+
+<div class="wl-scroll" style="overflow-x: auto; border-top: 1px solid #EFEFEF;">
+<div style="min-width: 1060px;">
+<div style="display: grid; grid-template-columns: minmax(220px, 2fr) 136px 132px 132px 88px 88px 76px minmax(130px, 1fr); gap: 12px; align-items: center; padding: 10px 20px; font-size: 12px; font-weight: 600; color: #666666; background: #FAFAFA;">
+<span>Project</span><span>Status</span><span>Editor</span><span>Designer</span><span>Edit due</span><span>Thumb due</span><span>Publish</span><span>Sponsor</span>
+</div>
+
+<div style="border-top: 1px solid #EFEFEF;">
+<div class="wl-row" style="display: grid; grid-template-columns: minmax(220px, 2fr) 136px 132px 132px 88px 88px 76px minmax(130px, 1fr); gap: 12px; align-items: center; min-height: 60px; padding: 8px 20px; box-sizing: border-box; background: #FFFFFF;">
+<span style="display: flex; flex-direction: column; gap: 2px; min-width: 0;"><span style="font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Tool haul under $500</span><span style="font-size: 12px; color: #666666;">Sponsored · film Oct 11</span></span>
+<span><span style="display: inline-flex; align-items: center; height: 26px; padding: 0 10px; box-sizing: border-box; border-radius: 4px; background: #B8264F; color: #FFFFFF; font-size: 12px; font-weight: 600; white-space: nowrap;">Scheduled</span></span>
+<span>
+<span style="display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 500;"><span style="display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 50%; background: #1E7A3C; color: #FFFFFF; font-size: 11px; font-weight: 700; flex: none;">T</span>Theo</span>
+
+</span>
+<span>
+<span style="display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 500;"><span style="display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 50%; background: #5F5F5F; color: #FFFFFF; font-size: 11px; font-weight: 700; flex: none;">L</span>Leo</span>
+
+</span>
+<span><span style="display: inline-flex; align-items: center; height: 26px; padding: 0 8px; border-radius: 6px; font-size: 13px; font-variant-numeric: tabular-nums; white-space: nowrap; color: #1B653B; background: #E6F5EC; font-weight: 600;">Done</span></span>
+<span><span style="display: inline-flex; align-items: center; height: 26px; padding: 0 8px; border-radius: 6px; font-size: 13px; font-variant-numeric: tabular-nums; white-space: nowrap; color: #7A4E00; background: #FCF1DC; font-weight: 700;">Oct 27</span></span>
+<span style="font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums;">Oct 29</span>
+<span style="display: flex; flex-direction: column; align-items: flex-start; gap: 4px; min-width: 0;"><span style="font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%;">Acme Tools</span><span style="display: inline-flex; align-items: center; height: 22px; padding: 0 8px; border-radius: 6px; font-size: 11px; font-weight: 700; background: #E6F5EC; color: #1B653B;">Approved</span></span>
+</div>
+
+</div>
+
+<div style="border-top: 1px solid #EFEFEF;">
+<div class="wl-row" style="display: grid; grid-template-columns: minmax(220px, 2fr) 136px 132px 132px 88px 88px 76px minmax(130px, 1fr); gap: 12px; align-items: center; min-height: 60px; padding: 8px 20px; box-sizing: border-box; background: #FFFFFF;">
+<span style="display: flex; flex-direction: column; gap: 2px; min-width: 0;"><span style="font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Pouring the slab</span><span style="font-size: 12px; color: #666666;">Film Oct 12</span></span>
+<span><span style="display: inline-flex; align-items: center; height: 26px; padding: 0 10px; box-sizing: border-box; border-radius: 4px; background: #B8264F; color: #FFFFFF; font-size: 12px; font-weight: 600; white-space: nowrap;">Scheduled</span></span>
+<span>
+<span style="display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 500;"><span style="display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 50%; background: #B9461F; color: #FFFFFF; font-size: 11px; font-weight: 700; flex: none;">D</span>Dani</span>
+
+</span>
+<span>
+<span style="display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 500;"><span style="display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 50%; background: #5F5F5F; color: #FFFFFF; font-size: 11px; font-weight: 700; flex: none;">L</span>Leo</span>
+
+</span>
+<span><span style="display: inline-flex; align-items: center; height: 26px; padding: 0 8px; border-radius: 6px; font-size: 13px; font-variant-numeric: tabular-nums; white-space: nowrap; color: #1B653B; background: #E6F5EC; font-weight: 600;">Done</span></span>
+<span><span style="display: inline-flex; align-items: center; height: 26px; padding: 0 8px; border-radius: 6px; font-size: 13px; font-variant-numeric: tabular-nums; white-space: nowrap; color: #1B653B; background: #E6F5EC; font-weight: 600;">Done</span></span>
+<span style="font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums;">Oct 30</span>
+<span style="display: flex; flex-direction: column; align-items: flex-start; gap: 4px; min-width: 0;"><span style="font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%;">None</span></span>
+</div>
+
+</div>
+
+<div style="border-top: 1px solid #EFEFEF;">
+<div class="wl-row" style="display: grid; grid-template-columns: minmax(220px, 2fr) 136px 132px 132px 88px 88px 76px minmax(130px, 1fr); gap: 12px; align-items: center; min-height: 60px; padding: 8px 20px; box-sizing: border-box; background: #FFFFFF; box-shadow: inset 3px 0 0 #C42B1C;">
+<span style="display: flex; flex-direction: column; gap: 2px; min-width: 0;"><span style="font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Why I quit my 9 to 5</span><span style="font-size: 12px; color: #666666;">Film Oct 16</span></span>
+<span><span style="display: inline-flex; align-items: center; height: 26px; padding: 0 10px; box-sizing: border-box; border-radius: 4px; background: #2F5BD8; color: #FFFFFF; font-size: 12px; font-weight: 600; white-space: nowrap;">Editing</span></span>
+<span>
+<span style="display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 500;"><span style="display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 50%; background: #B8264F; color: #FFFFFF; font-size: 11px; font-weight: 700; flex: none;">Z</span>ZZ</span>
+
+</span>
+<span>
+<span style="display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 500;"><span style="display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 50%; background: #7A3FD0; color: #FFFFFF; font-size: 11px; font-weight: 700; flex: none;">P</span>Priya</span>
+
+</span>
+<span><span style="display: inline-flex; align-items: center; height: 26px; padding: 0 8px; border-radius: 6px; font-size: 13px; font-variant-numeric: tabular-nums; white-space: nowrap; color: #9B1C13; background: #FDE8E5; font-weight: 700;">Oct 26</span></span>
+<span><span style="display: inline-flex; align-items: center; height: 26px; padding: 0 8px; border-radius: 6px; font-size: 13px; font-variant-numeric: tabular-nums; white-space: nowrap; color: #2A2A2A; font-weight: 500;">Oct 29</span></span>
+<span style="font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums;">Oct 31</span>
+<span style="display: flex; flex-direction: column; align-items: flex-start; gap: 4px; min-width: 0;"><span style="font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%;">None</span></span>
+</div>
+
+</div>
+
+<div style="border-top: 1px solid #EFEFEF;">
+<div class="wl-row" style="display: grid; grid-template-columns: minmax(220px, 2fr) 136px 132px 132px 88px 88px 76px minmax(130px, 1fr); gap: 12px; align-items: center; min-height: 60px; padding: 8px 20px; box-sizing: border-box; background: #FFFFFF;">
+<span style="display: flex; flex-direction: column; gap: 2px; min-width: 0;"><span style="font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Concrete pour gone wrong</span><span style="font-size: 12px; color: #666666;">Sponsored · film Oct 13</span></span>
+<span><span style="display: inline-flex; align-items: center; height: 26px; padding: 0 10px; box-sizing: border-box; border-radius: 4px; background: #7A3FD0; color: #FFFFFF; font-size: 12px; font-weight: 600; white-space: nowrap;">Sponsor Review</span></span>
+<span>
+<span style="display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 500;"><span style="display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 50%; background: #B9461F; color: #FFFFFF; font-size: 11px; font-weight: 700; flex: none;">D</span>Dani</span>
+
+</span>
+<span>
+<span style="display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 500;"><span style="display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 50%; background: #7A3FD0; color: #FFFFFF; font-size: 11px; font-weight: 700; flex: none;">P</span>Priya</span>
+
+</span>
+<span><span style="display: inline-flex; align-items: center; height: 26px; padding: 0 8px; border-radius: 6px; font-size: 13px; font-variant-numeric: tabular-nums; white-space: nowrap; color: #1B653B; background: #E6F5EC; font-weight: 600;">Done</span></span>
+<span><span style="display: inline-flex; align-items: center; height: 26px; padding: 0 8px; border-radius: 6px; font-size: 13px; font-variant-numeric: tabular-nums; white-space: nowrap; color: #2A2A2A; font-weight: 500;">Oct 30</span></span>
+<span style="font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums;">Nov 1</span>
+<span style="display: flex; flex-direction: column; align-items: flex-start; gap: 4px; min-width: 0;"><span style="font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%;">Northline Lumber</span><span style="display: inline-flex; align-items: center; height: 22px; padding: 0 8px; border-radius: 6px; font-size: 11px; font-weight: 700; background: #FCF1DC; color: #7A4E00;">Pending</span></span>
+</div>
+
+</div>
+
+<div style="border-top: 1px solid #EFEFEF;">
+<div class="wl-row" style="display: grid; grid-template-columns: minmax(220px, 2fr) 136px 132px 132px 88px 88px 76px minmax(130px, 1fr); gap: 12px; align-items: center; min-height: 60px; padding: 8px 20px; box-sizing: border-box; background: #FFFFFF; box-shadow: inset 3px 0 0 #C42B1C;">
+<span style="display: flex; flex-direction: column; gap: 2px; min-width: 0;"><span style="font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Building a $40k shop from scratch</span><span style="font-size: 12px; color: #666666;">Sponsored · film Oct 15</span></span>
+<span><span style="display: inline-flex; align-items: center; height: 26px; padding: 0 10px; box-sizing: border-box; border-radius: 4px; background: #2F5BD8; color: #FFFFFF; font-size: 12px; font-weight: 600; white-space: nowrap;">Editing</span></span>
+<span>
+<span style="display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 500;"><span style="display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 50%; background: #2F5BD8; color: #FFFFFF; font-size: 11px; font-weight: 700; flex: none;">M</span>Marcus</span>
+
+</span>
+<span>
+<span style="display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 500;"><span style="display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 50%; background: #7A3FD0; color: #FFFFFF; font-size: 11px; font-weight: 700; flex: none;">P</span>Priya</span>
+
+</span>
+<span><span style="display: inline-flex; align-items: center; height: 26px; padding: 0 8px; border-radius: 6px; font-size: 13px; font-variant-numeric: tabular-nums; white-space: nowrap; color: #9B1C13; background: #FDE8E5; font-weight: 700;">Oct 25</span></span>
+<span><span style="display: inline-flex; align-items: center; height: 26px; padding: 0 8px; border-radius: 6px; font-size: 13px; font-variant-numeric: tabular-nums; white-space: nowrap; color: #2A2A2A; font-weight: 500;">Oct 31</span></span>
+<span style="font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums;">Nov 2</span>
+<span style="display: flex; flex-direction: column; align-items: flex-start; gap: 4px; min-width: 0;"><span style="font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%;">Acme Tools</span><span style="display: inline-flex; align-items: center; height: 22px; padding: 0 8px; border-radius: 6px; font-size: 11px; font-weight: 700; background: #F0F0F0; color: #4A4A4A;">Not sent</span></span>
+</div>
+
+</div>
+
+<div style="border-top: 1px solid #EFEFEF;">
+<div class="wl-row" style="display: grid; grid-template-columns: minmax(220px, 2fr) 136px 132px 132px 88px 88px 76px minmax(130px, 1fr); gap: 12px; align-items: center; min-height: 60px; padding: 8px 20px; box-sizing: border-box; background: #FFFFFF;">
+<span style="display: flex; flex-direction: column; gap: 2px; min-width: 0;"><span style="font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">First client job breakdown</span><span style="font-size: 12px; color: #666666;">Sponsored · film Oct 14</span></span>
+<span><span style="display: inline-flex; align-items: center; height: 26px; padding: 0 10px; box-sizing: border-box; border-radius: 4px; background: #7A3FD0; color: #FFFFFF; font-size: 12px; font-weight: 600; white-space: nowrap;">Sponsor Review</span></span>
+<span>
+<span style="display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 500;"><span style="display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 50%; background: #1E7A3C; color: #FFFFFF; font-size: 11px; font-weight: 700; flex: none;">T</span>Theo</span>
+
+</span>
+<span>
+<span style="display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 500;"><span style="display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 50%; background: #7A3FD0; color: #FFFFFF; font-size: 11px; font-weight: 700; flex: none;">P</span>Priya</span>
+
+</span>
+<span><span style="display: inline-flex; align-items: center; height: 26px; padding: 0 8px; border-radius: 6px; font-size: 13px; font-variant-numeric: tabular-nums; white-space: nowrap; color: #1B653B; background: #E6F5EC; font-weight: 600;">Done</span></span>
+<span><span style="display: inline-flex; align-items: center; height: 26px; padding: 0 8px; border-radius: 6px; font-size: 13px; font-variant-numeric: tabular-nums; white-space: nowrap; color: #2A2A2A; font-weight: 500;">Nov 1</span></span>
+<span style="font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums;">Nov 3</span>
+<span style="display: flex; flex-direction: column; align-items: flex-start; gap: 4px; min-width: 0;"><span style="font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%;">Brightwire</span><span style="display: inline-flex; align-items: center; height: 22px; padding: 0 8px; border-radius: 6px; font-size: 11px; font-weight: 700; background: #FCF1DC; color: #7A4E00;">Pending</span></span>
+</div>
+
+</div>
+
+<div style="border-top: 1px solid #EFEFEF;">
+<div class="wl-row" style="display: grid; grid-template-columns: minmax(220px, 2fr) 136px 132px 132px 88px 88px 76px minmax(130px, 1fr); gap: 12px; align-items: center; min-height: 60px; padding: 8px 20px; box-sizing: border-box; background: #FFFFFF;">
+<span style="display: flex; flex-direction: column; gap: 2px; min-width: 0;"><span style="font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Shop tour 2026</span><span style="font-size: 12px; color: #666666;">Film Oct 18</span></span>
+<span><span style="display: inline-flex; align-items: center; height: 26px; padding: 0 10px; box-sizing: border-box; border-radius: 4px; background: #2F5BD8; color: #FFFFFF; font-size: 12px; font-weight: 600; white-space: nowrap;">Editing</span></span>
+<span>
+<span style="display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 500;"><span style="display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 50%; background: #2F5BD8; color: #FFFFFF; font-size: 11px; font-weight: 700; flex: none;">M</span>Marcus</span>
+
+</span>
+<span>
+<span style="display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 500;"><span style="display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 50%; background: #5F5F5F; color: #FFFFFF; font-size: 11px; font-weight: 700; flex: none;">L</span>Leo</span>
+
+</span>
+<span><span style="display: inline-flex; align-items: center; height: 26px; padding: 0 8px; border-radius: 6px; font-size: 13px; font-variant-numeric: tabular-nums; white-space: nowrap; color: #2A2A2A; font-weight: 500;">Oct 28</span></span>
+<span><span style="display: inline-flex; align-items: center; height: 26px; padding: 0 8px; border-radius: 6px; font-size: 13px; font-variant-numeric: tabular-nums; white-space: nowrap; color: #2A2A2A; font-weight: 500;">Nov 2</span></span>
+<span style="font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums;">Nov 4</span>
+<span style="display: flex; flex-direction: column; align-items: flex-start; gap: 4px; min-width: 0;"><span style="font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%;">None</span></span>
+</div>
+
+</div>
+
+<div style="border-top: 1px solid #EFEFEF;">
+<div class="wl-row" style="display: grid; grid-template-columns: minmax(220px, 2fr) 136px 132px 132px 88px 88px 76px minmax(130px, 1fr); gap: 12px; align-items: center; min-height: 60px; padding: 8px 20px; box-sizing: border-box; background: #FFFFFF;">
+<span style="display: flex; flex-direction: column; gap: 2px; min-width: 0;"><span style="font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Framing the second floor</span><span style="font-size: 12px; color: #666666;">Film Oct 20</span></span>
+<span><span style="display: inline-flex; align-items: center; height: 26px; padding: 0 10px; box-sizing: border-box; border-radius: 4px; background: #2F5BD8; color: #FFFFFF; font-size: 12px; font-weight: 600; white-space: nowrap;">Editing</span></span>
+<span>
+<span style="display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 500;"><span style="display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 50%; background: #B9461F; color: #FFFFFF; font-size: 11px; font-weight: 700; flex: none;">D</span>Dani</span>
+
+</span>
+<span>
+
+<button type="button" class="wl-assign" aria-expanded="false" style="display: inline-flex; align-items: center; gap: 6px; min-height: 34px; padding: 0 12px; box-sizing: border-box; border: 1px dashed #9A6500; border-radius: 10px; background: #FCF1DC; font-size: 13px; font-weight: 600; color: #7A4E00; cursor: pointer;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>Assign</button>
+</span>
+<span><span style="display: inline-flex; align-items: center; height: 26px; padding: 0 8px; border-radius: 6px; font-size: 13px; font-variant-numeric: tabular-nums; white-space: nowrap; color: #2A2A2A; font-weight: 500;">Oct 30</span></span>
+<span><span style="display: inline-flex; align-items: center; height: 26px; padding: 0 8px; border-radius: 6px; font-size: 13px; font-variant-numeric: tabular-nums; white-space: nowrap; color: #2A2A2A; font-weight: 500;">Nov 3</span></span>
+<span style="font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums;">Nov 5</span>
+<span style="display: flex; flex-direction: column; align-items: flex-start; gap: 4px; min-width: 0;"><span style="font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%;">None</span></span>
+</div>
+
+</div>
+
+<div style="border-top: 1px solid #EFEFEF;">
+<div class="wl-row" style="display: grid; grid-template-columns: minmax(220px, 2fr) 136px 132px 132px 88px 88px 76px minmax(130px, 1fr); gap: 12px; align-items: center; min-height: 60px; padding: 8px 20px; box-sizing: border-box; background: #FFFFFF;">
+<span style="display: flex; flex-direction: column; gap: 2px; min-width: 0;"><span style="font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Deck build timelapse</span><span style="font-size: 12px; color: #666666;">Film Oct 22</span></span>
+<span><span style="display: inline-flex; align-items: center; height: 26px; padding: 0 10px; box-sizing: border-box; border-radius: 4px; background: #2F5BD8; color: #FFFFFF; font-size: 12px; font-weight: 600; white-space: nowrap;">Editing</span></span>
+<span>
+<span style="display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 500;"><span style="display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 50%; background: #2F5BD8; color: #FFFFFF; font-size: 11px; font-weight: 700; flex: none;">M</span>Marcus</span>
+
+</span>
+<span>
+<span style="display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 500;"><span style="display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 50%; background: #7A3FD0; color: #FFFFFF; font-size: 11px; font-weight: 700; flex: none;">P</span>Priya</span>
+
+</span>
+<span><span style="display: inline-flex; align-items: center; height: 26px; padding: 0 8px; border-radius: 6px; font-size: 13px; font-variant-numeric: tabular-nums; white-space: nowrap; color: #2A2A2A; font-weight: 500;">Nov 1</span></span>
+<span><span style="display: inline-flex; align-items: center; height: 26px; padding: 0 8px; border-radius: 6px; font-size: 13px; font-variant-numeric: tabular-nums; white-space: nowrap; color: #2A2A2A; font-weight: 500;">Nov 5</span></span>
+<span style="font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums;">Nov 7</span>
+<span style="display: flex; flex-direction: column; align-items: flex-start; gap: 4px; min-width: 0;"><span style="font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%;">None</span></span>
+</div>
+
+</div>
+
+<div style="border-top: 1px solid #EFEFEF;">
+<div class="wl-row" style="display: grid; grid-template-columns: minmax(220px, 2fr) 136px 132px 132px 88px 88px 76px minmax(130px, 1fr); gap: 12px; align-items: center; min-height: 60px; padding: 8px 20px; box-sizing: border-box; background: #FFFFFF;">
+<span style="display: flex; flex-direction: column; gap: 2px; min-width: 0;"><span style="font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Siding install start to finish</span><span style="font-size: 12px; color: #666666;">Film Oct 27</span></span>
+<span><span style="display: inline-flex; align-items: center; height: 26px; padding: 0 10px; box-sizing: border-box; border-radius: 4px; background: #B9461F; color: #FFFFFF; font-size: 12px; font-weight: 600; white-space: nowrap;">Filming</span></span>
+<span>
+<span style="display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 500;"><span style="display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 50%; background: #B9461F; color: #FFFFFF; font-size: 11px; font-weight: 700; flex: none;">D</span>Dani</span>
+
+</span>
+<span>
+<span style="display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 500;"><span style="display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 50%; background: #5F5F5F; color: #FFFFFF; font-size: 11px; font-weight: 700; flex: none;">L</span>Leo</span>
+
+</span>
+<span><span style="display: inline-flex; align-items: center; height: 26px; padding: 0 8px; border-radius: 6px; font-size: 13px; font-variant-numeric: tabular-nums; white-space: nowrap; color: #2A2A2A; font-weight: 500;">Nov 6</span></span>
+<span><span style="display: inline-flex; align-items: center; height: 26px; padding: 0 8px; border-radius: 6px; font-size: 13px; font-variant-numeric: tabular-nums; white-space: nowrap; color: #2A2A2A; font-weight: 500;">Nov 7</span></span>
+<span style="font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums;">Nov 9</span>
+<span style="display: flex; flex-direction: column; align-items: flex-start; gap: 4px; min-width: 0;"><span style="font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%;">None</span></span>
+</div>
+
+</div>
+
+<div style="border-top: 1px solid #EFEFEF;">
+<div class="wl-row" style="display: grid; grid-template-columns: minmax(220px, 2fr) 136px 132px 132px 88px 88px 76px minmax(130px, 1fr); gap: 12px; align-items: center; min-height: 60px; padding: 8px 20px; box-sizing: border-box; background: #FFFFFF;">
+<span style="display: flex; flex-direction: column; gap: 2px; min-width: 0;"><span style="font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Day 1 of the cabin build</span><span style="font-size: 12px; color: #666666;">Film Oct 29</span></span>
+<span><span style="display: inline-flex; align-items: center; height: 26px; padding: 0 10px; box-sizing: border-box; border-radius: 4px; background: #B9461F; color: #FFFFFF; font-size: 12px; font-weight: 600; white-space: nowrap;">Filming</span></span>
+<span>
+
+<button type="button" class="wl-assign" aria-expanded="false" style="display: inline-flex; align-items: center; gap: 6px; min-height: 34px; padding: 0 12px; box-sizing: border-box; border: 1px dashed #9A6500; border-radius: 10px; background: #FCF1DC; font-size: 13px; font-weight: 600; color: #7A4E00; cursor: pointer;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>Assign</button>
+</span>
+<span>
+<span style="display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 500;"><span style="display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 50%; background: #5F5F5F; color: #FFFFFF; font-size: 11px; font-weight: 700; flex: none;">L</span>Leo</span>
+
+</span>
+<span><span style="display: inline-flex; align-items: center; height: 26px; padding: 0 8px; border-radius: 6px; font-size: 13px; font-variant-numeric: tabular-nums; white-space: nowrap; color: #2A2A2A; font-weight: 500;">Nov 8</span></span>
+<span><span style="display: inline-flex; align-items: center; height: 26px; padding: 0 8px; border-radius: 6px; font-size: 13px; font-variant-numeric: tabular-nums; white-space: nowrap; color: #2A2A2A; font-weight: 500;">Nov 8</span></span>
+<span style="font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums;">Nov 10</span>
+<span style="display: flex; flex-direction: column; align-items: flex-start; gap: 4px; min-width: 0;"><span style="font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%;">None</span></span>
+</div>
+
+</div>
+
+<div style="border-top: 1px solid #EFEFEF;">
+<div class="wl-row" style="display: grid; grid-template-columns: minmax(220px, 2fr) 136px 132px 132px 88px 88px 76px minmax(130px, 1fr); gap: 12px; align-items: center; min-height: 60px; padding: 8px 20px; box-sizing: border-box; background: #FFFFFF;">
+<span style="display: flex; flex-direction: column; gap: 2px; min-width: 0;"><span style="font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Electrical rough-in basics</span><span style="font-size: 12px; color: #666666;">Film Oct 28</span></span>
+<span><span style="display: inline-flex; align-items: center; height: 26px; padding: 0 10px; box-sizing: border-box; border-radius: 4px; background: #B9461F; color: #FFFFFF; font-size: 12px; font-weight: 600; white-space: nowrap;">Filming</span></span>
+<span>
+<span style="display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 500;"><span style="display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 50%; background: #2F5BD8; color: #FFFFFF; font-size: 11px; font-weight: 700; flex: none;">M</span>Marcus</span>
+
+</span>
+<span>
+
+<button type="button" class="wl-assign" aria-expanded="false" style="display: inline-flex; align-items: center; gap: 6px; min-height: 34px; padding: 0 12px; box-sizing: border-box; border: 1px dashed #9A6500; border-radius: 10px; background: #FCF1DC; font-size: 13px; font-weight: 600; color: #7A4E00; cursor: pointer;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>Assign</button>
+</span>
+<span><span style="display: inline-flex; align-items: center; height: 26px; padding: 0 8px; border-radius: 6px; font-size: 13px; font-variant-numeric: tabular-nums; white-space: nowrap; color: #2A2A2A; font-weight: 500;">Nov 7</span></span>
+<span><span style="display: inline-flex; align-items: center; height: 26px; padding: 0 8px; border-radius: 6px; font-size: 13px; font-variant-numeric: tabular-nums; white-space: nowrap; color: #2A2A2A; font-weight: 500;">Nov 9</span></span>
+<span style="font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums;">Nov 11</span>
+<span style="display: flex; flex-direction: column; align-items: flex-start; gap: 4px; min-width: 0;"><span style="font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%;">None</span></span>
+</div>
+
+</div>
+
+<div style="border-top: 1px solid #EFEFEF;">
+<div class="wl-row" style="display: grid; grid-template-columns: minmax(220px, 2fr) 136px 132px 132px 88px 88px 76px minmax(130px, 1fr); gap: 12px; align-items: center; min-height: 60px; padding: 8px 20px; box-sizing: border-box; background: #FFFFFF;">
+<span style="display: flex; flex-direction: column; gap: 2px; min-width: 0;"><span style="font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Viewer Q&A #12</span><span style="font-size: 12px; color: #666666;">Film Nov 4</span></span>
+<span><span style="display: inline-flex; align-items: center; height: 26px; padding: 0 10px; box-sizing: border-box; border-radius: 4px; background: #5F5F5F; color: #FFFFFF; font-size: 12px; font-weight: 600; white-space: nowrap;">Scripting</span></span>
+<span>
+<span style="display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 500;"><span style="display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 50%; background: #1E7A3C; color: #FFFFFF; font-size: 11px; font-weight: 700; flex: none;">T</span>Theo</span>
+
+</span>
+<span>
+
+<button type="button" class="wl-assign" aria-expanded="false" style="display: inline-flex; align-items: center; gap: 6px; min-height: 34px; padding: 0 12px; box-sizing: border-box; border: 1px dashed #D4D4D4; border-radius: 10px; background: transparent; font-size: 13px; font-weight: 600; color: #707070; cursor: pointer;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>Assign</button>
+</span>
+<span><span style="display: inline-flex; align-items: center; height: 26px; padding: 0 8px; border-radius: 6px; font-size: 13px; font-variant-numeric: tabular-nums; white-space: nowrap; color: #2A2A2A; font-weight: 500;">Nov 14</span></span>
+<span><span style="display: inline-flex; align-items: center; height: 26px; padding: 0 8px; border-radius: 6px; font-size: 13px; font-variant-numeric: tabular-nums; white-space: nowrap; color: #2A2A2A; font-weight: 500;">Nov 13</span></span>
+<span style="font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums;">Nov 15</span>
+<span style="display: flex; flex-direction: column; align-items: flex-start; gap: 4px; min-width: 0;"><span style="font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%;">None</span></span>
+</div>
+
+</div>
+
+<div style="border-top: 1px solid #EFEFEF;">
+<div class="wl-row" style="display: grid; grid-template-columns: minmax(220px, 2fr) 136px 132px 132px 88px 88px 76px minmax(130px, 1fr); gap: 12px; align-items: center; min-height: 60px; padding: 8px 20px; box-sizing: border-box; background: #FFFFFF;">
+<span style="display: flex; flex-direction: column; gap: 2px; min-width: 0;"><span style="font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Roof trusses in one day</span><span style="font-size: 12px; color: #666666;">Film Nov 2</span></span>
+<span><span style="display: inline-flex; align-items: center; height: 26px; padding: 0 10px; box-sizing: border-box; border-radius: 4px; background: #5F5F5F; color: #FFFFFF; font-size: 12px; font-weight: 600; white-space: nowrap;">Scripting</span></span>
+<span>
+
+<button type="button" class="wl-assign" aria-expanded="false" style="display: inline-flex; align-items: center; gap: 6px; min-height: 34px; padding: 0 12px; box-sizing: border-box; border: 1px dashed #D4D4D4; border-radius: 10px; background: transparent; font-size: 13px; font-weight: 600; color: #707070; cursor: pointer;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>Assign</button>
+</span>
+<span>
+
+<button type="button" class="wl-assign" aria-expanded="false" style="display: inline-flex; align-items: center; gap: 6px; min-height: 34px; padding: 0 12px; box-sizing: border-box; border: 1px dashed #D4D4D4; border-radius: 10px; background: transparent; font-size: 13px; font-weight: 600; color: #707070; cursor: pointer;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>Assign</button>
+</span>
+<span><span style="display: inline-flex; align-items: center; height: 26px; padding: 0 8px; border-radius: 6px; font-size: 13px; font-variant-numeric: tabular-nums; white-space: nowrap; color: #2A2A2A; font-weight: 500;">Nov 12</span></span>
+<span><span style="display: inline-flex; align-items: center; height: 26px; padding: 0 8px; border-radius: 6px; font-size: 13px; font-variant-numeric: tabular-nums; white-space: nowrap; color: #2A2A2A; font-weight: 500;">Nov 14</span></span>
+<span style="font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums;">Nov 16</span>
+<span style="display: flex; flex-direction: column; align-items: flex-start; gap: 4px; min-width: 0;"><span style="font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%;">None</span></span>
+</div>
+
+</div>
+
+
+</div>
+</div>
+</section>
+
+<!-- Workflow and rules -->
+<section aria-labelledby="wf-h" style="background: #FFFFFF; border: 1px solid #E6E6E6; border-radius: 16px; padding: 18px 20px 22px; box-sizing: border-box; display: flex; flex-direction: column; gap: 18px; min-width: 0;">
+<div style="display: flex; flex-direction: column; gap: 4px;"><h2 id="wf-h" style="margin: 0; font-family: Montserrat, sans-serif; font-weight: 900; font-size: 18px;">Workflow</h2><span style="font-size: 13px; color: #666666;">Every project moves through these statuses in order. Edit names and colors in Workspace Settings.</span></div>
+<div style="display: flex; flex-wrap: wrap; align-items: flex-start; gap: 8px 6px;">
+
+<span style="display: flex; align-items: flex-start; gap: 6px;">
+<span style="display: flex; flex-direction: column; gap: 5px;"><span style="display: inline-flex; align-items: center; height: 32px; padding: 0 10px; box-sizing: border-box; border-radius: 4px; background: #5F5F5F; color: #FFFFFF; font-size: 12px; font-weight: 600; white-space: nowrap; font-size: 13px; padding: 0 6px 0 12px; gap: 8px;">Scripting<span style="display: inline-flex; align-items: center; justify-content: center; min-width: 20px; height: 20px; padding: 0 5px; box-sizing: border-box; border-radius: 4px; background: rgba(255,255,255,0.22); font-size: 11px; font-weight: 700;">2</span></span><span style="font-size: 11px; font-weight: 600; color: #707070;">In Production</span></span>
+<svg width="16" height="30" viewBox="0 0 16 30" fill="none" stroke="#9A9A9A" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 15h11M9 11l4 4-4 4"></path></svg>
+</span>
+
+<span style="display: flex; align-items: flex-start; gap: 6px;">
+<span style="display: flex; flex-direction: column; gap: 5px;"><span style="display: inline-flex; align-items: center; height: 32px; padding: 0 10px; box-sizing: border-box; border-radius: 4px; background: #B9461F; color: #FFFFFF; font-size: 12px; font-weight: 600; white-space: nowrap; font-size: 13px; padding: 0 6px 0 12px; gap: 8px;">Filming<span style="display: inline-flex; align-items: center; justify-content: center; min-width: 20px; height: 20px; padding: 0 5px; box-sizing: border-box; border-radius: 4px; background: rgba(255,255,255,0.22); font-size: 11px; font-weight: 700;">3</span></span><span style="font-size: 11px; font-weight: 600; color: #707070;">In Production</span></span>
+<svg width="16" height="30" viewBox="0 0 16 30" fill="none" stroke="#9A9A9A" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 15h11M9 11l4 4-4 4"></path></svg>
+</span>
+
+<span style="display: flex; align-items: flex-start; gap: 6px;">
+<span style="display: flex; flex-direction: column; gap: 5px;"><span style="display: inline-flex; align-items: center; height: 32px; padding: 0 10px; box-sizing: border-box; border-radius: 4px; background: #2F5BD8; color: #FFFFFF; font-size: 12px; font-weight: 600; white-space: nowrap; font-size: 13px; padding: 0 6px 0 12px; gap: 8px;">Editing<span style="display: inline-flex; align-items: center; justify-content: center; min-width: 20px; height: 20px; padding: 0 5px; box-sizing: border-box; border-radius: 4px; background: rgba(255,255,255,0.22); font-size: 11px; font-weight: 700;">5</span></span><span style="font-size: 11px; font-weight: 600; color: #707070;">Post Production</span></span>
+<svg width="16" height="30" viewBox="0 0 16 30" fill="none" stroke="#9A9A9A" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 15h11M9 11l4 4-4 4"></path></svg>
+</span>
+
+<span style="display: flex; align-items: flex-start; gap: 6px;">
+<span style="display: flex; flex-direction: column; gap: 5px;"><span style="display: inline-flex; align-items: center; height: 32px; padding: 0 10px; box-sizing: border-box; border-radius: 4px; background: #7A3FD0; color: #FFFFFF; font-size: 12px; font-weight: 600; white-space: nowrap; font-size: 13px; padding: 0 6px 0 12px; gap: 8px;">Sponsor Review<span style="display: inline-flex; align-items: center; justify-content: center; min-width: 20px; height: 20px; padding: 0 5px; box-sizing: border-box; border-radius: 4px; background: rgba(255,255,255,0.22); font-size: 11px; font-weight: 700;">2</span></span><span style="font-size: 11px; font-weight: 600; color: #707070;">Post Production</span></span>
+<svg width="16" height="30" viewBox="0 0 16 30" fill="none" stroke="#9A9A9A" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 15h11M9 11l4 4-4 4"></path></svg>
+</span>
+
+<span style="display: flex; align-items: flex-start; gap: 6px;">
+<span style="display: flex; flex-direction: column; gap: 5px;"><span style="display: inline-flex; align-items: center; height: 32px; padding: 0 10px; box-sizing: border-box; border-radius: 4px; background: #B8264F; color: #FFFFFF; font-size: 12px; font-weight: 600; white-space: nowrap; font-size: 13px; padding: 0 6px 0 12px; gap: 8px;">Scheduled<span style="display: inline-flex; align-items: center; justify-content: center; min-width: 20px; height: 20px; padding: 0 5px; box-sizing: border-box; border-radius: 4px; background: rgba(255,255,255,0.22); font-size: 11px; font-weight: 700;">2</span></span><span style="font-size: 11px; font-weight: 600; color: #707070;">Publishing</span></span>
+<svg width="16" height="30" viewBox="0 0 16 30" fill="none" stroke="#9A9A9A" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 15h11M9 11l4 4-4 4"></path></svg>
+</span>
+
+<span style="display: flex; align-items: flex-start; gap: 6px;">
+<span style="display: flex; flex-direction: column; gap: 5px;"><span style="display: inline-flex; align-items: center; height: 32px; padding: 0 10px; box-sizing: border-box; border-radius: 4px; background: #1E7A3C; color: #FFFFFF; font-size: 12px; font-weight: 600; white-space: nowrap; font-size: 13px; padding: 0 6px 0 12px; gap: 8px;">Live<span style="display: inline-flex; align-items: center; justify-content: center; min-width: 20px; height: 20px; padding: 0 5px; box-sizing: border-box; border-radius: 4px; background: rgba(255,255,255,0.22); font-size: 11px; font-weight: 700;">5</span></span><span style="font-size: 11px; font-weight: 600; color: #707070;">Publishing</span></span>
+
+</span>
+
+</div>
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr)); gap: 24px; padding-top: 18px; border-top: 1px solid #EFEFEF;">
+<div style="display: flex; flex-direction: column; gap: 12px;">
+<h3 style="margin: 0; font-size: 14px; font-weight: 700;">Deadline defaults</h3>
+
+<div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 14px; border: 1px solid #EFEFEF; border-radius: 12px;">
+<span style="display: flex; flex-direction: column; gap: 2px;"><span style="font-size: 14px; font-weight: 600;">Edit due after film date</span><span style="font-size: 12px; color: #666666;">Moves the edit date on 10 open projects</span></span>
+<span style="display: flex; align-items: center; gap: 6px;">
+<button type="button" aria-label="Fewer edit days" style="width: 40px; height: 40px; border: 1px solid #E6E6E6; border-radius: 10px; background: #FFFFFF; font-size: 18px; font-weight: 600; color: #111111; cursor: pointer;">-</button>
+<span aria-live="polite" style="display: inline-flex; align-items: center; justify-content: center; min-width: 48px; height: 40px; border-radius: 10px; background: #F4F4F4; font-size: 15px; font-weight: 700; font-variant-numeric: tabular-nums;">10</span>
+<button type="button" aria-label="More edit days" style="width: 40px; height: 40px; border: 1px solid #E6E6E6; border-radius: 10px; background: #FFFFFF; font-size: 18px; font-weight: 600; color: #111111; cursor: pointer;">+</button>
+<span style="font-size: 13px; color: #666666; width: 32px;">days</span>
+</span>
+</div>
+
+<div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 14px; border: 1px solid #EFEFEF; border-radius: 12px;">
+<span style="display: flex; flex-direction: column; gap: 2px;"><span style="font-size: 14px; font-weight: 600;">Thumbnail due before publish</span><span style="font-size: 12px; color: #666666;">Moves the thumbnail date on 13 open projects</span></span>
+<span style="display: flex; align-items: center; gap: 6px;">
+<button type="button" aria-label="Fewer thumbnail days" style="width: 40px; height: 40px; border: 1px solid #E6E6E6; border-radius: 10px; background: #FFFFFF; font-size: 18px; font-weight: 600; color: #111111; cursor: pointer;">-</button>
+<span aria-live="polite" style="display: inline-flex; align-items: center; justify-content: center; min-width: 48px; height: 40px; border-radius: 10px; background: #F4F4F4; font-size: 15px; font-weight: 700; font-variant-numeric: tabular-nums;">2</span>
+<button type="button" aria-label="More thumbnail days" style="width: 40px; height: 40px; border: 1px solid #E6E6E6; border-radius: 10px; background: #FFFFFF; font-size: 18px; font-weight: 600; color: #111111; cursor: pointer;">+</button>
+<span style="font-size: 13px; color: #666666; width: 32px;">days</span>
+</span>
+</div>
+
+</div>
+<div style="display: flex; flex-direction: column; gap: 4px;">
+<h3 style="margin: 0 0 8px; font-size: 14px; font-weight: 700;">Rules</h3>
+
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: 56px; border-bottom: 1px solid #F2F2F2;">
+<span style="display: flex; flex-direction: column; gap: 2px;"><span style="font-size: 14px; font-weight: 600;">Require sponsor approval</span><span style="font-size: 12px; color: #666666;">Sponsored projects cannot move to Scheduled until approved.</span></span>
+<button type="button" role="switch" aria-checked="true" aria-label="Require sponsor approval" style="position: relative; flex: none; width: 46px; height: 28px; padding: 0; border: 0; border-radius: 14px; cursor: pointer; background: #111111;"><span class="wl-anim" style="position: absolute; top: 4px; left: 4px; width: 20px; height: 20px; border-radius: 50%; background: #FFFFFF; box-shadow: 0 1px 2px rgba(0,0,0,0.2); transform: translateX(18px);"></span></button>
+</div>
+
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: 56px; border-bottom: 1px solid #F2F2F2;">
+<span style="display: flex; flex-direction: column; gap: 2px;"><span style="font-size: 14px; font-weight: 600;">Lock projects after Live</span><span style="font-size: 12px; color: #666666;">Only Super Admins can edit a published project.</span></span>
+<button type="button" role="switch" aria-checked="false" aria-label="Lock projects after Live" style="position: relative; flex: none; width: 46px; height: 28px; padding: 0; border: 0; border-radius: 14px; cursor: pointer; background: #D4D4D4;"><span class="wl-anim" style="position: absolute; top: 4px; left: 4px; width: 20px; height: 20px; border-radius: 50%; background: #FFFFFF; box-shadow: 0 1px 2px rgba(0,0,0,0.2); transform: translateX(0px);"></span></button>
+</div>
+
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: 56px; border-bottom: 1px solid #F2F2F2;">
+<span style="display: flex; flex-direction: column; gap: 2px;"><span style="font-size: 14px; font-weight: 600;">Editors can change Status</span><span style="font-size: 12px; color: #666666;">Otherwise editors only change Editor Status.</span></span>
+<button type="button" role="switch" aria-checked="false" aria-label="Editors can change Status" style="position: relative; flex: none; width: 46px; height: 28px; padding: 0; border: 0; border-radius: 14px; cursor: pointer; background: #D4D4D4;"><span class="wl-anim" style="position: absolute; top: 4px; left: 4px; width: 20px; height: 20px; border-radius: 50%; background: #FFFFFF; box-shadow: 0 1px 2px rgba(0,0,0,0.2); transform: translateX(0px);"></span></button>
+</div>
+
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: 56px; border-bottom: 1px solid #F2F2F2;">
+<span style="display: flex; flex-direction: column; gap: 2px;"><span style="font-size: 14px; font-weight: 600;">Create distribution tasks</span><span style="font-size: 12px; color: #666666;">Add clipping, newsletter and community tasks on Live.</span></span>
+<button type="button" role="switch" aria-checked="true" aria-label="Create distribution tasks" style="position: relative; flex: none; width: 46px; height: 28px; padding: 0; border: 0; border-radius: 14px; cursor: pointer; background: #111111;"><span class="wl-anim" style="position: absolute; top: 4px; left: 4px; width: 20px; height: 20px; border-radius: 50%; background: #FFFFFF; box-shadow: 0 1px 2px rgba(0,0,0,0.2); transform: translateX(18px);"></span></button>
+</div>
+
+</div>
+</div>
+</section>
+
+</div>
+</main>
+</div>
+</div>
+</body>
+</html>

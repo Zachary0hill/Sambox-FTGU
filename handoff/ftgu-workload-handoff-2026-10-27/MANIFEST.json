@@ -1,0 +1,53 @@
+{
+  "name": "ftgu-workload-handoff-2026-10-27",
+  "created": "2026-10-27T15:18:49",
+  "counts": {
+    "source": 1,
+    "html": 1,
+    "screenshots": 1
+  },
+  "missing": [],
+  "layout": "<slug>-handoff-<date>/\n  START-HERE.md            read first: what this is, read order, first build phase\n  HANDOFF.md               the build spec\n  MANIFEST.json            every file with size and sha256\n  canvas.json              artboard frames, order, notes\n  render-report.json       per-artboard size, warnings, tweak props\n  tokens-candidates.json   colors, fonts, sizes, radii tallied from the artboards\n  screenshots/*.png        one per artboard, at frame size\n  html/*.html              static HTML per artboard, no canvas runtime\n  source/*.dc.html         original artboard sources\n  spec/                    original spec markdown, when supplied",
+  "files": [
+    {
+      "path": "HANDOFF.md",
+      "bytes": 21852,
+      "sha256": "0683e24027fdc00bf9a4d4ef0434fb1d340163d18bda63c692eb375184334dff"
+    },
+    {
+      "path": "START-HERE.md",
+      "bytes": 2289,
+      "sha256": "d5d173b55309201db0da7bc95bd088106998026035b7dfc29a7d8a363c556eeb"
+    },
+    {
+      "path": "canvas.json",
+      "bytes": 302,
+      "sha256": "27278fb296eaf5509aabe495c415f64129ca7a59e8e84a1b8a76c97149600eed"
+    },
+    {
+      "path": "render-report.json",
+      "bytes": 515,
+      "sha256": "23ff7a8eb6466dfe5a9925ccb89de8d979c11522f48ac4c7d496e4b3a05a68aa"
+    },
+    {
+      "path": "tokens-candidates.json",
+      "bytes": 5817,
+      "sha256": "35386ec2099f5cfb47d1e8f2e3009f8d5359a55d51c50110c7c43cff01eb56cd"
+    },
+    {
+      "path": "html/Main.html",
+      "bytes": 168828,
+      "sha256": "24aa9ba3a41ca55d2d30ab332b5fbdcdb78583b1696d33e802a85a412042ac1b"
+    },
+    {
+      "path": "screenshots/Main.png",
+      "bytes": 656189,
+      "sha256": "89229321b2f0fd9eb26126882109ffae7e98c463f3c61a50290596ef3510ad21"
+    },
+    {
+      "path": "source/Main.dc.html",
+      "bytes": 82439,
+      "sha256": "4e433a406269c846bbdffdc21273cc304fe9668419d04703cd2c646529979af4"
+    }
+  ]
+}

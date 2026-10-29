@@ -1,0 +1,805 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Workload overview</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Montserrat:wght@800;900&amp;display=swap">
+<style>
+body{margin:0;background:#EBEBEB}
+a{color:#111111}a:hover{color:#2A2A2A}
+.wl{font-family:Inter,system-ui,sans-serif;color:#111111;-webkit-font-smoothing:antialiased}
+.wl button{font-family:inherit;letter-spacing:-0.01em}
+.wl button:focus-visible,.wl a:focus-visible,.wl input:focus-visible{outline:2px solid #111111;outline-offset:2px}
+.wl-nav:hover{background:#F0F0F0 !important;color:#111111 !important}
+.wl-tile:hover{border-color:#BDBDBD !important}
+.wl-row:hover{background:#FAFAFA !important}
+.wl-ghost:hover{background:#F2F2F2 !important}
+.wl-primary:hover{background:#2A2A2A !important;color:#FFFFFF !important}
+.wl-col:hover{background:#F4F4F4 !important}
+.wl-cell:hover{box-shadow:0 0 0 2px #111111}
+.wl-assign:hover{border-color:#111111 !important;color:#111111 !important;background:#FFFFFF !important}
+.wl-opt:hover{border-color:#111111 !important}
+.wl-chip:hover{border-color:#111111 !important}
+.wl-person:hover .wl-pname{text-decoration:underline;text-underline-offset:3px}
+.wl-scroll{scrollbar-width:thin;scrollbar-color:#CFCFCF transparent}
+.wl-scroll::-webkit-scrollbar{height:6px}.wl-scroll::-webkit-scrollbar-thumb{background:#CFCFCF;border-radius:3px}
+@media (prefers-reduced-motion:no-preference){.wl-anim{transition:width .25s ease,height .25s ease,background-color .2s ease,transform .2s ease}}
+@media (max-width:720px){.wl-side{display:none !important}.wl-mob{display:flex !important}.wl-main{padding:20px 16px 40px !important}.wl-h1{font-size:30px !important}}
+</style>
+</helmet>
+<div class="wl" style="min-height: 100vh; box-sizing: border-box; padding: 8px; background: #EBEBEB;">
+<div style="display: flex; flex-wrap: wrap; align-items: stretch; background: #FFFFFF; border-radius: 20px; overflow: hidden;">
+
+<!-- Mobile top bar -->
+<div class="wl-mob" style="display: none; flex: 1 1 100%; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 16px; border-bottom: 1px solid #E6E6E6; background: #FAFAFA;">
+<div style="display: flex; align-items: center; gap: 10px;">
+<span style="display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 9px; background: #111111; color: #FFFFFF; font-family: Montserrat, sans-serif; font-weight: 900; font-size: 10px;">FTGU</span>
+<span style="font-family: Montserrat, sans-serif; font-weight: 900; font-size: 15px;">FTGU Studio</span>
+</div>
+<button type="button" aria-label="Open menu" style="width: 44px; height: 44px; border: 1px solid #E6E6E6; border-radius: 12px; background: #FFFFFF; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; color: #111111;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"></path></svg></button>
+</div>
+
+<!-- Sidebar -->
+<nav class="wl-side" aria-label="Main" style="flex: 0 0 264px; box-sizing: border-box; background: #FAFAFA; border-right: 1px solid #E6E6E6; padding: 18px 14px 14px; display: flex; flex-direction: column; gap: 2px;">
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 4px 6px 16px; margin-bottom: 12px; border-bottom: 1px solid #E6E6E6;">
+<div style="display: flex; align-items: center; gap: 12px;">
+<span style="display: inline-flex; align-items: center; justify-content: center; width: 38px; height: 38px; border-radius: 10px; background: #111111; color: #FFFFFF; font-family: Montserrat, sans-serif; font-weight: 900; font-size: 11px; letter-spacing: -0.02em;">FTGU</span>
+<span style="display: flex; flex-direction: column; line-height: 1.25;"><span style="font-family: Montserrat, sans-serif; font-weight: 900; font-size: 15px;">FTGU Studio</span><span style="font-size: 13px; color: #666666;">Production board</span></span>
+</div>
+<button type="button" aria-label="Collapse sidebar" style="width: 36px; height: 36px; border: 0; border-radius: 10px; background: transparent; color: #707070; display: inline-flex; align-items: center; justify-content: center; cursor: pointer;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"></rect><path d="M9 4v16M15 10l-2 2 2 2"></path></svg></button>
+</div>
+<a class="wl-nav" href="#" style="display: flex; align-items: center; gap: 12px; min-height: 44px; padding: 0 12px; border-radius: 10px; text-decoration: none; color: #2A2A2A; font-size: 15px; font-weight: 500;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5V21h-6v-6H9v6H3z"></path></svg>Daily</a>
+<a class="wl-nav" href="#" style="display: flex; align-items: center; gap: 12px; min-height: 44px; padding: 0 12px; border-radius: 10px; text-decoration: none; color: #2A2A2A; font-size: 15px; font-weight: 500;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="15" rx="2"></rect><path d="M3 10h18M8 3v4M16 3v4"></path></svg>Projects</a>
+<a class="wl-nav" href="#" style="display: flex; align-items: center; gap: 12px; min-height: 44px; padding: 0 12px; border-radius: 10px; text-decoration: none; color: #2A2A2A; font-size: 15px; font-weight: 500;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-4 10.5c.7.7 1 1.5 1 2.5h6c0-1 .3-1.8 1-2.5A6 6 0 0 0 12 3z"></path></svg>Ideas &amp; Research</a>
+<a class="wl-nav" href="#" style="display: flex; align-items: center; gap: 12px; min-height: 44px; padding: 0 12px; border-radius: 10px; text-decoration: none; color: #2A2A2A; font-size: 15px; font-weight: 500;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3a9 9 0 1 0 0 18c1 0 1.5-.8 1.5-1.5 0-1-.8-1.3-.8-2.2 0-.8.7-1.3 1.5-1.3H17a4 4 0 0 0 4-4C21 6.6 17 3 12 3z"></path><circle cx="7.5" cy="11" r="1"></circle><circle cx="10" cy="7" r="1"></circle><circle cx="15" cy="7" r="1"></circle></svg>Brand</a>
+<a class="wl-nav" href="#" style="display: flex; align-items: center; gap: 12px; min-height: 44px; padding: 0 12px; border-radius: 10px; text-decoration: none; color: #2A2A2A; font-size: 15px; font-weight: 500;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 16v-5a6 6 0 0 1 12 0v5l2 2H4z"></path><path d="M10 21h4"></path></svg>Inbox</a>
+<a class="wl-nav" href="#" style="display: flex; align-items: center; gap: 12px; min-height: 44px; padding: 0 12px; border-radius: 10px; text-decoration: none; color: #2A2A2A; font-size: 15px; font-weight: 500;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="9" width="18" height="12" rx="2"></rect><path d="M3 9l1.5-4.5L20 4l1 5M8.5 4.3 7 9M14.5 4.1 13 9"></path></svg>Content</a>
+<div style="display: flex; align-items: center; justify-content: space-between; padding: 22px 12px 8px; font-size: 13px; font-weight: 600; color: #666666;">Admin<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 15 6-6 6 6"></path></svg></div>
+<a class="wl-nav" href="#" style="display: flex; align-items: center; gap: 12px; min-height: 44px; padding: 0 12px; border-radius: 10px; text-decoration: none; color: #2A2A2A; font-size: 15px; font-weight: 500;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="4"></circle><path d="M2 21c0-4 3-6 7-6s7 2 7 6M16 4a4 4 0 0 1 0 8M22 21c0-3-1.5-5-4-5.5"></path></svg><span style="flex: 1;">Users</span><span style="display: inline-flex; align-items: center; justify-content: center; min-width: 22px; height: 22px; border-radius: 11px; background: #EDEDED; font-size: 12px; font-weight: 700;">6</span></a>
+<a class="wl-nav" href="#" style="display: flex; align-items: center; gap: 12px; min-height: 44px; padding: 0 12px; border-radius: 10px; text-decoration: none; color: #2A2A2A; font-size: 15px; font-weight: 500;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 4 6v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V6z"></path><path d="m9 12 2 2 4-4"></path></svg>Roles &amp; Permissions</a>
+<a class="wl-nav" href="#" aria-current="page" style="display: flex; align-items: center; gap: 12px; min-height: 44px; padding: 0 12px; border-radius: 10px; text-decoration: none; color: #111111; font-size: 15px; font-weight: 600; background: #EDEDED;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"></rect><path d="M8 8v8M12 8v5M16 8v8"></path></svg><span style="flex: 1;">Workload</span><span style="display: inline-flex; align-items: center; justify-content: center; min-width: 22px; height: 22px; padding: 0 6px; box-sizing: border-box; border-radius: 11px; background: #111111; color: #FFFFFF; font-size: 12px; font-weight: 700;">{{attTotal}}</span></a>
+<a class="wl-nav" href="#" style="display: flex; align-items: center; gap: 12px; min-height: 44px; padding: 0 12px; border-radius: 10px; text-decoration: none; color: #2A2A2A; font-size: 15px; font-weight: 500;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="7" width="18" height="13" rx="2"></rect><path d="M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2M3 13h18"></path></svg>Clients &amp; Sponsors</a>
+<a class="wl-nav" href="#" style="display: flex; align-items: center; gap: 12px; min-height: 44px; padding: 0 12px; border-radius: 10px; text-decoration: none; color: #2A2A2A; font-size: 15px; font-weight: 500;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2v20M17 6H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>Finance</a>
+<a class="wl-nav" href="#" style="display: flex; align-items: center; gap: 12px; min-height: 44px; padding: 0 12px; border-radius: 10px; text-decoration: none; color: #2A2A2A; font-size: 15px; font-weight: 500;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 2 4 14h7l-1 8 9-12h-7z"></path></svg>Automations</a>
+<a class="wl-nav" href="#" style="display: flex; align-items: center; gap: 12px; min-height: 44px; padding: 0 12px; border-radius: 10px; text-decoration: none; color: #2A2A2A; font-size: 15px; font-weight: 500;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7L3 8M3 3v5h5M12 7v5l3 2"></path></svg>Activity Log</a>
+<a class="wl-nav" href="#" style="display: flex; align-items: center; gap: 12px; min-height: 44px; padding: 0 12px; border-radius: 10px; text-decoration: none; color: #2A2A2A; font-size: 15px; font-weight: 500;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"></circle><path d="M12 2v3M12 19v3M4.9 4.9 7 7M17 17l2.1 2.1M2 12h3M19 12h3M4.9 19.1 7 17M17 7l2.1-2.1"></path></svg>Workspace Settings</a>
+<div style="flex: 1; min-height: 24px;"></div>
+<a class="wl-nav" href="#" style="display: flex; align-items: center; gap: 12px; min-height: 48px; padding: 0 12px; border-radius: 10px; text-decoration: none; color: #2A2A2A; font-size: 15px; font-weight: 500; border-top: 1px solid #E6E6E6;"><span style="display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 50%; background: #EDEDED; font-size: 12px; font-weight: 700;">Z</span>Account</a>
+</nav>
+
+<!-- Main -->
+<main class="wl-main" style="flex: 999 1 560px; min-width: 0; box-sizing: border-box; padding: 36px 40px 64px;">
+<div style="max-width: 1240px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px;">
+
+<!-- Header -->
+<header style="display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 16px;">
+<div style="display: flex; flex-direction: column; gap: 6px; min-width: 0;">
+<div style="display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 500; color: #666666;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"></rect><path d="M8 11V7a4 4 0 0 1 8 0v4"></path></svg>Admin · Super Admin only</div>
+<h1 class="wl-h1" style="margin: 0; font-family: Montserrat, sans-serif; font-weight: 900; font-size: 38px; line-height: 1.1; letter-spacing: -0.02em;">Workload</h1>
+<p style="margin: 0; font-size: 15px; color: #666666;">Assignments, deadlines, team capacity and workflow rules across every open project.</p>
+</div>
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 10px;">
+<span style="display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 14px; box-sizing: border-box; border-radius: 12px; background: #F4F4F4; font-size: 14px; font-weight: 600; color: #2A2A2A;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"></rect><path d="M3 10h18M8 3v4M16 3v4"></path></svg>{{todayLabel}}</span>
+<a class="wl-ghost" href="#" style="display: inline-flex; align-items: center; min-height: 44px; padding: 0 16px; box-sizing: border-box; border: 1px solid #E6E6E6; border-radius: 12px; background: #FFFFFF; font-size: 14px; font-weight: 600; color: #111111; text-decoration: none;">Open board</a>
+<a class="wl-primary" href="#attention" onClick="{{focusUnassigned}}" style="display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 16px; box-sizing: border-box; border-radius: 12px; background: #111111; font-size: 14px; font-weight: 600; color: #FFFFFF; text-decoration: none;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="4"></circle><path d="M2 21c0-4 3-6 7-6 1.5 0 2.8.3 3.9.8M19 14v6M16 17h6"></path></svg>Assign open work</a>
+</div>
+</header>
+
+<!-- Undo banner -->
+<sc-if value="{{hasLast}}" hint-placeholder-val="{{ false }}">
+<div role="status" style="display: flex; align-items: center; gap: 12px; padding: 8px 8px 8px 16px; background: #111111; color: #FFFFFF; border-radius: 14px; font-size: 14px; font-weight: 500;">
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#7BE0A0" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 5 5 9-10"></path></svg>
+<span style="flex: 1; min-width: 0;">{{lastText}}</span>
+<button type="button" onClick="{{undo}}" style="min-height: 36px; padding: 0 14px; border: 1px solid #444444; border-radius: 10px; background: transparent; color: #FFFFFF; font-size: 14px; font-weight: 600; cursor: pointer;">Undo</button>
+<button type="button" aria-label="Dismiss" onClick="{{dismiss}}" style="width: 36px; height: 36px; border: 0; border-radius: 10px; background: transparent; color: #BDBDBD; display: inline-flex; align-items: center; justify-content: center; cursor: pointer;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"></path></svg></button>
+</div>
+</sc-if>
+
+<!-- KPI tiles -->
+<section aria-label="Key numbers" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(188px, 1fr)); gap: 12px;">
+<sc-for list="{{kpis}}" as="k" hint-placeholder-count="5">
+<button type="button" class="wl-tile" onClick="{{k.pick}}" aria-pressed="{{k.pressed}}" style="{{k.style}}">
+<span style="display: flex; align-items: center; justify-content: space-between; width: 100%; gap: 8px;"><span style="font-size: 13px; font-weight: 600; color: #2A2A2A;">{{k.label}}</span><span style="{{k.dotStyle}}"></span></span>
+<span style="display: flex; align-items: flex-end; justify-content: space-between; gap: 8px; width: 100%;">
+<span style="font-family: Montserrat, sans-serif; font-weight: 900; font-size: 34px; line-height: 1; font-variant-numeric: tabular-nums;">{{k.value}}</span>
+<svg width="96" height="34" viewBox="0 0 96 34" aria-hidden="true"><polyline points="{{k.area}}" fill="{{k.fill}}" stroke="none"></polyline><polyline points="{{k.points}}" fill="none" stroke="{{k.stroke}}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"></polyline><circle cx="{{k.cx}}" cy="{{k.cy}}" r="3.2" fill="{{k.stroke}}"></circle></svg>
+</span>
+<span style="display: flex; flex-wrap: wrap; gap: 6px; font-size: 12px; color: #666666;"><span style="{{k.deltaStyle}}">{{k.delta}}</span><span>{{k.sub}}</span></span>
+</button>
+</sc-for>
+</section>
+
+<!-- Row: attention + due chart -->
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 460px), 1fr)); gap: 16px; align-items: start;">
+
+<!-- Needs attention -->
+<section id="attention" aria-labelledby="att-h" style="background: #FFFFFF; border: 1px solid #E6E6E6; border-radius: 16px; min-width: 0; overflow: hidden;">
+<div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding: 18px 20px 14px;">
+<div style="display: flex; align-items: center; gap: 10px;"><h2 id="att-h" style="margin: 0; font-family: Montserrat, sans-serif; font-weight: 900; font-size: 18px;">Needs attention</h2><span style="display: inline-flex; align-items: center; justify-content: center; min-width: 24px; height: 24px; padding: 0 7px; box-sizing: border-box; border-radius: 12px; background: #F0F0F0; font-size: 12px; font-weight: 700;">{{attTotal}}</span></div>
+<div role="tablist" aria-label="Filter attention items" style="display: flex; flex-wrap: wrap; gap: 4px; padding: 3px; background: #F4F4F4; border-radius: 12px;">
+<sc-for list="{{attTabs}}" as="t" hint-placeholder-count="4">
+<button type="button" role="tab" aria-selected="{{t.selected}}" onClick="{{t.pick}}" style="{{t.style}}">{{t.label}}<span style="{{t.countStyle}}">{{t.count}}</span></button>
+</sc-for>
+</div>
+</div>
+<div>
+<sc-for list="{{attItems}}" as="a" hint-placeholder-count="6">
+<div style="border-top: 1px solid #EFEFEF;">
+<div class="wl-row" style="display: flex; align-items: center; gap: 12px; min-height: 64px; padding: 10px 20px; box-sizing: border-box; background: #FFFFFF;">
+<span style="{{a.reasonStyle}}">{{a.reason}}</span>
+<div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px;">
+<span style="font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{a.title}}</span>
+<span style="font-size: 12px; color: #666666; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{a.meta}}</span>
+</div>
+<span style="{{a.dueStyle}}">{{a.due}}</span>
+<sc-if value="{{a.isLink}}" hint-placeholder-val="{{ false }}">
+<a href="#assignments" onClick="{{a.act}}" style="{{a.actStyle}}">{{a.actLabel}}</a>
+</sc-if>
+<sc-if value="{{a.isButton}}" hint-placeholder-val="{{ true }}">
+<button type="button" onClick="{{a.act}}" disabled="{{a.disabled}}" aria-expanded="{{a.expanded}}" style="{{a.actStyle}}">{{a.actLabel}}</button>
+</sc-if>
+</div>
+<sc-if value="{{a.pickerOpen}}" hint-placeholder-val="{{ false }}">
+<div style="display: flex; flex-direction: column; gap: 10px; padding: 4px 20px 16px; background: #FFFFFF;">
+<span style="font-size: 12px; font-weight: 600; color: #666666;">{{a.pickerLabel}}</span>
+<div style="display: flex; flex-wrap: wrap; gap: 8px;">
+<sc-for list="{{a.options}}" as="o" hint-placeholder-count="2">
+<button type="button" class="wl-opt" onClick="{{o.pick}}" style="{{o.style}}"><span style="{{o.avStyle}}">{{o.initial}}</span><span style="display: flex; flex-direction: column; align-items: flex-start; gap: 4px;"><span style="font-size: 14px; font-weight: 600;">{{o.name}}</span><span style="display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 600; color: #666666;"><span style="display: block; width: 44px; height: 5px; border-radius: 3px; background: #EFEFEF; overflow: hidden;"><span style="{{o.fillStyle}}"></span></span>{{o.load}}</span></span><span style="{{o.noteStyle}}">{{o.note}}</span></button>
+</sc-for>
+</div>
+</div>
+</sc-if>
+</div>
+</sc-for>
+<sc-if value="{{attEmpty}}" hint-placeholder-val="{{ false }}">
+<div style="display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 40px 20px; border-top: 1px solid #EFEFEF; text-align: center;">
+<span style="display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; border-radius: 50%; background: #E6F5EC; color: #1B653B;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 5 5 9-10"></path></svg></span>
+<span style="font-size: 15px; font-weight: 600;">All clear</span>
+<span style="font-size: 13px; color: #666666;">Nothing in this filter needs you right now.</span>
+</div>
+</sc-if>
+</div>
+</section>
+
+<!-- Due next 14 days -->
+<section aria-labelledby="due-h" style="background: #FFFFFF; border: 1px solid #E6E6E6; border-radius: 16px; min-width: 0; padding: 18px 20px 20px; box-sizing: border-box; display: flex; flex-direction: column; gap: 16px;">
+<div style="display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 12px;">
+<div style="display: flex; flex-direction: column; gap: 4px;"><h2 id="due-h" style="margin: 0; font-family: Montserrat, sans-serif; font-weight: 900; font-size: 18px;">Due next 14 days</h2><span style="font-size: 13px; color: #666666;">{{dueSummary}}</span></div>
+<div style="display: flex; flex-wrap: wrap; gap: 6px;">
+<sc-for list="{{series}}" as="se" hint-placeholder-count="3">
+<button type="button" class="wl-chip" aria-pressed="{{se.pressed}}" onClick="{{se.toggle}}" style="{{se.style}}"><span style="{{se.swatch}}"></span>{{se.label}}</button>
+</sc-for>
+</div>
+</div>
+<sc-if value="{{hasOverdue}}" hint-placeholder-val="{{ true }}">
+<div style="display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 12px; background: #FDE8E5; color: #9B1C13; font-size: 13px; font-weight: 600;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path></svg>{{overdueText}}</div>
+</sc-if>
+<div style="display: flex; gap: 8px;">
+<div aria-hidden="true" style="display: flex; flex-direction: column; justify-content: space-between; height: 176px; padding-bottom: 0; font-size: 11px; font-weight: 600; color: #8A8A8A; text-align: right; width: 14px; flex: none;">
+<sc-for list="{{yTicks}}" as="y" hint-placeholder-count="5"><span style="line-height: 1; transform: translateY(-50%);">{{y.label}}</span></sc-for>
+</div>
+<div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px;">
+<div style="position: relative; height: 176px;">
+<div aria-hidden="true" style="position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: space-between;">
+<sc-for list="{{yTicks}}" as="y" hint-placeholder-count="5"><span style="display: block; height: 1px; background: #EFEFEF;"></span></sc-for>
+</div>
+<div role="group" aria-label="Deadlines per day" style="position: relative; height: 100%; display: grid; grid-template-columns: repeat(14, minmax(0, 1fr)); gap: 4px;">
+<sc-for list="{{days}}" as="d" hint-placeholder-count="14">
+<button type="button" class="wl-col" onMouseEnter="{{d.pick}}" onFocus="{{d.pick}}" onClick="{{d.pick}}" aria-label="{{d.aria}}" aria-pressed="{{d.pressed}}" style="{{d.colStyle}}">
+<sc-for list="{{d.segs}}" as="g" hint-placeholder-count="1"><span class="wl-anim" style="{{g.style}}"></span></sc-for>
+</button>
+</sc-for>
+</div>
+</div>
+<div aria-hidden="true" style="display: grid; grid-template-columns: repeat(14, minmax(0, 1fr)); gap: 4px;">
+<sc-for list="{{days}}" as="d" hint-placeholder-count="14"><span style="{{d.labelStyle}}"><span>{{d.wd}}</span><span>{{d.num}}</span></span></sc-for>
+</div>
+</div>
+</div>
+<div style="display: flex; flex-direction: column; gap: 8px; padding: 14px; border-radius: 12px; background: #FAFAFA; border: 1px solid #EFEFEF;">
+<span style="font-size: 13px; font-weight: 700;">{{dayTitle}}</span>
+<sc-for list="{{dayItems}}" as="it" hint-placeholder-count="2">
+<div style="display: flex; align-items: center; gap: 10px; min-height: 28px; font-size: 13px;"><span style="{{it.swatch}}"></span><span style="width: 92px; flex: none; font-weight: 600; color: #2A2A2A;">{{it.type}}</span><span style="flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{it.title}}</span><span style="flex: none; font-size: 12px; color: #666666;">{{it.who}}</span></div>
+</sc-for>
+<sc-if value="{{dayEmpty}}" hint-placeholder-val="{{ false }}"><span style="font-size: 13px; color: #666666;">Nothing due this day.</span></sc-if>
+</div>
+</section>
+</div>
+
+<!-- Pipeline -->
+<section aria-labelledby="pipe-h" style="background: #FFFFFF; border: 1px solid #E6E6E6; border-radius: 16px; padding: 18px 20px 20px; box-sizing: border-box; display: flex; flex-direction: column; gap: 16px; min-width: 0;">
+<div style="display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 12px;">
+<div style="display: flex; flex-direction: column; gap: 4px;"><h2 id="pipe-h" style="margin: 0; font-family: Montserrat, sans-serif; font-weight: 900; font-size: 18px;">Pipeline</h2><span style="font-size: 13px; color: #666666;">{{pipeSummary}}</span></div>
+<div style="display: flex; flex-wrap: wrap; gap: 16px;">
+<sc-for list="{{stages}}" as="sg" hint-placeholder-count="3"><span style="display: flex; flex-direction: column; gap: 2px;"><span style="font-size: 11px; font-weight: 600; color: #666666;">{{sg.label}}</span><span style="font-size: 18px; font-weight: 800; font-family: Montserrat, sans-serif; font-variant-numeric: tabular-nums;">{{sg.count}}</span></span></sc-for>
+</div>
+</div>
+<div aria-hidden="true" style="display: flex; gap: 3px; height: 14px; border-radius: 7px; overflow: hidden; background: #F0F0F0;">
+<sc-for list="{{pipeBar}}" as="b" hint-placeholder-count="5"><span class="wl-anim" title="{{b.title}}" style="{{b.style}}"></span></sc-for>
+</div>
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px;">
+<sc-for list="{{statusCards}}" as="c" hint-placeholder-count="6">
+<button type="button" class="wl-tile" onClick="{{c.pick}}" disabled="{{c.disabled}}" aria-pressed="{{c.pressed}}" style="{{c.style}}">
+<span style="display: flex; align-items: center; justify-content: space-between; gap: 6px; width: 100%;"><span style="{{c.blockStyle}}">{{c.label}}</span><sc-if value="{{c.bottleneck}}" hint-placeholder-val="{{ false }}"><span style="font-size: 11px; font-weight: 700; color: #9B1C13; background: #FDE8E5; padding: 3px 7px; border-radius: 6px;">Slow</span></sc-if></span>
+<span style="display: flex; align-items: baseline; gap: 6px;"><span style="font-family: Montserrat, sans-serif; font-weight: 900; font-size: 30px; line-height: 1; font-variant-numeric: tabular-nums;">{{c.count}}</span><span style="font-size: 12px; color: #666666;">{{c.unit}}</span></span>
+<span style="display: flex; flex-direction: column; gap: 6px; width: 100%;">
+<span style="display: flex; justify-content: space-between; font-size: 12px; color: #666666;"><span>{{c.dwellText}}</span><span>{{c.targetText}}</span></span>
+<span style="display: block; height: 6px; border-radius: 3px; background: #F0F0F0; overflow: hidden;"><span class="wl-anim" style="{{c.dwellFill}}"></span></span>
+</span>
+<span style="font-size: 11px; font-weight: 600; color: #707070;">{{c.stage}}</span>
+</button>
+</sc-for>
+</div>
+</section>
+
+<!-- Team capacity -->
+<section aria-labelledby="team-h" style="background: #FFFFFF; border: 1px solid #E6E6E6; border-radius: 16px; min-width: 0; overflow: hidden;">
+<div style="display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 16px; padding: 18px 20px 16px;">
+<div style="display: flex; flex-direction: column; gap: 4px;"><h2 id="team-h" style="margin: 0; font-family: Montserrat, sans-serif; font-weight: 900; font-size: 18px;">Team capacity</h2><span style="font-size: 13px; color: #666666;">Each slot is one active project. Select a person to filter assignments, or a day to see what is due.</span></div>
+<div role="tablist" aria-label="Role" style="display: flex; gap: 4px; padding: 3px; background: #F4F4F4; border-radius: 12px;">
+<sc-for list="{{roleTabs}}" as="t" hint-placeholder-count="3"><button type="button" role="tab" aria-selected="{{t.selected}}" onClick="{{t.pick}}" style="{{t.style}}">{{t.label}}</button></sc-for>
+</div>
+</div>
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 28px; padding: 0 20px 18px;">
+<div style="display: flex; align-items: center; gap: 14px;">
+<svg width="68" height="68" viewBox="0 0 68 68" role="img" aria-label="{{utilAria}}"><circle cx="34" cy="34" r="26" fill="none" stroke="#F0F0F0" stroke-width="10"></circle><circle cx="34" cy="34" r="26" fill="none" stroke="{{utilColor}}" stroke-width="10" stroke-linecap="round" stroke-dasharray="{{utilDash}}" transform="rotate(-90 34 34)"></circle></svg>
+<span style="display: flex; flex-direction: column; gap: 2px;"><span style="font-family: Montserrat, sans-serif; font-weight: 900; font-size: 26px; line-height: 1;">{{utilPct}}</span><span style="font-size: 12px; font-weight: 600; color: #666666;">Team utilization</span></span>
+</div>
+<sc-for list="{{teamStats}}" as="ts" hint-placeholder-count="3">
+<span style="display: flex; flex-direction: column; gap: 2px; padding-left: 20px; border-left: 1px solid #EFEFEF;"><span style="font-family: Montserrat, sans-serif; font-weight: 900; font-size: 22px; line-height: 1.1;">{{ts.value}}</span><span style="font-size: 12px; font-weight: 600; color: #666666;">{{ts.label}}</span></span>
+</sc-for>
+<span style="flex: 1;"></span>
+<span style="display: flex; flex-wrap: wrap; align-items: center; gap: 10px; font-size: 11px; font-weight: 600; color: #666666;">Due per day<span style="display: inline-block; width: 14px; height: 14px; border-radius: 4px; background: #F2F2F2;"></span>0<span style="display: inline-block; width: 14px; height: 14px; border-radius: 4px; background: #C9D6FA;"></span>1<span style="display: inline-block; width: 14px; height: 14px; border-radius: 4px; background: #7F9CF0;"></span>2<span style="display: inline-block; width: 14px; height: 14px; border-radius: 4px; background: #2F5BD8;"></span>3+<span style="display: inline-block; width: 14px; height: 14px; border-radius: 4px; background: #C42B1C;"></span>Late</span>
+</div>
+<div class="wl-scroll" style="overflow-x: auto; border-top: 1px solid #EFEFEF;">
+<div style="min-width: 960px;">
+<div style="display: grid; grid-template-columns: minmax(160px, 1fr) 172px 52px 52px 82px 446px; gap: 12px; align-items: end; padding: 10px 20px; font-size: 12px; font-weight: 600; color: #666666;">
+<span>Person</span><span>Load</span><span>Active</span><span>Late</span><span>Next due</span>
+<span style="display: flex; gap: 4px;">
+<sc-for list="{{dayHeads}}" as="h" hint-placeholder-count="15"><span style="{{h.style}}"><span>{{h.top}}</span><span>{{h.num}}</span></span></sc-for>
+</span>
+</div>
+<sc-for list="{{team}}" as="p" hint-placeholder-count="6">
+<div style="{{p.rowStyle}}">
+<button type="button" class="wl-person" onClick="{{p.pick}}" aria-pressed="{{p.pressed}}" style="display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 0; border: 0; background: transparent; cursor: pointer; text-align: left; color: #111111;"><span style="{{p.avStyle}}">{{p.initial}}</span><span style="display: flex; flex-direction: column; line-height: 1.3;"><span class="wl-pname" style="font-size: 14px; font-weight: 600;">{{p.name}}</span><span style="font-size: 12px; color: #666666;">{{p.role}}</span></span></button>
+<span style="display: flex; align-items: center; gap: 10px;"><span style="display: flex; gap: 4px;"><sc-for list="{{p.slots}}" as="sl" hint-placeholder-count="5"><span class="wl-anim" title="{{sl.title}}" style="{{sl.style}}"></span></sc-for></span><span style="{{p.loadTextStyle}}">{{p.loadText}}</span></span>
+<span style="font-size: 14px; font-weight: 700; font-variant-numeric: tabular-nums;">{{p.active}}</span>
+<span style="{{p.lateStyle}}">{{p.late}}</span>
+<span style="font-size: 13px; color: #2A2A2A;">{{p.next}}</span>
+<span style="display: flex; gap: 4px;">
+<sc-for list="{{p.cells}}" as="c" hint-placeholder-count="15"><button type="button" class="wl-cell" onClick="{{c.pick}}" aria-label="{{c.aria}}" aria-pressed="{{c.pressed}}" style="{{c.style}}">{{c.label}}</button></sc-for>
+</span>
+</div>
+</sc-for>
+</div>
+</div>
+<sc-if value="{{hasCell}}" hint-placeholder-val="{{ false }}">
+<div style="display: flex; flex-direction: column; gap: 8px; margin: 0 20px 18px; padding: 14px; border-radius: 12px; background: #FAFAFA; border: 1px solid #EFEFEF;">
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;"><span style="font-size: 13px; font-weight: 700;">{{cellTitle}}</span><button type="button" onClick="{{clearCell}}" aria-label="Close day details" style="width: 32px; height: 32px; border: 0; border-radius: 8px; background: transparent; color: #707070; display: inline-flex; align-items: center; justify-content: center; cursor: pointer;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"></path></svg></button></div>
+<sc-for list="{{cellItems}}" as="it" hint-placeholder-count="1"><div style="display: flex; align-items: center; gap: 10px; font-size: 13px;"><span style="{{it.blockStyle}}">{{it.status}}</span><span style="font-weight: 600;">{{it.title}}</span><span style="color: #666666;">{{it.what}}</span></div></sc-for>
+<sc-if value="{{cellEmpty}}" hint-placeholder-val="{{ false }}"><span style="font-size: 13px; color: #666666;">Nothing due. Open capacity for this day.</span></sc-if>
+</div>
+</sc-if>
+</section>
+
+<!-- Assignments -->
+<section id="assignments" aria-labelledby="asg-h" style="background: #FFFFFF; border: 1px solid #E6E6E6; border-radius: 16px; min-width: 0; overflow: hidden;">
+<div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding: 18px 20px 14px;">
+<div style="display: flex; align-items: center; gap: 10px;"><h2 id="asg-h" style="margin: 0; font-family: Montserrat, sans-serif; font-weight: 900; font-size: 18px;">Assignments</h2><span style="display: inline-flex; align-items: center; justify-content: center; min-width: 24px; height: 24px; padding: 0 7px; box-sizing: border-box; border-radius: 12px; background: #F0F0F0; font-size: 12px; font-weight: 700;">{{rowCount}}</span></div>
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 10px;">
+<label style="display: flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 12px; box-sizing: border-box; border: 1px solid #E6E6E6; border-radius: 12px; background: #FAFAFA; color: #707070;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg><span style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0);">Search projects</span><input type="search" value="{{q}}" onChange="{{onQ}}" placeholder="Search projects" style="border: 0; outline: none; background: transparent; font-size: 14px; width: 180px; color: #111111;"></label>
+<label style="display: flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 12px; box-sizing: border-box; border: 1px solid #E6E6E6; border-radius: 12px; font-size: 14px; font-weight: 600; cursor: pointer;"><input type="checkbox" checked="{{issuesOnly}}" onChange="{{toggleIssues}}" style="width: 16px; height: 16px; accent-color: #111111; margin: 0;">Only issues</label>
+</div>
+</div>
+<sc-if value="{{hasFilters}}" hint-placeholder-val="{{ false }}">
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 0 20px 14px;">
+<sc-for list="{{filterChips}}" as="f" hint-placeholder-count="2"><button type="button" class="wl-chip" onClick="{{f.clear}}" aria-label="{{f.aria}}" style="display: inline-flex; align-items: center; gap: 8px; min-height: 36px; padding: 0 10px 0 12px; border: 1px solid #E6E6E6; border-radius: 10px; background: #FAFAFA; font-size: 13px; font-weight: 600; color: #111111; cursor: pointer;">{{f.label}}<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"></path></svg></button></sc-for>
+<button type="button" onClick="{{clearAll}}" style="min-height: 36px; padding: 0 10px; border: 0; background: transparent; font-size: 13px; font-weight: 600; color: #666666; cursor: pointer; text-decoration: underline; text-underline-offset: 3px;">Clear all</button>
+</div>
+</sc-if>
+<div class="wl-scroll" style="overflow-x: auto; border-top: 1px solid #EFEFEF;">
+<div style="min-width: 1060px;">
+<div style="display: grid; grid-template-columns: minmax(220px, 2fr) 136px 132px 132px 88px 88px 76px minmax(130px, 1fr); gap: 12px; align-items: center; padding: 10px 20px; font-size: 12px; font-weight: 600; color: #666666; background: #FAFAFA;">
+<span>Project</span><span>Status</span><span>Editor</span><span>Designer</span><span>Edit due</span><span>Thumb due</span><span>Publish</span><span>Sponsor</span>
+</div>
+<sc-for list="{{rows}}" as="r" hint-placeholder-count="8">
+<div style="border-top: 1px solid #EFEFEF;">
+<div class="wl-row" style="{{r.rowStyle}}">
+<span style="display: flex; flex-direction: column; gap: 2px; min-width: 0;"><span style="font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{r.title}}</span><span style="font-size: 12px; color: #666666;">{{r.sub}}</span></span>
+<span><span style="{{r.statusStyle}}">{{r.status}}</span></span>
+<span>
+<sc-if value="{{r.hasEditor}}" hint-placeholder-val="{{ true }}"><span style="display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 500;"><span style="{{r.edAv}}">{{r.edInitial}}</span>{{r.edName}}</span></sc-if>
+<sc-if value="{{r.noEditor}}" hint-placeholder-val="{{ false }}"><button type="button" class="wl-assign" onClick="{{r.pickEditor}}" aria-expanded="{{r.edOpen}}" style="{{r.edBtnStyle}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>Assign</button></sc-if>
+</span>
+<span>
+<sc-if value="{{r.hasDesigner}}" hint-placeholder-val="{{ true }}"><span style="display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 500;"><span style="{{r.dsAv}}">{{r.dsInitial}}</span>{{r.dsName}}</span></sc-if>
+<sc-if value="{{r.noDesigner}}" hint-placeholder-val="{{ false }}"><button type="button" class="wl-assign" onClick="{{r.pickDesigner}}" aria-expanded="{{r.dsOpen}}" style="{{r.dsBtnStyle}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>Assign</button></sc-if>
+</span>
+<span><span style="{{r.editStyle}}">{{r.editText}}</span></span>
+<span><span style="{{r.thumbStyle}}">{{r.thumbText}}</span></span>
+<span style="font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums;">{{r.pubText}}</span>
+<span style="display: flex; flex-direction: column; align-items: flex-start; gap: 4px; min-width: 0;"><span style="font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%;">{{r.sponsor}}</span><sc-if value="{{r.hasApproval}}" hint-placeholder-val="{{ false }}"><span style="{{r.apStyle}}">{{r.apText}}</span></sc-if></span>
+</div>
+<sc-if value="{{r.pickerOpen}}" hint-placeholder-val="{{ false }}">
+<div style="display: flex; flex-direction: column; gap: 10px; padding: 4px 20px 16px; background: #FAFAFA;">
+<span style="font-size: 12px; font-weight: 600; color: #666666; padding-top: 10px;">{{r.pickerLabel}}</span>
+<div style="display: flex; flex-wrap: wrap; gap: 8px;">
+<sc-for list="{{r.options}}" as="o" hint-placeholder-count="2">
+<button type="button" class="wl-opt" onClick="{{o.pick}}" style="{{o.style}}"><span style="{{o.avStyle}}">{{o.initial}}</span><span style="display: flex; flex-direction: column; align-items: flex-start; gap: 4px;"><span style="font-size: 14px; font-weight: 600;">{{o.name}}</span><span style="display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 600; color: #666666;"><span style="display: block; width: 44px; height: 5px; border-radius: 3px; background: #EFEFEF; overflow: hidden;"><span style="{{o.fillStyle}}"></span></span>{{o.load}}</span></span><span style="{{o.noteStyle}}">{{o.note}}</span></button>
+</sc-for>
+<button type="button" onClick="{{closePicker}}" style="min-height: 52px; padding: 0 14px; border: 0; background: transparent; font-size: 13px; font-weight: 600; color: #666666; cursor: pointer;">Cancel</button>
+</div>
+</div>
+</sc-if>
+</div>
+</sc-for>
+<sc-if value="{{rowsEmpty}}" hint-placeholder-val="{{ false }}">
+<div style="display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 40px 20px; border-top: 1px solid #EFEFEF; text-align: center;"><span style="font-size: 15px; font-weight: 600;">No projects match</span><span style="font-size: 13px; color: #666666;">Clear a filter to see more of the board.</span></div>
+</sc-if>
+</div>
+</div>
+</section>
+
+<!-- Workflow and rules -->
+<section aria-labelledby="wf-h" style="background: #FFFFFF; border: 1px solid #E6E6E6; border-radius: 16px; padding: 18px 20px 22px; box-sizing: border-box; display: flex; flex-direction: column; gap: 18px; min-width: 0;">
+<div style="display: flex; flex-direction: column; gap: 4px;"><h2 id="wf-h" style="margin: 0; font-family: Montserrat, sans-serif; font-weight: 900; font-size: 18px;">Workflow</h2><span style="font-size: 13px; color: #666666;">Every project moves through these statuses in order. Edit names and colors in Workspace Settings.</span></div>
+<div style="display: flex; flex-wrap: wrap; align-items: flex-start; gap: 8px 6px;">
+<sc-for list="{{flow}}" as="f" hint-placeholder-count="6">
+<span style="display: flex; align-items: flex-start; gap: 6px;">
+<span style="display: flex; flex-direction: column; gap: 5px;"><span style="{{f.style}}">{{f.label}}<span style="{{f.countStyle}}">{{f.count}}</span></span><span style="font-size: 11px; font-weight: 600; color: #707070;">{{f.stage}}</span></span>
+<sc-if value="{{f.arrow}}" hint-placeholder-val="{{ true }}"><svg width="16" height="30" viewBox="0 0 16 30" fill="none" stroke="#9A9A9A" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 15h11M9 11l4 4-4 4"></path></svg></sc-if>
+</span>
+</sc-for>
+</div>
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr)); gap: 24px; padding-top: 18px; border-top: 1px solid #EFEFEF;">
+<div style="display: flex; flex-direction: column; gap: 12px;">
+<h3 style="margin: 0; font-size: 14px; font-weight: 700;">Deadline defaults</h3>
+<sc-for list="{{steppers}}" as="st" hint-placeholder-count="2">
+<div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 14px; border: 1px solid #EFEFEF; border-radius: 12px;">
+<span style="display: flex; flex-direction: column; gap: 2px;"><span style="font-size: 14px; font-weight: 600;">{{st.label}}</span><span style="font-size: 12px; color: #666666;">{{st.hint}}</span></span>
+<span style="display: flex; align-items: center; gap: 6px;">
+<button type="button" onClick="{{st.dec}}" aria-label="{{st.decAria}}" style="width: 40px; height: 40px; border: 1px solid #E6E6E6; border-radius: 10px; background: #FFFFFF; font-size: 18px; font-weight: 600; color: #111111; cursor: pointer;">-</button>
+<span aria-live="polite" style="display: inline-flex; align-items: center; justify-content: center; min-width: 48px; height: 40px; border-radius: 10px; background: #F4F4F4; font-size: 15px; font-weight: 700; font-variant-numeric: tabular-nums;">{{st.value}}</span>
+<button type="button" onClick="{{st.inc}}" aria-label="{{st.incAria}}" style="width: 40px; height: 40px; border: 1px solid #E6E6E6; border-radius: 10px; background: #FFFFFF; font-size: 18px; font-weight: 600; color: #111111; cursor: pointer;">+</button>
+<span style="font-size: 13px; color: #666666; width: 32px;">days</span>
+</span>
+</div>
+</sc-for>
+</div>
+<div style="display: flex; flex-direction: column; gap: 4px;">
+<h3 style="margin: 0 0 8px; font-size: 14px; font-weight: 700;">Rules</h3>
+<sc-for list="{{rules}}" as="ru" hint-placeholder-count="4">
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: 56px; border-bottom: 1px solid #F2F2F2;">
+<span style="display: flex; flex-direction: column; gap: 2px;"><span style="font-size: 14px; font-weight: 600;">{{ru.label}}</span><span style="font-size: 12px; color: #666666;">{{ru.desc}}</span></span>
+<button type="button" role="switch" aria-checked="{{ru.checked}}" aria-label="{{ru.label}}" onClick="{{ru.toggle}}" style="{{ru.track}}"><span class="wl-anim" style="{{ru.knob}}"></span></button>
+</div>
+</sc-for>
+</div>
+</div>
+</section>
+
+</div>
+</main>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"capacity":{"editor":"int","default":5,"min":1,"max":10,"step":1,"section":"Workload"},"$preview":{"width":1440,"height":3400}}'>
+class Component extends DCLogic {
+  state = {
+    focus: 'all', status: null, person: null, roleView: 'all', q: '', issuesOnly: false,
+    assign: {}, picker: null, last: null, nudged: {}, highlight: null,
+    day: 0, hidden: {}, cell: null, editDays: 10, thumbDays: 2,
+    rules: { requireSponsor: true, lockLive: false, editorStatus: false, autoDistribute: true }
+  };
+
+  renderVals() {
+    const s = this.state;
+    const set = (o) => this.setState(o);
+    const CAP = Math.max(1, Math.min(10, Number(this.props.capacity ?? 5) || 5));
+    const LIVE = 5;
+    const MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const WD = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const dOf = (o) => new Date(2026, 9, 27 + o);
+    const fmt = (o) => { const d = dOf(o); return MON[d.getMonth()] + ' ' + d.getDate(); };
+    const fmtLong = (o) => { const d = dOf(o); return WD[d.getDay()] + ', ' + MON[d.getMonth()] + ' ' + d.getDate(); };
+    const plural = (n, w) => n + ' ' + w + (n === 1 ? '' : 's');
+
+    const PEOPLE = [
+      { id: 'marcus', name: 'Marcus', role: 'Editor', color: '#2F5BD8' },
+      { id: 'dani', name: 'Dani', role: 'Editor', color: '#B9461F' },
+      { id: 'theo', name: 'Theo', role: 'Editor', color: '#1E7A3C' },
+      { id: 'zz', name: 'ZZ', role: 'Editor', color: '#B8264F' },
+      { id: 'priya', name: 'Priya', role: 'Designer', color: '#7A3FD0' },
+      { id: 'leo', name: 'Leo', role: 'Designer', color: '#5F5F5F' }
+    ];
+    const PBY = {}; PEOPLE.forEach((x) => { PBY[x.id] = x; });
+    const ST = [
+      { id: 'Scripting', stage: 'In Production', bg: '#5F5F5F', dwell: 3.2, target: 5 },
+      { id: 'Filming', stage: 'In Production', bg: '#B9461F', dwell: 4.0, target: 5 },
+      { id: 'Editing', stage: 'Post Production', bg: '#2F5BD8', dwell: 8.5, target: 10 },
+      { id: 'Sponsor Review', stage: 'Post Production', bg: '#7A3FD0', dwell: 5.5, target: 3 },
+      { id: 'Scheduled', stage: 'Publishing', bg: '#B8264F', dwell: 2.1, target: 4 },
+      { id: 'Live', stage: 'Publishing', bg: '#1E7A3C', dwell: null, target: null }
+    ];
+    const SBY = {}; ST.forEach((x, i) => { x.i = i; SBY[x.id] = x; });
+    const BASE = [
+      { id: 'p1', title: 'Building a $40k shop from scratch', status: 'Editing', editor: 'marcus', designer: 'priya', film: -12, pub: 6, sponsor: 'Acme Tools', approval: 'Not sent' },
+      { id: 'p2', title: 'Day 1 of the cabin build', status: 'Filming', editor: null, designer: 'leo', film: 2, pub: 14 },
+      { id: 'p3', title: 'Concrete pour gone wrong', status: 'Sponsor Review', editor: 'dani', designer: 'priya', film: -14, pub: 5, sponsor: 'Northline Lumber', approval: 'Pending', editDone: true },
+      { id: 'p4', title: 'Framing the second floor', status: 'Editing', editor: 'dani', designer: null, film: -7, pub: 9 },
+      { id: 'p5', title: 'Tool haul under $500', status: 'Scheduled', editor: 'theo', designer: 'leo', film: -16, pub: 2, sponsor: 'Acme Tools', approval: 'Approved', editDone: true },
+      { id: 'p6', title: 'Roof trusses in one day', status: 'Scripting', editor: null, designer: null, film: 6, pub: 20 },
+      { id: 'p7', title: 'Shop tour 2026', status: 'Editing', editor: 'marcus', designer: 'leo', film: -9, pub: 8 },
+      { id: 'p8', title: 'First client job breakdown', status: 'Sponsor Review', editor: 'theo', designer: 'priya', film: -13, pub: 7, sponsor: 'Brightwire', approval: 'Pending', editDone: true },
+      { id: 'p9', title: 'Electrical rough-in basics', status: 'Filming', editor: 'marcus', designer: null, film: 1, pub: 15 },
+      { id: 'p10', title: 'Why I quit my 9 to 5', status: 'Editing', editor: 'zz', designer: 'priya', film: -11, pub: 4 },
+      { id: 'p11', title: 'Pouring the slab', status: 'Scheduled', editor: 'dani', designer: 'leo', film: -15, pub: 3, editDone: true, thumbDone: true },
+      { id: 'p12', title: 'Viewer Q&A #12', status: 'Scripting', editor: 'theo', designer: null, film: 8, pub: 19 },
+      { id: 'p13', title: 'Deck build timelapse', status: 'Editing', editor: 'marcus', designer: 'priya', film: -5, pub: 11 },
+      { id: 'p14', title: 'Siding install start to finish', status: 'Filming', editor: 'dani', designer: 'leo', film: 0, pub: 13 }
+    ];
+    const projects = BASE.map((p) => {
+      const o = s.assign[p.id] || {};
+      return Object.assign({}, p, {
+        editor: o.editor !== undefined ? o.editor : p.editor,
+        designer: o.designer !== undefined ? o.designer : p.designer,
+        edit: p.film + s.editDays,
+        thumb: p.pub - s.thumbDays,
+        editDone: !!p.editDone, thumbDone: !!p.thumbDone
+      });
+    });
+
+    const av = (x, size) => 'display: inline-flex; align-items: center; justify-content: center; width: ' + size + 'px; height: ' + size + 'px; border-radius: 50%; background: ' + x.color + '; color: #FFFFFF; font-size: ' + Math.round(size * 0.42) + 'px; font-weight: 700; flex: none;';
+    const block = (bg, h) => 'display: inline-flex; align-items: center; height: ' + h + 'px; padding: 0 10px; box-sizing: border-box; border-radius: 4px; background: ' + bg + '; color: #FFFFFF; font-size: 12px; font-weight: 600; white-space: nowrap;';
+    const TONE = { red: '#C42B1C', amber: '#9A6500', violet: '#7A3FD0' };
+
+    // Loads
+    const activeOf = (x) => projects.filter((p) => x.role === 'Editor' ? (p.editor === x.id && !p.editDone) : (p.designer === x.id && !p.thumbDone));
+    const dueOf = (x, p) => x.role === 'Editor' ? p.edit : p.thumb;
+    const loadOf = {}; PEOPLE.forEach((x) => { loadOf[x.id] = activeOf(x).length; });
+
+    const doAssign = (p, role, id) => {
+      const cur = s.assign;
+      const next = Object.assign({}, cur);
+      next[p.id] = Object.assign({}, cur[p.id] || {});
+      next[p.id][role] = id;
+      set({ assign: next, picker: null, last: { prev: cur, text: PBY[id].name + ' is now the ' + role + ' on "' + p.title + '"' } });
+    };
+    const optionsFor = (p, role) => PEOPLE.filter((x) => x.role.toLowerCase() === role)
+      .map((x) => {
+        const n = loadOf[x.id]; const full = n >= CAP;
+        return { n: n, name: x.name, initial: x.name.slice(0, 1), avStyle: av(x, 30), load: n + ' of ' + CAP,
+          note: full ? 'At capacity' : '', noteStyle: full ? 'font-size: 11px; font-weight: 700; color: #9B1C13; background: #FDE8E5; padding: 3px 7px; border-radius: 6px;' : 'display: none;',
+          fillStyle: 'display: block; height: 100%; width: ' + Math.min(100, Math.round(n / CAP * 100)) + '%; background: ' + (full ? '#C42B1C' : n >= CAP - 1 ? '#9A6500' : '#2F5BD8') + ';',
+          style: 'display: flex; align-items: center; gap: 10px; min-height: 52px; padding: 6px 14px 6px 8px; box-sizing: border-box; border: 1px solid ' + (full ? '#F2C7C1' : '#E6E6E6') + '; border-radius: 12px; background: #FFFFFF; cursor: pointer; color: #111111; text-align: left;',
+          pick: () => doAssign(p, role, x.id) };
+      }).sort((a, b) => a.n - b.n);
+
+    // Issues
+    const issuesOf = (p) => {
+      const out = []; const si = SBY[p.status].i;
+      if (!p.editDone && p.edit < 0) out.push({ k: 'late', reason: 'Late edit', tone: 'red', due: 'Edit due ' + fmt(p.edit), w: 0 });
+      if (!p.thumbDone && p.thumb < 0) out.push({ k: 'late', reason: 'Late thumbnail', tone: 'red', due: 'Thumb due ' + fmt(p.thumb), w: 0 });
+      if (!p.editDone && p.edit === 0) out.push({ k: 'late', reason: 'Edit due today', tone: 'amber', due: 'Today', w: 1 });
+      if (!p.thumbDone && p.thumb === 0) out.push({ k: 'late', reason: 'Thumb due today', tone: 'amber', due: 'Today', w: 1 });
+      if (si >= 1 && si <= 3 && !p.editor) out.push({ k: 'unassigned', reason: 'No editor', tone: 'amber', role: 'editor', due: 'Pub ' + fmt(p.pub), w: 2 });
+      if (si >= 1 && !p.designer) out.push({ k: 'unassigned', reason: 'No designer', tone: 'amber', role: 'designer', due: 'Pub ' + fmt(p.pub), w: 2 });
+      if (s.rules.requireSponsor && p.status === 'Sponsor Review' && p.approval === 'Pending') out.push({ k: 'sponsor', reason: 'Sponsor pending', tone: 'violet', due: 'Pub ' + fmt(p.pub), w: 3 });
+      return out;
+    };
+    const allIssues = [];
+    projects.forEach((p) => issuesOf(p).forEach((it) => allIssues.push(Object.assign({ p: p }, it))));
+    allIssues.sort((a, b) => a.w - b.w || a.p.pub - b.p.pub);
+    const byK = (k) => allIssues.filter((i) => i.k === k).length;
+
+    const people = (p) => [p.editor ? PBY[p.editor].name : 'No editor', p.designer ? PBY[p.designer].name : 'No designer'].join(' / ');
+    const attFocus = ['late', 'unassigned', 'sponsor'].indexOf(s.focus) >= 0 ? s.focus : 'all';
+    const attItems = allIssues.filter((i) => attFocus === 'all' || i.k === attFocus).map((i) => {
+      const p = i.p;
+      const key = 'att:' + p.id + ':' + (i.role || i.k);
+      const open = s.picker === key;
+      const nudged = !!s.nudged[p.id];
+      const btn = 'display: inline-flex; align-items: center; justify-content: center; min-height: 36px; min-width: 76px; padding: 0 12px; box-sizing: border-box; border-radius: 10px; font-size: 13px; font-weight: 600; text-decoration: none; cursor: pointer; flex: none; ';
+      let act, label, style, isLink = false, disabled = false;
+      if (i.k === 'unassigned') { act = () => set({ picker: open ? null : key }); label = open ? 'Close' : 'Assign'; style = btn + (open ? 'border: 1px solid #111111; background: #FFFFFF; color: #111111;' : 'border: 0; background: #111111; color: #FFFFFF;'); }
+      else if (i.k === 'sponsor') { act = () => set({ nudged: Object.assign({}, s.nudged, { [p.id]: true }) }); label = nudged ? 'Nudged' : 'Nudge'; disabled = nudged; style = btn + (nudged ? 'border: 0; background: #E6F5EC; color: #1B653B; cursor: default;' : 'border: 1px solid #E6E6E6; background: #FFFFFF; color: #111111;'); }
+      else { act = () => set({ highlight: p.id, focus: 'all', status: null, person: null, q: '' }); label = 'Open'; isLink = true; style = btn + 'border: 1px solid #E6E6E6; background: #FFFFFF; color: #111111;'; }
+      return {
+        reason: i.reason, title: p.title, due: i.due,
+        meta: p.status + ' · ' + (i.k === 'sponsor' ? p.sponsor + (nudged ? ' · reminder sent' : '') : people(p)),
+        reasonStyle: block(TONE[i.tone], 26) + ' min-width: 118px; justify-content: center; flex: none;',
+        dueStyle: 'flex: none; font-size: 12px; font-weight: 600; white-space: nowrap; color: ' + (i.tone === 'red' ? '#9B1C13' : '#666666') + ';',
+        act: act, actLabel: label, actStyle: style, isLink: isLink, isButton: !isLink, disabled: disabled, expanded: open ? 'true' : 'false',
+        pickerOpen: open, pickerLabel: 'Assign ' + (i.role || '') + ' to "' + p.title + '"',
+        options: open ? optionsFor(p, i.role) : []
+      };
+    });
+    const TABS = [['all', 'All', allIssues.length], ['late', 'Deadlines', byK('late')], ['unassigned', 'Unassigned', byK('unassigned')], ['sponsor', 'Sponsor', byK('sponsor')]];
+    const attTabs = TABS.map((t) => {
+      const on = attFocus === t[0];
+      return { label: t[1], count: String(t[2]), selected: on ? 'true' : 'false',
+        pick: () => set({ focus: t[0], picker: null }),
+        style: 'display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 0 10px; border: 0; border-radius: 9px; cursor: pointer; font-size: 13px; font-weight: 600; ' + (on ? 'background: #FFFFFF; color: #111111; box-shadow: 0 1px 2px rgba(0,0,0,0.08);' : 'background: transparent; color: #666666;'),
+        countStyle: 'font-size: 11px; font-weight: 700; color: ' + (on ? '#111111' : '#8A8A8A') + ';' };
+    });
+
+    // KPIs
+    const lateN = allIssues.filter((i) => i.tone === 'red').length;
+    const unN = byK('unassigned');
+    const spN = projects.filter((p) => p.status === 'Sponsor Review' && p.approval === 'Pending').length;
+    let wk = 0;
+    projects.forEach((p) => { if (!p.editDone && p.edit >= 0 && p.edit < 7) wk++; if (!p.thumbDone && p.thumb >= 0 && p.thumb < 7) wk++; if (p.pub >= 0 && p.pub < 7) wk++; });
+    const K = [
+      { id: 'all', label: 'Active projects', value: projects.length, hist: [9, 10, 12, 11, 13, 12, 13], sub: LIVE + ' went live this month', bad: false, color: '#111111' },
+      { id: 'week', label: 'Due in 7 days', value: wk, hist: [8, 11, 9, 12, 10, 13, 12], sub: 'edits, thumbs, publishes', bad: false, color: '#2F5BD8' },
+      { id: 'late', label: 'Late deadlines', value: lateN, hist: [3, 1, 2, 4, 2, 3, 1], sub: 'past due', bad: true, color: '#C42B1C' },
+      { id: 'unassigned', label: 'Unassigned', value: unN, hist: [1, 2, 2, 1, 3, 2, 2], sub: 'need an editor or designer', bad: true, color: '#9A6500' },
+      { id: 'sponsor', label: 'Awaiting sponsor', value: spN, hist: [0, 1, 1, 2, 1, 1, 1], sub: s.rules.requireSponsor ? 'approvals open' : 'approval rule off', bad: true, color: '#7A3FD0' }
+    ];
+    const kpis = K.map((k) => {
+      const v = k.hist.concat([k.value]);
+      const mn = Math.min.apply(null, v), mx = Math.max.apply(null, v), rg = mx - mn || 1;
+      const pts = v.map((n, i) => [Math.round((i * 88 / 7 + 4) * 10) / 10, Math.round((30 - (n - mn) / rg * 24) * 10) / 10]);
+      const last = pts[pts.length - 1];
+      const delta = k.value - k.hist[6];
+      const on = s.focus === k.id && k.id !== 'all';
+      const dColor = delta === 0 || !k.bad ? '#666666' : delta > 0 ? '#9B1C13' : '#1B653B';
+      return {
+        label: k.label, value: String(k.value), sub: k.sub,
+        points: pts.map((q) => q.join(',')).join(' '),
+        area: '4,34 ' + pts.map((q) => q.join(',')).join(' ') + ' ' + last[0] + ',34',
+        fill: k.color === '#111111' ? 'rgba(17,17,17,0.06)' : k.color + '1A',
+        stroke: k.color, cx: String(last[0]), cy: String(last[1]),
+        delta: delta === 0 ? 'Flat' : (delta > 0 ? '+' : '') + delta + ' wk',
+        deltaStyle: 'font-weight: 700; color: ' + dColor + ';',
+        dotStyle: 'display: block; width: 8px; height: 8px; border-radius: 50%; background: ' + k.color + ';',
+        pressed: on ? 'true' : 'false',
+        pick: () => set({ focus: s.focus === k.id ? 'all' : k.id, highlight: null, picker: null }),
+        style: 'display: flex; flex-direction: column; align-items: flex-start; gap: 12px; min-height: 136px; box-sizing: border-box; text-align: left; background: #FFFFFF; border-radius: 16px; cursor: pointer; color: #111111; ' + (on ? 'border: 2px solid #111111; padding: 15px 17px;' : 'border: 1px solid #E6E6E6; padding: 16px 18px;')
+      };
+    });
+
+    // Due next 14 days
+    const SER = [
+      { id: 'thumb', label: 'Thumbnail', long: 'Thumbnail due', color: '#F2A93B' },
+      { id: 'edit', label: 'Edit', long: 'Edit due', color: '#2F5BD8' },
+      { id: 'pub', label: 'Publish', long: 'Publish', color: '#111111' }
+    ];
+    const itemsOn = (d) => {
+      const out = [];
+      projects.forEach((p) => {
+        if (!p.thumbDone && p.thumb === d) out.push({ t: 'thumb', p: p, who: p.designer ? PBY[p.designer].name : 'No designer' });
+        if (!p.editDone && p.edit === d) out.push({ t: 'edit', p: p, who: p.editor ? PBY[p.editor].name : 'No editor' });
+        if (p.pub === d) out.push({ t: 'pub', p: p, who: p.status });
+      });
+      return out.filter((x) => !s.hidden[x.t]);
+    };
+    const dayData = []; let maxN = 0;
+    for (let d = 0; d < 14; d++) { const it = itemsOn(d); dayData.push(it); maxN = Math.max(maxN, it.length); }
+    const UNITS = Math.max(4, maxN);
+    const UNIT = 176 / UNITS;
+    const days = dayData.map((it, d) => {
+      const dt = dOf(d); const wkend = dt.getDay() === 0 || dt.getDay() === 6; const on = s.day === d;
+      const segs = SER.map((se) => ({ se: se, n: it.filter((x) => x.t === se.id).length })).filter((g) => g.n > 0)
+        .map((g) => ({ style: 'display: block; width: 100%; height: ' + Math.max(2, g.n * UNIT - 3) + 'px; margin-top: 3px; border-radius: 5px; background: ' + g.se.color + ';' }));
+      return {
+        segs: segs, wd: WD[dt.getDay()].slice(0, 1), num: String(dt.getDate()),
+        aria: fmtLong(d) + ': ' + plural(it.length, 'deadline'), pressed: on ? 'true' : 'false',
+        pick: () => { if (s.day !== d) set({ day: d }); },
+        colStyle: 'display: flex; flex-direction: column; justify-content: flex-end; height: 100%; padding: 0 4px 0; box-sizing: border-box; border: 0; border-radius: 8px; cursor: pointer; background: ' + (on ? '#EFEFEF' : wkend ? '#FAFAFA' : 'transparent') + ';',
+        labelStyle: 'display: flex; flex-direction: column; align-items: center; gap: 1px; font-size: 11px; line-height: 1.2; font-weight: ' + (d === 0 || on ? '800' : '600') + '; color: ' + (on || d === 0 ? '#111111' : wkend ? '#8A8A8A' : '#666666') + ';'
+      };
+    });
+    const yTicks = []; for (let i = UNITS; i >= 0; i--) yTicks.push({ label: String(i) });
+    const sel = dayData[s.day] || [];
+    const dayItems = sel.map((x) => { const se = SER.filter((q) => q.id === x.t)[0]; return { swatch: 'display: block; width: 10px; height: 10px; border-radius: 3px; flex: none; background: ' + se.color + ';', type: se.long, title: x.p.title, who: x.who }; });
+    const total14 = dayData.reduce((a, b) => a + b.length, 0);
+    const overdue = allIssues.filter((i) => i.tone === 'red');
+    const series = SER.map((se) => {
+      const off = !!s.hidden[se.id];
+      return { label: se.label, pressed: off ? 'false' : 'true',
+        toggle: () => set({ hidden: Object.assign({}, s.hidden, { [se.id]: !off }) }),
+        swatch: 'display: block; width: 10px; height: 10px; border-radius: 3px; background: ' + (off ? '#D4D4D4' : se.color) + ';',
+        style: 'display: inline-flex; align-items: center; gap: 7px; min-height: 34px; padding: 0 11px; border: 1px solid #E6E6E6; border-radius: 10px; background: #FFFFFF; font-size: 12px; font-weight: 600; cursor: pointer; color: ' + (off ? '#8A8A8A' : '#111111') + '; ' + (off ? 'text-decoration: line-through;' : '') };
+    });
+
+    // Pipeline
+    const countOf = (id) => id === 'Live' ? LIVE : projects.filter((p) => p.status === id).length;
+    const openN = projects.length;
+    const stageNames = ['In Production', 'Post Production', 'Publishing'];
+    const stages = stageNames.map((n) => ({ label: n, count: String(ST.filter((x) => x.stage === n && x.id !== 'Live').reduce((a, x) => a + countOf(x.id), 0)) }));
+    const pipeBar = ST.filter((x) => x.id !== 'Live' && countOf(x.id) > 0).map((x) => ({ title: x.id + ': ' + countOf(x.id), style: 'display: block; height: 100%; flex: ' + countOf(x.id) + ' 1 0; background: ' + x.bg + '; opacity: ' + (s.status && s.status !== x.id ? '0.25' : '1') + ';' }));
+    const slow = ST.filter((x) => x.dwell && x.dwell > x.target);
+    const statusCards = ST.map((x) => {
+      const live = x.id === 'Live'; const on = s.status === x.id; const n = countOf(x.id);
+      const over = !live && x.dwell > x.target;
+      return {
+        label: x.id, count: String(n), unit: live ? 'live this month' : n === 1 ? 'project' : 'projects', stage: x.stage,
+        blockStyle: block(x.bg, 26), bottleneck: over, disabled: live, pressed: on ? 'true' : 'false',
+        dwellText: live ? 'Published' : 'Avg ' + x.dwell.toFixed(1) + 'd here', targetText: live ? '' : 'Target ' + x.target + 'd',
+        dwellFill: 'display: block; height: 100%; width: ' + (live ? 100 : Math.min(100, Math.round(x.dwell / Math.max(x.dwell, x.target) * 100))) + '%; background: ' + (live ? '#1E7A3C' : over ? '#C42B1C' : '#111111') + ';',
+        pick: () => set({ status: on ? null : x.id, highlight: null }),
+        style: 'display: flex; flex-direction: column; align-items: flex-start; gap: 12px; box-sizing: border-box; text-align: left; background: ' + (live ? '#FAFAFA' : '#FFFFFF') + '; border-radius: 14px; color: #111111; cursor: ' + (live ? 'default' : 'pointer') + '; ' + (on ? 'border: 2px solid #111111; padding: 13px;' : 'border: 1px solid #E6E6E6; padding: 14px;')
+      };
+    });
+
+    // Team capacity
+    const roleTabs = [['all', 'All'], ['editor', 'Editors'], ['designer', 'Designers']].map((t) => {
+      const on = s.roleView === t[0];
+      return { label: t[1], selected: on ? 'true' : 'false', pick: () => set({ roleView: t[0] }),
+        style: 'min-height: 36px; padding: 0 12px; border: 0; border-radius: 9px; cursor: pointer; font-size: 13px; font-weight: 600; ' + (on ? 'background: #FFFFFF; color: #111111; box-shadow: 0 1px 2px rgba(0,0,0,0.08);' : 'background: transparent; color: #666666;') };
+    });
+    const vis = PEOPLE.filter((x) => s.roleView === 'all' || x.role.toLowerCase() === s.roleView);
+    const heat = (n) => n <= 0 ? ['#F2F2F2', '#8A8A8A'] : n === 1 ? ['#C9D6FA', '#1D3A8A'] : n === 2 ? ['#7F9CF0', '#0D1E52'] : ['#2F5BD8', '#FFFFFF'];
+    const team = vis.map((x) => {
+      const mine = activeOf(x);
+      const late = mine.filter((p) => dueOf(x, p) < 0);
+      const up = mine.map((p) => dueOf(x, p)).filter((o) => o >= 0).sort((a, b) => a - b);
+      const k = Math.max(CAP, mine.length);
+      const w = Math.floor((146 - 4 * (k - 1)) / k);
+      const slots = [];
+      for (let i = 0; i < k; i++) {
+        const p = mine[i];
+        slots.push({ title: p ? p.title + ' (' + p.status + ')' : 'Open slot', style: 'display: block; width: ' + w + 'px; height: 14px; border-radius: 4px; background: ' + (p ? SBY[p.status].bg : '#EFEFEF') + ';' + (i >= CAP ? ' box-shadow: 0 0 0 2px #FFFFFF, 0 0 0 4px #C42B1C;' : '') });
+      }
+      const cells = [];
+      for (let d = -1; d < 14; d++) {
+        const n = d < 0 ? late.length : mine.filter((p) => dueOf(x, p) === d).length;
+        const c = d < 0 ? (n ? ['#C42B1C', '#FFFFFF'] : ['#F2F2F2', '#8A8A8A']) : heat(n);
+        const key = x.id + ':' + d; const on = s.cell === key;
+        cells.push({ label: n ? String(n) : '', aria: x.name + ', ' + (d < 0 ? 'late' : fmtLong(d)) + ': ' + plural(n, 'item'), pressed: on ? 'true' : 'false',
+          pick: () => set({ cell: on ? null : key }),
+          style: 'width: 26px; height: 26px; flex: none; padding: 0; border: 0; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; background: ' + c[0] + '; color: ' + c[1] + ';' + (on ? ' box-shadow: 0 0 0 2px #FFFFFF, 0 0 0 4px #111111;' : '') });
+      }
+      const n = mine.length; const on = s.person === x.id;
+      return {
+        name: x.name, role: x.role, initial: x.name.slice(0, 1), avStyle: av(x, 32), slots: slots, cells: cells,
+        loadText: n + '/' + CAP, loadTextStyle: 'font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums; color: ' + (n >= CAP ? '#9B1C13' : '#2A2A2A') + ';',
+        active: String(n), late: String(late.length),
+        lateStyle: late.length ? 'display: inline-flex; align-items: center; justify-content: center; min-width: 24px; height: 24px; padding: 0 7px; box-sizing: border-box; border-radius: 4px; background: #C42B1C; color: #FFFFFF; font-size: 12px; font-weight: 700; justify-self: start;' : 'font-size: 14px; color: #8A8A8A;',
+        next: up.length ? fmt(up[0]) : 'None',
+        pressed: on ? 'true' : 'false', pick: () => set({ person: on ? null : x.id, highlight: null }),
+        rowStyle: 'display: grid; grid-template-columns: minmax(160px, 1fr) 172px 52px 52px 82px 446px; gap: 12px; align-items: center; min-height: 60px; padding: 6px 20px; box-sizing: border-box; border-top: 1px solid #EFEFEF; background: ' + (on ? '#F4F4F4' : '#FFFFFF') + ';',
+        sortN: n
+      };
+    }).sort((a, b) => b.sortN - a.sortN);
+    const dayHeads = [{ top: 'Late', num: '', style: 'display: flex; flex-direction: column; align-items: center; width: 26px; flex: none; font-size: 10px; font-weight: 700; color: #9B1C13; line-height: 1.2;' }];
+    for (let d = 0; d < 14; d++) { const dt = dOf(d); const we = dt.getDay() === 0 || dt.getDay() === 6; dayHeads.push({ top: WD[dt.getDay()].slice(0, 1), num: String(dt.getDate()), style: 'display: flex; flex-direction: column; align-items: center; width: 26px; flex: none; font-size: 10px; line-height: 1.2; font-weight: ' + (d === 0 ? '800' : '600') + '; color: ' + (d === 0 ? '#111111' : we ? '#8A8A8A' : '#666666') + ';' }); }
+    const used = vis.reduce((a, x) => a + loadOf[x.id], 0);
+    const capT = vis.length * CAP;
+    const util = capT ? used / capT : 0;
+    const atCap = vis.filter((x) => loadOf[x.id] >= CAP).length;
+    const openSlots = vis.reduce((a, x) => a + Math.max(0, CAP - loadOf[x.id]), 0);
+    const C = 2 * Math.PI * 26;
+    let cellTitle = '', cellItems = [];
+    if (s.cell) {
+      const parts = s.cell.split(':'); const x = PBY[parts[0]]; const d = Number(parts[1]);
+      if (x) {
+        cellTitle = x.name + ' · ' + (d < 0 ? 'Past due' : fmtLong(d));
+        cellItems = activeOf(x).filter((p) => d < 0 ? dueOf(x, p) < 0 : dueOf(x, p) === d).map((p) => ({ status: p.status, blockStyle: block(SBY[p.status].bg, 22), title: p.title, what: (x.role === 'Editor' ? 'Edit due ' : 'Thumbnail due ') + fmt(dueOf(x, p)) }));
+      }
+    }
+
+    // Assignments
+    const q = s.q.trim().toLowerCase();
+    const hasIssue = (p, k) => issuesOf(p).some((i) => !k || i.k === k);
+    const inWeek = (p) => (!p.editDone && p.edit >= 0 && p.edit < 7) || (!p.thumbDone && p.thumb >= 0 && p.thumb < 7) || (p.pub >= 0 && p.pub < 7);
+    const filtered = projects.filter((p) => {
+      if (s.status && p.status !== s.status) return false;
+      if (s.person && p.editor !== s.person && p.designer !== s.person) return false;
+      if (s.focus === 'late' && !hasIssue(p, 'late')) return false;
+      if (s.focus === 'unassigned' && !hasIssue(p, 'unassigned')) return false;
+      if (s.focus === 'sponsor' && !hasIssue(p, 'sponsor')) return false;
+      if (s.focus === 'week' && !inWeek(p)) return false;
+      if (s.issuesOnly && !hasIssue(p)) return false;
+      if (q && p.title.toLowerCase().indexOf(q) < 0) return false;
+      return true;
+    }).sort((a, b) => a.pub - b.pub);
+    const dueStyle = (o, done) => {
+      const base = 'display: inline-flex; align-items: center; height: 26px; padding: 0 8px; border-radius: 6px; font-size: 13px; font-variant-numeric: tabular-nums; white-space: nowrap; ';
+      if (done) return base + 'color: #1B653B; background: #E6F5EC; font-weight: 600;';
+      if (o < 0) return base + 'color: #9B1C13; background: #FDE8E5; font-weight: 700;';
+      if (o === 0) return base + 'color: #7A4E00; background: #FCF1DC; font-weight: 700;';
+      return base + 'color: #2A2A2A; font-weight: 500;';
+    };
+    const assignBtn = (open, quiet) => 'display: inline-flex; align-items: center; gap: 6px; min-height: 34px; padding: 0 12px; box-sizing: border-box; border: 1px dashed ' + (open ? '#111111' : quiet ? '#D4D4D4' : '#9A6500') + '; border-radius: 10px; background: ' + (open ? '#FFFFFF' : quiet ? 'transparent' : '#FCF1DC') + '; font-size: 13px; font-weight: 600; color: ' + (open ? '#111111' : quiet ? '#707070' : '#7A4E00') + '; cursor: pointer;';
+    const AP = { Pending: ['#FCF1DC', '#7A4E00'], Approved: ['#E6F5EC', '#1B653B'], 'Not sent': ['#F0F0F0', '#4A4A4A'] };
+    const rows = filtered.map((p) => {
+      const si = SBY[p.status].i;
+      const ed = p.editor ? PBY[p.editor] : null; const ds = p.designer ? PBY[p.designer] : null;
+      const kE = 'tbl:' + p.id + ':editor', kD = 'tbl:' + p.id + ':designer';
+      const oE = s.picker === kE, oD = s.picker === kD;
+      const role = oE ? 'editor' : oD ? 'designer' : null;
+      const iss = issuesOf(p);
+      const ap = AP[p.approval] || AP['Not sent'];
+      return {
+        title: p.title, sub: p.sponsor ? 'Sponsored · film ' + fmt(p.film) : 'Film ' + fmt(p.film),
+        status: p.status, statusStyle: block(SBY[p.status].bg, 26),
+        hasEditor: !!ed, noEditor: !ed, edName: ed ? ed.name : '', edInitial: ed ? ed.name.slice(0, 1) : '', edAv: ed ? av(ed, 26) : '',
+        hasDesigner: !!ds, noDesigner: !ds, dsName: ds ? ds.name : '', dsInitial: ds ? ds.name.slice(0, 1) : '', dsAv: ds ? av(ds, 26) : '',
+        edOpen: oE ? 'true' : 'false', dsOpen: oD ? 'true' : 'false',
+        edBtnStyle: assignBtn(oE, si === 0 || si > 3), dsBtnStyle: assignBtn(oD, si === 0),
+        pickEditor: () => set({ picker: oE ? null : kE }), pickDesigner: () => set({ picker: oD ? null : kD }),
+        editText: p.editDone ? 'Done' : fmt(p.edit), editStyle: dueStyle(p.edit, p.editDone),
+        thumbText: p.thumbDone ? 'Done' : fmt(p.thumb), thumbStyle: dueStyle(p.thumb, p.thumbDone),
+        pubText: fmt(p.pub),
+        sponsor: p.sponsor || 'None', hasApproval: !!p.sponsor, apText: p.approval || 'Not sent',
+        apStyle: 'display: inline-flex; align-items: center; height: 22px; padding: 0 8px; border-radius: 6px; font-size: 11px; font-weight: 700; background: ' + ap[0] + '; color: ' + ap[1] + ';',
+        pickerOpen: !!role, pickerLabel: role ? 'Assign ' + role + ' to "' + p.title + '"' : '', options: role ? optionsFor(p, role) : [],
+        rowStyle: 'display: grid; grid-template-columns: minmax(220px, 2fr) 136px 132px 132px 88px 88px 76px minmax(130px, 1fr); gap: 12px; align-items: center; min-height: 60px; padding: 8px 20px; box-sizing: border-box; background: ' + (s.highlight === p.id ? '#FFF6E0' : '#FFFFFF') + ';' + (iss.some((i) => i.tone === 'red') ? ' box-shadow: inset 3px 0 0 #C42B1C;' : '')
+      };
+    });
+    const FL = { late: 'Deadlines', unassigned: 'Unassigned', sponsor: 'Sponsor pending', week: 'Due in 7 days' };
+    const filterChips = [];
+    if (FL[s.focus]) filterChips.push({ label: 'Focus: ' + FL[s.focus], aria: 'Remove focus filter', clear: () => set({ focus: 'all' }) });
+    if (s.status) filterChips.push({ label: 'Status: ' + s.status, aria: 'Remove status filter', clear: () => set({ status: null }) });
+    if (s.person) filterChips.push({ label: 'Person: ' + PBY[s.person].name, aria: 'Remove person filter', clear: () => set({ person: null }) });
+    if (q) filterChips.push({ label: 'Search: ' + s.q, aria: 'Clear search', clear: () => set({ q: '' }) });
+
+    // Workflow
+    const flow = ST.map((x, i) => ({ label: x.id, stage: x.stage, arrow: i < ST.length - 1, count: String(countOf(x.id)),
+      style: block(x.bg, 32) + ' font-size: 13px; padding: 0 6px 0 12px; gap: 8px;',
+      countStyle: 'display: inline-flex; align-items: center; justify-content: center; min-width: 20px; height: 20px; padding: 0 5px; box-sizing: border-box; border-radius: 4px; background: rgba(255,255,255,0.22); font-size: 11px; font-weight: 700;' }));
+    const nEdit = projects.filter((p) => !p.editDone).length;
+    const nThumb = projects.filter((p) => !p.thumbDone).length;
+    const steppers = [
+      { label: 'Edit due after film date', hint: 'Moves the edit date on ' + plural(nEdit, 'open project'), value: String(s.editDays), decAria: 'Fewer edit days', incAria: 'More edit days',
+        dec: () => set({ editDays: Math.max(1, s.editDays - 1) }), inc: () => set({ editDays: Math.min(30, s.editDays + 1) }) },
+      { label: 'Thumbnail due before publish', hint: 'Moves the thumbnail date on ' + plural(nThumb, 'open project'), value: String(s.thumbDays), decAria: 'Fewer thumbnail days', incAria: 'More thumbnail days',
+        dec: () => set({ thumbDays: Math.max(0, s.thumbDays - 1) }), inc: () => set({ thumbDays: Math.min(14, s.thumbDays + 1) }) }
+    ];
+    const RULES = [
+      ['requireSponsor', 'Require sponsor approval', 'Sponsored projects cannot move to Scheduled until approved.'],
+      ['lockLive', 'Lock projects after Live', 'Only Super Admins can edit a published project.'],
+      ['editorStatus', 'Editors can change Status', 'Otherwise editors only change Editor Status.'],
+      ['autoDistribute', 'Create distribution tasks', 'Add clipping, newsletter and community tasks on Live.']
+    ];
+    const rules = RULES.map((r) => {
+      const on = !!s.rules[r[0]];
+      return { label: r[1], desc: r[2], checked: on ? 'true' : 'false',
+        toggle: () => set({ rules: Object.assign({}, s.rules, { [r[0]]: !on }) }),
+        track: 'position: relative; flex: none; width: 46px; height: 28px; padding: 0; border: 0; border-radius: 14px; cursor: pointer; background: ' + (on ? '#111111' : '#D4D4D4') + ';',
+        knob: 'position: absolute; top: 4px; left: 4px; width: 20px; height: 20px; border-radius: 50%; background: #FFFFFF; box-shadow: 0 1px 2px rgba(0,0,0,0.2); transform: translateX(' + (on ? 18 : 0) + 'px);' };
+    });
+
+    return {
+      todayLabel: fmtLong(0),
+      attTotal: String(allIssues.length),
+      focusUnassigned: () => set({ focus: 'unassigned', picker: null }),
+      hasLast: !!s.last, lastText: s.last ? s.last.text : '',
+      undo: () => set({ assign: s.last ? s.last.prev : s.assign, last: null }),
+      dismiss: () => set({ last: null }),
+      kpis: kpis,
+      attTabs: attTabs, attItems: attItems, attEmpty: attItems.length === 0,
+      series: series, days: days, yTicks: yTicks,
+      dueSummary: plural(total14, 'deadline') + ' across edits, thumbnails and publishes. Hover or tap a day.',
+      hasOverdue: overdue.length > 0, overdueText: plural(overdue.length, 'item') + ' already past due: ' + overdue.map((i) => i.p.title).join(', '),
+      dayTitle: (s.day === 0 ? 'Today · ' : '') + fmtLong(s.day) + ' · ' + plural(sel.length, 'deadline'),
+      dayItems: dayItems, dayEmpty: sel.length === 0,
+      pipeSummary: openN + ' open projects · ' + (slow.length ? slow.map((x) => x.id).join(', ') + ' is running over target' : 'every status within target') + '. Select a status to filter assignments.',
+      stages: stages, pipeBar: pipeBar, statusCards: statusCards,
+      roleTabs: roleTabs, team: team, dayHeads: dayHeads,
+      utilPct: Math.round(util * 100) + '%', utilDash: (Math.round(util * C * 10) / 10) + ' ' + Math.ceil(C),
+      utilColor: util >= 0.85 ? '#C42B1C' : util >= 0.6 ? '#9A6500' : '#2F5BD8',
+      utilAria: 'Team utilization ' + Math.round(util * 100) + ' percent',
+      teamStats: [{ value: used + '/' + capT, label: 'Slots in use' }, { value: String(atCap), label: 'At capacity' }, { value: String(openSlots), label: 'Open slots' }],
+      hasCell: !!s.cell, cellTitle: cellTitle, cellItems: cellItems, cellEmpty: !!s.cell && cellItems.length === 0,
+      clearCell: () => set({ cell: null }),
+      q: s.q, onQ: (e) => set({ q: e && e.target ? e.target.value : '' }),
+      issuesOnly: s.issuesOnly, toggleIssues: () => set({ issuesOnly: !s.issuesOnly }),
+      rows: rows, rowCount: String(rows.length), rowsEmpty: rows.length === 0,
+      hasFilters: filterChips.length > 0, filterChips: filterChips,
+      clearAll: () => set({ focus: 'all', status: null, person: null, q: '', issuesOnly: false, highlight: null }),
+      closePicker: () => set({ picker: null }),
+      flow: flow, steppers: steppers, rules: rules
+    };
+  }
+}
+</script>
+</body>
+</html>
