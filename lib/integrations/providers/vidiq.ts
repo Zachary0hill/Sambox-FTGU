@@ -12,16 +12,19 @@ import type { Config } from '../secrets';
 // vidIQ credits, and all 52 tools would crowd the prompt.
 
 export const VIDIQ_URL = 'https://mcp.vidiq.com/mcp';
-export const DEFAULT_TOOLS = ['keyword_research', 'outliers', 'trending_videos', 'subscriber_insights', 'video_transcript', 'generate_titles'];
 const PREFIX = 'vidiq_';
+export const DEFAULT_TOOLS = ['keyword_research', 'outliers', 'trending_videos', 'subscriber_insights', 'video_transcript', 'generate_titles'].map((name) => PREFIX + name);
 const MAX_RESULT = 12000;
 
 const clip = (t: string, n: number) => (t.length > n ? t.slice(0, n - 1) + '…' : t);
 
-// Tool names the workspace picked, else the defaults.
+// The MCP server includes its own namespace. Accept older saved names without adding it twice.
+export const vidiqToolName = (name: string): string => name.startsWith(PREFIX) ? name : PREFIX + name;
+
+// Tool names the workspace picked, else the defaults, in the server's namespace.
 export function vidiqToolNames(config: Config): string[] {
   const picked = String(config.tools || '').split(/[\s,]+/).map((t) => t.trim()).filter((t) => /^[\w.-]{1,64}$/.test(t));
-  return picked.length ? Array.from(new Set(picked)) : DEFAULT_TOOLS;
+  return picked.length ? Array.from(new Set(picked.map(vidiqToolName))) : DEFAULT_TOOLS;
 }
 
 function explain(err: unknown): string {
@@ -71,8 +74,8 @@ export async function vidiqTools(client: MCPClient, config: Config): Promise<Too
   const listed = await client.listTools({ options: { timeout: 15000 } });
   const out: ToolSet = {};
   for (const def of listed.tools) {
-    if (!allow.has(def.name) || def.annotations?.destructiveHint === true) continue;
-    out[PREFIX + def.name] = tool({
+    if (!allow.has(vidiqToolName(def.name)) || def.annotations?.destructiveHint === true) continue;
+    out[vidiqToolName(def.name)] = tool({
       description: clip('vidIQ (YouTube data, costs vidIQ credits): ' + (def.description || def.name), 1000),
       inputSchema: jsonSchema((def.inputSchema || { type: 'object', properties: {} }) as JSONSchema7),
       execute: async (args) => {
@@ -93,7 +96,8 @@ const provider: ProviderModule = {
     let client: MCPClient | null = null;
     try {
       client = await vidiqClient(secret.apiKey);
-      const names = (await client.listTools({ options: { timeout: 15000 } })).tools.map((t) => t.name);
+      const names = (await client.listTools({ options: { timeout: 15000 } })).tools
+        .filter((t) => t.annotations?.destructiveHint !== true).map((t) => vidiqToolName(t.name));
       const picked = vidiqToolNames(config);
       const unknown = picked.filter((n) => !names.includes(n));
       if (unknown.length === picked.length) return 'None of these tools exist on vidIQ: ' + unknown.join(', ') + '. Available: ' + clip(names.join(', '), 600);

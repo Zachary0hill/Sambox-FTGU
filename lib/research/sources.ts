@@ -3,7 +3,7 @@ import type { Page } from 'playwright-core';
 import { runActor, type ApifyLimits } from '@/lib/integrations/providers/apify';
 import { withBrowser } from '@/lib/integrations/providers/browserbase';
 import { firecrawlSearch } from '@/lib/integrations/providers/firecrawl';
-import { vidiqClient, callVidiq } from '@/lib/integrations/providers/vidiq';
+import { vidiqClient, callVidiq, vidiqToolName } from '@/lib/integrations/providers/vidiq';
 import { virloSearch, type VirloPlatform } from '@/lib/integrations/providers/virlo';
 import type { Connection } from '@/lib/integrations/secrets';
 import { LIMITS, type SourceId } from './catalog';
@@ -96,7 +96,7 @@ const RUNNERS: Record<SourceId, (c: Conns, ctx: SourceCtx) => Promise<Draft[]>> 
   async vidiq(c, ctx) {
     const client = await vidiqClient(c.vidiq!.secret.apiKey);
     try {
-      const def = (await client.listTools({ options: { timeout: 15000 } })).tools.find((t) => t.name === 'outliers');
+      const def = (await client.listTools({ options: { timeout: 15000 } })).tools.find((t) => vidiqToolName(t.name) === 'vidiq_outliers' && t.annotations?.destructiveHint !== true);
       if (!def) throw new Error('vidIQ no longer offers the outliers tool.');
       const props = (def.inputSchema?.properties || {}) as Record<string, { type?: string }>;
       const required = (def.inputSchema as { required?: string[] } | undefined)?.required || [];
@@ -106,7 +106,7 @@ const RUNNERS: Record<SourceId, (c: Conns, ctx: SourceCtx) => Promise<Draft[]>> 
       const out: Draft[] = [];
       for (const topic of ctx.topics) {
         if (Date.now() > ctx.deadline - 15000 || (await ctx.cancelled())) break;
-        const text = await callVidiq(client, 'outliers', { [key]: topic }, Math.min(60000, ctx.deadline - Date.now()));
+        const text = await callVidiq(client, def.name, { [key]: topic }, Math.min(60000, ctx.deadline - Date.now()));
         out.push(...fromVidiq(text, topic).slice(0, per));
       }
       return out;

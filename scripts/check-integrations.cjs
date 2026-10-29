@@ -51,6 +51,7 @@ const route = require('../app/api/integrations/[provider]/route.ts');
 const channel = 'UC' + 'a'.repeat(22);
 const fieldsFor = (def) => Object.fromEntries(def.fields.filter((f) => !f.optional).map((f) => [f.key, ({
   model: 'test-chat-model', boardId: '123456', projectId: 'project-1', botToken: 'xoxb-test-bot-token',
+  apiKey: def.id === 'virlo' ? 'virlo_tkn_offline-test' : 'test-credential-apiKey',
   channelIds: channel, webhookUrl: 'https://n8n.example.test/webhook/check',
 })[f.key] || 'test-credential-' + f.key]));
 const save = (id, fields) => route.POST(new Request('https://studio.example.test/api/integrations/' + id, {
@@ -76,6 +77,20 @@ beforeEach(() => {
     if (u.hostname === 'api.apify.com') return Response.json({ data: { id: 'test-user' } });
     if (u.hostname === 'api.browserbase.com') return Response.json({ id: 'project-1' });
     if (u.hostname === 'api.firecrawl.dev') return Response.json({ success: true, data: { remainingCredits: 10 } });
+    if (u.hostname === 'api.virlo.ai' && u.pathname === '/v1/account/balance') return Response.json({ data: { balance: '$10.00', status: 'active' } });
+    if (u.hostname === 'mcp.vidiq.com' || u.hostname === 'dev.virlo.ai') {
+      if (options.method === 'DELETE') return new Response(null, { status: 204 });
+      const rpc = JSON.parse(options.body || '{}');
+      if (rpc.method === 'notifications/initialized') return new Response(null, { status: 202 });
+      if (rpc.method === 'initialize') return Response.json({ jsonrpc: '2.0', id: rpc.id, result: {
+        protocolVersion: rpc.params.protocolVersion, capabilities: { tools: {} }, serverInfo: { name: 'offline-provider', version: '1' },
+      } });
+      if (rpc.method === 'tools/list') return Response.json({ jsonrpc: '2.0', id: rpc.id, result: { tools:
+        (u.hostname === 'mcp.vidiq.com' ? ['vidiq_keyword_research', 'vidiq_outliers', 'vidiq_video_transcript'] : ['get_trends_digest', 'raw_search'])
+          .map((name) => ({ name, inputSchema: { type: 'object', properties: {} } })),
+      } });
+      throw new Error('Unexpected MCP method: ' + rpc.method);
+    }
     if (u.hostname === 'slack.com') return Response.json({ ok: true, bot_id: 'bot-1' });
     if (u.hostname === 'www.googleapis.com' && u.pathname === '/youtube/v3/channels') return Response.json({
       items: [{ id: channel, snippet: { title: 'QA' }, contentDetails: { relatedPlaylists: { uploads: 'playlist-1' } } }] });
@@ -85,9 +100,9 @@ beforeEach(() => {
   };
 });
 
-test('all 14 visible connectors have a module, credential fields and matching sync support', () => {
-  assert.equal(PROVIDERS.length, 14);
-  assert.equal(new Set(PROVIDERS.map((p) => p.id)).size, 14);
+test('all 16 visible connectors have a module, credential fields and matching sync support', () => {
+  assert.equal(PROVIDERS.length, 16);
+  assert.equal(new Set(PROVIDERS.map((p) => p.id)).size, 16);
   for (const def of PROVIDERS) {
     assert.equal(typeof MODULES[def.id]?.verify, 'function', def.id);
     assert.ok(def.fields.some((f) => f.secret && !f.optional), def.id);
@@ -155,6 +170,19 @@ test('members and anonymous callers cannot save or disconnect any provider', asy
   }
   assert.equal(requests.length, 0);
   assert.equal(rpcCalls.length, 0);
+});
+test('MCP connectors save supported selections and reject unknown tools before writing credentials', async () => {
+  for (const [id, names] of [['vidiq', ['outliers', 'vidiq_outliers']], ['virlo', ['raw_search']]]) {
+    const fields = fieldsFor(PROVIDERS.find((p) => p.id === id));
+    for (const tools of names) {
+      assert.equal((await save(id, { ...fields, tools })).status, 200);
+    }
+    const prior = structuredClone(connected);
+    rpcCalls = [];
+    assert.equal((await save(id, { ...fields, tools: 'nonexistent_tool' })).status, 400);
+    assert.deepEqual(connected, prior);
+    assert.equal(rpcCalls.length, 0);
+  }
 });
 test('Vault failures stop the request instead of silently treating credentials as missing', async () => {
   unavailable = true;

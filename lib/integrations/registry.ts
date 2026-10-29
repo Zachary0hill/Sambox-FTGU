@@ -136,7 +136,7 @@ export const PROVIDERS: ProviderDef[] = [
     setupNote: 'Uses vidIQ\'s MCP server with a read-only API key, so it can research but never edit your channels. Each research call spends vidIQ credits (most cost 5).',
     fields: [
       { key: 'apiKey', label: 'MCP API key', secret: true, help: 'vidIQ > Account settings > MCP > Create API key. Works on every vidIQ plan, including Free.' },
-      { key: 'tools', label: 'Tools', optional: true, placeholder: 'keyword_research, outliers, trending_videos, subscriber_insights, video_transcript, generate_titles', help: 'vidIQ tool names the assistant may call, comma separated. Leave blank for the defaults shown.' },
+      { key: 'tools', label: 'Tools', optional: true, placeholder: 'vidiq_keyword_research, vidiq_outliers, vidiq_trending_videos, vidiq_subscriber_insights, vidiq_video_transcript, vidiq_generate_titles', help: 'vidIQ tool names the assistant may call, comma separated. Leave blank for the defaults shown. Names with or without the vidiq_ prefix are accepted.' },
     ],
   },
   {
