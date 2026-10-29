@@ -1,10 +1,10 @@
 'use client';
 // Dev Notes: the floating "press N anywhere" dock for Super Admins. A shared development backlog for the workspace:
 // jot down an idea, enhancement or bug while browsing and it is tagged with the page you were on. Drag the header to
-// move it (position is remembered), double-click the header to reset, arrow keys nudge when the grip is focused,
+// move it (position is remembered), double-click the header to re-centre, arrow keys nudge when the grip is focused,
 // Esc closes. Ported from the ZZMEDIA and Parish dashboards; rows live in dev_notes behind RLS (Super Admins only).
 /* eslint-disable react-hooks/exhaustive-deps, react-hooks/set-state-in-effect */
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { css } from '@/lib/studio/css';
 
 const CATS = {
@@ -20,7 +20,7 @@ const MARGIN = 24;
 const FALLBACK_H = 320;
 const DRAG_THRESHOLD = 4;
 const SNAP = 16;
-const EASE = 'left 160ms cubic-bezier(0.2, 0.8, 0.2, 1), top 160ms cubic-bezier(0.2, 0.8, 0.2, 1)';
+const EASE = 'transform 180ms cubic-bezier(0.2, 0.8, 0.2, 1)';
 
 const sortNotes = (list) => list.slice().sort((a, b) => (a.sort_order - b.sort_order) || (new Date(b.created_at) - new Date(a.created_at)));
 const authorOf = (n) => (n.created_by_email || '').split('@')[0] || '';
@@ -43,66 +43,73 @@ const I = {
 };
 const CAT_ICON = { idea: I.bulb, enhancement: I.sparkle, bug: I.bug };
 
-// ── Drag: translate3d while moving, then bake into left/top on release. See the Parish useFloatingCardDrag. ──
-function useDrag(cardRef, open) {
-  const [pos, setPos] = useState(null); // null = default corner (bottom right)
+// ── Drag: the card's position lives in one place, a translate3d on the card, written straight to the DOM. React
+// never renders left/top, so re-renders (realtime refreshes, typing) cannot fight the drag. First open is centred;
+// after a drag the spot is remembered and clamped to the viewport whenever the window or the card resizes. ──
+function useDrag(cardRef) {
   const [dragging, setDragging] = useState(false);
+  const pos = useRef(null);
+  const custom = useRef(false); // true once the user has moved it (or a saved spot was restored)
   const drag = useRef(null);
   const timer = useRef(0);
 
-  const height = () => (cardRef.current && cardRef.current.offsetHeight) || FALLBACK_H;
-  const clamp = (p, h = height()) => ({
-    x: Math.min(Math.max(MARGIN, p.x), Math.max(MARGIN, window.innerWidth - WIDTH - MARGIN)),
-    y: Math.min(Math.max(MARGIN, p.y), Math.max(MARGIN, window.innerHeight - h - MARGIN)),
-  });
+  const bounds = () => {
+    const el = cardRef.current;
+    const w = (el && el.offsetWidth) || WIDTH, h = (el && el.offsetHeight) || FALLBACK_H;
+    return { w, h, maxX: Math.max(MARGIN, window.innerWidth - w - MARGIN), maxY: Math.max(MARGIN, window.innerHeight - h - MARGIN) };
+  };
+  const clamp = (p) => { const b = bounds(); return { x: Math.min(Math.max(MARGIN, p.x), b.maxX), y: Math.min(Math.max(MARGIN, p.y), b.maxY) }; };
+  const centre = () => { const b = bounds(); return clamp({ x: Math.round((window.innerWidth - b.w) / 2), y: Math.round((window.innerHeight - b.h) / 2) }); };
   const snap = (p) => {
-    const maxX = Math.max(MARGIN, window.innerWidth - WIDTH - MARGIN), maxY = Math.max(MARGIN, window.innerHeight - height() - MARGIN);
+    const b = bounds();
     let { x, y } = p;
-    if (Math.abs(x - MARGIN) <= SNAP) x = MARGIN; else if (Math.abs(x - maxX) <= SNAP) x = maxX;
-    if (Math.abs(y - MARGIN) <= SNAP) y = MARGIN; else if (Math.abs(y - maxY) <= SNAP) y = maxY;
+    if (Math.abs(x - MARGIN) <= SNAP) x = MARGIN; else if (Math.abs(x - b.maxX) <= SNAP) x = b.maxX;
+    if (Math.abs(y - MARGIN) <= SNAP) y = MARGIN; else if (Math.abs(y - b.maxY) <= SNAP) y = b.maxY;
     return { x, y };
   };
+  const place = (p, animate) => {
+    const el = cardRef.current;
+    pos.current = p;
+    if (!el) return;
+    window.clearTimeout(timer.current);
+    el.style.transition = animate ? EASE : 'none';
+    el.style.transform = 'translate3d(' + p.x + 'px, ' + p.y + 'px, 0)';
+    if (animate) timer.current = window.setTimeout(() => { if (cardRef.current) cardRef.current.style.transition = 'none'; }, 200);
+  };
+  const commit = (p, animate) => { place(p, animate); custom.current = true; writeJson(POS_KEY, p); };
   const lock = (on) => { if (on) document.documentElement.dataset.floatingDrag = 'true'; else delete document.documentElement.dataset.floatingDrag; };
   const mark = (on) => { const el = cardRef.current; if (!el) return; if (on) el.dataset.dragging = 'true'; else delete el.dataset.dragging; };
 
-  const glideTo = (next) => {
-    const el = cardRef.current;
-    if (el) {
-      const r = el.getBoundingClientRect();
-      el.style.transition = 'none'; el.style.left = r.left + 'px'; el.style.top = r.top + 'px'; el.style.right = 'auto'; el.style.bottom = 'auto'; el.style.transform = '';
-      void el.offsetWidth;
-      el.style.transition = EASE; el.style.left = next.x + 'px'; el.style.top = next.y + 'px';
-      window.clearTimeout(timer.current);
-      timer.current = window.setTimeout(() => { if (cardRef.current) cardRef.current.style.transition = ''; }, 200);
-    }
-    setPos(next); writeJson(POS_KEY, next);
-  };
+  // Place before first paint: the saved spot, else the centre.
+  useLayoutEffect(() => {
+    const saved = readJson(POS_KEY);
+    if (saved && Number.isFinite(saved.x) && Number.isFinite(saved.y)) { custom.current = true; place(clamp(saved), false); }
+    else place(centre(), false);
+  }, []);
 
-  useEffect(() => { const saved = readJson(POS_KEY); if (saved && Number.isFinite(saved.x) && Number.isFinite(saved.y)) setPos(clamp(saved)); }, []);
+  // Keep it on screen as the window resizes or the list grows; an unmoved card stays centred.
   useEffect(() => {
-    if (!open) return;
-    const onResize = () => setPos((c) => (c ? clamp(c) : c));
-    window.addEventListener('resize', onResize);
-    return () => window.removeEventListener('resize', onResize);
-  }, [open]);
-  useEffect(() => () => { if (drag.current && drag.current.active) lock(false); if (drag.current && drag.current.raf) cancelAnimationFrame(drag.current.raf); drag.current = null; window.clearTimeout(timer.current); }, []);
+    const refit = () => { if (drag.current && drag.current.active) return; place(custom.current ? clamp(pos.current || centre()) : centre(), false); };
+    window.addEventListener('resize', refit);
+    const ro = typeof ResizeObserver !== 'undefined' && cardRef.current ? new ResizeObserver(refit) : null;
+    if (ro) ro.observe(cardRef.current);
+    return () => { window.removeEventListener('resize', refit); if (ro) ro.disconnect(); };
+  }, []);
+
+  useEffect(() => () => { const d = drag.current; if (d && d.active) lock(false); if (d && d.raf) cancelAnimationFrame(d.raf); drag.current = null; window.clearTimeout(timer.current); }, []);
 
   const finish = (handle, pointerId, cancelled) => {
     const d = drag.current;
     if (!d || d.pointerId !== pointerId) return;
     if (d.raf) cancelAnimationFrame(d.raf);
     drag.current = null;
-    try { if (handle) handle.releasePointerCapture(pointerId); } catch { /* released */ }
+    try { if (handle && handle.hasPointerCapture(pointerId)) handle.releasePointerCapture(pointerId); } catch { /* released */ }
     if (!d.active) return;
-    const el = cardRef.current;
     lock(false); mark(false); setDragging(false);
-    if (!el) return;
-    if (cancelled) { el.style.willChange = ''; glideTo({ x: d.baseX, y: d.baseY }); return; }
-    const landed = { x: d.lastX, y: d.lastY };
-    el.style.transition = 'none'; el.style.left = landed.x + 'px'; el.style.top = landed.y + 'px'; el.style.transform = ''; el.style.willChange = '';
+    if (cancelled) { place(d.base, true); return; }
+    const landed = clamp({ x: d.base.x + (d.pendingX - d.startX), y: d.base.y + (d.pendingY - d.startY) });
     const s = snap(landed);
-    if (s.x !== landed.x || s.y !== landed.y) glideTo(s);
-    else { el.style.transition = ''; setPos(landed); writeJson(POS_KEY, landed); }
+    commit(s, s.x !== landed.x || s.y !== landed.y);
   };
 
   useEffect(() => {
@@ -113,11 +120,12 @@ function useDrag(cardRef, open) {
   }, [dragging]);
 
   const onPointerDown = (e) => {
-    if ((e.button !== 0 && e.pointerType === 'mouse') || isInteractive(e.target)) return;
+    if ((e.button !== 0 && e.pointerType === 'mouse') || isInteractive(e.target) || drag.current) return;
     const el = cardRef.current; if (!el) return;
-    const r = el.getBoundingClientRect();
     window.clearTimeout(timer.current); el.style.transition = 'none';
-    drag.current = { pointerId: e.pointerId, startX: e.clientX, startY: e.clientY, baseX: r.left, baseY: r.top, pendingX: e.clientX, pendingY: e.clientY, lastX: r.left, lastY: r.top, raf: 0, active: false };
+    const base = pos.current || centre();
+    place(base, false);
+    drag.current = { pointerId: e.pointerId, startX: e.clientX, startY: e.clientY, base, pendingX: e.clientX, pendingY: e.clientY, raf: 0, active: false };
     try { e.currentTarget.setPointerCapture(e.pointerId); } catch { /* ignore */ }
     e.preventDefault();
   };
@@ -127,37 +135,17 @@ function useDrag(cardRef, open) {
     d.pendingX = e.clientX; d.pendingY = e.clientY;
     if (!d.active) {
       if (Math.hypot(d.pendingX - d.startX, d.pendingY - d.startY) < DRAG_THRESHOLD) return;
-      const el = cardRef.current; if (!el) return;
-      el.style.left = d.baseX + 'px'; el.style.top = d.baseY + 'px'; el.style.right = 'auto'; el.style.bottom = 'auto'; el.style.willChange = 'transform';
       d.active = true; lock(true); mark(true); setDragging(true);
     }
     if (d.raf) return;
     d.raf = requestAnimationFrame(() => {
-      const dd = drag.current, el = cardRef.current;
-      if (!dd || !el) return;
+      const dd = drag.current;
+      if (!dd) return;
       dd.raf = 0;
-      const c = clamp({ x: dd.baseX + (dd.pendingX - dd.startX), y: dd.baseY + (dd.pendingY - dd.startY) }, el.offsetHeight || FALLBACK_H);
-      dd.lastX = c.x; dd.lastY = c.y;
-      el.style.transform = 'translate3d(' + (c.x - dd.baseX) + 'px, ' + (c.y - dd.baseY) + 'px, 0)';
+      place(clamp({ x: dd.base.x + (dd.pendingX - dd.startX), y: dd.base.y + (dd.pendingY - dd.startY) }), false);
     });
   };
-  const reset = () => {
-    const el = cardRef.current;
-    window.clearTimeout(timer.current);
-    if (el) {
-      const target = { x: Math.max(MARGIN, window.innerWidth - WIDTH - MARGIN), y: Math.max(MARGIN, window.innerHeight - (el.offsetHeight || FALLBACK_H) - MARGIN) };
-      const r = el.getBoundingClientRect();
-      el.style.transition = 'none'; el.style.left = r.left + 'px'; el.style.top = r.top + 'px'; el.style.right = 'auto'; el.style.bottom = 'auto'; el.style.transform = '';
-      void el.offsetWidth;
-      el.style.transition = EASE; el.style.left = target.x + 'px'; el.style.top = target.y + 'px';
-      timer.current = window.setTimeout(() => {
-        const n = cardRef.current; if (!n) return;
-        n.style.transition = ''; n.style.left = ''; n.style.top = ''; n.style.right = MARGIN + 'px'; n.style.bottom = MARGIN + 'px';
-        setPos(null);
-      }, 200);
-    } else setPos(null);
-    writeJson(POS_KEY, null);
-  };
+  const reset = () => { custom.current = false; writeJson(POS_KEY, null); place(centre(), true); };
   const onKeyDown = (e) => {
     if (isInteractive(e.target)) return;
     const step = 8 * (e.shiftKey ? 4 : 1);
@@ -165,21 +153,18 @@ function useDrag(cardRef, open) {
     const dy = e.key === 'ArrowUp' ? -step : e.key === 'ArrowDown' ? step : 0;
     if (!dx && !dy) return;
     e.preventDefault();
-    const el = cardRef.current; if (!el) return;
-    const r = el.getBoundingClientRect();
-    const next = clamp({ x: r.left + dx, y: r.top + dy });
-    el.style.transition = 'none'; el.style.left = next.x + 'px'; el.style.top = next.y + 'px'; el.style.right = 'auto'; el.style.bottom = 'auto'; el.style.transform = '';
-    setPos(next); writeJson(POS_KEY, next);
+    const p = pos.current || centre();
+    commit(clamp({ x: p.x + dx, y: p.y + dy }), false);
   };
 
   return {
     dragging,
-    positionStyle: pos ? 'left: ' + pos.x + 'px; top: ' + pos.y + 'px;' : 'right: ' + MARGIN + 'px; bottom: ' + MARGIN + 'px;',
     handleProps: {
       onPointerDown, onPointerMove,
       onPointerUp: (e) => finish(e.currentTarget, e.pointerId, false),
       onPointerCancel: (e) => finish(e.currentTarget, e.pointerId, true),
-      onLostPointerCapture: (e) => finish(e.currentTarget, e.pointerId, true),
+      // Losing capture mid-drag (focus change, devtools) keeps the card where it is rather than throwing it back.
+      onLostPointerCapture: (e) => finish(null, e.pointerId, false),
       onDoubleClick: (e) => { if (isInteractive(e.target)) return; e.preventDefault(); reset(); },
     },
     gripKeyDown: onKeyDown,
@@ -216,7 +201,7 @@ function DevNotesCard({ sb, me, workspaceId, onClose }) {
   const [value, setValue] = useState('');
   const cardRef = useRef(null);
   const inputRef = useRef(null);
-  const { dragging, positionStyle, handleProps, gripKeyDown } = useDrag(cardRef, true);
+  const { dragging, handleProps, gripKeyDown } = useDrag(cardRef);
 
   useEffect(() => { const saved = readJson(CAT_KEY); if (CATS[saved]) setCat(saved); }, []);
   useEffect(() => { if (inputRef.current) inputRef.current.focus(); }, []);
@@ -303,11 +288,11 @@ function DevNotesCard({ sb, me, workspaceId, onClose }) {
 
   return (
     <div data-dev-notes="" style={css('position: fixed; inset: 0; z-index: 90; pointer-events: none;')}>
-      <div ref={cardRef} className="fb-devnotes" style={css('position: absolute; width: ' + WIDTH + 'px; max-width: calc(100vw - 32px); pointer-events: auto; ' + positionStyle)}>
+      <div ref={cardRef} className="fb-devnotes" style={css('position: absolute; left: 0; top: 0; width: ' + WIDTH + 'px; max-width: calc(100vw - ' + MARGIN * 2 + 'px); pointer-events: auto;')}>
         <div role="dialog" aria-label="Dev notes" className="fb-float" style={css('display: flex; flex-direction: column; max-height: min(72vh, 600px); border: 1px solid var(--line-4); border-radius: 18px; background: var(--surface); color: var(--ink); box-shadow: 0 1px 2px rgba(0,0,0,0.06), 0 24px 64px rgba(0,0,0,0.22); overflow: hidden; font-family: var(--font-main);')}>
           {/* Header: the whole strip is the drag handle; buttons opt out. */}
-          <div {...handleProps} title="Drag to move · double-click to reset" style={css('display: flex; align-items: center; gap: 10px; padding: 10px 10px 10px 8px; border-bottom: 1px solid var(--line-3); cursor: grab; user-select: none; touch-action: none; background: var(--surface-2);')}>
-            <span role="button" tabIndex={0} onKeyDown={gripKeyDown} aria-label="Move Dev Notes. Arrow keys nudge, Shift for larger steps, double-click resets." style={css('display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 24px; border-radius: 6px; color: var(--faint);')}>
+          <div {...handleProps} title="Drag to move · double-click to re-centre" style={css('display: flex; align-items: center; gap: 10px; padding: 10px 10px 10px 8px; border-bottom: 1px solid var(--line-3); cursor: grab; user-select: none; touch-action: none; background: var(--surface-2);')}>
+            <span role="button" tabIndex={0} onKeyDown={gripKeyDown} aria-label="Move Dev Notes. Arrow keys nudge, Shift for larger steps, double-click re-centres." style={css('display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 24px; border-radius: 6px; color: var(--faint);')}>
               <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="5" r="1.8" /><circle cx="15" cy="5" r="1.8" /><circle cx="9" cy="12" r="1.8" /><circle cx="15" cy="12" r="1.8" /><circle cx="9" cy="19" r="1.8" /><circle cx="15" cy="19" r="1.8" /></svg>
             </span>
             <span style={css('display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; flex: none; border-radius: 10px; background: var(--inv); color: var(--inv-ink);')}>{P(I.terminal)}</span>
