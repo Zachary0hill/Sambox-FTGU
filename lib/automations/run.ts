@@ -104,7 +104,7 @@ async function executeRun(r: Run, baseUrl: string, draft?: ReturnType<typeof gra
   const a = aRes.data as Automation | null;
   const st = (sRes.data as Settings | null) || { workspace_id: r.workspace_id, automation: {}, timezone: 'America/Chicago' };
   const auto = st.automation || {};
-  const workspace = (wRes.data && wRes.data.name) || 'FTGU Studio';
+  const workspace = (wRes.data && wRes.data.name) || 'SantosStudios';
   if (!a) { await finish('skipped', { error: 'The workflow was deleted.' }); return 'skipped'; }
   if (!r.is_test && (auto.paused || !a.enabled || a.is_draft)) {
     await finish('skipped', { error: auto.paused ? 'Pause all automations is on.' : 'The workflow is turned off.' });

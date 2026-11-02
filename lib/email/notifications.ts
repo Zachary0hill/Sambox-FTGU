@@ -103,7 +103,7 @@ export async function sendQueuedEmails(opts: { workspaceId: string | null; baseU
 
     const d = r.data || {};
     const tpl = buildNotificationEmail({
-      kind: r.kind, name: to!.full_name, workspace: wsName.get(r.workspace_id) || 'FTGU Studio',
+      kind: r.kind, name: to!.full_name, workspace: wsName.get(r.workspace_id) || 'SantosStudios',
       actor: firstName(profileOf.get(r.actor_id || '')) || 'The team', person: firstName(profileOf.get(d.person || '')) || undefined,
       account: d.account, note: d.note || undefined, version: d.version,
       project: { title: p!.title, job: p!.job_code, due: dateLabel(d.due), publish: dateLabel(p!.publish_date) },
@@ -200,7 +200,7 @@ async function sendDigests(workspaceId: string | null, base: string, out: SendSu
       ? Array.from(proj.values()).filter((x) => inWeek(x.publish_date)).sort((a, b) => String(a.publish_date).localeCompare(String(b.publish_date))).slice(0, 10).map((x) => [dateLabel(x.publish_date), x.title + ' (' + x.job_code + ')'])
       : [];
     const unread = ((nRes.data || []) as { actor_label: string; text: string; target_label: string }[]).map((n) => ['', [n.actor_label, n.text, n.target_label].filter(Boolean).join(' ')] as [string, string]);
-    const workspace = (wsRes.data && wsRes.data.name) || 'FTGU Studio';
+    const workspace = (wsRes.data && wsRes.data.name) || 'SantosStudios';
     const cards = [
       { title: 'Due this week', rows: due.length ? due.sort() : [['', 'Nothing due in the next 7 days.'] as [string, string]] },
       ...(publishing.length ? [{ title: 'Publishing this week', rows: publishing }] : []),

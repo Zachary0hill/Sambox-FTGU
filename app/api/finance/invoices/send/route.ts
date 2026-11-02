@@ -25,7 +25,7 @@ export async function POST(request: Request) {
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(to)) return NextResponse.json({ sent: false, error: 'Add a billing email to the invoice or the account first.' });
   if (i.status === 'paid') return NextResponse.json({ sent: false, error: 'This invoice is already paid.' });
 
-  const workspace = m.ctx.workspace_name || 'FTGU Studio';
+  const workspace = m.ctx.workspace_name || 'SantosStudios';
   const overdue = !!i.due_date && i.due_date < new Date().toISOString().slice(0, 10);
   const tpl = buildMessageEmail({
     workspace,

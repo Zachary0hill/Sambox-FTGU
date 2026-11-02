@@ -72,7 +72,7 @@ export default function SetupForm({ tokenHash, type }: { tokenHash: string; type
             <img src="/ftgu-logo.png" alt="" width={24} height={18} style={css('display: block; width: 24px; height: auto')} />
           </span>
           <div style={css('display: flex; flex-direction: column; gap: 2px')}>
-            <p style={css('margin: 0; font-family: var(--font-title); font-size: 15px; font-weight: var(--weight-black); line-height: 1.25; letter-spacing: -0.01em;')}>FTGU Studio</p>
+            <p style={css('margin: 0; font-family: var(--font-title); font-size: 15px; font-weight: var(--weight-black); line-height: 1.25; letter-spacing: -0.01em;')}>SantosStudios</p>
             <p style={css('margin: 0; font-size: 13px; line-height: 1.3; color: var(--muted-2);')}>Production board</p>
           </div>
         </div>

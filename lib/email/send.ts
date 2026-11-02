@@ -1,7 +1,7 @@
 import 'server-only';
 import { Resend } from 'resend';
 
-const DEFAULT_FROM = 'FTGU Studio <onboarding@resend.dev>';
+const DEFAULT_FROM = 'SantosStudios <onboarding@resend.dev>';
 
 // Whether invites can reach anyone: a Resend key is set, and the sender is not Resend's onboarding@resend.dev test address.
 export function emailHealth() {

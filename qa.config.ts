@@ -27,7 +27,7 @@ const PAGES: [id: string, path: string, label: string][] = [
 ];
 
 export default defineConfig({
-  name: 'FTGU Studio',
+  name: 'SantosStudios',
   app: { start: 'npm run dev -- --port 4200', port: 4200, readyPath: '/login' },
   login: async (page, env) => {
     if (!env.QA_EMAIL || !env.QA_PASSWORD) throw new Error('.env.test needs QA_EMAIL and QA_PASSWORD (node scripts/create-qa-user.mjs).');

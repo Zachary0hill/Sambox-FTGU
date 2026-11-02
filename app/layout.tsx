@@ -2,8 +2,8 @@ import type { Metadata } from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'FTGU Studio · Production board',
-  description: 'FTGU production board: projects, edits, thumbnails, sponsors and publishing in one place.',
+  title: 'SantosStudios · Production board',
+  description: 'SantosStudios production board: projects, edits, thumbnails, sponsors and publishing in one place.',
 };
 
 export default function RootLayout({ children }: LayoutProps<'/'>) {
