@@ -3174,6 +3174,13 @@ export default function StudioView({ V }) {
                           </section>
                         ) : null}
                         {" "}
+                        {V.br.hasVoicePrompt ? (
+                          <section aria-labelledby="br-voice-prompt" style={css(V.ui.panel)}>
+                            <h3 id="br-voice-prompt" style={css(V.ui.h3)}>Voice prompt</h3>
+                            <p style={css("margin: 0; font-size: 14px; line-height: 1.6; color: var(--ink-2); white-space: pre-wrap")}>{V.br.voicePrompt}</p>
+                          </section>
+                        ) : null}
+                        {" "}
                         <div style={css("display: grid; grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr)); gap: 16px; align-items: start")}>
                           {(V.br.rules || []).map((rl, rl__i) => (
                             <Fragment key={rl__i}>
@@ -3394,6 +3401,11 @@ export default function StudioView({ V }) {
                             </div>
                             <div role="group" aria-labelledby="be-voice" style={css("display: flex; flex-direction: column; gap: 8px; padding-top: 16px; border-top: 1px solid var(--line)")}>
                               <h3 id="be-voice" style={css(V.ui.h3)}>{V.br.edit.voiceLabel}</h3>
+                              <div style={css("display: flex; flex-direction: column; gap: 6px")}>
+                                <label htmlFor="be-voice-prompt" style={css(V.fieldLabel)}>Voice prompt</label>
+                                <textarea id="be-voice-prompt" rows="6" maxLength="6000" placeholder="Write the voice and rules as you would brief a writer: who the audience is, how the brand talks, what it never says, how scripts should open and close." value={V.br.edit.voice} onChange={V.br.edit.onVoice} style={css(V.ids.textarea)} />
+                                <p style={css("margin: 0; font-size: 12px; color: var(--muted-2)")}>Sent to the assistant and research agent word for word. The fields below still apply if you fill them.</p>
+                              </div>
                               <div style={css("display: flex; flex-direction: column; gap: 6px")}>
                                 <label htmlFor="be-tone" style={css(V.fieldLabel)}>Tone words</label>
                                 <input id="be-tone" type="text" autoComplete="off" placeholder="Playful, direct, curious" value={V.br.edit.tone} onChange={V.br.edit.onTone} style={css(V.fieldInput)} />

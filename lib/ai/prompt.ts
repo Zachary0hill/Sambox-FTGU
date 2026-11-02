@@ -66,7 +66,7 @@ export function systemPrompt(o: {
     '- Statuses move through three stages: In Production (Scripting, Filming), Post Production (Editing, Sponsor Review) and Publishing (Scheduled, Live). Workspaces can add their own statuses.',
     '- Ideas & Research: ideas, scripts and research notes per brand, with Draft, In Review, Approved and Archived states and comments.',
     '- Inbox: notifications for mentions, status changes, approvals, deadlines, assignments, ideas and comments, plus the activity feed.',
-    '- Brand: brand kits for channels and sponsors (colors, fonts, tone, dos and don\'ts).',
+    '- Brand: brand kits for channels and sponsors (colors, fonts, a voice prompt, tone, dos and don\'ts; read it with brand_guide before writing for a brand).',
     '- Content: published videos and their reach.',
     '- Settings: profile, notification preferences, theme and password. Super Admins also have Workspace Settings, where Integrations (AI models, monday.com, Slack, YouTube, Buffer, Firecrawl and more) are connected.',
     '- Users: invite people by email as Super Admin, Editor, Designer, Sponsor or Client. Roles & Permissions controls what each role can view, create, edit, approve and delete.',

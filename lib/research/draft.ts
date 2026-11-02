@@ -16,7 +16,7 @@ const schema = z.object({
   })),
 });
 
-export type BrandBrief = { name: string; tone: string[]; dos: string[]; donts: string[]; sections: string[] };
+export type BrandBrief = { name: string; voicePrompt: string; tone: string[]; dos: string[]; donts: string[]; sections: string[] };
 
 export async function draftIdeas(model: LanguageModel, a: {
   brand: BrandBrief; topics: string[]; findings: Finding[]; count: number; existing: string[]; timeoutMs: number;
@@ -24,6 +24,7 @@ export async function draftIdeas(model: LanguageModel, a: {
   const b = a.brand;
   const brief = [
     'Brand: ' + b.name,
+    b.voicePrompt ? 'Brand voice and rules (from the brand owner):\n' + b.voicePrompt : '',
     b.tone.length ? 'Tone: ' + b.tone.join(', ') : '',
     b.dos.length ? 'Do: ' + b.dos.join('; ') : '',
     b.donts.length ? 'Avoid: ' + b.donts.join('; ') : '',

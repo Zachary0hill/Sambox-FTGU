@@ -140,7 +140,7 @@ export async function executeRun(runId: string, m: Member) {
     }));
     if (await cancelled()) return;
 
-    const { data: brand } = await admin.from('brand_kits').select('name, tone, dos, donts, sections').eq('id', inputs.brandId).single();
+    const { data: brand } = await admin.from('brand_kits').select('name, voice_prompt, tone, dos, donts, sections').eq('id', inputs.brandId).single();
     const { data: prior } = await admin.from('ideas').select('title, refs').eq('brand_id', inputs.brandId).order('created_at', { ascending: false }).limit(200);
     const findings = dedupe(results.flat(), { usedUrls: (prior || []).flatMap((i) => i.refs || []), max: LIMITS.maxFindings });
     await save({ finding_count: findings.length });
@@ -170,7 +170,7 @@ function brief(b: Record<string, unknown> | null): BrandBrief {
   const arr = (v: unknown) => (Array.isArray(v) ? v.map((x) => String(x)).filter(Boolean) : []);
   const secs = Array.isArray(b && b.sections) ? (b!.sections as unknown[]) : [];
   return {
-    name: String((b && b.name) || ''), tone: arr(b && b.tone), dos: arr(b && b.dos), donts: arr(b && b.donts),
+    name: String((b && b.name) || ''), voicePrompt: String((b && b.voice_prompt) || '').trim().slice(0, 6000), tone: arr(b && b.tone), dos: arr(b && b.dos), donts: arr(b && b.donts),
     sections: secs.map((s) => (Array.isArray(s) ? String(s[0] || '') + (Array.isArray(s[1]) && s[1].length ? ': ' + s[1].join(', ') : '') : String(s || ''))).filter(Boolean).slice(0, 8),
   };
 }

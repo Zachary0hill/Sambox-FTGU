@@ -172,6 +172,25 @@ export function assistantTools(env: ToolEnv): ToolSet {
       },
     }),
 
+    brand_guide: tool({
+      description: 'A brand\'s voice and rules from its brand kit: the owner\'s voice prompt, tone words, do\'s, don\'ts and extra rule ' +
+        'sections. Read it before writing titles, hooks, scripts or captions for a brand.',
+      inputSchema: z.object({ brand: z.string().optional().describe('Brand name. Lists the brands when omitted and more than one is visible.') }),
+      execute: async (a) => {
+        const res = await sb.from('brand_kits').select('name, kind, voice_prompt, tone, dos, donts, sections').eq('workspace_id', ws).order('name');
+        if (res.error) return fail(dbError(res.error));
+        const rows = (res.data || []) as unknown as Rec[];
+        if (!rows.length) return fail('No brands are visible to this member.');
+        const hit = a.brand ? rows.find((b) => lower(b.name) === lower(a.brand)) || rows.find((b) => lower(b.name).includes(lower(a.brand))) : rows.length === 1 ? rows[0] : null;
+        if (!hit) return { brands: rows.map((b) => b.name), note: a.brand ? 'No brand called "' + a.brand + '".' : 'Ask which brand, or pass one of these names.' };
+        const secs = (Array.isArray(hit.sections) ? (hit.sections as unknown[]) : []).map((x) => Array.isArray(x) ? { title: str(x[0]), rules: ((x[1] as unknown[]) || []).map(str) } : null).filter(Boolean);
+        return compact({
+          brand: hit.name, kind: hit.kind,
+          untrusted: compact({ voicePrompt: clip(hit.voice_prompt, 6000), tone: (hit.tone as string[]) || [], do: (hit.dos as string[]) || [], dont: (hit.donts as string[]) || [], sections: secs }),
+        });
+      },
+    }),
+
     list_ideas: tool({
       description: 'List content ideas, scripts and research from Ideas & Research that this member can see.',
       inputSchema: z.object({
