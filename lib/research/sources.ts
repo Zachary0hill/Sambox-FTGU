@@ -29,6 +29,9 @@ export type Conns = { apify: Connection | null; browserbase: Connection | null; 
 const per = LIMITS.perTopic;
 const capFor = (topics: string[]): ApifyLimits => ({ timeoutSecs: 150, maxItems: per * topics.length, maxTotalChargeUsd: 0.5 });
 
+const REDDIT_MIN_ITEMS = 10;
+const redditItems = (topics: string[]) => Math.max(REDDIT_MIN_ITEMS, per * topics.length);
+
 async function apify(conn: Connection, actor: string, input: unknown, lim: ApifyLimits, ctx: SourceCtx) {
   const { items } = await runActor<Record<string, unknown>>(conn.secret.apiToken, actor, input, lim, {
     deadline: ctx.deadline, onStart: ctx.onActorRun, cancelled: ctx.cancelled,
@@ -63,12 +66,12 @@ const RUNNERS: Record<SourceId, (c: Conns, ctx: SourceCtx) => Promise<Draft[]>> 
       // Fields from the actor's input schema (api.apify.com/v2/acts/trudax~reddit-scraper-lite/builds/default/openapi.json).
       // Runs failed with the actor's own "Invalid input" (see the captured log line in the run error). Its proxy default
       // asks for the RESIDENTIAL group, which many Apify plans do not include, so the shared datacenter proxy is asked for
-      // explicitly; counts are kept at 1 or more.
+      // explicitly. The actor also charges for at least 10 items and rejects a lower maximum as "Invalid input".
       searches: ctx.topics, searchPosts: true, searchComments: false, searchCommunities: false, searchUsers: false, searchMedia: false,
       sort: 'top', time: 'month', includeNSFW: false, includeMediaLinks: true, skipComments: true, skipUserPosts: true,
-      maxItems: Math.max(1, per * ctx.topics.length), maxPostCount: Math.max(1, per), maxCommunitiesCount: 1, maxUserCount: 1,
+      maxItems: redditItems(ctx.topics), maxPostCount: Math.max(REDDIT_MIN_ITEMS, per), maxCommunitiesCount: 1, maxUserCount: 1,
       proxy: { useApifyProxy: true },
-    }, capFor(ctx.topics), ctx);
+    }, { ...capFor(ctx.topics), maxItems: redditItems(ctx.topics) }, ctx);
     return items.flatMap((i) => fromReddit([i], topicFrom(ctx.topics, i.searchTerm, i.title, i.body)));
   },
   async google(c, ctx) {

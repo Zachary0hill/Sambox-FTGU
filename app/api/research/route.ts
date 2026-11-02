@@ -1,6 +1,7 @@
 import { NextResponse, after } from 'next/server';
 import { getMember, isSuperAdmin, deny } from '@/lib/integrations/auth';
 import { createRun, executeRun, expireStale, availability } from '@/lib/research/run';
+import { RUN_COLUMNS } from '@/lib/research/catalog';
 
 // The run continues after the response (see `after`), so this limit covers the whole run. The pipeline stops itself
 // at LIMITS.runSecs (285 s), under this.
@@ -26,7 +27,7 @@ export async function GET() {
   await expireStale(ws);
   const [{ ai, conns }, runs] = await Promise.all([
     availability(ws),
-    m.supabase.from('research_runs').select('*').eq('workspace_id', ws).order('created_at', { ascending: false }).limit(10),
+    m.supabase.from('research_runs').select(RUN_COLUMNS).eq('workspace_id', ws).order('created_at', { ascending: false }).limit(10),
   ]);
   return NextResponse.json({
     connected: { ai, apify: !!conns.apify, browserbase: !!conns.browserbase, firecrawl: !!conns.firecrawl, vidiq: !!conns.vidiq, virlo: !!conns.virlo },

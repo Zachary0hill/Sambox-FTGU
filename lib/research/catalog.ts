@@ -28,6 +28,9 @@ export const LIMITS = {
   sourceSecs: 180, // gathering phase
 };
 
+// research_runs fields for the page and the API. Saved findings can be large, so only whether any exist is read here.
+export const RUN_COLUMNS = 'id, workspace_id, brand_id, created_by, inputs, status, sources, actor_run_ids, finding_count, idea_ids, error, note, created_at, started_at, finished_at, updated_at, dismissed_at, saved_finding:findings->0->>id';
+
 export const sourceById = (id: string) => SOURCES.find((s) => s.id === id);
 
 // Seed topics from a brand kit when the Super Admin leaves the niche blank.

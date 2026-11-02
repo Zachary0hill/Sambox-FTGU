@@ -25,11 +25,12 @@ export async function availability(ws: string) {
 }
 
 // Runs left as queued or running after the route's time limit died with their function. Mark them failed.
+// Goes by the last update, not created_at, because a redraft runs again on an older row.
 export async function expireStale(ws: string) {
   const cutoff = new Date(Date.now() - (LIMITS.runSecs + 90) * 1000).toISOString();
   await supabaseAdmin().from('research_runs')
     .update({ status: 'failed', error: 'The run stopped before it finished.', finished_at: new Date().toISOString() })
-    .eq('workspace_id', ws).in('status', ['queued', 'running']).lt('created_at', cutoff);
+    .eq('workspace_id', ws).in('status', ['queued', 'running']).lt('updated_at', cutoff);
 }
 
 // Validates the request and creates the run row on the Super Admin's own session (RLS checks it).
@@ -64,6 +65,26 @@ export async function createRun(m: Member, body: Record<string, unknown>) {
     .select('id').single();
   if (error || !data) return { error: error ? error.message : 'Could not start the run.', status: 400 };
   return { id: data.id as string, brandName: brand.name as string };
+}
+
+// Puts a failed run back in the queue to draft from its saved findings. The sources are not called again.
+export async function startRedraft(m: Member, runId: string) {
+  const ws = m.ctx.workspace_id;
+  const { data: run } = await m.supabase.from('research_runs').select('id, status, brand_id, saved_finding:findings->0->>id').eq('id', runId).eq('workspace_id', ws).maybeSingle();
+  if (!run) return { error: 'No such run.', status: 404 };
+  if (run.status !== 'failed' || !run.saved_finding) return { error: 'This run has no saved findings to draft from.', status: 409 };
+  if (!run.brand_id) return { error: 'The brand for this run was deleted.', status: 400 };
+  if (!(await assistantProvider(ws))) return { error: 'Connect an AI model in Workspace Settings > Integrations first.', status: 400 };
+
+  await expireStale(ws);
+  const { data: busy } = await m.supabase.from('research_runs').select('id').eq('workspace_id', ws).in('status', ['queued', 'running']).limit(1);
+  if (busy && busy.length) return { error: 'A research run is already going. Wait for it or cancel it.', status: 409 };
+
+  const { data: queued, error } = await m.supabase.from('research_runs')
+    .update({ status: 'queued', error: null, note: null, finished_at: null, dismissed_at: null })
+    .eq('id', runId).eq('status', 'failed').select('id');
+  if (error || !queued || !queued.length) return { error: error ? error.message : 'Could not start the draft.', status: 400 };
+  return { id: runId };
 }
 
 // Cancels a run: marks it cancelled and aborts any Apify actor runs it started.
@@ -107,10 +128,12 @@ export async function executeRun(runId: string, m: Member) {
   };
 
   try {
-    const { data: cur } = await admin.from('research_runs').select('inputs, sources').eq('id', runId).single();
+    const { data: cur } = await admin.from('research_runs').select('inputs, sources, findings').eq('id', runId).single();
     if (!cur) return;
     inputs = cur.inputs as RunInputs;
     Object.assign(progress, cur.sources || {});
+    // A redraft already has findings and no queued sources, so gathering below does nothing.
+    const saved = Array.isArray(cur.findings) && cur.findings.length ? cur.findings as Finding[] : null;
     await save({ status: 'running', started_at: new Date().toISOString() });
 
     const { conns } = await availability(ws);
@@ -142,8 +165,8 @@ export async function executeRun(runId: string, m: Member) {
 
     const { data: brand } = await admin.from('brand_kits').select('name, voice_prompt, tone, dos, donts, sections').eq('id', inputs.brandId).single();
     const { data: prior } = await admin.from('ideas').select('title, refs').eq('brand_id', inputs.brandId).order('created_at', { ascending: false }).limit(200);
-    const findings = dedupe(results.flat(), { usedUrls: (prior || []).flatMap((i) => i.refs || []), max: LIMITS.maxFindings });
-    await save({ finding_count: findings.length });
+    const findings = saved || dedupe(results.flat(), { usedUrls: (prior || []).flatMap((i) => i.refs || []), max: LIMITS.maxFindings });
+    await save({ finding_count: findings.length, findings: findings.length ? findings : null });
     if (!findings.length) {
       // Every source that ran failed: that is a failed run. Sources that ran and found nothing new is a finished run
       // with nothing to show, so it reads amber (note) rather than red (error).
@@ -169,7 +192,7 @@ export async function executeRun(runId: string, m: Member) {
     if (!ideas.length) return fail('The model did not return ideas tied to the findings. Try again or add topics.');
 
     const ids = await saveIdeas(m, runId, inputs.brandId, ideas, (brand && brand.name) || '');
-    await save({ status: 'done', idea_ids: ids, note, finished_at: new Date().toISOString(), error: null });
+    await save({ status: 'done', idea_ids: ids, findings: null, note, finished_at: new Date().toISOString(), error: null });
   } catch (err) {
     await fail(msg(err));
   }

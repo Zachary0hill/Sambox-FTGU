@@ -3490,6 +3490,7 @@ export default function StudioView({ V }) {
                           </div>
                           <div style={css("display: flex; flex-wrap: wrap; gap: 8px")}>
                             {V.ids.rs.panel.canShow ? <button type="button" onClick={V.ids.rs.panel.show} style={css(V.ui.btnPrimary)}>Show new ideas</button> : null}
+                            {V.ids.rs.panel.canRedraft ? <button type="button" onClick={V.ids.rs.panel.redraft} style={css(V.ui.btnPrimary)}>Draft ideas again</button> : null}
                             <button type="button" className="fb-ni" aria-expanded={V.ids.rs.strip.expanded ? 'true' : 'false'} onClick={V.ids.rs.strip.toggle} style={css("min-height: 40px; padding: 0 14px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); font-size: 13px; font-weight: 600; color: var(--ink); cursor: pointer")}>{V.ids.rs.strip.viewLabel}</button>
                             {V.ids.rs.panel.active ? <button type="button" className="fb-ni" onClick={V.ids.rs.panel.cancel} style={css("min-height: 40px; padding: 0 14px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); font-size: 13px; font-weight: 600; color: var(--ink); cursor: pointer")}>Cancel</button> : null}
                             {V.ids.rs.panel.canDismiss ? (
