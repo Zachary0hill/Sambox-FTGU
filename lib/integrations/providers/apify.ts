@@ -71,8 +71,28 @@ export async function runActor<T = Record<string, unknown>>(
     run = await getRun(token, run.id, Math.min(30, left - 1));
   }
   const items = run.defaultDatasetId ? await datasetItems<T>(token, run.defaultDatasetId, lim.maxItems) : [];
-  if (run.status !== 'SUCCEEDED' && !items.length) throw new Error('Apify run ' + run.status.toLowerCase() + (run.statusMessage ? ': ' + run.statusMessage : '') + '.');
+  if (run.status !== 'SUCCEEDED' && !items.length) {
+    const why = run.status === 'FAILED' ? await failureReason(token, run.id) : '';
+    throw new Error('Apify run ' + run.status.toLowerCase() + (run.statusMessage ? ': ' + run.statusMessage : '') + (why ? ' (' + why + ')' : '') + '.');
+  }
   return { run, items };
+}
+
+// The actor's own explanation of a failed run, from the tail of its log: the first ERROR line, with the actor's
+// input-validation detail when it printed one (e.g. which field it rejected). Empty when the log is unavailable.
+// https://docs.apify.com/api/v2/log-get
+async function failureReason(token: string, runId: string): Promise<string> {
+  try {
+    const res = await fetch(API + '/logs/' + runId + '?stream=0', { headers: { authorization: 'Bearer ' + token } });
+    if (!res.ok) return '';
+    const lines = (await res.text()).split('\n').map((l) => l.replace(/^\S+\s+/, '').trim()).filter(Boolean);
+    const errs = lines.filter((l) => /^(ERROR|Error:|.*\bError\b.*(input|field|must|required|invalid))/i.test(l));
+    const detail = lines.find((l) => /^\s*(Field|Property|Input)\b.*(must|invalid|required|is not)/i.test(l));
+    const pick = [errs[0], detail].filter((x): x is string => !!x).join(' ').replace(/\s+/g, ' ');
+    return pick.slice(0, 240);
+  } catch {
+    return '';
+  }
 }
 
 const provider: ProviderModule = {

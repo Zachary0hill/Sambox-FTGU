@@ -60,9 +60,14 @@ const RUNNERS: Record<SourceId, (c: Conns, ctx: SourceCtx) => Promise<Draft[]>> 
   },
   async reddit(c, ctx) {
     const items = await apify(c.apify!, 'trudax~reddit-scraper-lite', {
+      // Fields from the actor's input schema (api.apify.com/v2/acts/trudax~reddit-scraper-lite/builds/default/openapi.json).
+      // Runs failed with the actor's own "Invalid input" (see the captured log line in the run error). Its proxy default
+      // asks for the RESIDENTIAL group, which many Apify plans do not include, so the shared datacenter proxy is asked for
+      // explicitly; counts are kept at 1 or more.
       searches: ctx.topics, searchPosts: true, searchComments: false, searchCommunities: false, searchUsers: false, searchMedia: false,
-      sort: 'top', time: 'month', includeNSFW: false, includeMediaLinks: true, skipComments: true, maxComments: 0,
-      maxItems: per * ctx.topics.length, maxPostCount: per,
+      sort: 'top', time: 'month', includeNSFW: false, includeMediaLinks: true, skipComments: true, skipUserPosts: true,
+      maxItems: Math.max(1, per * ctx.topics.length), maxPostCount: Math.max(1, per), maxCommunitiesCount: 1, maxUserCount: 1,
+      proxy: { useApifyProxy: true },
     }, capFor(ctx.topics), ctx);
     return items.flatMap((i) => fromReddit([i], topicFrom(ctx.topics, i.searchTerm, i.title, i.body)));
   },
@@ -119,14 +124,21 @@ const RUNNERS: Record<SourceId, (c: Conns, ctx: SourceCtx) => Promise<Draft[]>> 
   async virlo(c, ctx) {
     const platforms: VirloPlatform[] = ['tiktok', 'youtube', 'instagram'];
     const out: Draft[] = [];
+    let failed: unknown = null;
     for (const topic of ctx.topics) {
       if (Date.now() > ctx.deadline - 15000 || (await ctx.cancelled())) break;
       const timeout = Math.min(30000, ctx.deadline - Date.now());
       const got = await Promise.allSettled(platforms.map((p) => virloSearch(c.virlo!.secret.apiKey, p, topic, timeout)));
       const ok = got.flatMap((g) => (g.status === 'fulfilled' ? [g.value] : []));
-      if (!ok.length) throw (got[0] as PromiseRejectedResult).reason;
+      if (!ok.length) {
+        // Every platform failed for this topic. Keep what earlier topics found; fail only when nothing was found at all.
+        if (out.length) continue;
+        failed = (got[0] as PromiseRejectedResult).reason;
+        continue;
+      }
       out.push(...fromVirlo(ok.flat(), topic).sort((a, b) => (b.views || 0) - (a.views || 0)).slice(0, per));
     }
+    if (!out.length && failed) throw failed;
     return out;
   },
 };
