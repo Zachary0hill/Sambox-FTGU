@@ -99,7 +99,8 @@ export function fromWeb(items: { url: string; title: string; description: string
 // objects that look like videos (a title plus a video ID or watch URL) and reads the common count field names.
 export function fromVidiq(text: string, topic: string): Draft[] {
   let data: unknown;
-  try { data = JSON.parse(text); } catch { return []; }
+  try { data = JSON.parse(text); } catch { data = embeddedJson(text); }
+  if (data === undefined) return fromVidiqText(text, topic);
   const out: Draft[] = [];
   const seen = new Set<string>();
   const pick = (o: Raw, ...keys: string[]) => keys.map((k) => get(o, k)).find((v) => v != null && v !== '');
@@ -130,6 +131,54 @@ export function fromVidiq(text: string, topic: string): Draft[] {
     for (const k in o) walk(o[k], depth + 1);
   };
   walk(data, 0);
+  return out.length ? out : fromVidiqText(text, topic);
+}
+
+// JSON inside a markdown code fence or prose ("Here are the outliers: [...]"). Undefined when none parses.
+function embeddedJson(text: string): unknown {
+  const fence = text.match(/```(?:json)?\s*([\s\S]*?)```/i);
+  const candidates = [fence && fence[1], text.slice(text.search(/[[{]/))].filter((c): c is string => !!c && c.trim().length > 1);
+  for (const c of candidates) {
+    const end = Math.max(c.lastIndexOf('}'), c.lastIndexOf(']'));
+    try { return JSON.parse(c.slice(0, end + 1)); } catch { /* try the next */ }
+  }
+  return undefined;
+}
+
+// vidIQ's MCP tools usually answer in markdown, not JSON: one video per line or bullet with a YouTube link, e.g.
+// "1. **Title** by Channel - https://youtu.be/ID - 1.2M views - 14.3x". Titles come from the link text, bold text,
+// or the text before the link; counts and the outlier multiplier from the rest of the line.
+const YT_URL = /https?:\/\/(?:www\.|m\.)?(?:youtube\.com\/(?:watch\?[^\s)\]]*v=|shorts\/)|youtu\.be\/)([\w-]{11})[^\s)\]]*/i;
+const unmark = (t: string) => t.replace(/[*_`#>]+/g, ' ').replace(/^\s*(?:[-•]|\d+[.)])\s*/, '').replace(/\s+/g, ' ').trim().replace(/[\s:|–-]+$/, '').trim();
+
+export function fromVidiqText(text: string, topic: string): Draft[] {
+  const out: Draft[] = [];
+  const seen = new Set<string>();
+  const lines = text.split('\n');
+  for (let i = 0; i < lines.length && out.length < 50; i++) {
+    const line = lines[i];
+    const m = line.match(YT_URL);
+    if (!m) continue;
+    const url = 'https://www.youtube.com/watch?v=' + m[1];
+    if (seen.has(url)) continue;
+    const link = line.match(/\[([^\]]+)\]\([^)]*\)/);
+    const bold = line.match(/\*\*([^*]+)\*\*/);
+    const before = line.slice(0, m.index).replace(/\[[^\]]*$/, '');
+    const prev = i > 0 && !YT_URL.test(lines[i - 1]) ? unmark(lines[i - 1]) : '';
+    const title = clip(unmark(link ? link[1] : bold ? bold[1] : before) || prev, 200);
+    if (!title || /^(watch|link|url|video)$/i.test(title)) continue;
+    seen.add(url);
+    const rest = line.slice((m.index || 0) + m[0].length) + ' ' + before;
+    const views = rest.match(/([\d.,]+\s*[KMB]?)\s*views?/i);
+    const score = rest.match(/(\d+(?:\.\d+)?)\s*x\b/i);
+    const by = rest.match(/\b(?:by|channel:?)\s+([^|•\-–(]+)/i);
+    out.push({
+      source: 'vidiq', topic, title, url,
+      author: by ? unmark(by[1]) || undefined : undefined,
+      views: views ? num(views[1]) : undefined,
+      snippet: score ? 'Outlier score ' + score[1] + 'x' : undefined,
+    });
+  }
   return out;
 }
 
