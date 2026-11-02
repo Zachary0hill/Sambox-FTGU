@@ -2,7 +2,7 @@ import 'server-only';
 import { supabaseAdmin } from '@/lib/supabase/admin';
 import { getIntegration, assistantProvider } from '@/lib/integrations/secrets';
 import { abortRun } from '@/lib/integrations/providers/apify';
-import { workspaceModel } from '@/lib/ai/model';
+import { workspaceModels, withFallback, providerName } from '@/lib/ai/model';
 import type { Member } from '@/lib/integrations/auth';
 import { LIMITS, SOURCES, defaultTopics, parseTopics, sourceById, type SourceId } from './catalog';
 import { dedupe, type Finding, type IdeaDraft } from './normalize';
@@ -145,22 +145,31 @@ export async function executeRun(runId: string, m: Member) {
     const findings = dedupe(results.flat(), { usedUrls: (prior || []).flatMap((i) => i.refs || []), max: LIMITS.maxFindings });
     await save({ finding_count: findings.length });
     if (!findings.length) {
+      // Every source that ran failed: that is a failed run. Sources that ran and found nothing new is a finished run
+      // with nothing to show, so it reads amber (note) rather than red (error).
+      const ran = Object.values(progress).filter((v) => v.state === 'done' || v.state === 'failed');
       const failed = Object.entries(progress).filter(([, v]) => v.state === 'failed').map(([k, v]) => sourceById(k)!.label + ': ' + v.error);
-      return fail(failed.length ? 'No findings. ' + failed.join(' ') : 'The sources returned nothing new for these topics.');
+      if (ran.length && failed.length === ran.length) return fail('No findings. ' + failed.join(' '));
+      const note = (failed.length ? failed.join(' ') + ' The other sources returned nothing new for these topics.' : 'The sources returned nothing new for these topics.') + ' Try broader topics or another source.';
+      return save({ status: 'done', note, error: null, finished_at: new Date().toISOString() });
     }
 
-    const wm = await workspaceModel(ws);
-    if (!wm) return fail('No AI model is connected.');
+    const models = await workspaceModels(ws);
+    if (!models.length) return fail('No AI model is connected.');
     const left = LIMITS.runSecs * 1000 - (Date.now() - t0) - 15000;
-    const ideas = await draftIdeas(wm.model, {
+    const drafted = await withFallback(models, (wm) => draftIdeas(wm.model, {
       brand: brief(brand), topics: inputs.topics, findings, count: inputs.count,
-      existing: (prior || []).map((i) => i.title).slice(0, 80), timeoutMs: Math.max(30000, left),
-    });
+      existing: (prior || []).map((i) => i.title).slice(0, 80), timeoutMs: Math.max(30000, Math.min(left, 120000)),
+    }));
+    const ideas = drafted.result;
+    const note = drafted.skipped.length
+      ? 'Drafted with ' + providerName(drafted.used.provider) + ' because ' + drafted.skipped.map((x) => providerName(x.provider) + ' failed (' + x.error + ')').join(' and ') + '.'
+      : null;
     if (await cancelled()) return;
     if (!ideas.length) return fail('The model did not return ideas tied to the findings. Try again or add topics.');
 
     const ids = await saveIdeas(m, runId, inputs.brandId, ideas, (brand && brand.name) || '');
-    await save({ status: 'done', idea_ids: ids, finished_at: new Date().toISOString(), error: null });
+    await save({ status: 'done', idea_ids: ids, note, finished_at: new Date().toISOString(), error: null });
   } catch (err) {
     await fail(msg(err));
   }
@@ -175,13 +184,13 @@ function brief(b: Record<string, unknown> | null): BrandBrief {
   };
 }
 
-// Saves drafts as Research ideas on the member's session (ideas_insert: author is the caller, brand visible, not an
-// editor) and logs them like the app does. Falls back to the secret-key client if the session expired mid-run.
+// Saves drafts as Research ideas in In Review (they exist to be judged, not edited first) on the member's session
+// (ideas_insert: author is the caller, brand visible, not an editor) and logs them like the app does. Falls back to the secret-key client if the session expired mid-run.
 async function saveIdeas(m: Member, runId: string, brandId: string, ideas: IdeaDraft[], brandName: string): Promise<string[]> {
   const ws = m.ctx.workspace_id, uid = m.ctx.user_id;
   const rows = ideas.map((i) => ({
-    workspace_id: ws, brand_id: brandId, type: 'research', status: 'draft', title: i.title, hook: i.hook,
-    body: i.body, tags: i.tags, refs: i.refs, author_id: uid, source: 'research', research_run_id: runId,
+    workspace_id: ws, brand_id: brandId, type: 'research', status: 'in_review', title: i.title, hook: i.hook,
+    body: i.body, tags: i.tags, refs: i.refs, findings: i.findings, author_id: uid, source: 'research', research_run_id: runId,
   }));
   const mine = await m.supabase.from('ideas').insert(rows).select('id, title');
   if (!mine.error && mine.data) {

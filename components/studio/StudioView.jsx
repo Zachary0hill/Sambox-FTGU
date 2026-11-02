@@ -3514,6 +3514,7 @@ export default function StudioView({ V }) {
                               ))}
                             </ul>
                             {V.ids.rs.panel.hasError ? <p role="alert" style={css("margin: 0; padding: 10px 12px; border-radius: 10px; background: var(--red-soft); color: var(--red-ink); font-size: 13px; font-weight: 600")}>{V.ids.rs.panel.error}</p> : null}
+                            {V.ids.rs.panel.hasNote ? <p style={css("margin: 0; padding: 10px 12px; border-radius: 10px; font-size: 13px; " + V.ids.rs.panel.noteStyle)}>{V.ids.rs.panel.note}</p> : null}
                           </>
                         ) : null}
                       </section>
@@ -4351,6 +4352,7 @@ export default function StudioView({ V }) {
                                           <span style={css("font-weight: 600; color: var(--ink)")}>{rsr.brand}</span>
                                           {"  ·  "}{rsr.summary}
                                           <span style={css("display: block; color: var(--muted-2)")}>{rsr.topics}</span>
+                                          {rsr.hasNote ? <span style={css("display: block; color: var(--muted)")}>{rsr.note}</span> : null}
                                         </span>
                                         {" "}
                                         <span style={css("font-size: 12px; color: var(--muted-2)")}>{rsr.when}</span>

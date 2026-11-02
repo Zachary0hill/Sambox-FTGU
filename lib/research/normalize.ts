@@ -272,7 +272,20 @@ export function findingLine(f: Finding): string {
 }
 
 export type RawIdea = { title: string; hook: string; points: string[]; tags: string[]; sources: string[] };
-export type IdeaDraft = { title: string; hook: string; body: string[]; tags: string[]; refs: string[] };
+// Findings the idea cites travel with it (ideas.findings) so reviewers see the numbers behind the idea without opening the run.
+export type IdeaFinding = Pick<Finding, 'source' | 'title' | 'url' | 'author' | 'views' | 'likes' | 'comments' | 'upvotes' | 'date'>;
+export type IdeaDraft = { title: string; hook: string; body: string[]; tags: string[]; refs: string[]; findings: IdeaFinding[] };
+
+export const ideaFinding = (f: Finding): IdeaFinding => {
+  const o: IdeaFinding = { source: f.source, title: clip(f.title, 140), url: f.url };
+  if (f.author) o.author = clip(f.author, 60);
+  if (f.views != null) o.views = f.views;
+  if (f.likes != null) o.likes = f.likes;
+  if (f.comments != null) o.comments = f.comments;
+  if (f.upvotes != null) o.upvotes = f.upvotes;
+  if (f.date) o.date = f.date;
+  return o;
+};
 
 // Keeps only model ideas that cite real findings, maps those IDs to URLs, cleans tags, and drops repeats of
 // existing ideas, so every saved idea links back to something the sources actually returned.
@@ -281,7 +294,8 @@ export function groundIdeas(raw: RawIdea[], findings: Finding[], existing: strin
   const out: IdeaDraft[] = [];
   for (const i of raw) {
     const cited = (i.sources || []).map((s) => byId.get(String(s).trim().replace(/^\[|\]$/g, '').toLowerCase()));
-    const refs = [...new Set(cited.filter((f): f is Finding => !!f).map((f) => f.url))];
+    const found = cited.filter((f): f is Finding => !!f).filter((f, k, a) => a.findIndex((x) => x.url === f.url) === k);
+    const refs = found.map((f) => f.url);
     const title = String(i.title || '').trim().slice(0, 200);
     if (!title || !refs.length) continue;
     if (existing.concat(out.map((o) => o.title)).some((t) => titleOverlap(t, title) >= 0.7)) continue;
@@ -291,6 +305,7 @@ export function groundIdeas(raw: RawIdea[], findings: Finding[], existing: strin
       body: (i.points || []).map((p) => String(p).trim()).filter(Boolean).slice(0, 8),
       tags: [...new Set((i.tags || []).map((t) => '#' + String(t).toLowerCase().replace(/^#+/, '').replace(/[^a-z0-9]+/g, '')).filter((t) => t.length > 1))].slice(0, 4),
       refs: refs.slice(0, 6),
+      findings: found.slice(0, 6).map(ideaFinding),
     });
     if (out.length >= count) break;
   }

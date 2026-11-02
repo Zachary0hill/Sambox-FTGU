@@ -3,7 +3,7 @@ import { streamText, isStepCount, APICallError, RetryError, type ModelMessage, t
 import { getMember, isSuperAdmin, deny } from '@/lib/integrations/auth';
 import { getIntegration } from '@/lib/integrations/secrets';
 import { providerById, type ProviderId } from '@/lib/integrations/registry';
-import { workspaceModel } from '@/lib/ai/model';
+import { workspaceModel, workspaceModels, providerDown, type WorkspaceModel } from '@/lib/ai/model';
 import { assistantTools, urlsIn } from '@/lib/ai/tools';
 import { vidiqClient, vidiqTools } from '@/lib/integrations/providers/vidiq';
 import { virloClient, virloTools } from '@/lib/integrations/providers/virlo';
@@ -104,9 +104,13 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'You have sent ' + RATE_PER_HOUR + ' messages to the assistant in the last hour. Try again a little later.', code: 'rate_limited' }, { status: 429 });
   }
 
-  // A picked provider that has since been disconnected falls back to the workspace default.
-  const wm = (pickProvider ? await workspaceModel(ws, pickProvider, pickModel).catch(() => null) : null)
-    || await workspaceModel(ws).catch(() => null);
+  // A picked provider that has since been disconnected falls back to the workspace default. The other connected
+  // providers queue behind it: if the first one is out of credits or rejects its key before writing anything, the
+  // answer is retried on the next.
+  const picked = pickProvider ? await workspaceModel(ws, pickProvider, pickModel).catch(() => null) : null;
+  const others = await workspaceModels(ws).catch(() => [] as WorkspaceModel[]);
+  const models = [picked, ...others.filter((m) => !picked || m.provider !== picked.provider)].filter((m): m is WorkspaceModel => !!m);
+  let wm = models[0];
   if (!wm) return NextResponse.json({ error: 'No AI model is connected. A Super Admin can add one in Workspace Settings > Integrations.', code: 'no_model' }, { status: 409 });
 
   // Thread and user turn are written on the member's session (ai_threads/ai_messages RLS: own rows only).
@@ -173,12 +177,12 @@ export async function POST(request: Request) {
     vl && vl.secret.apiKey ? mcpTools('virlo', () => virloClient(vl.secret.apiKey, 8000), (c) => virloTools(c, vl.config)) : {},
   ]);
   mcpSets.forEach((s) => Object.assign(tools, s));
-  const name = providerName(wm.provider);
+  let name = providerName(wm.provider);
   const accounts = ((ctx as unknown as { accounts?: { name: string }[] }).accounts || []).map((a) => a.name);
 
-  const result = streamText({
-    model: wm.model,
-    instructions: systemPrompt({ ctx, today: day.iso, weekday: day.weekday, timezone: day.tz, settings, tools: Object.keys(tools), providerName: name + ' (' + wm.modelId + ')', accounts, instructions: prefs.instructions }),
+  const start = (m: WorkspaceModel) => streamText({
+    model: m.model,
+    instructions: systemPrompt({ ctx, today: day.iso, weekday: day.weekday, timezone: day.tz, settings, tools: Object.keys(tools), providerName: providerName(m.provider) + ' (' + m.modelId + ')', accounts, instructions: prefs.instructions }),
     messages,
     tools,
     // Fast answers start writing right away; Think reasons first. Reasoning summaries are requested in both modes so
@@ -213,6 +217,12 @@ export async function POST(request: Request) {
       let error = '';
       const used: string[] = [];
       const proposals: Record<string, unknown>[] = [];
+      const fellBack: string[] = [];
+      for (let attempt = 0; attempt < models.length; attempt++) {
+      wm = models[attempt];
+      name = providerName(wm.provider);
+      const result = start(wm);
+      let failed: unknown = null;
       // Keep reading even if the browser goes away, so the reply is still saved to the thread.
       try {
         for await (const part of result.stream) {
@@ -232,18 +242,29 @@ export async function POST(request: Request) {
             const out = part.output as { proposal?: Record<string, unknown> } | null;
             if (out && out.proposal && typeof out.proposal === 'object' && proposals.length < 10) { proposals.push(out.proposal); send({ t: 'proposal', p: out.proposal }); }
           }
-          else if (part.type === 'error') error = readable(part.error, name);
+          else if (part.type === 'error') { failed = part.error; error = readable(part.error, name); }
           else if (part.type === 'abort') error = 'The answer was stopped before it finished.';
         }
       } catch (err) {
-        error = readable(err, name);
+        failed = err; error = readable(err, name);
+      }
+      const untouched = !reply.trim() && !thinking && !used.length && !proposals.length;
+      if (failed && untouched && attempt < models.length - 1 && providerDown(failed) && !request.signal.aborted) {
+        const next = models[attempt + 1];
+        fellBack.push(name + ': ' + error);
+        console.warn('assistant fallback', name, '->', providerName(next.provider), error);
+        error = ''; thinkFrom = 0;
+        send({ t: 'model', provider: next.provider, model: next.modelId, note: name + ' is unavailable. Answering with ' + providerName(next.provider) + '.' });
+        continue;
+      }
+      break;
       }
       if (!reply.trim() && !proposals.length && !error) error = 'The model did not return an answer. Try rephrasing the question.';
       // Proposals are stored with the reply so their cards (and the Create buttons) survive a reload.
       if (reply.trim() || proposals.length) {
         const saved = await sb.from('ai_messages').insert({
           thread_id: threadId, role: 'assistant', body: reply.trim().slice(0, 20000) || 'Here is the proposal. Nothing is saved until you click the button.',
-          meta: { provider: wm.provider, model: wm.modelId, mode, tools: used,
+          meta: { provider: wm.provider, model: wm.modelId, mode, tools: used, ...(fellBack.length ? { fellBack } : {}),
             ...(thinking.trim() ? { thinking: thinking.trim().slice(0, 12000), thinkMs: thinkMs || (thinkFrom ? Date.now() - thinkFrom : 0) } : {}), ...(proposals.length ? { proposals } : {}), ...(error ? { error } : {}) },
         });
         if (saved.error) console.warn('assistant save', saved.error.message);
