@@ -238,3 +238,7 @@ textarea:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px }
   .fb-be-plats { grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)) !important }
 }
 @media (prefers-reduced-motion: reduce) { .fb-dd, .fb-addrow, .fb-plat, .fb-dot { transition: none } .fb-plat:hover, .fb-dot:hover { transform: none } }
+
+/* Roles & Permissions: scrolls sideways only when narrow, so its header can stick to the page when there is room. */
+@media (max-width: 1100px) { .perm-scroll { overflow-x: auto; padding-bottom: 8px } }
+@media (max-width: 640px) { .perm-scroll { --perm-label: 148px; --perm-col: 108px } .perm-scroll [role="table"] { min-width: 580px !important } }

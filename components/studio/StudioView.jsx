@@ -498,136 +498,96 @@ export default function StudioView({ V }) {
                 {" "}
                 {V.adm.isRoles ? (
                   <>
-                    <div role="group" aria-label="User type" style={css("display: flex; flex-wrap: wrap; gap: 4px; align-items: center; padding-bottom: 20px; border-bottom: 1px solid var(--line)")}>
-                      {(V.adm.roleTabs || []).map((rt, rt__i) => (
-                        <Fragment key={rt__i}>
-                          <button type="button" className="fb-ni" aria-pressed={rt.pressed} onClick={rt.pick} style={css(rt.style)}>
-                            <span>{rt.label}</span>
-                            {" "}
-                            <span style={css(rt.badge)}>{rt.count}</span>
-                          </button>
-                        </Fragment>
-                      ))}
-                    </div>
-                    {" "}
-                    <div style={css("display: flex; flex-wrap: wrap; align-items: center; gap: 12px 16px; padding: 20px; border: 1px solid var(--line); border-radius: 16px; background: var(--surface)")}>
-                      <span style={css(V.adm.roleBlock)}>{V.adm.roleLabel}</span>
-                      {" "}
-                      <span style={css("flex: 1 1 280px; font-size: var(--text-body-sm); color: var(--ink-3)")}>{V.adm.roleDesc}</span>
-                      {" "}
-                      <span style={css("font-size: 13px; font-weight: 600; color: var(--muted-2)")}>{V.adm.roleMembers}</span>
-                    </div>
-                    {" "}
-                    <section aria-labelledby="perm-h" style={css("display: flex; flex-direction: column; gap: 12px")}>
-                      <div style={css("display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px")}>
-                        <h2 id="perm-h" style={css(V.ui.h2)}>Permissions</h2>
-                        {" "}
-                        <span style={css("font-size: 13px; color: var(--muted)")}>{V.adm.permNote}</span>
-                      </div>
-                      {" "}
-                      <div style={css("position: relative; overflow-x: auto; padding-bottom: 8px")}>
-                        <div role="table" aria-label="Permissions" style={css("min-width: 760px; border: 1px solid var(--line); border-radius: 16px; background: var(--surface)")}>
-                          <div role="row" style={css(V.adm.permHeadStyle)}>
-                            <span role="columnheader" style={css(V.thStyle)}>Area</span>
-                            {" "}
-                            {(V.adm.permHead || []).map((ph, ph__i) => (
-                              <Fragment key={ph__i}>
-                                <span role="columnheader" style={css(ph.style)}>{ph.label}</span>
-                              </Fragment>
-                            ))}
-                          </div>
+                    <div className="perm-scroll">
+                      <div role="table" aria-label="Permissions by user type" style={css("min-width: 720px; border: 1px solid var(--line); border-radius: 16px; background: var(--surface)")}>
+                        <div role="row" style={css(V.adm.permGrid.headStyle)}>
+                          <span role="columnheader" style={css("position: sticky; left: 0; z-index: 1; display: flex; align-items: center; padding: 0 16px; background: inherit; border-radius: 16px 0 0 0; font-size: 13px; font-weight: 600; color: var(--muted)")}>What they can do</span>
                           {" "}
-                          {(V.adm.permRows || []).map((pr, pr__i) => (
-                            <Fragment key={pr__i}>
-                              <div role="row" className="row" style={css(V.adm.permRowStyle)}>
-                                <div role="cell" style={css("display: flex; flex-direction: column; gap: 2px; min-width: 0; padding: 12px 16px")}>
-                                  <span style={css("font-size: 14px; font-weight: 600; color: var(--ink)")}>{pr.label}</span>
-                                  {" "}
-                                  <span style={css("font-size: 12px; color: var(--muted-2)")}>{pr.desc}</span>
-                                </div>
+                          {(V.adm.permGrid.roles || []).map((pr) => (
+                            <Fragment key={pr.id}>
+                              <div role="columnheader" style={css("display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; min-width: 0; padding: 8px 4px; text-align: center")}>
+                                <span style={css(pr.block)}>{pr.label}</span>
                                 {" "}
-                                {(pr.cells || []).map((pc, pc__i) => (
-                                  <Fragment key={pc__i}>
-                                    <div role="cell" style={css("display: flex; align-items: center; justify-content: center")}>
-                                      {pc.isBox ? (
-                                        <>
-                                          <label style={css("width: 44px; height: 44px; display: inline-flex; align-items: center; justify-content: center; cursor: pointer")}>
-                                            <input type="checkbox" checked={!!pc.on} onChange={pc.pick} style={css("width: 18px; height: 18px; margin: 0; accent-color: var(--ink); cursor: pointer")} />
-                                            {" "}
-                                            <span style={css("position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap")}>{pc.aria}</span>
-                                          </label>
-                                        </>
-                                      ) : null}
-                                      {" "}
-                                      {pc.isLocked ? (
-                                        <>
-                                          <span style={css("display: inline-flex; color: var(--ink)")}>
-                                            <svg aria-hidden="true" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                              <path d="M3.5 8.5l3 3 6-7"></path>
-                                            </svg>
-                                            {" "}
-                                            <span style={css("position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap")}>{pc.aria}</span>
-                                          </span>
-                                        </>
-                                      ) : null}
-                                      {" "}
-                                      {pc.isNa ? (
-                                        <>
-                                          <span style={css("font-size: 12px; color: var(--muted-2)")}>n/a</span>
-                                        </>
-                                      ) : null}
-                                    </div>
-                                  </Fragment>
-                                ))}
+                                <span style={css("font-size: 12px; font-weight: 500; color: var(--muted-2)")}>{pr.count}</span>
                               </div>
                             </Fragment>
                           ))}
                         </div>
+                        {" "}
+                        {(V.adm.permGrid.groups || []).map((pg) => (
+                          <div key={pg.id} role="rowgroup" aria-label={pg.label}>
+                            <div role="row" style={css(V.adm.permGrid.groupStyle)}>
+                              <div role="rowheader" style={css("position: sticky; left: 0; z-index: 1; display: flex; flex-direction: column; justify-content: center; gap: 2px; min-width: 0; padding: 8px 16px; background: inherit")}>
+                                {pg.canFold ? (
+                                  <button type="button" aria-expanded={pg.open} onClick={pg.toggle} style={css("display: inline-flex; align-items: center; gap: 6px; padding: 0; border: 0; background: transparent; color: var(--ink); font-size: 13px; font-weight: 700; cursor: pointer; text-align: left")}>
+                                    <span>{pg.label}</span>
+                                    <svg aria-hidden="true" width="14" height="14" viewBox="0 0 16 16" style={css(pg.chevStyle)}><path d="M4 6l4 4 4-4" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"></path></svg>
+                                  </button>
+                                ) : (
+                                  <span style={css("font-size: 13px; font-weight: 700; color: var(--ink)")}>{pg.label}</span>
+                                )}
+                                {pg.note && pg.open ? <span style={css("font-size: 12px; font-weight: 400; color: var(--muted-2)")}>{pg.note}</span> : null}
+                              </div>
+                              {(pg.counts || []).map((pn, pn__i) => (
+                                <Fragment key={pn__i}>
+                                  <span role="cell" style={css("display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; color: var(--muted)")}>{pn}</span>
+                                </Fragment>
+                              ))}
+                            </div>
+                            {(pg.rows || []).map((pr, pr__i) => (
+                              <Fragment key={pr__i}>
+                                <div role="row" className="row" style={css(V.adm.permGrid.rowStyle)}>
+                                  <div role="rowheader" style={css("position: sticky; left: 0; z-index: 1; display: flex; flex-direction: column; justify-content: center; gap: 2px; min-width: 0; padding: 8px 16px; background: inherit")}>
+                                    <span style={css("font-size: 14px; font-weight: 500; color: var(--ink)")}>{pr.label}</span>
+                                    {pr.hint ? <span style={css("font-size: 12px; line-height: 1.35; color: var(--muted-2)")}>{pr.hint}</span> : null}
+                                  </div>
+                                  {(pr.cells || []).map((pc, pc__i) => (
+                                    <Fragment key={pc__i}>
+                                      <div role="cell" title={pc.title} style={css(pc.style)}>
+                                        {pc.isBox ? (
+                                          <label style={css("width: 44px; height: 44px; display: inline-flex; align-items: center; justify-content: center; cursor: pointer")}>
+                                            <input type="checkbox" checked={!!pc.on} onChange={pc.pick} aria-label={pc.aria} style={css("width: 18px; height: 18px; margin: 0; accent-color: var(--ink); cursor: pointer")} />
+                                          </label>
+                                        ) : null}
+                                        {pc.isFixed ? (
+                                          <span style={css("display: inline-flex; color: var(--muted-2)")}>
+                                            <svg aria-hidden="true" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3.5 8.5l3 3 6-7"></path></svg>
+                                            <span style={css("position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap")}>Yes. {pc.title}</span>
+                                          </span>
+                                        ) : null}
+                                        {pc.isNone ? (
+                                          <span style={css("display: inline-block; width: 10px; height: 2px; border-radius: 1px; background: var(--border-strong)")}>
+                                            <span style={css("position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap")}>No. {pc.title}</span>
+                                          </span>
+                                        ) : null}
+                                        {pc.isAcct ? <span style={css("font-size: 12px; font-weight: 500; color: var(--muted)")}>Per account</span> : null}
+                                      </div>
+                                    </Fragment>
+                                  ))}
+                                </div>
+                              </Fragment>
+                            ))}
+                          </div>
+                        ))}
                       </div>
-                    </section>
-                    {" "}
-                    <div style={css("display: grid; grid-template-columns: repeat(auto-fit, minmax(min(320px, 100%), 1fr)); gap: 16px")}>
-                      <section aria-labelledby="rv-h" style={css(V.ui.panel)}>
-                        <h2 id="rv-h" style={css(V.ui.h3)}>Board views</h2>
-                        {" "}
-                        <p style={css("margin: 0; font-size: 13px; color: var(--muted)")}>Default views for new users of this type.</p>
-                        {" "}
-                        <div style={css("display: flex; flex-wrap: wrap; gap: 8px")}>
-                          {(V.adm.roleViews || []).map((rv, rv__i) => (
-                            <Fragment key={rv__i}>
-                              {rv.isBox ? (
-                                <>
-                                  <label style={css(rv.style)}>
-                                    <input type="checkbox" checked={!!rv.on} onChange={rv.pick} style={css("width: 16px; height: 16px; margin: 0; accent-color: var(--ink)")} />
-                                    <span>{rv.label}</span>
-                                  </label>
-                                </>
-                              ) : null}
-                              {" "}
-                              {rv.isLocked ? (
-                                <>
-                                  <span style={css(V.viewChip)}>{rv.label}</span>
-                                </>
-                              ) : null}
-                            </Fragment>
-                          ))}
-                        </div>
-                      </section>
-                      {" "}
-                      <section aria-labelledby="rf-h" style={css(V.ui.panel)}>
-                        <h2 id="rf-h" style={css(V.ui.h3)}>Visible fields</h2>
-                        {" "}
-                        <p style={css("margin: 0; font-size: 13px; color: var(--muted)")}>{V.adm.roleFieldNote}</p>
-                        {" "}
-                        <div style={css("display: flex; flex-wrap: wrap; gap: 6px")}>
-                          {(V.adm.roleFields || []).map((rf, rf__i) => (
-                            <Fragment key={rf__i}>
-                              <span style={css(V.viewChip)}>{rf.label}</span>
-                            </Fragment>
-                          ))}
-                        </div>
-                      </section>
                     </div>
+                    {" "}
+                    <div style={css("display: flex; flex-direction: column; gap: 4px; font-size: 13px; line-height: 1.5; color: var(--muted)")}>
+                      <p style={css("margin: 0")}>
+                        Per account means it is switched on for each sponsor or client in{" "}
+                        <button type="button" onClick={V.adm.permGrid.goAccounts} style={css("padding: 0; border: 0; background: transparent; color: var(--ink); font: inherit; font-weight: 600; text-decoration: underline; text-underline-offset: 2px; cursor: pointer")}>Clients & Sponsors</button>.
+                      </p>
+                      <p style={css("margin: 0")}>Finance, Users, Automations and Workspace Settings are Super Admin only, and so is deleting edits and thumbnails.</p>
+                    </div>
+                    {V.adm.permGrid.dirty ? (
+                      <div role="status" style={css("position: sticky; bottom: 16px; z-index: 4; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; padding: 10px 12px 10px 18px; border: 1px solid var(--line-4); border-radius: 16px; background: var(--surface); box-shadow: 0 8px 32px rgba(0,0,0,0.14)")}>
+                        <span style={css("font-size: 14px; font-weight: 600; color: var(--ink)")}>{V.adm.permGrid.changes}</span>
+                        <span style={css("display: inline-flex; gap: 8px")}>
+                          <button type="button" className="fb-ni" onClick={V.adm.permGrid.discard} disabled={V.adm.permGrid.saving} style={css(V.ui.ghostSm)}>Discard</button>
+                          <button type="button" onClick={V.adm.permGrid.save} disabled={V.adm.permGrid.saving} style={css(V.ui.btnPrimary + " min-height: 36px; border-radius: 10px; padding: 0 14px; font-size: 13px; font-weight: 600")}>{V.adm.permGrid.saving ? 'Saving' : 'Save changes'}</button>
+                        </span>
+                      </div>
+                    ) : null}
                   </>
                 ) : null}
                 {" "}
