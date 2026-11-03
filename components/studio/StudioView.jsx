@@ -729,6 +729,10 @@ export default function StudioView({ V }) {
                                   <input id="ae-name" type="text" autoComplete="off" value={V.adm.acct.edit.name} onChange={V.adm.acct.edit.onName} style={css(V.fieldInput)} />
                                 </div>
                                 <div style={css("display: flex; flex-direction: column; gap: 6px")}>
+                                  <label htmlFor="ae-contact" style={css(V.fieldLabel)}>Contact name</label>
+                                  <input id="ae-contact" type="text" autoComplete="off" value={V.adm.acct.edit.contactName} onChange={V.adm.acct.edit.onContact} style={css(V.fieldInput)} />
+                                </div>
+                                <div style={css("display: flex; flex-direction: column; gap: 6px")}>
                                   <label htmlFor="ae-email" style={css(V.fieldLabel)}>Contact email</label>
                                   <input id="ae-email" type="email" autoComplete="off" placeholder="name@company.com" value={V.adm.acct.edit.email} onChange={V.adm.acct.edit.onEmail} style={css(V.fieldInput)} />
                                 </div>
@@ -814,13 +818,42 @@ export default function StudioView({ V }) {
                               ))}
                             </div>
                             {" "}
-                            <div style={css("display: flex; flex-wrap: wrap; gap: 8px; padding-top: 16px; border-top: 1px solid var(--line)")}>
-                              {V.adm.acct.canResend ? (
-                                <>
-                                  <button type="button" onClick={V.adm.acct.resend} style={css(V.ui.btnGhost)}>{V.adm.acct.resendLabel}</button>
-                                </>
+                            <div style={css("display: flex; flex-direction: column; gap: 8px")}>
+                              <div style={css("display: flex; align-items: center; justify-content: space-between; gap: 8px")}>
+                                <p style={css("margin: 0; font-size: 13px; font-weight: 600; color: var(--ink-2)")}>People</p>
+                                {V.adm.acct.canInvite && !V.adm.acct.invite.open ? <button type="button" className="fb-ni" onClick={V.adm.acct.invite.start} style={css(V.ui.ghostSm)}>Invite someone</button> : null}
+                              </div>
+                              {V.adm.acct.portalOffNote ? <p style={css("margin: 0; font-size: 13px; line-height: 1.4; color: var(--muted)")}>{V.adm.acct.portalOffNote}</p> : null}
+                              {V.adm.acct.noPeople && V.adm.acct.canInvite ? <p style={css("margin: 0; font-size: 13px; color: var(--muted)")}>Nobody has been invited yet.</p> : null}
+                              {(V.adm.acct.people || []).map((pp) => (
+                                <div key={pp.key} style={css("display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; padding: 8px 0; border-top: 1px solid var(--line)")}>
+                                  <span style={css("flex: 1 1 160px; min-width: 0; display: flex; flex-direction: column; gap: 2px")}>
+                                    <span style={css("font-size: 14px; color: var(--ink); overflow-wrap: anywhere")}>{pp.name}</span>
+                                    <span style={css("font-size: 12px; color: var(--muted-2); overflow-wrap: anywhere")}>{pp.sub}  ·  {pp.tag}</span>
+                                  </span>
+                                  {pp.acts.map((pa) => <button key={pa.aria} type="button" className="fb-ni" aria-label={pa.aria} onClick={pa.pick} style={css(pa.style)}>{pa.label}</button>)}
+                                </div>
+                              ))}
+                              {V.adm.acct.invite.open ? (
+                                <div role="group" aria-label="Invite someone" style={css("display: flex; flex-direction: column; gap: 12px; padding: 14px; border: 1px solid var(--line); border-radius: 14px")}>
+                                  <div style={css("display: flex; flex-direction: column; gap: 6px")}>
+                                    <label htmlFor="pi-name" style={css(V.fieldLabel)}>Their name</label>
+                                    <input id="pi-name" type="text" autoComplete="off" value={V.adm.acct.invite.name} onChange={V.adm.acct.invite.onName} style={css(V.fieldInput)} />
+                                  </div>
+                                  <div style={css("display: flex; flex-direction: column; gap: 6px")}>
+                                    <label htmlFor="pi-email" style={css(V.fieldLabel)}>Email</label>
+                                    <input id="pi-email" type="email" autoComplete="off" placeholder="name@company.com" value={V.adm.acct.invite.email} onChange={V.adm.acct.invite.onEmail} style={css(V.fieldInput)} />
+                                  </div>
+                                  {V.adm.acct.invite.err ? <p role="alert" style={css("margin: 0; padding: 10px 12px; border-radius: 10px; background: var(--red-soft); color: var(--red-ink); font-size: 13px; font-weight: 600")}>{V.adm.acct.invite.err}</p> : null}
+                                  <div style={css("display: flex; justify-content: flex-end; gap: 8px")}>
+                                    <button type="button" className="fb-ni" onClick={V.adm.acct.invite.cancel} style={css(V.ui.ghostSm)}>Cancel</button>
+                                    <button type="button" onClick={V.adm.acct.invite.send} style={css(V.ui.btnGhost)}>{V.adm.acct.invite.sendLabel}</button>
+                                  </div>
+                                </div>
                               ) : null}
-                              {" "}
+                            </div>
+                            {" "}
+                            <div style={css("display: flex; flex-wrap: wrap; gap: 8px; padding-top: 16px; border-top: 1px solid var(--line)")}>
                               <button type="button" onClick={V.adm.acct.remove} style={css(V.ui.btnDanger)}>{V.adm.acct.removeLabel}</button>
                             </div>
                           </aside>
@@ -852,6 +885,12 @@ export default function StudioView({ V }) {
                               <label htmlFor="acct-name" style={css(V.fieldLabel)}>Account name</label>
                               {" "}
                               <input id="acct-name" type="text" autoComplete="off" placeholder="Brand or channel name" onChange={V.adm.onAcctName} style={css(V.fieldInput)} />
+                            </div>
+                            {" "}
+                            <div style={css("display: flex; flex-direction: column; gap: 6px")}>
+                              <label htmlFor="acct-contact" style={css(V.fieldLabel)}>Contact name (optional)</label>
+                              {" "}
+                              <input id="acct-contact" type="text" autoComplete="off" onChange={V.adm.onAcctContact} style={css(V.fieldInput)} />
                             </div>
                             {" "}
                             <div style={css("display: flex; flex-direction: column; gap: 6px")}>

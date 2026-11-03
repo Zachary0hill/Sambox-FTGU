@@ -304,6 +304,17 @@ function Overview({ V }) {
           )}
         </Section>
       ) : null}
+      {dr.deliverables.show ? (
+        <Section icon="M9 11l3 3L22 4M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" title="Sponsor deliverables">
+          {dr.deliverables.editing ? (
+            <textarea aria-label="Sponsor deliverables" autoFocus rows={4} value={dr.deliverables.draft} placeholder={dr.deliverables.placeholder} onChange={dr.deliverables.onDraft} onKeyDown={dr.deliverables.onKey} onBlur={dr.deliverables.save} style={css('width: 100%; box-sizing: border-box; padding: 12px 14px; border: 1px solid var(--line-4); border-radius: 12px; background: transparent; font-family: inherit; font-size: 14px; line-height: 1.6; color: var(--ink-2); resize: vertical;')} />
+          ) : dr.deliverables.can ? (
+            <button type="button" className="fb-brief" onClick={dr.deliverables.start} aria-label={dr.deliverables.has ? 'Edit sponsor deliverables' : 'Add sponsor deliverables'} title="Click to edit" style={css('display: block; width: 100%; min-height: 60px; box-sizing: border-box; padding: 12px 14px; border: 1px ' + (dr.deliverables.has ? 'solid var(--line-4)' : 'dashed var(--border-2)') + '; border-radius: 12px; background: transparent; font-family: inherit; font-size: 14px; font-weight: 400; line-height: 1.6; text-align: left; white-space: pre-wrap; overflow-wrap: anywhere; color: ' + (dr.deliverables.has ? 'var(--ink-2)' : 'var(--muted)') + '; cursor: text;')}>{dr.deliverables.has ? dr.deliverables.text : dr.deliverables.emptyText}</button>
+          ) : (
+            <p style={css('margin: 0; padding: 12px 14px; border: 1px solid var(--line-4); border-radius: 12px; font-size: 14px; line-height: 1.6; white-space: pre-wrap; overflow-wrap: anywhere; color: var(--ink-2)')}>{dr.deliverables.text}</p>
+          )}
+        </Section>
+      ) : null}
       {/* app: the project's Social post, sent to Buffer by a Publish to Buffer workflow */}
       {dr.publish && dr.publish.show ? (
         <Section icon="M22 2 11 13M22 2l-7 20-4-9-9-4z" title="Social post">
@@ -491,10 +502,11 @@ function Files({ V, CellPop }) {
                       <span title={as.name} style={css('flex: 1; min-width: 0; font-size: 13px; font-weight: 600; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis')}>{as.name}</span>
                     </div>
                     <span style={css('font-size: 11.5px; color: var(--muted-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis')}>{as.source}  ·  {as.meta}{as.size ? '  ·  ' + as.size : ''}</span>
-                    <div style={css('display: flex; align-items: center; gap: 2px; margin-top: 4px')}>
+                    <div style={css('display: flex; flex-wrap: wrap; align-items: center; gap: 2px; margin-top: 4px')}>
                       <a href="#" aria-label={as.aria} onClick={as.open} style={css(V.dLink + '; min-height: 28px; padding: 0 6px; font-size: 12px')}>Open</a>
                       <button type="button" aria-label={'Download ' + as.name} onClick={as.download} style={css('min-height: 28px; padding: 0 6px; border: 0; border-radius: 8px; background: transparent; color: var(--ink-3); font-size: 12px; font-weight: 600; cursor: pointer')}>Download</button>
                       <span style={css('flex: 1')}></span>
+                      {as.canShare ? <button type="button" aria-label={as.shareAria} onClick={as.share} style={css('min-height: 28px; padding: 0 6px; border: 0; border-radius: 8px; background: transparent; color: var(--ink-3); font-size: 12px; font-weight: 600; white-space: nowrap; cursor: pointer')}>{as.shareLabel}</button> : null}
                       {as.canDelete ? <button type="button" aria-label={as.delLabel + ' ' + as.name} onClick={as.del} style={css('min-height: 28px; padding: 0 6px; border: 0; border-radius: 8px; background: ' + (as.confirm ? 'var(--red-soft)' : 'transparent') + '; color: var(--red-ink); font-size: 12px; font-weight: 600; cursor: pointer')}>{as.delLabel}</button> : null}
                     </div>
                   </div>
@@ -515,6 +527,7 @@ function Files({ V, CellPop }) {
                   </span>
                   <a href="#" aria-label={as.aria} onClick={as.open} style={css(V.dLink + '; font-size: 12px')}>Open</a>
                   <button type="button" aria-label={'Download ' + as.name} title="Download" onClick={as.download} className="fb-ni" style={css(V.dIconBtn + ' width: 34px; height: 34px;')}><I d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" size={15} /></button>
+                  {as.canShare ? <button type="button" aria-label={as.shareAria} onClick={as.share} style={css('flex: none; min-height: 32px; padding: 0 8px; border: 0; border-radius: 8px; background: transparent; color: var(--ink-3); font-size: 12px; font-weight: 600; white-space: nowrap; cursor: pointer')}>{as.shareLabel}</button> : null}
                   {as.canDelete ? <button type="button" aria-label={as.delLabel + ' ' + as.name} onClick={as.del} style={css('flex: none; min-height: 32px; padding: 0 8px; border: 0; border-radius: 8px; background: ' + (as.confirm ? 'var(--red-soft)' : 'transparent') + '; color: var(--red-ink); font-size: 12px; font-weight: 600; cursor: pointer')}>{as.delLabel}</button> : null}
                 </div>
               ))}
