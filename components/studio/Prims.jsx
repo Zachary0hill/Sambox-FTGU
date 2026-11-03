@@ -116,7 +116,7 @@ export function Divider() {
 }
 
 // Field: 40px default ('sm' 36 for menu search, 'lg' 48 for modals). `chips` render before the input, as in the multi select picker.
-export function Field({ id, label, hideLabel, size = 'md', icon, prefix, suffix, chips, multiline, rows = 3, align, strong, mono, inputRef, ...input }) {
+export function Field({ id, label, hideLabel, size = 'md', icon, prefix, suffix, chips, multiline, rows = 3, align, strong, mono, invalid, inputRef, ...input }) {
   const auto = useId();
   const fid = id || auto;
   const own = useRef(null);
@@ -127,12 +127,12 @@ export function Field({ id, label, hideLabel, size = 'md', icon, prefix, suffix,
   return (
     <div style={css('display: flex; flex-direction: column; gap: 6px; min-width: 0')}>
       {label && !hideLabel ? <label htmlFor={fid} style={css(fieldLabelStyle)}>{label}</label> : null}
-      <div className="fb-field" onMouseDown={focus} style={css(fieldStyle({ size, multi: multiline, chips: !!chips }))}>
+      <div className="fb-field" onMouseDown={focus} style={css(fieldStyle({ size, multi: multiline, chips: !!chips }) + (invalid ? ' border-color: var(--red-ink);' : ''))}>
         {icon ? <Icon d={icon} style="flex: none; color: var(--muted-2)" /> : null}
         {prefix ? <span aria-hidden="true" style={css(fieldAddonStyle)}>{prefix}</span> : null}
         {chips}
         <Tag ref={ref} id={fid} aria-label={label && hideLabel ? label : undefined} rows={multiline ? rows : undefined}
-          type={multiline ? undefined : (input.type || 'text')} {...input} style={css(st)} />
+          type={multiline ? undefined : (input.type || 'text')} aria-invalid={invalid || undefined} {...input} style={css(st)} />
         {suffix ? <span style={css(fieldAddonStyle)}>{suffix}</span> : null}
       </div>
     </div>

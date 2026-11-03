@@ -19,11 +19,14 @@ import { PickBox } from './Prims';
 import SyncPicker from './SyncPicker';
 import Performance from './Performance';
 import Workload from './Workload';
+import BrandEditor from './BrandEditor';
+import Dropdown from './Dropdown';
+import SocialIcon from './SocialIcon';
 import { RichText, Thinking, Steps, MsgActions, ModelPicker, ModeToggle, GearButton, AiSettings, ChatScroll } from './ChatKit';
 
 export default function StudioView({ V }) {
   return (
-    <div style={css(V.rootStyle)} onClickCapture={(e) => { const a = e.target.closest && e.target.closest('a[href="#"]'); if (a) e.preventDefault(); }}>
+    <div data-studio-root="" style={css(V.rootStyle)} onClickCapture={(e) => { const a = e.target.closest && e.target.closest('a[href="#"]'); if (a) e.preventDefault(); }}>
       {/* app: Dev Notes floating dock for Super Admins (press N) */}
       {V.devNotes}
       {V.flowLayer}
@@ -3191,7 +3194,7 @@ export default function StudioView({ V }) {
                               {(V.br.socials || []).map((so, so__i) => (
                                 <Fragment key={so__i}>
                                   <div className="row" style={css("display: flex; align-items: center; gap: 12px; min-height: 60px; padding: 8px 12px 8px 20px; border-bottom: 1px solid var(--line); box-sizing: border-box")}>
-                                    <span aria-hidden="true" style={css("width: 36px; height: 36px; flex: none; border-radius: 10px; display: inline-flex; align-items: center; justify-content: center; background: var(--chip-2); color: var(--ink-2); font-size: 14px; font-weight: 700")}>{so.initial}</span>
+                                    <span aria-hidden="true" style={css("width: 36px; height: 36px; flex: none; border-radius: 10px; display: inline-flex; align-items: center; justify-content: center; background: var(--chip-2); color: var(--ink)")}><SocialIcon id={so.id} size={18} /></span>
                                     {" "}
                                     <span style={css("flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px")}>
                                       <span style={css("font-size: 14px; font-weight: 600; color: var(--ink)")}>{so.name}</span>
@@ -3360,12 +3363,7 @@ export default function StudioView({ V }) {
                             </div>
                             {V.br.nb.isSponsor ? (
                               <div style={css("display: flex; flex-direction: column; gap: 6px")}>
-                                <label htmlFor="br-new-acct" style={css(V.fieldLabel)}>Sponsor account</label>
-                                <select id="br-new-acct" value={V.br.nb.account} onChange={V.br.nb.onAccount} style={css(V.fieldInput)}>
-                                  {V.br.nb.accounts.map((o) => (
-                                    <option key={o.value || 'none'} value={o.value}>{o.label}</option>
-                                  ))}
-                                </select>
+                                <Dropdown id="br-new-acct" label="Sponsor account" value={V.br.nb.account} options={V.br.nb.accounts} onChange={V.br.nb.onAccount} />
                                 <span style={css("font-size: 12px; line-height: 1.4; color: var(--muted-2)")}>{V.br.nb.accountHelp}</span>
                               </div>
                             ) : null}
@@ -3382,130 +3380,7 @@ export default function StudioView({ V }) {
                     ) : null}
                     {" "}
                     {/* app: Edit brand dialog (Super Admin) */}
-                    {V.br.hasEdit ? (
-                      <>
-                        <button type="button" aria-label="Close dialog" onClick={V.br.edit.close} style={css("position: fixed; inset: 0; z-index: 40; border: 0; background: rgba(17,17,17,0.32); cursor: default")}></button>
-                        <dialog open aria-modal="true" aria-labelledby="br-edit-title" style={css(V.ui.dialog + " width: 680px; max-height: calc(100vh - 48px); overflow-y: auto")}>
-                          <div style={css("display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 20px")}>
-                            <h2 id="br-edit-title" style={css("margin: 0; font-family: var(--font-title); font-size: var(--text-h4); font-weight: var(--weight-black); letter-spacing: -0.02em")}>Edit brand</h2>
-                            <button type="button" className="fb-ni" aria-label="Close" onClick={V.br.edit.close} style={css(V.ui.iconBtn)}><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M18 6 6 18M6 6l12 12"></path></svg></button>
-                          </div>
-                          <div style={css("display: flex; flex-direction: column; gap: 16px")}>
-                            <div style={css("display: grid; grid-template-columns: repeat(auto-fit, minmax(min(200px, 100%), 1fr)); gap: 12px")}>
-                              <div style={css("display: flex; flex-direction: column; gap: 6px")}>
-                                <label htmlFor="be-name" style={css(V.fieldLabel)}>Name</label>
-                                <input id="be-name" type="text" autoComplete="off" value={V.br.edit.name} onChange={V.br.edit.onName} style={css(V.fieldInput)} />
-                              </div>
-                              {/* app: link a sponsor brand to its account after creating it with "link later" */}
-                              {V.br.edit.canAccount ? (
-                                <div style={css("display: flex; flex-direction: column; gap: 6px")}>
-                                  <label htmlFor="be-account" style={css(V.fieldLabel)}>Sponsor account</label>
-                                  <select id="be-account" value={V.br.edit.account} onChange={V.br.edit.onAccount} style={css(V.fieldInput + " cursor: pointer;")}>
-                                    {(V.br.edit.accounts || []).map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-                                  </select>
-                                </div>
-                              ) : null}
-                              <div style={css("display: flex; flex-direction: column; gap: 6px")}>
-                                <label htmlFor="be-color" style={css(V.fieldLabel)}>Accent color</label>
-                                <div style={css("display: flex; gap: 8px")}>
-                                  <input type="color" aria-label="Pick accent color" value={V.br.edit.colorPick} onChange={V.br.edit.onColor} style={css("width: 44px; height: 44px; flex: none; padding: 2px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface-2); cursor: pointer")} />
-                                  <input id="be-color" type="text" autoComplete="off" placeholder="#1A73E8" value={V.br.edit.color} onChange={V.br.edit.onColor} style={css(V.fieldInput)} />
-                                </div>
-                              </div>
-                            </div>
-                            <p style={css("margin: 0; font-size: 12px; color: var(--muted-2)")}>The accent color tints this brand&apos;s tile and its idea cards.</p>
-                            <div role="group" aria-labelledby="be-colors" style={css("display: flex; flex-direction: column; gap: 8px; padding-top: 16px; border-top: 1px solid var(--line)")}>
-                              <h3 id="be-colors" style={css(V.ui.h3)}>Colors</h3>
-                              {(V.br.edit.colors || []).map((r, r__i) => (
-                                <div key={r__i} style={css("display: flex; align-items: center; gap: 8px")}>
-                                  <input type="color" aria-label={"Pick color " + (r__i + 1)} value={r.pick} onChange={r.onHex} style={css("width: 40px; height: 40px; flex: none; padding: 2px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface-2); cursor: pointer")} />
-                                  <input type="text" autoComplete="off" aria-label={"Color " + (r__i + 1) + " name"} placeholder="Name" value={r.name} onChange={r.onName} style={css("flex: 1; min-width: 0; min-height: 40px; box-sizing: border-box; padding: 0 12px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface-2); font-size: 14px; color: var(--ink)")} />
-                                  <input type="text" autoComplete="off" aria-label={"Color " + (r__i + 1) + " hex"} placeholder="#000000" value={r.hex} onChange={r.onHex} style={css("flex: 1; min-width: 0; min-height: 40px; box-sizing: border-box; padding: 0 12px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface-2); font-size: 14px; color: var(--ink)" + "; flex: 0 0 110px")} />
-                                  <button type="button" className="fb-ni" aria-label={r.aria} onClick={r.remove} style={css(V.ui.iconBtn)}><svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M18 6 6 18M6 6l12 12"></path></svg></button>
-                                </div>
-                              ))}
-                              <button type="button" onClick={V.br.edit.addColor} style={css("align-self: flex-start; min-height: 36px; padding: 0 12px; border: 1px dashed var(--border-strong); border-radius: 10px; background: transparent; color: var(--ink-2); font-size: 13px; font-weight: 600; cursor: pointer")}>Add color</button>
-                            </div>
-                            <div role="group" aria-labelledby="be-fonts" style={css("display: flex; flex-direction: column; gap: 8px; padding-top: 16px; border-top: 1px solid var(--line)")}>
-                              <h3 id="be-fonts" style={css(V.ui.h3)}>Typography</h3>
-                              <p style={css("margin: 0; font-size: 12px; color: var(--muted-2)")}>Font name as installed or on Google Fonts, what it is used for, and the weight (400 regular, 700 bold).</p>
-                              {(V.br.edit.fonts || []).map((r, r__i) => (
-                                <div key={r__i} style={css("display: flex; align-items: center; gap: 8px")}>
-                                  <input type="text" autoComplete="off" aria-label={"Font " + (r__i + 1) + " name"} placeholder="Inter" value={r.name} onChange={r.onName} style={css("flex: 1; min-width: 0; min-height: 40px; box-sizing: border-box; padding: 0 12px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface-2); font-size: 14px; color: var(--ink)")} />
-                                  <input type="text" autoComplete="off" aria-label={"Font " + (r__i + 1) + " use"} placeholder="Headlines" value={r.use} onChange={r.onUse} style={css("flex: 1; min-width: 0; min-height: 40px; box-sizing: border-box; padding: 0 12px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface-2); font-size: 14px; color: var(--ink)")} />
-                                  <input type="text" inputMode="numeric" autoComplete="off" aria-label={"Font " + (r__i + 1) + " weight"} placeholder="400" value={r.weight} onChange={r.onWeight} style={css("flex: 1; min-width: 0; min-height: 40px; box-sizing: border-box; padding: 0 12px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface-2); font-size: 14px; color: var(--ink)" + "; flex: 0 0 72px")} />
-                                  <button type="button" className="fb-ni" aria-label={r.aria} onClick={r.remove} style={css(V.ui.iconBtn)}><svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M18 6 6 18M6 6l12 12"></path></svg></button>
-                                </div>
-                              ))}
-                              <button type="button" onClick={V.br.edit.addFont} style={css("align-self: flex-start; min-height: 36px; padding: 0 12px; border: 1px dashed var(--border-strong); border-radius: 10px; background: transparent; color: var(--ink-2); font-size: 13px; font-weight: 600; cursor: pointer")}>Add font</button>
-                            </div>
-                            <div role="group" aria-labelledby="be-voice" style={css("display: flex; flex-direction: column; gap: 8px; padding-top: 16px; border-top: 1px solid var(--line)")}>
-                              <h3 id="be-voice" style={css(V.ui.h3)}>{V.br.edit.voiceLabel}</h3>
-                              <div style={css("display: flex; flex-direction: column; gap: 6px")}>
-                                <label htmlFor="be-voice-prompt" style={css(V.fieldLabel)}>Voice prompt</label>
-                                <textarea id="be-voice-prompt" rows="6" maxLength="6000" placeholder="Write the voice and rules as you would brief a writer: who the audience is, how the brand talks, what it never says, how scripts should open and close." value={V.br.edit.voice} onChange={V.br.edit.onVoice} style={css(V.ids.textarea)} />
-                                <p style={css("margin: 0; font-size: 12px; color: var(--muted-2)")}>Sent to the assistant and research agent word for word. The fields below still apply if you fill them.</p>
-                              </div>
-                              <div style={css("display: flex; flex-direction: column; gap: 6px")}>
-                                <label htmlFor="be-tone" style={css(V.fieldLabel)}>Tone words</label>
-                                <input id="be-tone" type="text" autoComplete="off" placeholder="Playful, direct, curious" value={V.br.edit.tone} onChange={V.br.edit.onTone} style={css(V.fieldInput)} />
-                                <p style={css("margin: 0; font-size: 12px; color: var(--muted-2)")}>Separate with commas.</p>
-                              </div>
-                              <div style={css("display: grid; grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr)); gap: 12px")}>
-                                <div style={css("display: flex; flex-direction: column; gap: 6px")}>
-                                  <label htmlFor="be-dos" style={css(V.fieldLabel)}>Do</label>
-                                  <textarea id="be-dos" rows="4" placeholder="One per line" value={V.br.edit.dos} onChange={V.br.edit.onDos} style={css(V.ids.textarea)} />
-                                </div>
-                                <div style={css("display: flex; flex-direction: column; gap: 6px")}>
-                                  <label htmlFor="be-donts" style={css(V.fieldLabel)}>Don&apos;t</label>
-                                  <textarea id="be-donts" rows="4" placeholder="One per line" value={V.br.edit.donts} onChange={V.br.edit.onDonts} style={css(V.ids.textarea)} />
-                                </div>
-                              </div>
-                            </div>
-                            <div role="group" aria-labelledby="be-social" style={css("display: flex; flex-direction: column; gap: 8px; padding-top: 16px; border-top: 1px solid var(--line)")}>
-                              <h3 id="be-social" style={css(V.ui.h3)}>Social links</h3>
-                              <p style={css("margin: 0; font-size: 12px; color: var(--muted-2)")}>Paste a profile or channel link. The platform is detected from the link unless you pick one.</p>
-                              {(V.br.edit.socials || []).map((r, r__i) => (
-                                <div key={r__i} style={css("display: flex; flex-wrap: wrap; align-items: center; gap: 8px")}>
-                                  <select aria-label={"Link " + (r__i + 1) + " platform"} value={r.platform} onChange={r.onPlatform} style={css("flex: 1; min-width: 0; min-height: 40px; box-sizing: border-box; padding: 0 12px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface-2); font-size: 14px; color: var(--ink); flex: 0 0 160px; cursor: pointer")}>
-                                    {(V.br.edit.socialOpts || []).map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-                                  </select>
-                                  <input type="url" inputMode="url" autoComplete="off" aria-label={"Link " + (r__i + 1) + " address"} placeholder="instagram.com/yourbrand" value={r.url} onChange={r.onUrl} style={css("flex: 1; min-width: 0; min-height: 40px; box-sizing: border-box; padding: 0 12px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface-2); font-size: 14px; color: var(--ink); flex-basis: 200px")} />
-                                  <button type="button" className="fb-ni" aria-label={r.aria} onClick={r.remove} style={css(V.ui.iconBtn)}><svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M18 6 6 18M6 6l12 12"></path></svg></button>
-                                </div>
-                              ))}
-                              <button type="button" onClick={V.br.edit.addSocial} style={css("align-self: flex-start; min-height: 36px; padding: 0 12px; border: 1px dashed var(--border-strong); border-radius: 10px; background: transparent; color: var(--ink-2); font-size: 13px; font-weight: 600; cursor: pointer")}>Add link</button>
-                            </div>
-                            <div role="group" aria-labelledby="be-secs" style={css("display: flex; flex-direction: column; gap: 8px; padding-top: 16px; border-top: 1px solid var(--line)")}>
-                              <h3 id="be-secs" style={css(V.ui.h3)}>More rules</h3>
-                              <p style={css("margin: 0; font-size: 12px; color: var(--muted-2)")}>Extra sections such as sponsor read rules, thumbnail rules or legal lines. One item per line.</p>
-                              {(V.br.edit.sections || []).map((r, r__i) => (
-                                <div key={r__i} style={css("display: flex; flex-direction: column; gap: 6px; padding: 12px; border: 1px solid var(--line); border-radius: 12px")}>
-                                  <div style={css("display: flex; align-items: center; gap: 8px")}>
-                                    <input type="text" autoComplete="off" aria-label={"Section " + (r__i + 1) + " title"} placeholder="Section title" value={r.title} onChange={r.onTitle} style={css("flex: 1; min-width: 0; min-height: 40px; box-sizing: border-box; padding: 0 12px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface-2); font-size: 14px; color: var(--ink)")} />
-                                    <button type="button" className="fb-ni" aria-label={r.aria} onClick={r.remove} style={css(V.ui.iconBtn)}><svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M18 6 6 18M6 6l12 12"></path></svg></button>
-                                  </div>
-                                  <textarea rows="3" aria-label={"Section " + (r__i + 1) + " items"} placeholder="One per line" value={r.text} onChange={r.onText} style={css(V.ids.textarea)} />
-                                </div>
-                              ))}
-                              <button type="button" onClick={V.br.edit.addSection} style={css("align-self: flex-start; min-height: 36px; padding: 0 12px; border: 1px dashed var(--border-strong); border-radius: 10px; background: transparent; color: var(--ink-2); font-size: 13px; font-weight: 600; cursor: pointer")}>Add section</button>
-                            </div>
-                            {V.br.edit.hasErr ? (
-                              <p role="alert" style={css("margin: 0; padding: 10px 12px; border-radius: 10px; background: var(--red-soft); color: var(--red-ink); font-size: 13px; font-weight: 600")}>{V.br.edit.err}</p>
-                            ) : null}
-                            {V.br.edit.confirm ? (
-                              <p role="alert" style={css("margin: 0; padding: 10px 12px; border-radius: 10px; background: var(--red-soft); color: var(--red-ink); font-size: 13px; font-weight: 600")}>{V.br.edit.delNote}</p>
-                            ) : null}
-                          </div>
-                          <div style={css("display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 24px")}>
-                            <button type="button" className="fb-ni" onClick={V.br.edit.del} style={css("min-height: 44px; padding: 0 14px; border: 1px solid var(--border); border-radius: 14px; background: " + (V.br.edit.confirm ? "var(--red-soft)" : "transparent") + "; color: var(--red-ink); font-weight: 600; cursor: pointer")}>{V.br.edit.delLabel}</button>
-                            <span style={css("flex: 1")}></span>
-                            <button type="button" className="fb-ni" onClick={V.br.edit.close} style={css("min-height: 44px; padding: 0 18px; border: 0; border-radius: 14px; background: transparent; color: var(--ink-3); cursor: pointer")}>Cancel</button>
-                            <button type="button" onClick={V.br.edit.save} style={css(V.ui.btnPrimary)}>Save brand</button>
-                          </div>
-                        </dialog>
-                      </>
-                    ) : null}
+                    {V.br.hasEdit ? <BrandEditor e={V.br.edit} ui={V.ui} dark={V.dark} /> : null}
                   </>
                 ) : null}
                 {" "}
