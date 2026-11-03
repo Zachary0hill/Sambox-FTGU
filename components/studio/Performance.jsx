@@ -2,6 +2,7 @@
 // Performance page body: filters, totals against the previous period, reach over time, sources, channels and top
 // posts. Everything it shows comes from perfVals() in lib/studio/vals-perf.js.
 import { css } from '@/lib/studio/css';
+import SocialIcon from './SocialIcon';
 
 const card = 'display: flex; flex-direction: column; gap: 16px; padding: 24px; box-sizing: border-box; border: 1px solid var(--line); border-radius: 20px; background: var(--surface); min-width: 0;';
 const h2 = 'margin: 0; font-family: var(--font-title); font-size: 20px; font-weight: var(--weight-black); letter-spacing: -0.02em; color: var(--ink);';
@@ -135,7 +136,7 @@ export default function Performance({ p, ui }) {
                     <span aria-hidden="true" style={css(r.swatch)}></span>
                     <span style={css('display: flex; flex-direction: column; min-width: 0')}>
                       <span style={css('font-size: 14px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap')}>{r.name}</span>
-                      <span style={css('font-size: 12px; color: var(--muted)')}>{r.sub}</span>
+                      <span style={css('display: flex; align-items: center; gap: 5px; font-size: 12px; color: var(--muted)')}><SocialIcon id={r.logo} size={12} />{r.sub}</span>
                     </span>
                   </span>
                   {r.stats.map((v, i) => <span key={i} role="cell" className="fb-pnum" data-label={CH_SHORT[i]} style={css(num + ' font-size: 14px;')}>{v}</span>)}
@@ -176,7 +177,7 @@ export default function Performance({ p, ui }) {
                       {r.hasUrl
                         ? <a href={r.url} target="_blank" rel="noopener noreferrer" aria-label={r.linkAria} className="fb-ptitle fb-ptlink" style={css('font-size: 14px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--ink); text-decoration: none')}>{r.title}</a>
                         : <span className="fb-ptitle" style={css('font-size: 14px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap')}>{r.title}</span>}
-                      <span style={css('font-size: 12px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap')}>{r.meta}</span>
+                      <span style={css('display: flex; align-items: center; gap: 5px; min-width: 0; font-size: 12px; color: var(--muted)')}><SocialIcon id={r.logo} size={12} /><span style={css('min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap')}>{r.meta}</span></span>
                     </span>
                   </span>
                   <span role="cell" className="fb-pnum" data-label={TOP_SHORT[0]} style={css(num + ' font-size: 13px; color: var(--ink-3);')}>{r.date}</span>
@@ -207,6 +208,7 @@ function Sources({ p, card: asCard }) {
               <span aria-hidden="true" style={css(r.swatch + ' margin-top: 5px;')}></span>
               <span style={css('display: flex; flex-direction: column; gap: 4px; min-width: 0')}>
                 <span style={css('display: flex; flex-wrap: wrap; align-items: center; gap: 8px')}>
+                  {r.logo ? <SocialIcon id={r.logo} size={14} /> : null}
                   <span style={css('font-size: 14px; font-weight: 600')}>{r.name}</span>
                   <span style={css(r.statusStyle)}>{r.status}</span>
                 </span>

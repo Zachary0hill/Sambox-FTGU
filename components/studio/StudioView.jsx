@@ -21,7 +21,8 @@ import Performance from './Performance';
 import Workload from './Workload';
 import BrandEditor from './BrandEditor';
 import Dropdown from './Dropdown';
-import SocialIcon from './SocialIcon';
+import SocialIcon, { TextLogo } from './SocialIcon';
+import { socialIdOf } from '@/lib/studio/socials';
 import { RichText, Thinking, Steps, MsgActions, ModelPicker, ModeToggle, GearButton, AiSettings, ChatScroll } from './ChatKit';
 
 export default function StudioView({ V }) {
@@ -1272,7 +1273,7 @@ export default function StudioView({ V }) {
                             <Fragment key={ig__i}>
                               <article style={css("display: flex; flex-direction: column; gap: 14px; padding: 18px; border: 1px solid var(--line); border-radius: 18px; background: var(--surface)")}>
                                 <div style={css("display: flex; align-items: center; gap: 12px")}>
-                                  <span aria-hidden="true" style={css(ig.tileStyle)}>{ig.initials}</span>
+                                  <span aria-hidden="true" style={css(ig.tileStyle)}>{ig.logo ? <SocialIcon id={ig.logo} size={18} mono /> : ig.initials}</span>
                                   {" "}
                                   <span style={css("flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px")}>
                                     <span style={css("font-size: 15px; font-weight: 600; color: var(--ink)")}>{ig.name}</span>
@@ -1867,7 +1868,7 @@ export default function StudioView({ V }) {
                                     {igg.cards.map((ic) => (
                                       <article key={ic.id} id={'ig-card-' + ic.id} tabIndex={-1} aria-label={ic.name + ' connection settings'} style={css("display: flex; flex-direction: column; gap: 14px; padding: 18px; box-sizing: border-box; border: 1px solid var(--line); border-radius: 18px; background: var(--surface); min-width: 0")}>
                                         <div style={css("display: flex; align-items: center; gap: 12px")}>
-                                          <span aria-hidden="true" style={css(ic.tileStyle)}>{ic.initials}</span>
+                                          <span aria-hidden="true" style={css(ic.tileStyle)}>{socialIdOf(ic.id) ? <SocialIcon id={ic.id} size={18} mono /> : ic.initials}</span>
                                           <span style={css("flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px")}>
                                             <span style={css("font-size: 15px; font-weight: 600; color: var(--ink)")}>{ic.name}</span>
                                             <span style={css("font-size: 12px; color: var(--muted-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap")}>{ic.keyNote}</span>
@@ -2361,7 +2362,7 @@ export default function StudioView({ V }) {
                     {" "}
                     {V.pg.hasGhost ? (
                       <>
-                        <button type="button" onClick={V.pg.ghostPick} style={css(V.ui.btnGhost)}>{V.pg.ghost}</button>
+                        <button type="button" onClick={V.pg.ghostPick} style={css(V.ui.btnGhost + (V.pg.ghostLogo ? ' display: inline-flex; align-items: center; gap: 8px;' : ''))}>{V.pg.ghostLogo ? <SocialIcon id={V.pg.ghostLogo} size={16} /> : null}{V.pg.ghost}</button>
                       </>
                     ) : null}
                     {" "}
@@ -2644,6 +2645,7 @@ export default function StudioView({ V }) {
                           <button type="button" className="fb-ni" aria-pressed={ctb.pressed} onClick={ctb.pick} style={css(ctb.style)}>
                             <span aria-hidden="true" style={css(ctb.swatch)}></span>
                             {" "}
+                            <TextLogo text={ctb.label} size={14} brand />
                             <span>{ctb.label}</span>
                             {" "}
                             <span style={css(ctb.badge)}>{ctb.count}</span>
@@ -2704,7 +2706,7 @@ export default function StudioView({ V }) {
                               {/* eslint-disable-next-line @next/next/no-img-element -- remote YouTube thumbnail, sized by CSS */}
                               {cv.hasImg ? <img src={cv.img} alt="" loading="lazy" decoding="async" referrerPolicy="no-referrer" style={css(V.lib.imgStyle)} /> : null}
                               {cv.hasDur ? <span style={css(cv.durStyle)}>{cv.dur}</span> : null}
-                              <span style={css(cv.typeStyle)}>{cv.type}</span>
+                              <span style={css(cv.typeStyle + ' gap: 5px;')}><TextLogo text={cv.type} size={12} />{cv.type}</span>
                               {" "}
                               <span style={css("font-family: var(--font-title); font-size: 20px; font-weight: var(--weight-black); line-height: 1.1; letter-spacing: -0.02em; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden")}>{cv.thumbText}</span>
                               {/* app: banner hook on hand-added cards */}
@@ -2717,7 +2719,7 @@ export default function StudioView({ V }) {
                               <div style={css("display: flex; flex-direction: column; gap: 4px")}>
                                 <h3 style={css("margin: 0; font-size: 15px; font-weight: 600; line-height: 1.35; color: var(--ink)")}>{cv.title}</h3>
                                 {" "}
-                                <span style={css("font-size: 12px; color: var(--muted-2)")}>{cv.meta}</span>
+                                <span style={css("display: flex; align-items: center; gap: 5px; font-size: 12px; color: var(--muted-2)")}>{cv.metaLogo ? <SocialIcon id={cv.metaLogo} size={12} /> : null}<span>{cv.meta}</span></span>
                               </div>
                               {" "}
                               {cv.hasMetrics ? (
@@ -2758,6 +2760,7 @@ export default function StudioView({ V }) {
                                 {/* app: only link out when the project has a real URL */}
                                 {cv.hasLink ? (
                                 <a href={cv.href} target="_blank" rel="noopener noreferrer" style={css(V.lib.linkStyle)}>
+                                  {cv.linkLogo ? <SocialIcon id={cv.linkLogo} size={14} /> : null}
                                   <span>{cv.linkText}</span>
                                   <svg aria-hidden="true" width="12" height="12" viewBox="0 0 16 16">
                                     <path d="M6 3h7v7M13 3L4 12" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"></path>
@@ -2843,14 +2846,14 @@ export default function StudioView({ V }) {
                                   <span id="cm-type-l" style={css(V.fieldLabel)}>Content type</span>
                                   <div role="group" aria-labelledby="cm-type-l" style={css("display: flex; flex-wrap: wrap; gap: 8px")}>
                                     {(V.lib.cm.types || []).map((t) => (
-                                      <button key={t.label} type="button" aria-pressed={t.pressed} onClick={t.pick} style={css(t.style)}><span aria-hidden="true" style={css(t.sw)}></span><span>{t.label}</span></button>
+                                      <button key={t.label} type="button" aria-pressed={t.pressed} onClick={t.pick} style={css(t.style)}><span aria-hidden="true" style={css(t.sw)}></span><TextLogo text={t.label} size={14} brand /><span>{t.label}</span></button>
                                     ))}
                                   </div>
                                 </div>
                                 <div style={css("grid-column: 1 / -1; display: flex; flex-direction: column; gap: 8px")}>
                                   <span id="cm-pl-l" style={css(V.fieldLabel)}>Platform</span>
                                   <div role="group" aria-labelledby="cm-pl-l" style={css("display: flex; flex-wrap: wrap; gap: 8px")}>
-                                    {(V.lib.cm.platforms || []).map((p) => <button key={p.label} type="button" aria-pressed={p.pressed} onClick={p.pick} style={css(p.style)}>{p.label}</button>)}
+                                    {(V.lib.cm.platforms || []).map((p) => <button key={p.label} type="button" aria-pressed={p.pressed} onClick={p.pick} style={css(p.style)}><SocialIcon id={p.label} size={14} />{p.label}</button>)}
                                   </div>
                                 </div>
                               </fieldset>
@@ -2888,13 +2891,13 @@ export default function StudioView({ V }) {
                               <p style={css("margin: 0; font-size: 13px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted)")}>Preview</p>
                               <div style={css("display: flex; flex-direction: column; gap: 12px")}>
                                 <div style={css(V.lib.cm.thumbStyle)}>
-                                  {V.lib.cm.typeLabel ? <span style={css(V.lib.cm.typeStyle)}>{V.lib.cm.typeLabel}</span> : null}
+                                  {V.lib.cm.typeLabel ? <span style={css(V.lib.cm.typeStyle + ' gap: 5px;')}><TextLogo text={V.lib.cm.typeLabel} size={12} />{V.lib.cm.typeLabel}</span> : null}
                                   <span style={css("position: absolute; top: 12px; right: 12px; display: inline-flex; align-items: center; height: 22px; padding: 0 8px; font-size: 11px; font-weight: 700; background: var(--surface); color: var(--ink)")}>{V.lib.cm.state}</span>
                                   <Hook b={V.lib.cm} />
                                 </div>
                                 <div style={css("display: flex; flex-direction: column; gap: 4px")}>
                                   <span style={css("font-size: 16px; font-weight: 600; line-height: 1.35; overflow-wrap: anywhere")}>{V.lib.cm.previewTitle}</span>
-                                  <span style={css("font-size: 13px; color: var(--muted)")}>{V.lib.cm.previewMeta}</span>
+                                  <span style={css("display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--muted)")}><SocialIcon id={V.lib.cm.previewLogo} size={14} /><span>{V.lib.cm.previewMeta}</span></span>
                                 </div>
                                 <dl style={css("margin: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; padding: 12px 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line)")}>
                                   {(V.lib.cm.previewStats || []).map((m) => (
@@ -2929,6 +2932,7 @@ export default function StudioView({ V }) {
                           <div role="group" aria-label="Social channel filter" style={css("display: flex; flex-wrap: wrap; gap: 4px; padding-bottom: 20px; border-bottom: 1px solid var(--line)")}>
                             {(V.lib.social.tabs || []).map((stb, stb__i) => (
                               <button key={stb__i} type="button" className="fb-ni" aria-pressed={stb.pressed} onClick={stb.pick} style={css(stb.style)}>
+                                {stb.service ? <SocialIcon id={stb.service} size={14} /> : null}
                                 <span>{stb.label}</span>
                                 <span style={css(stb.badge)}>{stb.count}</span>
                               </button>
@@ -2945,7 +2949,7 @@ export default function StudioView({ V }) {
                                     <span aria-hidden="true" style={css(sc.avatarStyle)}>{sc.initials}</span>
                                     <span style={css("flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px")}>
                                       <span style={css("font-size: 15px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap")}>{sc.name}</span>
-                                      <span style={css("font-size: 12px; color: var(--muted-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap")}>{sc.sub}</span>
+                                      <span style={css("display: flex; align-items: center; gap: 5px; min-width: 0; font-size: 12px; color: var(--muted-2)")}><SocialIcon id={sc.service} size={12} /><span style={css("min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap")}>{sc.sub}</span></span>
                                     </span>
                                   </span>
                                   {sc.hasWarn ? <span style={css(sc.warnStyle)}>{sc.warn}</span> : null}
@@ -2972,7 +2976,7 @@ export default function StudioView({ V }) {
                                   {sp.hasImg ? <img src={sp.img} alt="" loading="lazy" decoding="async" referrerPolicy="no-referrer" style={css(V.lib.social.imgStyle)} /> : null}
                                   <span style={css("flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px")}>
                                     <span style={css("font-size: 14px; line-height: 1.45; color: var(--ink); white-space: pre-wrap; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden")}>{sp.text}</span>
-                                    <span style={css("font-size: 12px; color: var(--muted-2)")}>{sp.meta}</span>
+                                    <span style={css("display: flex; align-items: center; gap: 5px; font-size: 12px; color: var(--muted-2)")}><SocialIcon id={sp.service} size={12} /><span>{sp.meta}</span></span>
                                     {sp.hasMetrics ? (
                                       <span style={css("display: flex; flex-wrap: wrap; gap: 4px 14px")}>
                                         {(sp.metrics || []).map((pm, pm__i) => (
@@ -2987,6 +2991,7 @@ export default function StudioView({ V }) {
                                   <span style={css("flex: none; display: flex; flex-direction: column; align-items: flex-end; gap: 6px")}>
                                     {sp.hasUrl ? (
                                       <a href={sp.url} target="_blank" rel="noopener noreferrer" style={css(V.lib.linkStyle)}>
+                                        <SocialIcon id={sp.service} size={14} />
                                         <span>{sp.openLabel}</span>
                                         <svg aria-hidden="true" width="12" height="12" viewBox="0 0 16 16">
                                           <path d="M6 3h7v7M13 3L4 12" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"></path>
@@ -3423,6 +3428,7 @@ export default function StudioView({ V }) {
                               {(V.ids.rs.panel.sources || []).map((rsx, rsx__i) => (
                                 <li key={rsx__i} style={css("display: flex; flex-direction: column; gap: 6px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); min-width: 0")}>
                                   <span style={css("display: flex; align-items: center; gap: 8px")}>
+                                    {rsx.logo ? <SocialIcon id={rsx.logo} size={14} /> : null}
                                     <span style={css("flex: 1; min-width: 0; font-size: 14px; font-weight: 600; color: var(--ink)")}>{rsx.label}</span>
                                     <span style={css(rsx.stateStyle)}>{rsx.state}</span>
                                   </span>
@@ -3638,69 +3644,65 @@ export default function StudioView({ V }) {
                     {V.ids.hasSel ? (
                       <>
                         <button type="button" aria-label="Close idea" onClick={V.ids.closeIdea} style={css("position: fixed; inset: 0; z-index: 40; border: 0; background: rgba(17,17,17,0.45); cursor: default")}></button>
-                        <dialog open aria-modal="true" aria-labelledby="idea-title" style={css("position: fixed; z-index: 41; top: 50%; left: 50%; transform: translate(-50%, -50%); margin: 0; width: 1120px; max-width: calc(100vw - 32px); max-height: calc(100vh - 48px); overflow-y: auto; box-sizing: border-box; padding: 0; background: var(--surface); border: 1px solid var(--line-4); border-radius: 28px; box-shadow: 0 24px 80px rgba(0,0,0,0.28); color: var(--ink); font-family: var(--font-main)")}>
-                          <div style={css(V.ids.sel.bannerStyle)}>
-                            <div style={css("position: absolute; top: 16px; left: 16px; right: 16px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px")}>
-                              <span style={css(V.ids.sel.priStyle)}>{V.ids.sel.pri}</span>
-                              <span style={css("flex: 1")}></span>
+                        <dialog open aria-modal="true" aria-labelledby="idea-title" className="fb-dlg fb-idea" style={css("position: fixed; z-index: 41; top: 50%; left: 50%; transform: translate(-50%, -50%); margin: 0; width: min(1120px, calc(100vw - 48px)); height: min(880px, calc(100vh - 48px)); box-sizing: border-box; padding: 0; display: flex; flex-direction: column; overflow: hidden; background: var(--surface); border: 1px solid var(--line-4); border-radius: 24px; box-shadow: 0 24px 80px rgba(0,0,0,0.28); color: var(--ink); font-family: var(--font-main)")}>
+                          <button type="button" className="fb-ni fb-idea-x" aria-label="Close" onClick={V.ids.closeIdea} style={css("position: absolute; z-index: 3; top: 14px; right: 14px; width: 34px; height: 34px; display: inline-flex; align-items: center; justify-content: center; padding: 0; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); color: var(--ink); cursor: pointer")}>
+                            <svg aria-hidden="true" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><path d="M4 4l8 8M12 4l-8 8"></path></svg>
+                          </button>
+                          <header className="fb-idea-hd" style={css("flex: none; display: flex; gap: 20px; padding: 14px 24px; border-bottom: 1px solid var(--line)")}>
+                            <div className="fb-idea-cover" style={css(V.ids.sel.bannerStyle)}>
+                              <Hook b={V.ids.sel} />
                               {V.ids.sel.canCover ? (
-                                <button type="button" onClick={V.ids.sel.changeCover} style={css("display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 14px; border: 0; border-radius: 12px; background: #FFFFFF; color: #111111; font-size: 13px; font-weight: 600; cursor: pointer")}>
-                                  <svg aria-hidden="true" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"></rect><circle cx="9" cy="10" r="2"></circle><path d="M21 17l-5-5-9 8"></path></svg>Change cover
+                                <button type="button" aria-label="Change cover" title="Change cover" onClick={V.ids.sel.changeCover} style={css("position: absolute; top: 6px; right: 6px; width: 30px; height: 30px; display: inline-flex; align-items: center; justify-content: center; padding: 0; border: 0; border-radius: 8px; background: #FFFFFF; color: #111111; box-shadow: 0 1px 4px rgba(0,0,0,0.25); cursor: pointer")}>
+                                  <svg aria-hidden="true" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"></rect><circle cx="9" cy="10" r="2"></circle><path d="M21 17l-5-5-9 8"></path></svg>
                                 </button>
                               ) : null}
-                              <button type="button" aria-label="Close" onClick={V.ids.closeIdea} style={css("width: 44px; height: 44px; display: inline-flex; align-items: center; justify-content: center; padding: 0; border: 0; border-radius: 12px; background: #FFFFFF; color: #111111; cursor: pointer")}>
-                                <svg aria-hidden="true" width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><path d="M4 4l8 8M12 4l-8 8"></path></svg>
-                              </button>
                             </div>
-                            <Hook b={V.ids.sel} />
-                          </div>
-                          <div style={css("padding: 24px clamp(16px, 4vw, 32px) 20px; display: flex; flex-direction: column; gap: 16px; border-bottom: 1px solid var(--line)")}>
-                            <div style={css("display: flex; flex-wrap: wrap; align-items: center; gap: 8px")}>
-                              <span aria-hidden="true" style={css(V.ids.sel.brandTile)}>{V.ids.sel.brandInitials}</span>
-                              <span style={css("font-size: 14px; font-weight: 600; margin-right: 4px")}>{V.ids.sel.brand}</span>
-                              <span style={css(V.ids.sel.typeStyle)}>{V.ids.sel.type}</span>
-                              <span style={css(V.ids.sel.statusStyle)}>{V.ids.sel.status}</span>
-                              {(V.ids.sel.meta || []).map((m) => <span key={m} style={css(V.ids.sel.metaStyle)}>{m}</span>)}
-                            </div>
-                            <div style={css("display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 16px")}>
-                              <div style={css("flex: 1 1 420px; min-width: 0; display: flex; flex-direction: column; gap: 6px")}>
-                                <h2 id="idea-title" style={css("margin: 0; font-family: var(--font-title); font-weight: 900; font-size: clamp(22px, 3vw, 30px); line-height: 1.15; letter-spacing: -0.02em; text-wrap: balance")}>{V.ids.sel.title}</h2>
-                                <p style={css("margin: 0; font-size: 14px; color: var(--muted)")}>{V.ids.sel.byline}</p>
-                              </div>
-                              <div style={css("display: flex; flex-wrap: wrap; gap: 8px")}>
-                                {(V.ids.sel.actions || []).map((ac, ac__i) => (
-                                  <button key={ac__i} type="button" className="fb-ni" onClick={ac.pick} style={css(ac.style)}><IdeaIcon name={ac.icon} />{ac.label}</button>
-                                ))}
-                              </div>
-                            </div>
-                            {V.ids.sel.showStepper ? (
-                              <div style={css("display: flex; flex-wrap: wrap; align-items: center; gap: 12px 16px; padding: 14px; border-radius: 18px; background: var(--surface-2); border: 1px solid var(--border)")}>
-                                <ol aria-label="Status" style={css("flex: 999 1 420px; min-width: 0; margin: 0; padding: 0; list-style: none; display: flex; flex-wrap: wrap; align-items: center; gap: 6px")}>
-                                  {(V.ids.sel.steps || []).map((st, st__i) => (
-                                    <li key={st__i} aria-current={st.current} style={css(st.style)}><span aria-hidden="true" style={css(st.dotStyle)}>{st.num}</span><span style={css(st.labelStyle)}>{st.label}</span></li>
+                            <div style={css("flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px")}>
+                              <div style={css("display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding-right: 44px")}>
+                                <span aria-hidden="true" style={css(V.ids.sel.brandTile)}>{V.ids.sel.brandInitials}</span>
+                                <span style={css("font-size: 14px; font-weight: 600; margin-right: 4px")}>{V.ids.sel.brand}</span>
+                                <span style={css(V.ids.sel.typeStyle)}>{V.ids.sel.type}</span>
+                                <span style={css(V.ids.sel.statusStyle)}>{V.ids.sel.status}</span>
+                                {(V.ids.sel.meta || []).map((m) => <span key={m} style={css(V.ids.sel.metaStyle)}>{m}</span>)}
+                                <span className="fb-idea-sp" style={css("flex: 1")}></span>
+                                <div style={css("display: flex; flex-wrap: wrap; gap: 6px")}>
+                                  {(V.ids.sel.actions || []).map((ac, ac__i) => (
+                                    <button key={ac__i} type="button" className="fb-ni" onClick={ac.pick} style={css(ac.style)}><IdeaIcon name={ac.icon} />{ac.label}</button>
                                   ))}
-                                </ol>
-                                {V.ids.sel.hasCta || V.ids.sel.hasBack ? (
-                                  <div style={css("flex: 1 1 auto; display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px")}>
-                                    {V.ids.sel.hasBack ? <button type="button" className="fb-ni" onClick={V.ids.sel.back} style={css("min-height: 44px; padding: 0 16px; border: 1px solid var(--border); border-radius: 14px; background: var(--surface); font-size: 14px; font-weight: 600; color: var(--ink); cursor: pointer")}>{V.ids.sel.backLabel}</button> : null}
-                                    {V.ids.sel.hasCta ? (
-                                      <button type="button" onClick={V.ids.sel.advance} style={css("display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 18px; border: 0; border-radius: 14px; background: var(--inv); color: var(--inv-ink); font-size: 14px; font-weight: 600; cursor: pointer")}>
-                                        {V.ids.sel.cta}<svg aria-hidden="true" width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 8h10M9 4l4 4-4 4"></path></svg>
-                                      </button>
-                                    ) : null}
-                                  </div>
-                                ) : null}
+                                </div>
                               </div>
-                            ) : null}
-                            {V.ids.sel.hasNote ? <p style={css("margin: 0; font-size: 13px; color: var(--muted)")}>{V.ids.sel.note}</p> : null}
-                          </div>
-                          <div style={css("display: flex; flex-wrap: wrap; align-items: stretch")}>
-                            <div style={css("flex: 999 1 520px; min-width: 0; box-sizing: border-box; padding: 8px clamp(16px, 4vw, 32px) 32px; display: flex; flex-direction: column; gap: 24px; border-right: 1px solid var(--line)")}>
-                              <div role="tablist" aria-label="Idea sections" onKeyDown={V.ids.sel.onTabKey} style={css("display: flex; gap: 4px; border-bottom: 1px solid var(--line); overflow-x: auto; overflow-y: hidden")}>
+                              <h2 id="idea-title" style={css("margin: 0; font-family: var(--font-title); font-weight: 900; font-size: clamp(20px, 2.4vw, 24px); line-height: 1.2; letter-spacing: -0.02em; text-wrap: balance")}>{V.ids.sel.title}</h2>
+                              <p style={css("margin: 0; font-size: 13px; color: var(--muted)")}>{V.ids.sel.byline}</p>
+                              {V.ids.sel.hasNote ? <p style={css("margin: 0; font-size: 13px; color: var(--muted)")}>{V.ids.sel.note}</p> : null}
+                            </div>
+                          </header>
+                          {V.ids.sel.showStepper ? (
+                            <div className="fb-idea-pad" style={css("flex: none; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; padding: 8px 24px; background: var(--surface-2); border-bottom: 1px solid var(--line)")}>
+                              <ol aria-label="Status" style={css("flex: 999 1 420px; min-width: 0; margin: 0; padding: 0; list-style: none; display: flex; flex-wrap: wrap; align-items: center; gap: 4px")}>
+                                {(V.ids.sel.steps || []).map((st, st__i) => (
+                                  <li key={st__i} aria-current={st.current} style={css(st.style)}><span aria-hidden="true" style={css(st.dotStyle)}>{st.num}</span><span style={css(st.labelStyle)}>{st.label}</span></li>
+                                ))}
+                              </ol>
+                              {V.ids.sel.hasCta || V.ids.sel.hasBack ? (
+                                <div style={css("flex: 1 1 auto; display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px")}>
+                                  {V.ids.sel.hasBack ? <button type="button" className="fb-ni" onClick={V.ids.sel.back} style={css("min-height: 38px; padding: 0 14px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); font-size: 13px; font-weight: 600; color: var(--ink); cursor: pointer")}>{V.ids.sel.backLabel}</button> : null}
+                                  {V.ids.sel.hasCta ? (
+                                    <button type="button" onClick={V.ids.sel.advance} style={css("display: inline-flex; align-items: center; gap: 8px; min-height: 38px; padding: 0 16px; border: 0; border-radius: 12px; background: var(--inv); color: var(--inv-ink); font-size: 13px; font-weight: 600; cursor: pointer")}>
+                                      {V.ids.sel.cta}<svg aria-hidden="true" width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 8h10M9 4l4 4-4 4"></path></svg>
+                                    </button>
+                                  ) : null}
+                                </div>
+                              ) : null}
+                            </div>
+                          ) : null}
+                          <div className="fb-idea-body" style={css("flex: 1 1 auto; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) 300px; overflow: hidden")}>
+                            <div className="fb-idea-main" style={css("min-width: 0; min-height: 0; display: flex; flex-direction: column; border-right: 1px solid var(--line)")}>
+                              <div role="tablist" aria-label="Idea sections" onKeyDown={V.ids.sel.onTabKey} className="fb-idea-pad" style={css("flex: none; display: flex; gap: 4px; padding: 0 24px; border-bottom: 1px solid var(--line); overflow-x: auto; overflow-y: hidden")}>
                                 {(V.ids.sel.tabs || []).map((t, t__i) => (
                                   <button key={t__i} id={t.id} type="button" role="tab" aria-selected={t.selected} aria-controls={t.panel} tabIndex={t.tabIndex} onClick={t.pick} style={css(t.style)}>{t.label}{t.count ? <span style={css("font-size: 12px; font-weight: 600; color: var(--muted-2)")}>{t.count}</span> : null}</button>
                                 ))}
                               </div>
+                              <div className="fb-idea-pane fb-idea-pad" style={css("position: relative; flex: 1 1 auto; min-height: 0; overflow-y: auto; box-sizing: border-box; padding: 20px 24px 24px; display: flex; flex-direction: column; gap: 24px")}>
                               {V.ids.sel.isOverview ? (
                                 <div role="tabpanel" id="idp-overview" aria-labelledby="idt-overview" style={css("display: flex; flex-direction: column; gap: 24px")}>
                                   <div style={css("display: grid; grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr)); gap: 12px")}>
@@ -3773,19 +3775,20 @@ export default function StudioView({ V }) {
                                     </div>
                                   </div>
                                 ))}
-                                {V.ids.sel.canComment ? (
-                                  <div style={css("display: flex; gap: 8px; align-items: flex-end")}>
-                                    <label htmlFor="idea-comment" style={css("position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)")}>Add a comment</label>
-                                    <textarea id="idea-comment" rows="2" placeholder="Add a comment. Cmd or Ctrl + Enter to post." value={V.ids.sel.draft} onChange={V.ids.sel.onDraft} onKeyDown={V.ids.sel.onDraftKey} style={css("flex: 1; min-width: 0; box-sizing: border-box; padding: 12px 14px; border: 1px solid var(--border); border-radius: 14px; background: var(--surface-2); font-family: inherit; font-size: 14px; line-height: 1.45; color: var(--ink); resize: vertical")} />
-                                    <button type="button" onClick={V.ids.sel.post} style={css(V.ids.sel.postStyle)}>Post</button>
-                                  </div>
-                                ) : null}
-                              </section>
+                                </section>
+                              </div>
+                              {V.ids.sel.canComment ? (
+                                <div className="fb-idea-pad" style={css("flex: none; display: flex; gap: 8px; align-items: flex-end; padding: 10px 24px; border-top: 1px solid var(--line); background: var(--surface)")}>
+                                  <label htmlFor="idea-comment" style={css("position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)")}>Add a comment</label>
+                                  <textarea id="idea-comment" rows="2" placeholder="Add a comment. Cmd or Ctrl + Enter to post." value={V.ids.sel.draft} onChange={V.ids.sel.onDraft} onKeyDown={V.ids.sel.onDraftKey} style={css("flex: 1; min-width: 0; box-sizing: border-box; min-height: 42px; max-height: 140px; field-sizing: content; padding: 10px 14px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface-2); font-family: inherit; font-size: 14px; line-height: 1.45; color: var(--ink); resize: none")} />
+                                  <button type="button" onClick={V.ids.sel.post} style={css(V.ids.sel.postStyle)}>Post</button>
+                                </div>
+                              ) : null}
                             </div>
-                            <aside aria-label="Properties" style={css("flex: 1 1 300px; min-width: 0; box-sizing: border-box; padding: 24px clamp(16px, 3vw, 28px) 32px; display: flex; flex-direction: column; gap: 20px; background: var(--surface-2); border-radius: 0 0 28px 0")}>
-                              <div style={css("display: flex; flex-direction: column; gap: 12px; padding: 16px; border-radius: 18px; background: var(--surface); border: 1px solid var(--border)")}>
+                            <aside aria-label="Properties" className="fb-idea-rail fb-idea-pad" style={css("position: relative; min-width: 0; min-height: 0; overflow-x: hidden; overflow-y: auto; box-sizing: border-box; padding: 16px 20px 24px; display: flex; flex-direction: column; gap: 16px; background: var(--surface-2)")}>
+                              <div style={css("display: flex; flex-direction: column; gap: 8px; padding: 14px; border-radius: 14px; background: var(--surface); border: 1px solid var(--border)")}>
                                 <div style={css("display: flex; align-items: center; justify-content: space-between")}><span style={css("font-size: 13px; font-weight: 600; color: var(--muted)")}>ICE score</span><span style={css(V.ids.sel.scoreTagStyle)}>{V.ids.sel.scoreTag}</span></div>
-                                <span style={css("font-family: var(--font-title); font-weight: 900; font-size: 40px; line-height: 1; font-variant-numeric: tabular-nums")}>{V.ids.sel.score}</span>
+                                <span style={css("font-family: var(--font-title); font-weight: 900; font-size: 32px; line-height: 1; font-variant-numeric: tabular-nums")}>{V.ids.sel.score}</span>
                                 {(V.ids.sel.iceBars || []).map((k) => (
                                   <div key={k.label} style={css("display: grid; grid-template-columns: 84px minmax(0, 1fr) 20px; align-items: center; gap: 10px; font-size: 13px")}>
                                     <span style={css("color: var(--ink-3)")}>{k.label}</span>
@@ -3794,11 +3797,11 @@ export default function StudioView({ V }) {
                                   </div>
                                 ))}
                               </div>
-                              <dl style={css("margin: 0; display: grid; grid-template-columns: 112px minmax(0, 1fr); gap: 12px; font-size: 14px")}>
+                              <dl style={css("margin: 0; display: grid; grid-template-columns: 104px minmax(0, 1fr); gap: 10px; font-size: 13px")}>
                                 <dt style={css("color: var(--muted)")}>Owner</dt><dd style={css("margin: 0; display: flex; align-items: center; gap: 8px; font-weight: 500")}><span aria-hidden="true" style={css("width: 22px; height: 22px; border-radius: 999px; background: var(--chip-2); display: inline-flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700")}>{V.ids.sel.ownerIni}</span>{V.ids.sel.owner}</dd>
                                 <dt style={css("color: var(--muted)")}>Priority</dt><dd style={css("margin: 0")}><span style={css(V.ids.sel.priFlat)}>{V.ids.sel.pri}</span></dd>
                                 <dt style={css("color: var(--muted)")}>Effort</dt><dd style={css("margin: 0; font-weight: 500; color: " + (V.ids.sel.effortSet ? "var(--ink)" : "var(--muted)"))}>{V.ids.sel.effort}</dd>
-                                <dt style={css("color: var(--muted)")}>Platforms</dt><dd style={css("margin: 0; display: flex; flex-wrap: wrap; gap: 6px")}>{V.ids.sel.noPlatforms ? <span style={css("color: var(--muted)")}>None picked</span> : (V.ids.sel.platforms || []).map((p) => <span key={p} style={css("display: inline-flex; align-items: center; height: 24px; padding: 0 8px; border-radius: 7px; background: var(--chip-2); font-size: 12px; font-weight: 600")}>{p}</span>)}</dd>
+                                <dt style={css("color: var(--muted)")}>Platforms</dt><dd style={css("margin: 0; display: flex; flex-wrap: wrap; gap: 6px")}>{V.ids.sel.noPlatforms ? <span style={css("color: var(--muted)")}>None picked</span> : (V.ids.sel.platforms || []).map((p) => <span key={p} style={css("display: inline-flex; align-items: center; gap: 5px; height: 24px; padding: 0 8px; border-radius: 7px; background: var(--chip-2); font-size: 12px; font-weight: 600")}><SocialIcon id={p} size={12} />{p}</span>)}</dd>
                                 <dt style={css("color: var(--muted)")}>Target window</dt><dd style={css("margin: 0; font-weight: 500; color: " + (V.ids.sel.windowSet ? "var(--ink)" : "var(--muted)"))}>{V.ids.sel.window}</dd>
                                 <dt style={css("color: var(--muted)")}>Sponsor</dt><dd style={css("margin: 0; font-weight: 500; color: " + (V.ids.sel.sponsorSet ? "var(--ink)" : "var(--muted)"))}>{V.ids.sel.sponsor}</dd>
                                 <dt style={css("color: var(--muted)")}>Source</dt><dd style={css("margin: 0; font-weight: 500")}>{V.ids.sel.source}</dd>
@@ -3933,7 +3936,7 @@ export default function StudioView({ V }) {
                               <div style={css("display: flex; flex-direction: column; gap: 8px")}>
                                 <span id="ie-pl-l" style={css(V.fieldLabel)}>Platforms</span>
                                 <div role="group" aria-labelledby="ie-pl-l" style={css("display: flex; flex-wrap: wrap; gap: 6px")}>
-                                  {(V.ids.edit.platforms || []).map((p) => <button key={p.label} type="button" aria-pressed={p.pressed} onClick={p.pick} style={css(p.style)}>{p.on ? <svg aria-hidden="true" width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M3.5 8.5l3 3 6-7"></path></svg> : null}{p.label}</button>)}
+                                  {(V.ids.edit.platforms || []).map((p) => <button key={p.label} type="button" aria-pressed={p.pressed} onClick={p.pick} style={css(p.style)}>{p.on ? <svg aria-hidden="true" width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M3.5 8.5l3 3 6-7"></path></svg> : null}<SocialIcon id={p.label} size={14} />{p.label}</button>)}
                                 </div>
                               </div>
                               <div style={css("display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px")}>
@@ -4066,7 +4069,7 @@ export default function StudioView({ V }) {
                                     <div style={css("grid-column: 1 / -1; display: flex; flex-direction: column; gap: 8px")}>
                                       <span id="ni-pl-l" style={css(V.fieldLabel)}>Platforms <span style={css("font-weight: 400; color: var(--muted)")}>pick any</span></span>
                                       <div role="group" aria-labelledby="ni-pl-l" style={css("display: flex; flex-wrap: wrap; gap: 8px")}>
-                                        {(V.ids.ni.platforms || []).map((p) => <button key={p.label} type="button" aria-pressed={p.pressed} onClick={p.pick} style={css(p.style)}>{p.on ? <svg aria-hidden="true" width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M3.5 8.5l3 3 6-7"></path></svg> : null}{p.label}</button>)}
+                                        {(V.ids.ni.platforms || []).map((p) => <button key={p.label} type="button" aria-pressed={p.pressed} onClick={p.pick} style={css(p.style)}>{p.on ? <svg aria-hidden="true" width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M3.5 8.5l3 3 6-7"></path></svg> : null}<SocialIcon id={p.label} size={14} />{p.label}</button>)}
                                       </div>
                                     </div>
                                   </fieldset>
@@ -4218,7 +4221,7 @@ export default function StudioView({ V }) {
                                       <span aria-hidden="true" style={css(rss.tickStyle)}>✓</span>
                                       {" "}
                                       <span style={css("display: flex; flex-direction: column; gap: 2px; min-width: 0")}>
-                                        <span style={css("font-size: 14px; font-weight: 600")}>{rss.label}</span>
+                                        <span style={css("display: flex; align-items: center; gap: 6px; font-size: 14px; font-weight: 600")}>{rss.logo ? <SocialIcon id={rss.logo} size={14} /> : null}{rss.label}</span>
                                         <span style={css("font-size: 12px; color: var(--muted)")}>{rss.sub}</span>
                                       </span>
                                     </button>
@@ -4876,6 +4879,7 @@ export default function StudioView({ V }) {
                                   {" "}
                                   <span aria-hidden="true" style={css(g.dotStyle)}></span>
                                   {" "}
+                                  <TextLogo text={g.title} size={18} brand />
                                   <h2 style={css("margin: 0; font-family: var(--font-title); font-size: var(--text-h4); font-weight: var(--weight-black); line-height: 1.2; letter-spacing: -0.02em; color: var(--ink)")}>{g.title}</h2>
                                   {" "}
                                   {g.showCount ? <span style={css("display: inline-flex; align-items: center; justify-content: center; min-width: 22px; height: 22px; padding: 0 7px; box-sizing: border-box; border-radius: 999px; background: var(--chip-2); color: var(--ink-2); font-size: 12px; font-weight: 600; font-variant-numeric: tabular-nums;")}>{g.countText}</span> : null}
@@ -4943,7 +4947,7 @@ export default function StudioView({ V }) {
                                                           {" "}
                                                           {c.isPill ? (
                                                             <>
-                                                              <span style={css(c.pillStyle)}>{c.text}</span>
+                                                              <span style={css(c.pillStyle)}><TextLogo text={c.text} size={13} />{c.text}</span>
                                                             </>
                                                           ) : null}
                                                           {/* app: Select and Multi select pills, then +N */}
@@ -5070,6 +5074,7 @@ export default function StudioView({ V }) {
                                     </svg>
                                   </button>
                                   <span aria-hidden="true" style={css(g.kanDot)}></span>
+                                  <TextLogo text={g.title} size={14} brand />
                                   <h2 title={g.title} style={css("margin: 0; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: color-mix(in srgb, var(--ink) 90%, transparent)")}>{g.title}</h2>
                                   {g.showCount ? <span style={css("display: inline-flex; align-items: center; flex: none; height: 18px; padding: 0 6px; box-sizing: border-box; border-radius: 6px; border: 1px solid color-mix(in srgb, var(--ink) 12%, transparent); background: var(--surface); font-size: 11px; font-weight: 600; color: var(--ink-3); font-variant-numeric: tabular-nums")}>{g.countText}</span> : null}
                                   {g.canEdit ? (
@@ -5122,7 +5127,7 @@ export default function StudioView({ V }) {
                                           </h3>
                                           {k.hasFlags ? (
                                             <div style={css("display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px")}>
-                                              {k.hasType ? <span title={k.typeText} style={css(k.typeTag)}><span style={css("min-width: 0; overflow: hidden; text-overflow: ellipsis")}>{k.typeText}</span></span> : null}
+                                              {k.hasType ? <span title={k.typeText} style={css(k.typeTag)}><TextLogo text={k.typeText} size={11} /><span style={css("min-width: 0; overflow: hidden; text-overflow: ellipsis")}>{k.typeText}</span></span> : null}
                                               {k.hasStatus ? <span title={k.statusText} style={css(k.statusStyle)}><span aria-hidden="true" style={css(k.statusDot)}></span><span style={css("min-width: 0; overflow: hidden; text-overflow: ellipsis")}>{k.statusText}</span></span> : null}
                                               {(k.flags || []).map((fl, fl__i) => (
                                                 <span key={fl__i} title={fl.title} style={css(fl.style)}>
@@ -5235,6 +5240,7 @@ export default function StudioView({ V }) {
                               {" "}
                               <span aria-hidden="true" style={css(g.dotStyle)}></span>
                               {" "}
+                              <TextLogo text={g.title} size={16} brand />
                               <h2 style={css("margin: 0; font-family: var(--font-title); font-size: var(--text-h6); font-weight: var(--weight-black); letter-spacing: -0.01em; color: var(--ink)")}>{g.title}</h2>
                               {" "}
                               {g.showCount ? <span style={css("font-size: var(--text-caption); font-weight: 600; color: var(--muted-2); font-variant-numeric: tabular-nums")}>{g.countText}</span> : null}
@@ -5265,7 +5271,7 @@ export default function StudioView({ V }) {
                                       {" "}
                                       {k.hasType ? (
                                         <>
-                                          <span style={css(k.typeStyle)}>{k.typeText}</span>
+                                          <span style={css(k.typeStyle)}><TextLogo text={k.typeText} size={12} />{k.typeText}</span>
                                         </>
                                       ) : null}
                                       {" "}
@@ -5353,6 +5359,7 @@ export default function StudioView({ V }) {
                                 <div style={css("position: sticky; left: 0; display: flex; align-items: center; gap: 10px; padding: 0 20px; height: 40px; width: max-content")}>
                                   <span aria-hidden="true" style={css(g.dotStyle)}></span>
                                   {" "}
+                                  <TextLogo text={g.title} size={14} brand />
                                   <span style={css("font-family: var(--font-title); font-weight: var(--weight-black); font-size: 14px; letter-spacing: -0.01em")}>{g.title}</span>
                                   {" "}
                                   {g.showCount ? <span style={css("font-size: var(--text-caption); font-weight: 600; color: var(--muted-2); font-variant-numeric: tabular-nums")}>{g.countText}</span> : null}
@@ -5662,6 +5669,7 @@ function CellPop({ ce, popStyle, close, dark }) {
                   <button type="button" role="option" className="mitem" aria-selected={co2.sel} onClick={co2.pick} style={css(co2.style)}>
                     <span aria-hidden="true" style={css(co2.swStyle)}>{co2.swText}</span>
                     {" "}
+                    <TextLogo text={co2.label} size={14} brand />
                     <span style={css("flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis")}>{co2.label}</span>
                     {" "}
                     <span style={css("font-size: 12px; font-weight: 500; color: var(--muted-2)")}>{co2.meta}</span>

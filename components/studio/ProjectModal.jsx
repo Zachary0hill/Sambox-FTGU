@@ -2,8 +2,10 @@
 // app: the project modal, laid out like the ZZMEDIA dashboard's project card (CardDetailPanel): cover, header with the
 // state row, tabs with quick actions beside them, then the tab body next to a Details sidebar. Every value comes from
 // lib/studio/vals.js (V.dr); this file only lays it out.
-import { Fragment, useEffect, useRef } from 'react';
+import { Fragment, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { css } from '@/lib/studio/css';
+import SocialIcon, { TextLogo } from './SocialIcon';
 
 const ICON = {
   status: 'M22 11.1V12a10 10 0 1 1-5.9-9.1M22 4 12 14l-3-3',
@@ -58,7 +60,7 @@ function PropValue({ f }) {
   return (
     <span style={css('min-width: 0; display: flex; align-items: center; gap: 8px; overflow: hidden; font-size: 12.5px; font-weight: 500; color: var(--ink)')}>
       {f.isText ? <span style={css(f.textStyle)}>{f.text}</span> : null}
-      {f.isBlock ? <span style={css(f.blockStyle + ' border-radius: 6px;')}>{f.text}</span> : null}
+      {f.isBlock ? <span style={css(f.blockStyle + ' border-radius: 6px; gap: 5px;')}><TextLogo text={f.text} size={12} />{f.text}</span> : null}
       {f.isDate ? <span style={css(f.chipStyle + ' border-radius: 8px;')}>{f.text}</span> : null}
       {f.isPerson ? <><span aria-hidden="true" style={css(f.avatarStyle)}>{f.initials}</span><span style={css('white-space: nowrap; overflow: hidden; text-overflow: ellipsis')}>{f.text}</span></> : null}
       {f.isDot ? <><span aria-hidden="true" style={css(f.dotStyle)}></span><span>{f.text}</span></> : null}
@@ -74,6 +76,54 @@ function PropValue({ f }) {
 const SHORT = { type: 'Type', editStatus: 'Edit status', editDue: 'Edit due', thumbDue: 'Thumb due', pub: 'Publish date', approval: 'Approval', community: 'Community', film: 'Film date', thumb: 'Thumbnail' };
 const ROW = 'display: flex; align-items: flex-start; gap: 12px; width: 100%; min-height: 44px; padding: 8px 6px; box-sizing: border-box; border: 0; border-radius: 10px; background: transparent; font-family: inherit; text-align: left; color: var(--ink); letter-spacing: normal;';
 const GUT = 'display: flex; align-items: center; gap: 8px; width: 100px; flex: none; padding-top: 5px; font-size: 12px; font-weight: 500; color: var(--ink-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;';
+const TEXT_BTN = 'min-height: 28px; padding: 0 8px; border: 0; border-radius: 8px; background: transparent; color: var(--ink-3); font-size: 12px; font-weight: 600; font-family: inherit; cursor: pointer;';
+// A field's popover. The pickers place themselves under their parent, which inside the scrolling sidebar would clip them
+// and add a horizontal scrollbar, so their parent here is a fixed box over the row, portaled to the studio root (the
+// centred dialog's transform would otherwise anchor position: fixed). Opens upward when there is no room below, and
+// stays inside the window.
+const POP_EDGE = 12;
+function RowPop({ children }) {
+  const anchor = useRef(null);
+  const box = useRef(null);
+  const [root, setRoot] = useState(null);
+  useLayoutEffect(() => { setRoot(anchor.current.closest('[data-studio-root]') || document.body); }, []);
+  useLayoutEffect(() => {
+    const pop = root && box.current.querySelector(':scope > [data-pop], :scope > [role="dialog"]');
+    if (!pop) return undefined;
+    const place = () => {
+      const r = anchor.current.parentElement.getBoundingClientRect();
+      const b = box.current.style;
+      b.width = r.width + 'px';
+      b.height = r.height + 'px';
+      const h = pop.offsetHeight;
+      const gap = pop.offsetTop - r.height;
+      const maxTop = window.innerHeight - POP_EDGE - h;
+      const above = r.top - gap - h;
+      const top = r.bottom + gap <= maxTop ? r.bottom + gap : above >= POP_EDGE ? above : Math.max(POP_EDGE, maxTop);
+      const left = Math.max(POP_EDGE, Math.min(r.left + pop.offsetLeft, window.innerWidth - POP_EDGE - pop.offsetWidth));
+      b.top = top - pop.offsetTop + 'px';
+      b.left = left - pop.offsetLeft + 'px';
+    };
+    place();
+    // Filtering a list changes the popover's height.
+    const ro = new ResizeObserver(place);
+    ro.observe(pop);
+    window.addEventListener('resize', place);
+    window.addEventListener('scroll', place, true);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener('resize', place);
+      window.removeEventListener('scroll', place, true);
+    };
+  }, [root]);
+  return (
+    <>
+      <span ref={anchor} hidden></span>
+      {root ? createPortal(<div ref={box} style={css('position: fixed; z-index: 46')}>{children}</div>, root) : null}
+    </>
+  );
+}
+
 function DetailRow({ f, V, CellPop }) {
   const icon = ICON[f.key] || ICON.tag;
   const gutter = <span style={css(GUT)}><I d={icon} /><span style={css('overflow: hidden; text-overflow: ellipsis')}>{SHORT[f.key] || f.label}</span></span>;
@@ -104,7 +154,30 @@ function DetailRow({ f, V, CellPop }) {
           <span style={css('min-width: 0; flex: 1; display: flex; align-items: center; min-height: 28px')}><PropValue f={f} /></span>
         </div>
       )}
-      {f.isOpen ? <CellPop ce={V.ce} popStyle={V.drPop} close={V.closeCell} dark={V.dark} /> : null}
+      {f.isOpen ? <RowPop><CellPop ce={V.ce} popStyle={V.drPop} close={V.closeCell} dark={V.dark} /></RowPop> : null}
+    </div>
+  );
+}
+
+// The image on this project's kanban card and modal cover. Wide images suit the card best.
+function BannerRow({ b }) {
+  if (!b.show) return null;
+  return (
+    <div style={css('border-bottom: 1px solid var(--line)')}>
+      <div style={css(ROW)}>
+        <span style={css(GUT)}><I d={ICON.thumb} /><span>Banner</span></span>
+        <span style={css('min-width: 0; flex: 1; display: flex; flex-wrap: wrap; align-items: center; gap: 4px; min-height: 28px')}>
+          {b.has ? (
+            <>
+              {b.url ? <img src={b.url} alt="" loading="lazy" decoding="async" draggable={false} style={css('width: 48px; height: 28px; flex: none; margin-right: 4px; border-radius: 6px; object-fit: cover; background: var(--panel)')} /> : null}
+              <button type="button" className="fb-ni" aria-label="Change banner" onClick={b.pick} style={css(TEXT_BTN)}>Change</button>
+              {b.canRemove ? <button type="button" className="fb-ni" aria-label="Remove banner" onClick={b.remove} style={css(TEXT_BTN)}>Remove</button> : null}
+            </>
+          ) : (
+            <button type="button" aria-label="Add banner" title="Shows on the kanban card. Wide images work best." onClick={b.pick} style={css(EMPTY_BTN)}><I d="M12 5v14M5 12h14" size={12} />Add</button>
+          )}
+        </span>
+      </div>
     </div>
   );
 }
@@ -116,6 +189,7 @@ export function DetailsRail({ V, CellPop }) {
       {dr.rail.map((g) => (
         <section key={g.title} aria-label={g.title} style={css('display: flex; flex-direction: column')}>
           <h4 style={css('margin: 14px 6px 2px; font-size: 10.5px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted-2)')}>{g.title}</h4>
+          {g.title === 'Project' ? <BannerRow b={dr.banner} /> : null}
           {g.fields.map((f) => <DetailRow key={f.key} f={f} V={V} CellPop={CellPop} />)}
         </section>
       ))}
@@ -328,12 +402,12 @@ function Overview({ V }) {
               <span style={css('font-size: var(--text-caption); font-weight: 600; color: var(--muted-2)')}>Channels</span>
               {dr.publish.noChannels ? <p style={css('margin: 0; font-size: 13px; color: var(--muted)')}>{dr.publish.noChannels}</p> : null}
               <div style={css('display: flex; flex-wrap: wrap; gap: 8px')}>
-                {dr.publish.channels.map((c) => <button key={c.id} type="button" aria-pressed={c.on} disabled={dr.publish.readOnly} onClick={c.toggle} style={css(c.style)}>{c.label}</button>)}
+                {dr.publish.channels.map((c) => <button key={c.id} type="button" aria-pressed={c.on} disabled={dr.publish.readOnly} onClick={c.toggle} style={css(c.style)}><SocialIcon id={c.service} size={14} />{c.label}</button>)}
               </div>
             </div>
             {dr.publish.showYt ? (
               <label style={css('display: flex; flex-direction: column; gap: 6px')}>
-                <span style={css('font-size: var(--text-caption); font-weight: 600; color: var(--muted-2)')}>YouTube title</span>
+                <span style={css('display: inline-flex; align-items: center; gap: 6px; font-size: var(--text-caption); font-weight: 600; color: var(--muted-2)')}><SocialIcon id="youtube" size={14} />YouTube title</span>
                 <input type="text" maxLength={100} value={dr.publish.ytTitle} placeholder={dr.publish.ytPlaceholder} onChange={dr.publish.onYt} onBlur={dr.publish.saveYt} readOnly={dr.publish.readOnly} style={css(V.fieldInput + ' background: var(--surface);')} />
               </label>
             ) : null}
@@ -351,7 +425,7 @@ function Overview({ V }) {
                 {dr.publish.history.map((h) => (
                   <li key={h.id} style={css('display: flex; align-items: center; gap: 10px; min-height: 44px; border-top: 1px solid var(--line)')}>
                     <span style={css('flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px')}>
-                      <span style={css(h.textStyle)}>{h.text}</span>
+                      <span style={css(h.textStyle + ' display: flex; align-items: center; gap: 6px;')}>{h.service ? <SocialIcon id={h.service} size={14} /> : null}<span style={css('min-width: 0')}>{h.text}</span></span>
                       <span style={css('font-size: 12px; color: var(--muted-2); overflow-wrap: anywhere')}>{h.sub}</span>
                     </span>
                     {h.canClear ? <button type="button" aria-label={h.clearLabel} onClick={h.clear} style={css(V.ui.ghostSm + ' border: 1px solid var(--border);')}>Allow again</button> : null}
@@ -583,18 +657,18 @@ export default function ProjectModal({ V, CellPop }) {
   const IB = V.dIconBtn + ' width: 34px; height: 34px; border-radius: 10px;';
   return (
     <>
-      <button type="button" aria-label="Close project details" onClick={V.closeDrawer} style={css('position: fixed; inset: 0; z-index: 44; border: 0; background: rgba(17,17,17,0.5); cursor: default')}></button>
+      <button type="button" aria-label="Close project details" onClick={V.closeDrawer} onDragOver={dr.refuseDrag} onDrop={dr.refuseDrop} style={css('position: fixed; inset: 0; z-index: 44; border: 0; background: rgba(17,17,17,0.5); cursor: default')}></button>
       {/* app: files dropped anywhere on the panel upload to Files */}
       <dialog open aria-modal="true" aria-labelledby="drawer-title" className={'fb-dlg' + (dr.split ? ' fb-dlg-split' : '')} onKeyDown={dr.onKey} onDragOver={dr.onDragOver} onDragLeave={dr.onDragLeave} onDrop={dr.onDrop} style={css(dr.panelStyle)}>
         {dr.dragging ? (
           <div aria-hidden="true" style={css('position: absolute; inset: 10px; z-index: 5; display: flex; align-items: center; justify-content: center; border: 2px dashed var(--ink); border-radius: 20px; background: color-mix(in srgb, var(--surface) 88%, transparent); font-size: 16px; font-weight: 700; color: var(--ink); pointer-events: none')}>{dr.dropText}</div>
         ) : null}
-        {/* Cover: the latest thumbnail in Files, collapsible from the header */}
+        {/* Cover: the uploaded banner, else the latest thumbnail in Files, collapsible from the header */}
         {dr.cover.show ? (
           <div className="fb-dlg-cover" style={css('position: relative; flex: none; width: 100%; overflow: hidden; transition: height .25s ease; height: ' + (dr.cover.open ? '150px' : '0'))}>
             <img src={dr.cover.url} alt="" loading="lazy" decoding="async" draggable={false} style={css('width: 100%; height: 100%; object-fit: cover; display: block')} />
             <div aria-hidden="true" style={css('position: absolute; inset: 0; background: linear-gradient(to top, color-mix(in srgb, var(--surface) 70%, transparent), transparent 55%)')}></div>
-            <button type="button" onClick={dr.cover.view} style={css('position: absolute; right: 12px; bottom: 10px; min-height: 28px; padding: 0 10px; border: 1px solid var(--line-4); border-radius: 8px; background: color-mix(in srgb, var(--surface) 80%, transparent); color: var(--ink); font-size: 11px; font-weight: 600; cursor: pointer; backdrop-filter: blur(6px)')}>Open thumbnail</button>
+            <button type="button" onClick={dr.cover.view} style={css('position: absolute; right: 12px; bottom: 10px; min-height: 28px; padding: 0 10px; border: 1px solid var(--line-4); border-radius: 8px; background: color-mix(in srgb, var(--surface) 80%, transparent); color: var(--ink); font-size: 11px; font-weight: 600; cursor: pointer; backdrop-filter: blur(6px)')}>{dr.cover.viewLabel}</button>
           </div>
         ) : null}
         {/* ─── Header ─── */}
@@ -658,7 +732,7 @@ export default function ProjectModal({ V, CellPop }) {
                 {dr.headStatus.isOpen ? <CellPop ce={V.ce} popStyle={V.drPop} close={V.closeCell} dark={V.dark} /> : null}
               </span>
             ) : null}
-            {dr.typeBlock ? <span style={css(dr.typeBlock.style + ' border-radius: 999px; height: 26px;')}>{dr.typeBlock.text}</span> : null}
+            {dr.typeBlock ? <span style={css(dr.typeBlock.style + ' border-radius: 999px; height: 26px; gap: 5px;')}><TextLogo text={dr.typeBlock.text} size={13} />{dr.typeBlock.text}</span> : null}
             <span style={css('display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px; font-weight: 600; color: var(--ink-2)')} title={dr.progress.note}>
               <span role="progressbar" aria-label="Project progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow={dr.progress.pct} style={css('display: block; width: 64px; height: 4px; border-radius: 999px; overflow: hidden; background: var(--chip-2)')}><span style={css(dr.progress.bar)}></span></span>
               <span style={css('font-variant-numeric: tabular-nums')}>{dr.progress.text}</span>
@@ -707,8 +781,8 @@ export default function ProjectModal({ V, CellPop }) {
             </div>
           </div>
           {dr.split ? (
-            <aside className="fb-dlg-rail" aria-label="Project details" style={css('min-height: 0; overflow-y: auto; box-sizing: border-box; border-left: 1px solid var(--line); background: var(--surface-2); padding: 16px 16px 24px; display: flex; flex-direction: column')}>
-              <h3 style={css(SEC_T + ' margin: 0;')}>Details</h3>
+            <aside className="fb-dlg-rail" aria-label="Project details" style={css('min-height: 0; min-width: 0; overflow-x: hidden; overflow-y: auto; box-sizing: border-box; border-left: 1px solid var(--line); background: var(--surface-2); padding: 16px 16px 24px; display: flex; flex-direction: column')}>
+              <h3 style={css(SEC_T + ' margin: 0 6px;')}>Details</h3>
               <DetailsRail V={V} CellPop={CellPop} />
             </aside>
           ) : null}

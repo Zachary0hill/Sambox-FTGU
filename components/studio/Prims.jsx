@@ -4,6 +4,7 @@
 import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import { css } from '@/lib/studio/css';
 import { OPTION_COLORS, isHexColor, solid } from '@/lib/studio/tones';
+import { TextLogo } from './SocialIcon';
 import {
   popStyle, scrimStyle, rowStyle, rowIconStyle, rowLabelStyle, rowMetaStyle, chevStyle, labelStyle, labelActionStyle, iconBtnStyle, dividerStyle,
   fieldStyle, inputStyle, textareaStyle, fieldAddonStyle, fieldLabelStyle, toggleStyle, segStyle, segBtnStyle, chipStyle, chipTextStyle, chipRemoveStyle,
@@ -194,6 +195,7 @@ export function Segmented({ label, caption, options, value, onChange, size = 'md
 export function Chip({ tone, dark, variant = 'pill', onRemove, removeLabel, children }) {
   return (
     <span style={css(chipStyle(tone, { dark, variant, removable: !!onRemove }))}>
+      {typeof children === 'string' ? <TextLogo text={children} size={12} /> : null}
       <span style={css(chipTextStyle)}>{children}</span>
       {onRemove ? (
         <button type="button" tabIndex={-1} className="fb-chipx" aria-label={removeLabel || 'Remove ' + children} onMouseDown={(e) => e.preventDefault()} onClick={onRemove} style={css(chipRemoveStyle)}>

@@ -2,8 +2,11 @@
 // app: Daily assistant chat parts, hand written (not from the design canvas): reply text with light markdown, the
 // collapsible Thinking block, tool steps, reply actions, the composer's model picker and Fast / Think toggle, and the
 // AI settings dialog behind the gear in the Daily header. Styles use the board's tokens through css().
-import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { css } from '@/lib/studio/css';
+import { btnStyle, fieldLabelStyle } from '@/lib/studio/prims';
+import { Field, Icon } from './Prims';
+import Dropdown from './Dropdown';
 
 const ICON = { width: 16, height: 16, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round', 'aria-hidden': 'true' };
 const P = {
@@ -16,7 +19,10 @@ const P = {
   gear: 'M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z',
   x: 'M18 6 6 18M6 6l12 12',
   eye: 'M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7zM12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z',
+  eyeOff: 'M3 3l18 18M10.6 5.2A10 10 0 0 1 12 5c7 0 10 7 10 7a17 17 0 0 1-3.2 4.2M6.6 6.6A16 16 0 0 0 2 12s3 7 10 7a10 10 0 0 0 4.4-1M9.9 9.9a3 3 0 0 0 4.2 4.2',
   search: 'M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14zM21 21l-4.3-4.3',
+  spin: 'M21 12a9 9 0 1 1-6.2-8.6',
+  out: 'M7 17 17 7M8 7h9v9',
 };
 const Ico = ({ d, size = 16, style }) => <svg {...ICON} width={size} height={size} style={style}><path d={d}></path></svg>;
 const DOT = { anthropic: '#D97757', openai: '#10A37F', gemini: '#4285F4' };
@@ -318,27 +324,80 @@ export function GearButton({ onClick }) {
 
 // ---------- AI settings dialog ----------
 // d: { close, A, onChanged(), mode, setMode(mode) }. Reads /api/assistant/settings; keys and models save through the
-// Integrations actions (the server checks each key with a live call before storing it in Vault).
-const LBL = 'font-size: 13px; font-weight: 600; color: var(--ink-3);';
-const INPUT = 'width: 100%; min-height: 44px; box-sizing: border-box; padding: 0 12px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface-2); font-size: 14px; color: var(--ink);';
-const BTN = 'min-height: 40px; padding: 0 16px; border: 0; border-radius: 12px; font-size: 14px; font-weight: 600; cursor: pointer;';
-const PRIMARY = BTN + ' background: var(--inv); color: var(--inv-ink);';
-const QUIET = BTN + ' background: var(--chip-2); color: var(--ink-2);';
+// Integrations actions (the server checks each key with a live call before storing it in Vault). Laid out like the
+// Edit brand dialog: one pane per job, with a save bar that appears only when the workspace defaults have changed.
+const MAX_INSTRUCTIONS = 4000;
+const HINT = 'margin: 0; font-size: 12px; line-height: 1.45; color: var(--muted-2);';
+const SMALL_BTN = 'display: inline-flex; align-items: center; gap: 6px; flex: none; height: 36px; padding: 0 10px; border: 0; border-radius: 10px; background: transparent; color: var(--ink-3); font-size: 13px; font-weight: 600; letter-spacing: normal; white-space: nowrap; cursor: pointer;';
+const OFF_BTN = ' background: var(--chip); color: var(--faint); cursor: default;';
+const MODES = [
+  { id: 'fast', label: 'Fast', d: P.bolt, note: 'Starts writing right away.' },
+  { id: 'think', label: 'Think', d: P.brain, note: 'Reasons first and shows its thinking.' },
+];
+const PANE_ICON = {
+  chat: 'M2.5 3.5h11V11h-6l-3 2.5V11h-2z',
+  workspace: 'M3 5h10M3 11h10M6 3.5v3M10 9.5v3',
+  models: 'M10 2.5a3.5 3.5 0 1 1-3.2 4.9L2.5 11.7v1.8h2V12H6v-1.5h1.5l1-1',
+};
 
-function Seg({ value, options, onChange, label, disabled }) {
+const ProviderDot = ({ id, size = 8 }) => <span aria-hidden="true" style={css('width: ' + size + 'px; height: ' + size + 'px; flex: none; border-radius: 999px; background: ' + (DOT[id] || 'var(--muted)'))}></span>;
+const Spinner = ({ size = 14 }) => <span className="fb-spin" aria-hidden="true" style={css('display: inline-flex; flex: none')}><Ico d={P.spin} size={size} /></span>;
+
+function PaneHead({ id, title, help }) {
   return (
-    <div role="radiogroup" aria-label={label} style={css('display: inline-flex; gap: 2px; padding: 3px; border-radius: 12px; background: var(--chip)')}>
-      {options.map((o) => {
-        const on = value === o[0];
-        return <button key={o[0]} type="button" role="radio" aria-checked={on ? 'true' : 'false'} disabled={disabled} onClick={() => onChange(o[0])} style={css('display: inline-flex; align-items: center; gap: 6px; min-height: 34px; padding: 0 14px; border: 0; border-radius: 9px; font-size: 13px; font-weight: 600; cursor: ' + (disabled ? 'default' : 'pointer') + '; ' + (on ? 'background: var(--surface); color: var(--ink); box-shadow: 0 1px 2px rgba(0,0,0,0.08);' : 'background: transparent; color: var(--muted);'))}>{o[2] ? <Ico d={o[2]} size={14} /> : null}{o[1]}</button>;
-      })}
+    <div style={css('display: flex; flex-direction: column; gap: 4px')}>
+      <h3 id={id} style={css('margin: 0; font-family: var(--font-title); font-size: var(--text-h5); font-weight: var(--weight-black); letter-spacing: -0.01em; color: var(--ink)')}>{title}</h3>
+      {help ? <p style={css(HINT + ' font-size: 13px;')}>{help}</p> : null}
     </div>
   );
 }
 
-function ProviderCard({ pr, admin, isDefault, A, after }) {
+// Fast / Think as two radio cards, so each choice explains itself. Arrow keys move between them.
+function ModeCards({ label, caption, value, onChange, disabled }) {
+  const onKey = (e) => {
+    if (!['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(e.key)) return;
+    e.preventDefault();
+    const next = MODES.findIndex((m) => m.id !== value);
+    onChange(MODES[next].id);
+    const btns = e.currentTarget.querySelectorAll('button');
+    if (btns[next]) btns[next].focus();
+  };
+  return (
+    <div style={css('display: flex; flex-direction: column; gap: 6px')}>
+      {caption ? <span style={css(fieldLabelStyle)}>{caption}</span> : null}
+      <div role="radiogroup" aria-label={label} onKeyDown={disabled ? undefined : onKey} style={css('display: grid; grid-template-columns: repeat(auto-fit, minmax(min(200px, 100%), 1fr)); gap: 8px')}>
+        {MODES.map((m) => {
+          const on = value === m.id;
+          return (
+            <button key={m.id} type="button" role="radio" aria-checked={on ? 'true' : 'false'} tabIndex={on ? 0 : -1} disabled={disabled} className={on ? undefined : 'fb-dd'} onClick={() => onChange(m.id)}
+              style={css('display: flex; align-items: flex-start; gap: 10px; box-sizing: border-box; min-width: 0; padding: 12px; border: 1px solid ' + (on ? 'var(--ink)' : 'var(--border)') + '; border-radius: 12px; text-align: left; letter-spacing: normal; cursor: ' + (disabled ? 'default' : 'pointer') + '; ' + (on ? 'background: var(--surface); box-shadow: inset 0 0 0 1px var(--ink);' : 'background: var(--panel);') + (disabled ? ' opacity: 0.6;' : ''))}>
+              <span style={css('display: inline-flex; flex: none; margin-top: 2px; color: ' + (on ? 'var(--ink)' : 'var(--muted-2)'))}><Ico d={m.d} /></span>
+              <span style={css('flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px')}>
+                <span style={css('font-size: 14px; font-weight: 600; color: var(--ink)')}>{m.label}</span>
+                <span style={css('font-size: 12px; font-weight: 400; line-height: 1.4; color: var(--muted-2)')}>{m.note}</span>
+              </span>
+              {on ? <span style={css('display: inline-flex; flex: none; margin-top: 2px; color: var(--ink)')}><Ico d={P.check} size={14} /></span> : null}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function KeyLink({ pr }) {
+  return pr.keyUrl ? (
+    <a href={pr.keyUrl} target="_blank" rel="noopener noreferrer" className="fb-mr" style={css(SMALL_BTN + ' text-decoration: none;')}>
+      Get a key<Ico d={P.out} size={13} />
+    </a>
+  ) : null;
+}
+
+function ProviderCard({ pr, admin, isDefault, A, after, onDirty }) {
   const [key, setKey] = useState('');
   const [show, setShow] = useState(false);
+  const [replacing, setReplacing] = useState(false);
+  const [confirming, setConfirming] = useState(false);
   const [models, setModels] = useState(null);
   const [model, setModel] = useState(pr.model);
   const auto = admin && pr.connected;
@@ -349,55 +408,77 @@ function ProviderCard({ pr, admin, isDefault, A, after }) {
   // The saved key's models fill the dropdown when the dialog opens (the card remounts when the saved model changes).
   useEffect(() => { if (auto) fetchModels(''); }, []); // eslint-disable-line react-hooks/exhaustive-deps
   const dirty = !!key.trim() || model !== pr.model;
+  useEffect(() => { onDirty(pr.id, dirty); }, [dirty]); // eslint-disable-line react-hooks/exhaustive-deps
   const save = async () => {
     setBusy('save'); setErr('');
     const ok = await A.saveIntegration({ provider: pr.id, name: pr.name }, Object.assign({ model }, key.trim() ? { apiKey: key.trim() } : {}));
     setBusy('');
-    if (ok) { setKey(''); after(); } else setErr('Not saved. Check the key and model.');
+    if (ok) { setKey(''); setReplacing(false); after(); } else setErr('Not saved. Check the key and model.');
   };
-  const drop = async () => { setBusy('drop'); await A.disconnectIntegration({ provider: pr.id, name: pr.name }); setBusy(''); after(); };
-  const pill = pr.connected
-    ? ['Connected' + (pr.keyHint ? ' · ••••' + pr.keyHint : ''), 'background: var(--green-soft, rgba(16,163,127,0.12)); color: var(--green-ink, #0B7A5F);']
-    : ['Not connected', 'background: var(--chip-2); color: var(--muted);'];
-  const opts = models ? [pr.model].concat(models.filter((x) => x !== pr.model)) : [pr.model];
+  const drop = async () => { setBusy('drop'); await A.disconnectIntegration({ provider: pr.id, name: pr.name }); setBusy(''); setConfirming(false); after(); };
+  const reset = () => { setKey(''); setModel(pr.model); setReplacing(false); setShow(false); setErr(''); };
+  const ids = models ? [pr.model].concat(models.filter((x) => x !== pr.model)) : [pr.model];
+  if (!ids.includes(model)) ids.push(model);
+  const options = ids.map((id) => ({ value: id, label: id, note: id === pr.model && pr.connected ? 'Current' : '' }));
+  const modelField = (
+    <Dropdown label="Default model" value={model} options={options} onChange={setModel} searchable={options.length > 7} searchLabel="Search models" disabled={busy === 'save' || busy === 'drop'}
+      display={busy === 'models' ? { label: model, note: 'Loading models…' } : { label: model }} />
+  );
+  const keyField = (
+    <Field label={pr.connected ? 'New API key' : 'API key'} type={show ? 'text' : 'password'} mono autoComplete="off" spellCheck="false" autoFocus={replacing} placeholder="Paste the API key" value={key}
+      disabled={busy === 'save'} onChange={(e) => setKey(e.target.value)} onBlur={() => { if (key.trim() && !pr.connected) load(key.trim()); }}
+      suffix={<button type="button" className="fb-ni" aria-label={show ? 'Hide key' : 'Show key'} aria-pressed={show} onClick={() => setShow(!show)} style={css('width: 28px; height: 28px; margin-right: -6px; border: 0; border-radius: 8px; background: transparent; color: var(--muted-2); display: inline-flex; align-items: center; justify-content: center; cursor: pointer')}><Ico d={show ? P.eyeOff : P.eye} size={15} /></button>} />
+  );
   return (
-    <section aria-label={pr.name} style={css('display: flex; flex-direction: column; gap: 12px; padding: 16px; border: 1px solid var(--line-3); border-radius: 16px; background: var(--surface)')}>
-      <div style={css('display: flex; align-items: center; gap: 10px; flex-wrap: wrap')}>
-        <span aria-hidden="true" style={css('width: 10px; height: 10px; border-radius: 999px; background: ' + (DOT[pr.id] || 'var(--muted)'))}></span>
-        <span style={css('font-size: 15px; font-weight: 700; color: var(--ink)')}>{pr.name}</span>
-        <span style={css('display: inline-flex; align-items: center; min-height: 24px; padding: 0 9px; border-radius: 999px; font-size: 12px; font-weight: 600; ' + pill[1])}>{pill[0]}</span>
-        {isDefault ? <span style={css('display: inline-flex; align-items: center; min-height: 24px; padding: 0 9px; border-radius: 999px; font-size: 12px; font-weight: 600; background: var(--inv); color: var(--inv-ink)')}>Default</span> : null}
-        <span style={css('flex: 1')}></span>
-        {admin && pr.keyUrl ? <a href={pr.keyUrl} target="_blank" rel="noopener noreferrer" style={css('font-size: 13px; font-weight: 600; color: var(--ink-3)')}>Get a key</a> : null}
+    <section aria-label={pr.name} style={css('display: flex; flex-direction: column; gap: 14px; padding: 16px; border: 1px solid var(--line-3); border-radius: 16px; background: var(--surface)')}>
+      <div style={css('display: flex; align-items: center; gap: 12px')}>
+        <span aria-hidden="true" style={css('width: 36px; height: 36px; flex: none; border-radius: 10px; display: inline-flex; align-items: center; justify-content: center; background: color-mix(in srgb, ' + (DOT[pr.id] || 'var(--muted)') + ' 14%, transparent)')}><ProviderDot id={pr.id} size={12} /></span>
+        <div style={css('flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px')}>
+          <span style={css('display: flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 700; color: var(--ink)')}>
+            {pr.name}
+            {isDefault ? <span style={css('display: inline-flex; align-items: center; height: 20px; padding: 0 7px; border-radius: 6px; font-size: 11px; font-weight: 600; background: var(--inv); color: var(--inv-ink)')}>Default</span> : null}
+          </span>
+          <span style={css('display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 500; color: ' + (pr.connected ? 'var(--green-ink, #0B7A5F)' : 'var(--muted-2)'))}>
+            <span aria-hidden="true" style={css('width: 6px; height: 6px; flex: none; border-radius: 999px; background: ' + (pr.connected ? 'currentColor' : 'var(--border-strong)'))}></span>
+            {pr.connected ? 'Connected' : 'Not connected'}
+            {pr.connected && pr.keyHint ? <span style={css('font-family: ui-monospace, Menlo, monospace; color: var(--muted-2)')}>••••{pr.keyHint}</span> : null}
+          </span>
+        </div>
+        {admin && !pr.connected ? <KeyLink pr={pr} /> : null}
       </div>
-      {pr.error ? <p role="alert" style={css('margin: 0; font-size: 13px; color: var(--red-ink)')}>{pr.error}</p> : null}
-      {admin ? (
-        <>
-          <div style={css('display: grid; grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr)); gap: 12px')}>
-            <label style={css('display: flex; flex-direction: column; gap: 6px')}>
-              <span style={css(LBL)}>API key</span>
-              <span style={css('position: relative; display: flex')}>
-                <input type={show ? 'text' : 'password'} autoComplete="off" spellCheck="false" placeholder={pr.connected ? 'Leave blank to keep the saved key' : 'Paste the API key'} value={key} onChange={(e) => setKey(e.target.value)} onBlur={() => { if (key.trim() && !pr.connected) load(key.trim()); }} style={css(INPUT + ' padding-right: 44px;')} />
-                <button type="button" aria-label={show ? 'Hide key' : 'Show key'} onClick={() => setShow(!show)} style={css('position: absolute; right: 4px; top: 4px; width: 36px; height: 36px; border: 0; border-radius: 10px; background: transparent; color: var(--muted-2); display: inline-flex; align-items: center; justify-content: center; cursor: pointer')}><Ico d={P.eye} size={16} /></button>
-              </span>
-            </label>
-            <label style={css('display: flex; flex-direction: column; gap: 6px')}>
-              <span style={css(LBL)}>Default model{busy === 'models' ? ' · loading' : ''}</span>
-              <select value={model} onChange={(e) => setModel(e.target.value)} style={css(INPUT + ' appearance: auto;')}>
-                {opts.map((id) => <option key={id} value={id}>{id}</option>)}
-              </select>
-            </label>
-          </div>
-          {err ? <p role="alert" style={css('margin: 0; font-size: 13px; font-weight: 600; color: var(--red-ink)')}>{err}</p> : null}
-          <div style={css('display: flex; align-items: center; gap: 8px; flex-wrap: wrap')}>
-            <button type="button" onClick={save} disabled={!!busy || (!dirty && pr.connected) || (!pr.connected && !key.trim())} style={css(PRIMARY + ((busy || (!dirty && pr.connected) || (!pr.connected && !key.trim())) ? ' opacity: 0.5; cursor: default;' : ''))}>{busy === 'save' ? 'Checking key…' : pr.connected ? 'Save' : 'Connect'}</button>
-            {pr.connected && !models ? <button type="button" onClick={() => load('')} disabled={!!busy} style={css(QUIET)}>Load models</button> : null}
-            <span style={css('flex: 1')}></span>
-            {pr.connected ? <button type="button" onClick={drop} disabled={!!busy} style={css(BTN + ' background: transparent; color: var(--red-ink);')}>{busy === 'drop' ? 'Disconnecting…' : 'Disconnect'}</button> : null}
-          </div>
-        </>
+      {pr.error ? <p role="alert" style={css('margin: 0; padding: 8px 10px; border-radius: 10px; background: var(--red-soft); color: var(--red-ink); font-size: 13px; line-height: 1.4')}>{pr.error}</p> : null}
+      {!admin ? (
+        <p style={css('margin: 0; font-size: 13px; color: var(--muted)')}>{pr.connected ? 'Default model: ' + pr.model : 'A Super Admin can connect this provider.'}</p>
       ) : (
-        <p style={css('margin: 0; font-size: 14px; color: var(--muted)')}>{pr.connected ? 'Default model: ' + pr.model : 'A Super Admin can connect this provider.'}</p>
+        <>
+          {pr.connected ? modelField : (
+            <div style={css('display: grid; grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr)); gap: 12px')}>{keyField}{modelField}</div>
+          )}
+          {pr.connected && replacing ? keyField : null}
+          {err ? <p role="alert" style={css('margin: 0; font-size: 13px; font-weight: 600; color: var(--red-ink)')}>{err}</p> : null}
+          {confirming ? (
+            <div style={css('display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding-top: 12px; border-top: 1px solid var(--line)')}>
+              <p role="alert" style={css('flex: 1 1 220px; margin: 0; font-size: 13px; font-weight: 600; line-height: 1.4; color: var(--red-ink)')}>Disconnect {pr.name}? Its saved key is deleted.</p>
+              <button type="button" className="fb-mr" disabled={busy === 'drop'} onClick={() => setConfirming(false)} style={css(SMALL_BTN)}>Keep</button>
+              <button type="button" disabled={busy === 'drop'} onClick={drop} style={css(SMALL_BTN + ' padding: 0 12px; background: var(--red-soft); color: var(--red-ink);')}>{busy === 'drop' ? <Spinner /> : null}{busy === 'drop' ? 'Disconnecting…' : 'Disconnect'}</button>
+            </div>
+          ) : (
+            <div style={css('display: flex; flex-wrap: wrap; align-items: center; gap: 4px; ' + (pr.connected ? 'margin: -2px 0 -4px -10px;' : ''))}>
+              {pr.connected && !replacing ? <button type="button" className="fb-mr" onClick={() => setReplacing(true)} style={css(SMALL_BTN)}>Replace key</button> : null}
+              {pr.connected && replacing ? <KeyLink pr={pr} /> : null}
+              {pr.connected && !models && busy !== 'models' ? <button type="button" className="fb-mr" disabled={!!busy} onClick={() => load('')} style={css(SMALL_BTN)}>Load models</button> : null}
+              {pr.connected ? <button type="button" className="fb-mr" disabled={!!busy} onClick={() => setConfirming(true)} style={css(SMALL_BTN + ' color: var(--red-ink);')}>Disconnect</button> : null}
+              <span style={css('flex: 1')}></span>
+              {pr.connected && (dirty || replacing) ? <button type="button" className="fb-mr" disabled={busy === 'save'} onClick={reset} style={css(SMALL_BTN)}>Cancel</button> : null}
+              {!pr.connected || dirty ? (
+                <button type="button" onClick={save} disabled={!!busy || !dirty || (!pr.connected && !key.trim())} style={css(btnStyle('primary', { h: 36 }) + ' font-size: 13px; letter-spacing: normal;' + ((!pr.connected && !key.trim()) ? OFF_BTN : ''))}>
+                  {busy === 'save' ? <Spinner /> : null}
+                  {busy === 'save' ? (key.trim() ? 'Checking key…' : 'Saving…') : pr.connected ? 'Save' : 'Connect'}
+                </button>
+              ) : null}
+            </div>
+          )}
+        </>
       )}
     </section>
   );
@@ -410,16 +491,21 @@ export function AiSettings({ d }) {
   const [ins, setIns] = useState('');
   const [busy, setBusy] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [pane, setPane] = useState(null);
+  const [leaving, setLeaving] = useState(false);
+  const [cards, setCards] = useState({});
+  const dialog = useRef(null);
   const load = () => fetch('/api/assistant/settings', { cache: 'no-store' }).then((r) => r.json().then((j) => {
     if (!r.ok) throw new Error(j.error || 'Could not load AI settings.');
     setSt(j); setMode(j.mode); setIns(j.instructions || ''); setErr('');
   })).catch((e) => setErr(e.message));
   useEffect(() => { load(); }, []);
+  // Focus moves into the dialog and returns to the gear on close.
   useEffect(() => {
-    const onKey = (e) => { if (e.key === 'Escape') d.close(); };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [d]);
+    const back = document.activeElement;
+    if (dialog.current) dialog.current.focus({ preventScroll: true });
+    return () => { if (back && back.focus && document.contains(back)) back.focus({ preventScroll: true }); };
+  }, []);
   const after = () => { load(); d.onChanged(); };
   const put = async (body) => {
     setBusy(true); setErr('');
@@ -429,68 +515,115 @@ export function AiSettings({ d }) {
     if (!r || !r.ok) { setErr(j.error || 'Could not save AI settings.'); return false; }
     return true;
   };
-  const savePrefs = async () => { if (await put({ mode, instructions: ins })) { setSaved(true); setTimeout(() => setSaved(false), 1800); after(); } };
+  const savePrefs = async () => { if (await put({ mode, instructions: ins })) { setSaved(true); setLeaving(false); setTimeout(() => setSaved(false), 1800); after(); } };
   const pickDefault = async (id) => { if (await put({ provider: id })) after(); };
+  const resetPrefs = () => { setMode(st.mode); setIns(st.instructions || ''); };
   const admin = !!(st && st.admin);
   const live = st ? st.providers.filter((p) => p.connected) : [];
-  const prefsDirty = st && (mode !== st.mode || ins.trim() !== (st.instructions || '').trim());
+  const prefsDirty = !!st && (mode !== st.mode || ins.trim() !== (st.instructions || '').trim());
+  const cardDirty = Object.values(cards).some(Boolean);
+  const onCardDirty = (id, on) => setCards((c) => (!!c[id] === on ? c : Object.assign({}, c, { [id]: on })));
+  const requestClose = () => { if (prefsDirty || cardDirty) setLeaving(true); else d.close(); };
+  const onKey = (e) => {
+    if (e.key === 'Escape') { e.preventDefault(); requestClose(); return; }
+    if (e.key !== 'Tab') return;
+    const items = Array.from(dialog.current.querySelectorAll('button:not([tabindex="-1"]), a[href], input, textarea')).filter((el) => !el.disabled && el.offsetParent !== null);
+    if (!items.length) return;
+    const a = document.activeElement;
+    if (e.shiftKey && (a === items[0] || a === dialog.current)) { e.preventDefault(); items[items.length - 1].focus(); }
+    else if (!e.shiftKey && a === items[items.length - 1]) { e.preventDefault(); items[0].focus(); }
+  };
+  const panes = [{ id: 'chat', label: 'Your chat' }].concat(admin ? [{ id: 'workspace', label: 'Workspace' }] : []).concat([{ id: 'models', label: admin ? 'Models & keys' : 'Models', count: live.length }]);
+  // With nothing connected yet, connecting a provider is the first job.
+  const cur = pane || (admin && !live.length ? 'models' : 'chat');
+  const paneStyle = (id) => css('flex: 1; min-width: 0; box-sizing: border-box; flex-direction: column; gap: 16px; padding: 20px 24px 24px; overflow-y: auto; display: ' + (cur === id ? 'flex' : 'none'));
+  // On phones the section list scrolls sideways; keep the open section in view.
+  useEffect(() => {
+    const tab = dialog.current && dialog.current.querySelector('.fb-be-tab[aria-current]');
+    if (tab) tab.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+  }, [cur, !st]); // eslint-disable-line react-hooks/exhaustive-deps
+  const providerOpts = live.map((p) => ({ value: p.id, label: p.name, note: p.model, icon: <ProviderDot id={p.id} /> }));
   return (
     <>
-      <button type="button" aria-label="Close AI settings" onClick={d.close} style={css('position: fixed; inset: 0; z-index: 40; border: 0; background: rgba(17,17,17,0.32); cursor: default')}></button>
-      <dialog open aria-modal="true" aria-labelledby="ais-title" style={css('position: fixed; z-index: 41; top: 50%; left: 50%; transform: translate(-50%, -50%); width: min(720px, calc(100vw - 32px)); max-height: calc(100vh - 48px); overflow-y: auto; box-sizing: border-box; margin: 0; padding: 24px; border: 1px solid var(--line-3); border-radius: 24px; background: var(--surface-2, var(--surface)); color: var(--ink); box-shadow: 0 24px 80px rgba(0,0,0,0.24)')}>
-        <div style={css('display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 20px')}>
-          <div>
+      <button type="button" tabIndex={-1} aria-label="Close AI settings" onClick={requestClose} style={css('position: fixed; inset: 0; z-index: 40; border: 0; background: rgba(17,17,17,0.32); cursor: default')}></button>
+      <dialog ref={dialog} open tabIndex={-1} aria-modal="true" aria-labelledby="ais-title" onKeyDown={onKey} className="fb-be" style={css('position: fixed; z-index: 41; top: 50%; left: 50%; transform: translate(-50%, -50%); display: flex; flex-direction: column; width: min(820px, calc(100vw - 32px)); height: 660px; max-height: calc(100vh - 48px); overflow: hidden; box-sizing: border-box; margin: 0; padding: 0; border: 1px solid var(--line-3); border-radius: 24px; outline: none; background: var(--surface-2, var(--surface)); color: var(--ink); box-shadow: 0 24px 80px rgba(0,0,0,0.24)')}>
+        <header style={css('display: flex; align-items: center; gap: 12px; padding: 16px 16px 16px 20px; border-bottom: 1px solid var(--line)')}>
+          <div style={css('flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px')}>
             <h2 id="ais-title" style={css('margin: 0; font-family: var(--font-title); font-size: var(--text-h4); font-weight: var(--weight-black); letter-spacing: -0.02em')}>AI settings</h2>
-            <p style={css('margin: 6px 0 0; font-size: var(--text-body-sm); color: var(--muted)')}>{admin ? 'Models, API keys and how the Daily assistant answers for everyone in the workspace.' : 'The models connected to the Daily assistant. Your model and Fast / Think choice are saved on this device.'}</p>
+            <p style={css('margin: 0; font-size: 13px; line-height: 1.4; color: var(--muted)')}>{admin ? 'How the Daily assistant answers for everyone in the workspace.' : 'The models connected to the Daily assistant.'}</p>
           </div>
-          <button type="button" className="fb-ni" aria-label="Close" onClick={d.close} style={css('width: 40px; height: 40px; flex: none; border: 0; border-radius: 12px; background: transparent; color: var(--muted-2); display: inline-flex; align-items: center; justify-content: center; cursor: pointer')}><Ico d={P.x} size={18} /></button>
-        </div>
-        {err ? <p role="alert" style={css('margin: 0 0 16px; padding: 10px 12px; border-radius: 10px; background: var(--red-soft); color: var(--red-ink); font-size: 13px; font-weight: 600')}>{err}</p> : null}
-        {!st ? (!err ? <p style={css('margin: 0; color: var(--muted)')}>Loading…</p> : null) : (
-          <div style={css('display: flex; flex-direction: column; gap: 28px')}>
-            <section aria-labelledby="ais-chat" style={css('display: flex; flex-direction: column; gap: 14px')}>
-              <h3 id="ais-chat" style={css('margin: 0; font-size: 15px; font-weight: 700')}>Your chat</h3>
-              <div style={css('display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap')}>
-                <div style={css('display: flex; flex-direction: column; gap: 2px')}>
-                  <span style={css(LBL)}>Answer mode on this device</span>
-                  <span style={css('font-size: 13px; color: var(--muted-2)')}>Fast starts writing right away. Think reasons first and shows its thinking.</span>
-                </div>
-                <Seg label="Answer mode on this device" value={d.mode} onChange={d.setMode} options={[['fast', 'Fast', P.bolt], ['think', 'Think', P.brain]]} />
-              </div>
+          <button type="button" className="fb-ni" aria-label="Close" onClick={requestClose} style={css('width: 40px; height: 40px; flex: none; border: 0; border-radius: 12px; background: transparent; color: var(--muted-2); display: inline-flex; align-items: center; justify-content: center; cursor: pointer')}><Ico d={P.x} size={18} /></button>
+        </header>
+        {!st ? (
+          <div role="status" style={css('flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 13px; color: var(--muted)')}>
+            {err ? null : <><Spinner />Loading settings…</>}
+          </div>
+        ) : (
+          <div className="fb-be-body" style={css('flex: 1; min-height: 0; display: flex')}>
+            <nav aria-label="AI settings sections" className="fb-be-rail" style={css('flex: 0 0 204px; box-sizing: border-box; display: flex; flex-direction: column; gap: 2px; padding: 12px; border-right: 1px solid var(--line); overflow-y: auto')}>
+              {panes.map((p) => {
+                const on = cur === p.id;
+                return (
+                  <button key={p.id} type="button" className="fb-mr fb-be-tab" aria-current={on ? 'true' : undefined} onClick={() => setPane(p.id)}
+                    style={css('display: flex; align-items: center; gap: 10px; flex: none; min-height: 38px; padding: 0 10px; border: 0; border-radius: 10px; font-size: 14px; font-weight: ' + (on ? 600 : 500) + '; letter-spacing: normal; text-align: left; white-space: nowrap; cursor: pointer; background: ' + (on ? 'var(--hover)' : 'transparent') + '; color: ' + (on ? 'var(--ink)' : 'var(--ink-3)') + ';')}>
+                    <Icon d={PANE_ICON[p.id]} />
+                    <span style={css('flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis')}>{p.label}</span>
+                    {p.count ? <span style={css('flex: none; font-size: 12px; font-weight: 500; font-variant-numeric: tabular-nums; color: var(--muted-2)')}>{p.count}</span> : null}
+                  </button>
+                );
+              })}
+            </nav>
+            <section aria-labelledby="ais-chat" className="fb-pop fb-be-pane" style={paneStyle('chat')}>
+              <PaneHead id="ais-chat" title="Your chat" help="Saved on this device. It does not change anything for other members." />
+              <ModeCards label="Answer mode on this device" caption="Answer mode" value={d.mode} onChange={d.setMode} />
             </section>
             {admin ? (
-              <section aria-labelledby="ais-ws" style={css('display: flex; flex-direction: column; gap: 14px')}>
-                <h3 id="ais-ws" style={css('margin: 0; font-size: 15px; font-weight: 700')}>Workspace assistant</h3>
-                <div style={css('display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap')}>
-                  <span style={css(LBL)}>Default model provider</span>
-                  {live.length ? <Seg label="Default model provider" value={st.provider} onChange={pickDefault} disabled={busy} options={live.map((p) => [p.id, p.name])} /> : <span style={css('font-size: 13px; color: var(--muted)')}>Connect a provider below first.</span>}
-                </div>
-                <div style={css('display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap')}>
-                  <span style={css(LBL)}>Default answer mode for new members</span>
-                  <Seg label="Default answer mode" value={mode} onChange={setMode} disabled={!st.prefsReady} options={[['fast', 'Fast', P.bolt], ['think', 'Think', P.brain]]} />
-                </div>
-                <label style={css('display: flex; flex-direction: column; gap: 6px')}>
-                  <span style={css(LBL)}>Instructions for every chat</span>
-                  <textarea rows={4} maxLength={4000} disabled={!st.prefsReady} placeholder="e.g. Answer in a friendly tone. Always mention the editor when talking about a project." value={ins} onChange={(e) => setIns(e.target.value)} style={css(INPUT + ' min-height: 100px; padding: 10px 12px; resize: vertical; line-height: 1.5; font-family: inherit;')} />
-                  <span style={css('font-size: 12px; color: var(--muted-2)')}>{st.prefsReady ? 'Added to the assistant\'s instructions. Board rules and permissions still apply.' : 'Run the assistant settings database migration to save these.'}</span>
-                </label>
-                <div style={css('display: flex; align-items: center; gap: 10px')}>
-                  <button type="button" onClick={savePrefs} disabled={busy || !prefsDirty || !st.prefsReady} style={css(PRIMARY + (busy || !prefsDirty || !st.prefsReady ? ' opacity: 0.5; cursor: default;' : ''))}>{busy ? 'Saving…' : 'Save'}</button>
-                  {saved ? <span role="status" style={css('font-size: 13px; font-weight: 600; color: var(--muted)')}>Saved.</span> : null}
+              <section aria-labelledby="ais-ws" className="fb-pop fb-be-pane" style={paneStyle('workspace')}>
+                <PaneHead id="ais-ws" title="Workspace assistant" help="Defaults for everyone in the workspace. Members can still switch model and mode in their own chat." />
+                {live.length ? (
+                  <Dropdown label="Default provider" value={st.provider} options={providerOpts} onChange={pickDefault} disabled={busy} minMenuWidth={320} />
+                ) : (
+                  <div style={css('display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; padding: 12px; border: 1px dashed var(--border); border-radius: 12px; font-size: 13px; color: var(--muted)')}>
+                    No provider is connected yet.
+                    <button type="button" className="fb-mr" onClick={() => setPane('models')} style={css(SMALL_BTN)}>Connect one</button>
+                  </div>
+                )}
+                <ModeCards label="Default answer mode" caption="Default answer mode for new members" value={mode} onChange={setMode} disabled={!st.prefsReady} />
+                <div style={css('display: flex; flex-direction: column; gap: 6px')}>
+                  <Field label="Instructions for every chat" multiline rows={5} maxLength={MAX_INSTRUCTIONS} disabled={!st.prefsReady} placeholder="e.g. Answer in a friendly tone. Always mention the editor when talking about a project." value={ins} onChange={(e) => setIns(e.target.value)} />
+                  <div style={css('display: flex; justify-content: space-between; gap: 12px')}>
+                    <p style={css(HINT)}>{st.prefsReady ? 'Added to the assistant\'s instructions. Board rules and permissions still apply.' : 'Run the assistant settings database migration to save these.'}</p>
+                    <span style={css(HINT + ' flex: none; font-variant-numeric: tabular-nums;')}>{ins.length.toLocaleString()} / {MAX_INSTRUCTIONS.toLocaleString()}</span>
+                  </div>
                 </div>
               </section>
             ) : null}
-            <section aria-labelledby="ais-keys" style={css('display: flex; flex-direction: column; gap: 12px')}>
-              <h3 id="ais-keys" style={css('margin: 0; font-size: 15px; font-weight: 700')}>{admin ? 'Models & API keys' : 'Connected models'}</h3>
-              {admin ? <p style={css('margin: -4px 0 0; font-size: 13px; color: var(--muted-2)')}>Keys are checked with a live call, then stored encrypted. Nobody can read them back, including you.</p> : null}
+            <section aria-labelledby="ais-keys" className="fb-pop fb-be-pane" style={paneStyle('models')}>
+              <PaneHead id="ais-keys" title={admin ? 'Models & API keys' : 'Connected models'} help={admin ? 'Keys are checked with a live call, then stored encrypted. Nobody can read them back, including you.' : null} />
               {st.providers.map((pr) => (
-                <Fragment key={pr.id}>
-                  <ProviderCard key={pr.model + (pr.connected ? '1' : '0')} pr={pr} admin={admin} isDefault={pr.id === st.provider} A={d.A} after={after} />
-                </Fragment>
+                <ProviderCard key={pr.id + pr.model + (pr.connected ? '1' : '0')} pr={pr} admin={admin} isDefault={pr.id === st.provider} A={d.A} after={after} onDirty={onCardDirty} />
               ))}
             </section>
           </div>
         )}
+        {err ? <p role="alert" style={css('margin: 0; padding: 10px 20px; background: var(--red-soft); color: var(--red-ink); font-size: 13px; font-weight: 600')}>{err}</p> : null}
+        {leaving ? (
+          <footer style={css('display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 12px 16px 12px 20px; border-top: 1px solid var(--line)')}>
+            <p role="alert" style={css('flex: 1 1 200px; margin: 0; font-size: 13px; font-weight: 600; color: var(--ink)')}>Discard your unsaved changes?</p>
+            <button type="button" className="fb-mr" onClick={() => setLeaving(false)} style={css(SMALL_BTN + ' height: 40px; padding: 0 14px;')}>Keep editing</button>
+            <button type="button" onClick={d.close} style={css(btnStyle('danger') + ' letter-spacing: normal;')}>Discard</button>
+          </footer>
+        ) : prefsDirty || saved ? (
+          <footer style={css('display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 12px 16px 12px 20px; border-top: 1px solid var(--line)')}>
+            <span role="status" style={css('flex: 1; font-size: 13px; color: var(--muted-2)')}>{prefsDirty ? 'Unsaved workspace defaults' : 'Saved.'}</span>
+            {prefsDirty ? (
+              <>
+                <button type="button" className="fb-mr" disabled={busy} onClick={resetPrefs} style={css(SMALL_BTN + ' height: 40px; padding: 0 14px;')}>Discard</button>
+                <button type="button" disabled={busy || !st.prefsReady} onClick={savePrefs} style={css(btnStyle('primary') + ' letter-spacing: normal;' + (st.prefsReady ? '' : OFF_BTN))}>{busy ? <Spinner /> : null}{busy ? 'Saving…' : 'Save changes'}</button>
+              </>
+            ) : null}
+          </footer>
+        ) : null}
       </dialog>
     </>
   );

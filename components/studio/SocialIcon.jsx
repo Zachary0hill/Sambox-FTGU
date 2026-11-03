@@ -1,10 +1,10 @@
 'use client';
-// app: a social platform's logo. Website and unknown platforms draw a globe.
+// app: a social platform's logo, from its id or any name socialIdOf knows. Website and unknown platforms draw a globe.
 import { css } from '@/lib/studio/css';
-import { socialOf } from '@/lib/studio/socials';
+import { socialOf, socialIdOf, socialInText } from '@/lib/studio/socials';
 
 export default function SocialIcon({ id, size = 16, mono }) {
-  const so = socialOf(id);
+  const so = socialOf(socialIdOf(id));
   const color = !mono && so && so.color ? so.color : 'currentColor';
   if (!so || !so.path) {
     return (
@@ -19,4 +19,11 @@ export default function SocialIcon({ id, size = 16, mono }) {
       <path d={so.path}></path>
     </svg>
   );
+}
+
+// The logo for a label that names a platform ("YouTube Video"), or nothing. One color by default, so it reads on a
+// colored pill; brand keeps the platform's color on a plain surface.
+export function TextLogo({ text, size = 12, brand }) {
+  const id = socialInText(text);
+  return id ? <SocialIcon id={id} size={size} mono={!brand} /> : null;
 }

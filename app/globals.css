@@ -175,6 +175,21 @@ textarea:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px }
 @media (hover: none) { .fb-msgact { opacity: 1 } }
 .fb-chatin { resize: none; font-family: inherit; line-height: 1.5; outline: none }
 @media (prefers-reduced-motion: reduce) { .fb-shimmer, .fb-caret, .fb-spin, .fb-pop { animation: none } .fb-shimmer { color: var(--muted) } }
+/* Idea detail: header stays put, the main column and the properties rail scroll on their own. When there is no room for that, the whole dialog scrolls. */
+@media (max-width: 860px), (max-height: 560px) {
+  .fb-idea { overflow-y: auto !important }
+  .fb-idea-body { display: flex !important; flex-direction: column; flex: none !important; overflow: visible !important }
+  .fb-idea-main, .fb-idea-pane, .fb-idea-rail { flex: none !important; min-height: auto !important; overflow: visible !important }
+  .fb-idea-main { border-right: 0 !important }
+  .fb-idea-rail { border-top: 1px solid var(--line) }
+}
+@media (max-width: 860px) {
+  .fb-idea-hd { flex-direction: column; padding: 12px 16px !important }
+  .fb-idea-cover { width: calc(100% - 44px) !important; height: 120px !important }
+  .fb-idea-sp { display: none }
+  .fb-idea-x { position: fixed !important }
+  .fb-idea-pad { padding-left: 16px !important; padding-right: 16px !important }
+}
 /* Project modal (docs/design/project-card/CardDetail.dc.html): property rows, brief and status button hovers; phone layout. */
 .fb-prop:hover { background: var(--hover) !important }
 .fb-brief:hover { border-color: var(--border-2) !important; background: var(--surface-2) !important }
