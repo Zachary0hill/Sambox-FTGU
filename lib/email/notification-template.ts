@@ -4,7 +4,7 @@
 export type NotificationKind =
   | 'edit_assigned' | 'thumb_assigned' | 'edit_revision' | 'thumb_revision' | 'sponsor_changes'
   | 'edit_review' | 'thumb_review' | 'edit_approved' | 'thumb_approved' | 'sponsor_requested' | 'sponsor_reminder' | 'sponsor_approved'
-  | 'edit_due' | 'thumb_due';
+  | 'edit_due' | 'thumb_due' | 'comment_mention';
 
 const TONE = {
   assignment: { label: 'Assignment', bg: '#9A6A00' },
@@ -12,6 +12,7 @@ const TONE = {
   review: { label: 'Review', bg: '#7A45C4' },
   approved: { label: 'Approved', bg: '#22844C' },
   deadline: { label: 'Deadline', bg: '#C42B2F' },
+  mention: { label: 'Mention', bg: '#7A45C4' },
 } as const;
 
 const esc = (s: string) => s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c] as string));
@@ -63,6 +64,8 @@ function copyFor(o: NotificationEmailInput): Copy {
       return { tone: 'review', subject: 'Reminder: approval needed for ' + t, heading: 'Your approval is still needed', lead: o.workspace + ' is waiting on ' + acct + ' to approve ' + t + '. Review the draft, then approve it or request changes.' };
     case 'sponsor_approved':
       return { tone: 'approved', subject: acct + ' approved ' + t, heading: acct + ' approved', lead: acct + ' approved ' + t + '. It can move to Scheduled.' };
+    case 'comment_mention':
+      return { tone: 'mention', subject: o.actor + ' mentioned you on ' + t, heading: o.actor + ' mentioned you', lead: o.actor + ' mentioned you in a comment on ' + t + '.' };
     case 'edit_due':
       return { tone: 'deadline', subject: 'Edit due tomorrow: ' + t, heading: 'Your edit is due tomorrow', lead: 'Your edit of ' + t + ' is due tomorrow' + (o.project.due ? ', ' + o.project.due : '') + '.', dueLabel: 'Edit due' };
     case 'thumb_due':

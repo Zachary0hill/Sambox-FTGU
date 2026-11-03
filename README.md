@@ -70,6 +70,7 @@ per recipient, and never for the person who made the change:
 | Revision (Editor Status or Thumbnail becomes Needs Revision, or a sponsor requests changes) | The editor or designer |
 | Review and approval (edit or thumbnail In Review; project moves to Sponsor Review; sponsor decides; edit Approved or thumbnail Done) | Super Admins for reviews and sponsor decisions, the sponsor's approvers for Sponsor Review, the editor or designer when theirs is approved |
 | Deadline (edit or thumbnail due tomorrow in the workspace time zone, not finished, project not Live) | The editor or designer, plus an in-app Deadline notification |
+| Mention ("@Full Name" in a project comment, `supabase/migrations/20261102000300_comment_mentions.sql`) | The person mentioned, if they can read that comment, plus an in-app Mention notification |
 
 `POST /api/notifications/send` (`lib/email/notifications.ts`) queues tomorrow's deadline reminders, then sends what is
 waiting through Resend with `lib/email/notification-template.ts`. The board calls it after a change and once per

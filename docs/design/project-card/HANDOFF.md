@@ -1,5 +1,7 @@
 # Project card + detail modal: build spec
 
+> The Kanban card's look now follows `ZZMEDIA-DASHBOARD`'s `Projects/Card/Project Card` story (`src/components/projects/ProjectCard.tsx`): 12px radius, full-bleed 112px banner, pill tags, link chips. Where this spec describes card styling, that story wins. Column headers follow the same repo's `KanbanColumn` story.
+
 Source designs (open in a browser):
 
 - `ProjectCard.dc.html`: kanban card on the board, anatomy, and every state (minimal, hover, quick menu, selected, dragging, overdue, role views, compact)

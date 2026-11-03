@@ -39,6 +39,8 @@ Let each person choose what a Kanban card shows, the same way columns are chosen
 
 Turn the unread dot into a full "what's new for me" loop.
 
+> Built in `supabase/migrations/20261102000300_comment_mentions.sql`. A trigger resolves mentions from the comment text instead of `postComment()` sending a list, so they can't be forged and only reach people who can read the comment.
+
 **Why**
 - `project_reads` now records when each person last opened a project's Comments, but only the card's dot uses it.
 - The comment trigger already queues the `mention_admin` automation on @-mentions of admins, but nobody else can be mentioned or notified.

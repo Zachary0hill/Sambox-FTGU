@@ -30,7 +30,7 @@ const initialUi = (c, data, path, project) => {
   const prefs = (c.profile && c.profile.prefs) || {};
   const settings = data.settings || {};
   return {
-    role: UI_ROLE[c.role], nav: navFromPath(path || '/'), openJob: project || '', dTab: 'overview',
+    role: UI_ROLE[c.role], nav: navFromPath(path || '/'), openJob: project || '', dTab: project && new URLSearchParams(window.location.search).get('tab') === 'comments' ? 'comments' : 'overview',
     panel: prefs.panel === undefined ? true : !!prefs.panel, theme: prefs.theme || settings.default_theme || 'light',
     density: prefs.density || 'Comfortable', view: prefs.view || settings.default_view || 'table',
     person: 'All', ftype: {}, fchannel: {}, fstatus: {}, sort: 'default', hidden: {}, groupBy: 'stage', closed: {},
@@ -231,6 +231,15 @@ export default function Studio({ initialPath, initialProject }) {
   useEffect(() => {
     if (ctx && !mailed.current) { mailed.current = true; A.sendEmails(); }
   }, [ctx, A]);
+
+  // Opening a project marks its comments seen right away, so closing the tab counts too. The thread's "New since your
+  // last visit" line keeps the time from before this visit (s.dSeen).
+  useEffect(() => {
+    if (!openId || !ctx || UI_ROLE[ctx.role] === 'sponsor' || (s.dTab !== 'overview' && s.dTab !== 'comments')) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- a snapshot taken once per opened project
+    set({ dSeen: { id: openId, at: (D.seen || {})[openId] || null } });
+    A.markSeen({ id: openId });
+  }, [openId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (mfa) return <MfaGate state={mfa} setState={setMfa} sb={sb} onDone={() => { setMfa(null); reload(); }} />;
   if (error === 'no-access') return <Gate title="No workspace access yet" body="Your account is signed in but is not an active member of a workspace. Ask a Super Admin to invite this email, then sign in again." action={() => A.signOut('local')} actionLabel="Sign out" />;

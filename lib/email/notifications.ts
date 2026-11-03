@@ -107,7 +107,7 @@ export async function sendQueuedEmails(opts: { workspaceId: string | null; baseU
       actor: firstName(profileOf.get(r.actor_id || '')) || 'The team', person: firstName(profileOf.get(d.person || '')) || undefined,
       account: d.account, note: d.note || undefined, version: d.version,
       project: { title: p!.title, job: p!.job_code, due: dateLabel(d.due), publish: dateLabel(p!.publish_date) },
-      link: base + '/projects?project=' + encodeURIComponent(p!.job_code), settingsLink: base + '/settings',
+      link: base + '/projects?project=' + encodeURIComponent(p!.job_code) + (r.kind === 'comment_mention' ? '&tab=comments' : ''), settingsLink: base + '/settings',
     });
     if (!first) await wait(GAP_MS);
     first = false;
@@ -146,7 +146,7 @@ async function sendSlackAlerts(workspaceId: string | null, base: string, out: Se
     if (Date.now() - new Date(r.created_at).getTime() > STALE_MS) { await finish(r.id, 'skipped', 'Older than 48 hours'); continue; }
     if (!p || !(p.prefs && p.prefs.myN && p.prefs.myN.slack)) { await finish(r.id, 'skipped', 'Slack alerts turned off in their Settings'); continue; }
     if (quietNow(p)) { await admin.from('notify_outbox').update({ status: 'queued', attempts: Math.max(0, r.attempts - 1) }).eq('id', r.id); out.held++; continue; }
-    const link = r.project_id && job.get(r.project_id) ? base + '/projects?project=' + encodeURIComponent(job.get(r.project_id)!) : base + '/inbox';
+    const link = r.project_id && job.get(r.project_id) ? base + '/projects?project=' + encodeURIComponent(job.get(r.project_id)!) + (r.event === 'mention' ? '&tab=comments' : '') : base + '/inbox';
     const text = [r.actor_label, r.text, r.target_label].filter(Boolean).join(' ') + (r.quote ? '\n> ' + r.quote.slice(0, 300) : '') + '\n' + link;
     try {
       await postSlackAlert(r.workspace_id, text, p.email);
