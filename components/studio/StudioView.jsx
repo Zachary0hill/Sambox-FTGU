@@ -6,7 +6,7 @@ import { css } from '@/lib/studio/css';
 import DateField from './DateField';
 import HeaderCell, { DeleteColumnDialog } from './HeaderCell';
 import SelectPicker from './SelectPicker';
-import StatusPicker from './StatusEditor';
+import StatusPicker, { StatusColorButton } from './StatusEditor';
 import PropertySheet from './PropertySheet';
 import CellEditor from './CellEditors';
 import { FilterBy, SortEditor, FilterChips, NoMatch } from './FilterBar';
@@ -1624,7 +1624,7 @@ export default function StudioView({ V }) {
                             <section aria-labelledby="ws-st" style={css(V.ui.panel)}>
                               <h2 id="ws-st" style={css(V.ui.h3)}>Project statuses</h2>
                               {" "}
-                              <p style={css("margin: 0; font-size: 13px; color: var(--muted)")}>Order matches the workflow. Each status maps to a board stage.</p>
+                              <p style={css("margin: 0; font-size: 13px; color: var(--muted)")}>Order matches the workflow. Each status maps to a board stage. Click a status to change its color.</p>
                               {" "}
                               <div style={css("display: flex; flex-direction: column; margin: 0 -20px; border-top: 1px solid var(--line)")}>
                                 {(V.adm.ws.statuses || []).map((ss, ss__i) => (
@@ -1633,7 +1633,8 @@ export default function StudioView({ V }) {
                                       <span style={css("font-size: 12px; font-weight: 600; color: var(--muted-2); font-variant-numeric: tabular-nums")}>{ss.n}</span>
                                       {" "}
                                       <span>
-                                        <span style={css(ss.style)}>{ss.label}</span>
+                                        {/* app: the chip opens the status's color menu */}
+                                        <StatusColorButton ss={ss} dark={V.dark} />
                                       </span>
                                       {" "}
                                       <span style={css("font-size: 13px; color: var(--ink-3)")}>{ss.stage}</span>

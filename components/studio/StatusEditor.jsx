@@ -159,6 +159,25 @@ export function DefaultStatusMenu({ p, dark, align, x, top, onClose }) {
   );
 }
 
+// Workspace Settings row: the status chip opens its color menu.
+export function StatusColorButton({ ss, dark }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <span style={css('position: relative; display: inline-flex')}>
+      <button type="button" aria-label={'Change color of ' + ss.label} aria-haspopup="dialog" aria-expanded={open} title="Change color" onClick={() => setOpen(!open)}
+        style={css('display: inline-flex; align-items: center; gap: 6px; padding: 0; border: 0; background: transparent; color: var(--muted-2); cursor: pointer')}>
+        <span style={css(ss.style)}>{ss.label}</span>
+        <Icon d={IC.chevD} size={14} />
+      </button>
+      {open ? (
+        <Popover label={'Color of ' + ss.label} onClose={() => setOpen(false)} width={280}>
+          <SwatchList layout="grid" custom value={ss.tone} dark={dark} onChange={ss.setColor} />
+        </Popover>
+      ) : null}
+    </span>
+  );
+}
+
 // Status option menu: name, group, notify sponsor, editors can set, color, delete.
 export function StatusOptionMenu({ o, p, dark, align, x, top, onClose }) {
   const [name, setName] = useState(o.label);
@@ -184,7 +203,7 @@ export function StatusOptionMenu({ o, p, dark, align, x, top, onClose }) {
           <MenuRow icon={SI.bell} label="Notify sponsor" toggle={o.notify} onClick={() => p.toggleNotify(o.id)} />
           <MenuRow icon={SI.lock} label="Editors can set this" toggle={o.editors} onClick={() => p.toggleEditors(o.id)} />
           <Divider />
-          <SwatchList layout="grid" value={o.tone} dark={dark} onChange={(t) => p.setColor(o.id, t)} />
+          <SwatchList layout="grid" custom value={o.tone} dark={dark} onChange={(t) => p.setColor(o.id, t)} />
           {!o.system ? (
             <>
               <Divider />

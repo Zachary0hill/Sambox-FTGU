@@ -1,13 +1,13 @@
 'use client';
 // app: shared primitives for the column system (docs/design/database-components, step 1).
 // Styles live in lib/studio/prims.js; hover and focus states in the .fb-mr / .fb-field / .fb-sw rules in globals.css.
-import { useEffect, useId, useRef } from 'react';
+import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import { css } from '@/lib/studio/css';
-import { OPTION_COLORS } from '@/lib/studio/tones';
+import { OPTION_COLORS, isHexColor, solid } from '@/lib/studio/tones';
 import {
   popStyle, scrimStyle, rowStyle, rowIconStyle, rowLabelStyle, rowMetaStyle, chevStyle, labelStyle, labelActionStyle, iconBtnStyle, dividerStyle,
   fieldStyle, inputStyle, textareaStyle, fieldAddonStyle, fieldLabelStyle, toggleStyle, segStyle, segBtnStyle, chipStyle, chipTextStyle, chipRemoveStyle,
-  dotStyle, swatchStyle, swatchGridStyle, btnStyle,
+  dotStyle, swatchStyle, swatchGridStyle, swatchCustomStyle, btnStyle,
 } from '@/lib/studio/prims';
 
 export { popAlign } from '@/lib/studio/prims';
@@ -208,8 +208,55 @@ export function Dot({ tone, dark, size }) {
   return <span aria-hidden="true" style={css(dotStyle(tone, dark, size))}></span>;
 }
 
+const parseHex = (v) => {
+  const h = (v || '').trim().replace(/^#/, '').toLowerCase();
+  if (/^[0-9a-f]{3}$/.test(h)) return '#' + h.split('').map((c) => c + c).join('');
+  return /^[0-9a-f]{6}$/.test(h) ? '#' + h : '';
+};
+
+// Any color: the browser's picker and a hex field. Dragging in the picker sends a burst of values, so saves wait for a
+// pause; leaving the field or closing the menu saves at once.
+function CustomColor({ value, onChange, dark }) {
+  const custom = isHexColor(value) ? value.toLowerCase() : '';
+  const [draft, setDraft] = useState(null);
+  const pending = useRef('');
+  const timer = useRef(null);
+  const latest = useRef(onChange);
+  useEffect(() => { latest.current = onChange; });
+  const flush = useCallback(() => {
+    clearTimeout(timer.current);
+    const hex = pending.current;
+    pending.current = '';
+    if (hex && latest.current) latest.current(hex);
+  }, []);
+  useEffect(() => flush, [flush]);
+  const edit = (text) => {
+    setDraft(text);
+    const hex = parseHex(text);
+    pending.current = hex;
+    clearTimeout(timer.current);
+    // Three digits may be the start of six, so those wait for Enter or leaving the field.
+    if (hex && text.trim().replace(/^#/, '').length === 6) timer.current = setTimeout(flush, 250);
+  };
+  const done = () => { flush(); setDraft(null); };
+  return (
+    <>
+      <MenuLabel>Custom color</MenuLabel>
+      <div style={css('display: flex; align-items: center; gap: 8px; padding: 4px 10px 8px')}>
+        <input type="color" aria-label="Pick a custom color" value={parseHex(draft) || custom || solid(value, dark)[0].toLowerCase()} onChange={(e) => edit(e.target.value)} onBlur={done} style={css(swatchCustomStyle(!!custom))} />
+        <div style={css('flex: 1; min-width: 0')}>
+          <Field size="sm" label="Custom color hex code" hideLabel placeholder="#FFE066" maxLength={7} autoComplete="off" spellCheck={false} mono
+            value={draft ?? custom} onChange={(e) => edit(e.target.value)} onBlur={done}
+            onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); done(); } }} />
+        </div>
+      </div>
+    </>
+  );
+}
+
 // Color picker over the eight color_token values. layout 'list' (Select options) or 'grid' (Status options).
-export function SwatchList({ value, onChange, dark, layout = 'list', label = 'Colors' }) {
+// custom (grid) adds any color, stored as its #rrggbb.
+export function SwatchList({ value, onChange, dark, layout = 'list', label = 'Colors', custom = false }) {
   if (layout === 'grid') {
     return (
       <>
@@ -221,6 +268,7 @@ export function SwatchList({ value, onChange, dark, layout = 'list', label = 'Co
             </button>
           ))}
         </div>
+        {custom ? <CustomColor value={value} onChange={onChange} dark={dark} /> : null}
       </>
     );
   }

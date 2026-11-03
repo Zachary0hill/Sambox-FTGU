@@ -18,12 +18,23 @@ export async function POST(request: Request) {
   const role = String(body.role || '');
   const views = Array.isArray(body.views) ? body.views.filter((v: string) => VIEWS.includes(v)) : [];
   const accountId = body.accountId || null;
-  if (!name || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || !ROLES.includes(role) || !views.length) {
+  if (!name || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || !ROLES.includes(role) || (!views.length && !['client', 'sponsor'].includes(role))) {
     return NextResponse.json({ error: 'Name, a valid email, a user type and at least one view are required.' }, { status: 400 });
   }
 
-  const saved = await supabase.rpc('invite_member', { p_email: email, p_name: name, p_role: role, p_views: views, p_account: accountId });
-  if (saved.error) return NextResponse.json({ error: saved.error.message }, { status: 400 });
+  const saved = await supabase.rpc('invite_member', { p_email: email, p_name: name, p_role: role, p_views: views.length ? views : null, p_account: accountId });
+  if (saved.error) {
+    // The browser may have stale invite data. Explain an older team invite here too, without changing its access.
+    if (accountId && ['client', 'sponsor'].includes(role) && saved.error.message === 'That email already has a pending invite') {
+      const pending = await supabase.from('invitations').select('role')
+        .eq('workspace_id', ctx.workspace_id).eq('email', email).is('accepted_at', null)
+        .in('role', ['super_admin', 'editor', 'designer']).limit(1);
+      if (pending.data?.length) {
+        return NextResponse.json({ error: email + ' has a pending team invite. Open Users to cancel it before inviting them as a client or sponsor, or use a different email.' }, { status: 409 });
+      }
+    }
+    return NextResponse.json({ error: saved.error.message }, { status: 400 });
+  }
 
   let account: string | null = null;
   if (accountId) {

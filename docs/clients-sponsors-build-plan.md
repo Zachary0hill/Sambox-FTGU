@@ -26,7 +26,7 @@ Goal: an admin can add a client or sponsor, link its projects, send a portal inv
 1. **Resend:** verify a sending domain (add its DNS records), then set `EMAIL_FROM="FTGU Studio <studio@yourdomain.com>"` in `.env.local` and in production.
 2. **Amplify env vars:** `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY`, `RESEND_API_KEY`, `EMAIL_FROM`, `APP_BASE_URL` (the live origin), `CRON_SECRET`.
 3. **Supabase Auth → URL Configuration:** set Site URL to the live domain; add `<domain>/auth/callback` and `<domain>/auth/invite/*` to the redirect allow-list.
-4. **Roles & Permissions:** set the board views for the Sponsor and Client roles (the fallback is table only).
+4. **Roles & Permissions:** set the board views for the Sponsor and Client roles (all five by default). Everyone in those roles follows this setting unless Edit access gives them their own views.
 5. **Workflow settings:** decide on "Require sponsor approval"; tick "Notify sponsor" on the Sponsor Review status (and any others the portal should report).
 
 Done when: a test invite to an outside address arrives, and the link signs the person in on the live domain.
