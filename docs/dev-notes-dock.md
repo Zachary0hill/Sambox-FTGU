@@ -16,7 +16,8 @@ Think of it as a shared sticky-note pad for the people building and running the 
 | Categories | **Idea** (amber), **Enhance** (violet), **Bug** (red). The last used category is remembered in localStorage. Clicking the colored dot on a saved note cycles its category. |
 | Auto tagging | Each note stores `page_path` (pathname + search + hash) and `created_by` / `created_by_email`. The row shows "Idea · zach · /admin/clients". |
 | Resolve | Click the circle to mark done. The row fades out of the open list; **Show done** brings resolved notes back, struck through. Click again to reopen. |
-| Delete | Trash icon appears on hover. |
+| Delete | Trash icon appears on hover. Deleting a note also removes its screenshots from storage. |
+| Screenshots | Paste an image (Cmd+Shift+4, then Cmd+V), drop one onto the card, or click the paperclip. Up to 4 per note; images over 2000px on the long side are downscaled to WebP in the browser before upload. Previews show under the input before you press Enter. Saved notes show a thumbnail strip; click one for a lightbox with arrows, Open and Remove. Files live in the private `dev-note-shots` bucket under `<workspace>/<note>/` and are read with 1 hour signed URLs. |
 | Drag | Grab the header strip and move it anywhere. Snaps to the viewport margin when dropped near an edge. Position persists in localStorage. Double-click the header to reset to the default corner. With the grip focused, arrow keys nudge (Shift for larger steps). Esc during a drag cancels and springs back. |
 | Live updates | Supabase Realtime on the `dev_notes` table: when another admin adds or resolves a note, the list refreshes. |
 | Access | Only members whose role is `super_admin`. Enforced in the UI (the component is not mounted for other roles) **and** in Postgres with RLS, so a non-admin cannot read or write rows even with the API. |
@@ -34,6 +35,7 @@ Think of it as a shared sticky-note pad for the people building and running the 
 | `components/studio/StudioView.jsx` | Renders `{V.devNotes}` inside the board root so the card inherits the theme CSS variables. |
 | `app/globals.css` | Hover and drag states (`.fb-devnotes`, `.fb-devnote`, `html[data-floating-drag]`). |
 | `supabase/migrations/20261023000700_dev_notes.sql` | Table, index, RLS policies, `updated_at` trigger, realtime publication. |
+| `supabase/migrations/20261103000400_dev_note_shots.sql` | `attachments` jsonb column (`[{path, w, h}]`, max 4), the `dev-note-shots` bucket and its Super Admin-only storage policies. |
 
 ### Data model
 

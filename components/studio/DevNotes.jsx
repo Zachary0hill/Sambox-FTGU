@@ -3,6 +3,8 @@
 // jot down an idea, enhancement or bug while browsing and it is tagged with the page you were on. Drag the header to
 // move it (position is remembered), double-click the header to re-centre, arrow keys nudge when the grip is focused,
 // Esc closes. Ported from the ZZMEDIA and Parish dashboards; rows live in dev_notes behind RLS (Super Admins only).
+// Screenshots: paste, drop onto the card, or pick with the paperclip. Up to four per note; large images are downscaled
+// in the browser, stored in the private dev-note-shots bucket under <workspace>/<note>/ and shown through signed URLs.
 /* eslint-disable react-hooks/exhaustive-deps, react-hooks/set-state-in-effect */
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { css } from '@/lib/studio/css';
@@ -21,6 +23,12 @@ const FALLBACK_H = 320;
 const DRAG_THRESHOLD = 4;
 const SNAP = 16;
 const EASE = 'transform 180ms cubic-bezier(0.2, 0.8, 0.2, 1)';
+const SHOTS_BUCKET = 'dev-note-shots';
+const MAX_SHOTS = 4;
+const MAX_EDGE = 2000; // px; retina screenshots are downscaled to this before upload
+const MAX_BYTES = 10 * 1024 * 1024; // the bucket's file_size_limit
+const SIGN_TTL = 3600;
+const IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/avif'];
 
 const sortNotes = (list) => list.slice().sort((a, b) => (a.sort_order - b.sort_order) || (new Date(b.created_at) - new Date(a.created_at)));
 const authorOf = (n) => (n.created_by_email || '').split('@')[0] || '';
@@ -28,6 +36,37 @@ const pagePath = () => (typeof window === 'undefined' ? '' : window.location.pat
 const readJson = (k) => { try { return JSON.parse(window.localStorage.getItem(k) || 'null'); } catch { return null; } };
 const writeJson = (k, v) => { try { if (v == null) window.localStorage.removeItem(k); else window.localStorage.setItem(k, JSON.stringify(v)); } catch { /* ignore */ } };
 const isInteractive = (t) => t instanceof Element && !!t.closest('button, a, input, textarea, select, [contenteditable="true"], [data-no-drag]');
+const hasFiles = (e) => !!(e.dataTransfer && Array.from(e.dataTransfer.types || []).includes('Files'));
+const imageFiles = (list) => Array.from(list || []).filter((f) => f && IMAGE_TYPES.includes(f.type));
+
+// Reads an image file, downscales anything over MAX_EDGE on its long side (or over the bucket limit) and returns
+// { blob, type, ext, w, h }. GIFs keep their bytes so they still animate; everything else that shrinks becomes WebP.
+async function prepImage(file) {
+  const bitmap = await new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => { URL.revokeObjectURL(url); resolve(img); };
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Not a readable image')); };
+    img.src = url;
+  });
+  const w = bitmap.naturalWidth, h = bitmap.naturalHeight;
+  const scale = Math.min(1, MAX_EDGE / Math.max(w, h));
+  const keep = file.type === 'image/gif' || (scale === 1 && file.size <= MAX_BYTES);
+  if (keep) {
+    if (file.size > MAX_BYTES) throw new Error('That image is over 10 MB');
+    return { blob: file, type: file.type, ext: extOf(file.type), w, h };
+  }
+  const cw = Math.round(w * scale), ch = Math.round(h * scale);
+  const canvas = document.createElement('canvas');
+  canvas.width = cw; canvas.height = ch;
+  canvas.getContext('2d').drawImage(bitmap, 0, 0, cw, ch);
+  const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/webp', 0.86));
+  if (!blob) throw new Error('Could not process that image');
+  if (blob.size > MAX_BYTES) throw new Error('That image is over 10 MB');
+  return { blob, type: 'image/webp', ext: 'webp', w: cw, h: ch };
+}
+const extOf = (type) => ({ 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp', 'image/gif': 'gif', 'image/avif': 'avif' }[type] || 'png');
+const shotsOf = (n) => (Array.isArray(n.attachments) ? n.attachments : []);
 
 const P = (d, extra) => <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={css(extra)}><path d={d} /></svg>;
 const I = {
@@ -40,6 +79,10 @@ const I = {
   bulb: 'M15 14c.2-1 .7-1.7 1.5-2.5A6 6 0 106.5 11.5c.8.8 1.3 1.5 1.5 2.5M9 18h6M10 22h4',
   sparkle: 'M9.9 2.1l1.6 4.4 4.4 1.6-4.4 1.6-1.6 4.4-1.6-4.4L3.9 8.1l4.4-1.6zM19 14l.9 2.1 2.1.9-2.1.9L19 20l-.9-2.1L16 17l2.1-.9z',
   bug: 'M8 2l1.88 1.88M14.12 3.88L16 2M9 7.13v-1a3.003 3.003 0 116 0v1M12 20c-3.3 0-6-2.7-6-6v-3a4 4 0 014-4h4a4 4 0 014 4v3c0 3.3-2.7 6-6 6zM12 20v-9M6.53 9C4.6 8.8 3 7.1 3 5M6 13H2M3 21c0-2.1 1.7-3.9 3.8-4M17.47 9c1.93-.2 3.53-1.9 3.53-4M22 13h-4M20.97 21c0-2.1-1.6-3.9-3.8-4',
+  clip: 'M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48',
+  image: 'M3 5a2 2 0 012-2h14a2 2 0 012 2v14a2 2 0 01-2 2H5a2 2 0 01-2-2zM8.5 10a1.5 1.5 0 100-3 1.5 1.5 0 000 3zM21 15l-5-5L5 21',
+  left: 'M15 18l-6-6 6-6',
+  right: 'M9 18l6-6-6-6',
 };
 const CAT_ICON = { idea: I.bulb, enhancement: I.sparkle, bug: I.bug };
 
@@ -199,15 +242,99 @@ function DevNotesCard({ sb, me, workspaceId, onClose }) {
   const [showDone, setShowDone] = useState(false);
   const [cat, setCat] = useState('idea');
   const [value, setValue] = useState('');
+  const [pending, setPending] = useState([]); // images waiting for Log: [{ id, blob, type, ext, w, h, url }]
+  const [urls, setUrls] = useState({}); // storage path -> displayable URL (signed, or the local blob just uploaded)
+  const [dragOver, setDragOver] = useState(false);
+  const [lightbox, setLightbox] = useState(null); // { noteId, index }
   const cardRef = useRef(null);
   const inputRef = useRef(null);
+  const fileRef = useRef(null);
+  const dragDepth = useRef(0);
+  const signedAt = useRef(new Map()); // path -> ms when signed; re-sign after 50 minutes
   const { dragging, handleProps, gripKeyDown } = useDrag(cardRef);
 
   useEffect(() => { const saved = readJson(CAT_KEY); if (CATS[saved]) setCat(saved); }, []);
   useEffect(() => { if (inputRef.current) inputRef.current.focus(); }, []);
+  useEffect(() => () => { pending.forEach((p) => URL.revokeObjectURL(p.url)); }, []);
 
   const flash = (msg) => { setActionError(msg); window.setTimeout(() => setActionError((c) => (c === msg ? '' : c)), 3500); };
   const unfade = (id) => setFading((c) => { const s = new Set(c); s.delete(id); return s; });
+
+  // ── Screenshots ──
+  const addFiles = async (list) => {
+    const files = imageFiles(list);
+    if (!files.length) { if (list && list.length) flash('Only images can be attached'); return; }
+    const room = MAX_SHOTS - pending.length;
+    if (room <= 0) { flash('Up to ' + MAX_SHOTS + ' images per note'); return; }
+    if (files.length > room) flash('Up to ' + MAX_SHOTS + ' images per note');
+    const prepared = [];
+    for (const f of files.slice(0, room)) {
+      try { const p = await prepImage(f); prepared.push({ ...p, id: 'p' + Date.now() + Math.random().toString(36).slice(2, 6), url: URL.createObjectURL(p.blob) }); }
+      catch (err) { flash(err.message || 'Could not read that image'); }
+    }
+    if (prepared.length) setPending((c) => [...c, ...prepared].slice(0, MAX_SHOTS));
+    if (inputRef.current) inputRef.current.focus();
+  };
+  const dropPending = (id) => setPending((c) => { const p = c.find((x) => x.id === id); if (p) URL.revokeObjectURL(p.url); return c.filter((x) => x.id !== id); });
+  const onPaste = (e) => {
+    const files = imageFiles(e.clipboardData && e.clipboardData.files);
+    if (!files.length) return;
+    e.preventDefault();
+    addFiles(files);
+  };
+  const onDragEnter = (e) => { if (!hasFiles(e)) return; e.preventDefault(); dragDepth.current += 1; setDragOver(true); };
+  const onDragOver = (e) => { if (!hasFiles(e)) return; e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; };
+  const onDragLeave = (e) => { if (!hasFiles(e)) return; dragDepth.current = Math.max(0, dragDepth.current - 1); if (!dragDepth.current) setDragOver(false); };
+  const onDrop = (e) => { if (!hasFiles(e)) return; e.preventDefault(); dragDepth.current = 0; setDragOver(false); addFiles(e.dataTransfer.files); };
+
+  // While the dock is open, a file dropped outside it must not navigate the tab away to the image.
+  useEffect(() => {
+    const block = (e) => { if (hasFiles(e)) e.preventDefault(); };
+    window.addEventListener('dragover', block);
+    window.addEventListener('drop', block);
+    return () => { window.removeEventListener('dragover', block); window.removeEventListener('drop', block); };
+  }, []);
+
+  // Signed URLs for every attachment on screen, batched, reused for 50 minutes. Paths we uploaded ourselves already
+  // map to the local blob and are skipped.
+  useEffect(() => {
+    const now = Date.now();
+    const paths = [...new Set(notes.flatMap((n) => shotsOf(n).map((a) => a.path)))]
+      .filter((p) => p && !(urls[p] && (!signedAt.current.has(p) || now - signedAt.current.get(p) < 50 * 60 * 1000)));
+    if (!paths.length) return;
+    let gone = false;
+    sb.storage.from(SHOTS_BUCKET).createSignedUrls(paths, SIGN_TTL).then((res) => {
+      if (gone || res.error || !res.data) return;
+      const next = {};
+      res.data.forEach((x) => { if (x.signedUrl) { next[x.path] = x.signedUrl; signedAt.current.set(x.path, now); } });
+      if (Object.keys(next).length) setUrls((c) => ({ ...c, ...next }));
+    });
+    return () => { gone = true; };
+  }, [notes, sb]);
+
+  const uploadShots = async (noteId, shots) => {
+    const saved = [];
+    for (let i = 0; i < shots.length; i++) {
+      const s = shots[i];
+      const path = workspaceId + '/' + noteId + '/' + Date.now() + '-' + i + '.' + s.ext;
+      const up = await sb.storage.from(SHOTS_BUCKET).upload(path, s.blob, { upsert: false, contentType: s.type });
+      if (up.error) throw new Error(up.error.message);
+      saved.push({ path, w: s.w, h: s.h, local: s.url });
+    }
+    return saved;
+  };
+
+  const removeShot = async (note, index) => {
+    const shots = shotsOf(note);
+    const target = shots[index];
+    if (!target) return;
+    const next = shots.filter((_, i) => i !== index);
+    setNotes((c) => c.map((n) => (n.id === note.id ? { ...n, attachments: next } : n)));
+    setLightbox((lb) => (lb && lb.noteId === note.id ? (next.length ? { noteId: note.id, index: Math.min(index, next.length - 1) } : null) : lb));
+    const res = await sb.from('dev_notes').update({ attachments: next }).eq('id', note.id);
+    if (res.error) { flash('Could not remove that image'); setNotes((c) => c.map((n) => (n.id === note.id ? { ...n, attachments: shots } : n))); return; }
+    sb.storage.from(SHOTS_BUCKET).remove([target.path]).catch(() => {});
+  };
 
   const fetchNotes = useCallback(async (quiet) => {
     if (!quiet) { setLoading(true); setLoadError(''); }
@@ -228,29 +355,65 @@ function DevNotesCard({ sb, me, workspaceId, onClose }) {
     return () => { clearTimeout(t); sb.removeChannel(ch); };
   }, [sb, workspaceId, fetchNotes]);
 
-  // Esc closes, unless a drag owns it (the drag hook stops propagation on its own capture listener).
+  const stepLightbox = (d) => setLightbox((lb) => {
+    if (!lb) return lb;
+    const n = notes.find((x) => x.id === lb.noteId);
+    const len = n ? shotsOf(n).length : 0;
+    return len ? { noteId: lb.noteId, index: (lb.index + d + len) % len } : null;
+  });
+
+  // Esc closes, unless a drag owns it (the drag hook stops propagation on its own capture listener) or the lightbox
+  // is open, in which case Esc closes the lightbox and arrows step through the note's images.
   useEffect(() => {
     if (dragging) return;
-    const onKey = (e) => { if (e.key === 'Escape') onClose(); };
+    const onKey = (e) => {
+      if (lightbox) {
+        if (e.key === 'Escape') { e.preventDefault(); setLightbox(null); }
+        else if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') { e.preventDefault(); stepLightbox(e.key === 'ArrowRight' ? 1 : -1); }
+        return;
+      }
+      if (e.key === 'Escape') onClose();
+    };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [dragging, onClose]);
+  }, [dragging, onClose, lightbox, notes]);
 
   const pickCat = (c) => { setCat(c); writeJson(CAT_KEY, c); if (inputRef.current) inputRef.current.focus(); };
 
+  // Uploads the pending images under the saved note and writes their paths; returns the row to show.
+  const attachShots = async (note, shots) => {
+    try {
+      const uploaded = await uploadShots(note.id, shots);
+      const attachments = uploaded.map(({ path: p, w, h }) => ({ path: p, w, h }));
+      setUrls((c) => ({ ...c, ...Object.fromEntries(uploaded.map((u) => [u.path, u.local])) }));
+      const upd = await sb.from('dev_notes').update({ attachments }).eq('id', note.id).select().single();
+      if (upd.error) throw new Error(upd.error.message);
+      return upd.data;
+    } catch (err) {
+      flash('Note saved, but the images did not upload: ' + (err.message || 'unknown error'));
+      return { ...note, attachments: [] };
+    }
+  };
+
+  // Saves the row first, then uploads any images under its id and writes their paths. The optimistic row shows the
+  // local previews straight away; a failed upload keeps the text and reports the images.
   const add = async () => {
-    const content = value.trim();
+    const shots = pending;
+    const content = value.trim() || (shots.length ? 'Screenshot' : '');
     if (!content) return;
-    setValue('');
+    setValue(''); setPending([]);
     if (inputRef.current) inputRef.current.focus();
     const path = pagePath() || null;
     const tempId = 'tmp-' + Date.now();
     const top = notes.length ? Math.min(...notes.map((n) => n.sort_order)) : 1;
     const row = { workspace_id: workspaceId, content: content.slice(0, 2000), category: cat, priority: 'medium', page_path: path ? path.slice(0, 512) : null, sort_order: top - 1, created_by: me.id, created_by_email: me.email || null };
-    setNotes((c) => sortNotes([{ ...row, id: tempId, is_resolved: false, created_at: new Date().toISOString() }, ...c]));
+    const temp = { ...row, id: tempId, is_resolved: false, created_at: new Date().toISOString(), attachments: shots.map((s) => ({ path: s.url, w: s.w, h: s.h })) };
+    if (shots.length) setUrls((c) => ({ ...c, ...Object.fromEntries(shots.map((s) => [s.url, s.url])) }));
+    setNotes((c) => sortNotes([temp, ...c]));
     const res = await sb.from('dev_notes').insert(row).select().single();
-    if (res.error) { flash('Could not save that note: ' + res.error.message); setNotes((c) => c.filter((n) => n.id !== tempId)); }
-    else setNotes((c) => sortNotes(c.map((n) => (n.id === tempId ? res.data : n))));
+    if (res.error) { flash('Could not save that note: ' + res.error.message); setNotes((c) => c.filter((n) => n.id !== tempId)); shots.forEach((s) => URL.revokeObjectURL(s.url)); return; }
+    const saved = shots.length ? await attachShots(res.data, shots) : res.data;
+    setNotes((c) => sortNotes(c.map((n) => (n.id === tempId ? saved : n))));
   };
 
   const resolve = async (note) => {
@@ -273,14 +436,20 @@ function DevNotesCard({ sb, me, workspaceId, onClose }) {
 
   const remove = async (id) => {
     const prev = notes;
+    const paths = shotsOf(prev.find((n) => n.id === id) || {}).map((a) => a.path);
     setNotes((c) => c.filter((n) => n.id !== id));
+    setLightbox((lb) => (lb && lb.noteId === id ? null : lb));
     const res = await sb.from('dev_notes').delete().eq('id', id);
-    if (res.error) { flash('Could not delete that note'); setNotes(prev); }
+    if (res.error) { flash('Could not delete that note'); setNotes(prev); return; }
+    if (paths.length) sb.storage.from(SHOTS_BUCKET).remove(paths).catch(() => {});
   };
 
   const visible = useMemo(() => notes.filter((n) => showDone || !n.is_resolved), [notes, showDone]);
   const openCount = notes.filter((n) => !n.is_resolved).length;
   const meta = CATS[cat];
+  const lbNote = lightbox ? notes.find((n) => n.id === lightbox.noteId) : null;
+  const lbShots = lbNote ? shotsOf(lbNote) : [];
+  const lbShot = lbShots[lightbox ? lightbox.index : -1] || null;
 
   const chipStyle = (on, c) => 'display: inline-flex; align-items: center; gap: 6px; min-height: 28px; padding: 0 10px; border-radius: 999px; font-size: 12px; font-weight: 600; cursor: pointer; ' +
     (on ? 'background: ' + c.soft + '; color: ' + c.ink + '; border: 1px solid ' + c.dot + '55;' : 'background: var(--surface-2); color: var(--muted); border: 1px solid var(--line-4);');
@@ -289,7 +458,15 @@ function DevNotesCard({ sb, me, workspaceId, onClose }) {
   return (
     <div data-dev-notes="" style={css('position: fixed; inset: 0; z-index: 90; pointer-events: none;')}>
       <div ref={cardRef} className="fb-devnotes" style={css('position: absolute; left: 0; top: 0; width: ' + WIDTH + 'px; max-width: calc(100vw - ' + MARGIN * 2 + 'px); pointer-events: auto;')}>
-        <div role="dialog" aria-label="Dev notes" className="fb-float" style={css('display: flex; flex-direction: column; max-height: min(72vh, 600px); border: 1px solid var(--line-4); border-radius: 18px; background: var(--surface); color: var(--ink); box-shadow: 0 1px 2px rgba(0,0,0,0.06), 0 24px 64px rgba(0,0,0,0.22); overflow: hidden; font-family: var(--font-main);')}>
+        <div role="dialog" aria-label="Dev notes" className="fb-float" onPaste={onPaste} onDragEnter={onDragEnter} onDragOver={onDragOver} onDragLeave={onDragLeave} onDrop={onDrop}
+          style={css('position: relative; display: flex; flex-direction: column; max-height: min(72vh, 600px); border: 1px solid ' + (dragOver ? meta.dot : 'var(--line-4)') + '; border-radius: 18px; background: var(--surface); color: var(--ink); box-shadow: 0 1px 2px rgba(0,0,0,0.06), 0 24px 64px rgba(0,0,0,0.22); overflow: hidden; font-family: var(--font-main);')}>
+          {dragOver ? (
+            <div aria-hidden="true" style={css('position: absolute; inset: 0; z-index: 2; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; border-radius: 18px; background: color-mix(in srgb, var(--surface) 86%, transparent); backdrop-filter: blur(2px); pointer-events: none;')}>
+              <span style={css('display: inline-flex; align-items: center; justify-content: center; width: 48px; height: 48px; border-radius: 14px; background: ' + meta.soft + '; color: ' + meta.ink + ';')}>{P(I.image, 'width: 22px; height: 22px')}</span>
+              <p style={css('margin: 0; font-size: 13px; font-weight: 700;')}>Drop to attach</p>
+              <p style={css('margin: 0; font-size: 11.5px; color: var(--muted);')}>Up to {MAX_SHOTS} images per note</p>
+            </div>
+          ) : null}
           {/* Header: the whole strip is the drag handle; buttons opt out. */}
           <div {...handleProps} title="Drag to move · double-click to re-centre" style={css('display: flex; align-items: center; gap: 10px; padding: 10px 10px 10px 8px; border-bottom: 1px solid var(--line-3); cursor: grab; user-select: none; touch-action: none; background: var(--surface-2);')}>
             <span role="button" tabIndex={0} onKeyDown={gripKeyDown} aria-label="Move Dev Notes. Arrow keys nudge, Shift for larger steps, double-click re-centres." style={css('display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 24px; border-radius: 6px; color: var(--faint);')}>
@@ -314,17 +491,32 @@ function DevNotesCard({ sb, me, workspaceId, onClose }) {
           </div>
 
           {/* Quick add */}
-          <form onSubmit={(e) => { e.preventDefault(); add(); }} style={css('margin: 0 12px 8px; display: flex; align-items: center; gap: 10px; min-height: 42px; padding: 0 8px 0 12px; box-sizing: border-box; border: 1px solid ' + (value ? meta.dot + '99' : 'var(--border)') + '; border-radius: 12px; background: var(--surface-2);')}>
-            <span aria-hidden="true" style={css('width: 8px; height: 8px; flex: none; border-radius: 999px; background: ' + meta.dot + ';')} />
-            <input ref={inputRef} type="text" value={value} aria-label="Log a dev note" placeholder={meta.placeholder} autoComplete="off"
-              onChange={(e) => setValue(e.target.value)}
-              onKeyDown={(e) => { e.stopPropagation(); if (e.key === 'Escape') { if (value) setValue(''); else onClose(); } }}
-              style={css('flex: 1; min-width: 0; border: 0; outline: none; background: transparent; font-size: 13px; color: var(--ink); padding: 0;')} />
-            {value.trim() ? (
-              <button type="submit" style={css('display: inline-flex; align-items: center; gap: 4px; min-height: 28px; padding: 0 10px; border: 0; border-radius: 8px; background: var(--inv); color: var(--inv-ink); font-size: 11.5px; font-weight: 700; cursor: pointer;')}>Log {P(I.enter, 'width: 12px; height: 12px')}</button>
-            ) : (
-              <kbd style={css('display: inline-flex; align-items: center; gap: 4px; height: 22px; padding: 0 6px; border: 1px solid var(--line-4); border-radius: 6px; background: var(--chip); color: var(--faint); font-family: var(--font-main); font-size: 10.5px; font-weight: 600;')}>{P(I.enter, 'width: 11px; height: 11px')} Enter</kbd>
-            )}
+          <form onSubmit={(e) => { e.preventDefault(); add(); }} style={css('margin: 0 12px 8px; display: flex; flex-direction: column; box-sizing: border-box; border: 1px solid ' + (value || pending.length ? meta.dot + '99' : 'var(--border)') + '; border-radius: 12px; background: var(--surface-2);')}>
+            <div style={css('display: flex; align-items: center; gap: 10px; min-height: 42px; padding: 0 6px 0 12px;')}>
+              <span aria-hidden="true" style={css('width: 8px; height: 8px; flex: none; border-radius: 999px; background: ' + meta.dot + ';')} />
+              <input ref={inputRef} type="text" value={value} aria-label="Log a dev note" placeholder={pending.length ? 'Add a caption (optional)…' : meta.placeholder} autoComplete="off"
+                onChange={(e) => setValue(e.target.value)}
+                onKeyDown={(e) => { e.stopPropagation(); if (e.key === 'Escape') { if (value) setValue(''); else if (pending.length) pending.forEach((p) => dropPending(p.id)); else onClose(); } }}
+                style={css('flex: 1; min-width: 0; border: 0; outline: none; background: transparent; font-size: 13px; color: var(--ink); padding: 0;')} />
+              <input ref={fileRef} type="file" accept={IMAGE_TYPES.join(',')} multiple hidden onChange={(e) => { addFiles(e.target.files); e.target.value = ''; }} />
+              <button type="button" className="fb-ni" aria-label="Attach a screenshot" title="Attach a screenshot · or paste / drop one" disabled={pending.length >= MAX_SHOTS} onClick={() => fileRef.current && fileRef.current.click()}
+                style={css('display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; flex: none; border: 0; border-radius: 8px; background: transparent; cursor: pointer; color: ' + (pending.length ? meta.ink : 'var(--faint)') + (pending.length >= MAX_SHOTS ? '; opacity: .4; cursor: default' : '') + ';')}>{P(I.clip, 'width: 15px; height: 15px')}</button>
+              {value.trim() || pending.length ? (
+                <button type="submit" style={css('display: inline-flex; align-items: center; gap: 4px; min-height: 28px; padding: 0 10px; border: 0; border-radius: 8px; background: var(--inv); color: var(--inv-ink); font-size: 11.5px; font-weight: 700; cursor: pointer;')}>Log {P(I.enter, 'width: 12px; height: 12px')}</button>
+              ) : (
+                <kbd style={css('display: inline-flex; align-items: center; gap: 4px; height: 22px; padding: 0 6px; border: 1px solid var(--line-4); border-radius: 6px; background: var(--chip); color: var(--faint); font-family: var(--font-main); font-size: 10.5px; font-weight: 600;')}>{P(I.enter, 'width: 11px; height: 11px')} Enter</kbd>
+              )}
+            </div>
+            {pending.length ? (
+              <div style={css('display: flex; gap: 6px; padding: 0 10px 10px; overflow-x: auto;')}>
+                {pending.map((p) => (
+                  <span key={p.id} className="fb-devshot" style={css('position: relative; flex: none; width: 64px; height: 48px; border-radius: 8px; overflow: hidden; border: 1px solid var(--line-4); background: var(--chip);')}>
+                    <img src={p.url} alt="" width={p.w} height={p.h} style={css('display: block; width: 100%; height: 100%; object-fit: cover;')} />
+                    <button type="button" aria-label="Remove image" onClick={() => dropPending(p.id)} style={css('position: absolute; top: 3px; right: 3px; display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 18px; padding: 0; border: 0; border-radius: 999px; background: rgba(0,0,0,0.6); color: #fff; cursor: pointer;')}>{P(I.close, 'width: 10px; height: 10px')}</button>
+                  </span>
+                ))}
+              </div>
+            ) : null}
           </form>
 
           {actionError ? <p role="alert" style={css('margin: 0 12px 8px; padding: 6px 10px; border-radius: 8px; background: var(--red-soft); color: var(--red-ink); font-size: 12px; font-weight: 600;')}>{actionError}</p> : null}
@@ -359,6 +551,16 @@ function DevNotesCard({ sb, me, workspaceId, onClose }) {
                         <p style={css('flex: 1; min-width: 0; margin: 0; font-size: 12.5px; font-weight: 500; line-height: 1.4; overflow-wrap: anywhere; ' + (n.is_resolved ? 'color: var(--muted); text-decoration: line-through;' : ''))}>{n.content}</p>
                         <button type="button" className="fb-devnote-x" aria-label="Delete note" onClick={() => remove(n.id)} style={css('flex: none; padding: 2px; border: 0; background: transparent; cursor: pointer; color: var(--faint); opacity: 0;')}>{P(I.trash, 'width: 13px; height: 13px')}</button>
                       </div>
+                      {shotsOf(n).length ? (
+                        <div style={css('display: flex; gap: 6px; margin: 6px 0 0 16px; overflow-x: auto;')}>
+                          {shotsOf(n).map((a, i) => (
+                            <button key={a.path} type="button" aria-label={'Open screenshot ' + (i + 1) + ' of ' + shotsOf(n).length} onClick={() => setLightbox({ noteId: n.id, index: i })}
+                              style={css('flex: none; width: 72px; height: 54px; padding: 0; border: 1px solid var(--line-4); border-radius: 8px; overflow: hidden; background: var(--chip); cursor: zoom-in;' + (n.is_resolved ? ' opacity: .6;' : ''))}>
+                              {urls[a.path] ? <img src={urls[a.path]} alt="" width={a.w} height={a.h} loading="lazy" style={css('display: block; width: 100%; height: 100%; object-fit: cover;')} /> : <span style={css('display: flex; width: 100%; height: 100%; align-items: center; justify-content: center; color: var(--faint);')}>{P(I.image, 'width: 14px; height: 14px')}</span>}
+                            </button>
+                          ))}
+                        </div>
+                      ) : null}
                       <div style={css('display: flex; align-items: center; gap: 6px; margin-top: 4px; font-size: 10.5px; color: var(--muted); min-width: 0;')}>
                         <span style={css('font-weight: 700; color: ' + c.ink + ';')}>{c.label}</span>
                         {author ? <><span style={css('color: var(--faint);')}>·</span><span style={css('flex: none;')}>{author}</span></> : null}
@@ -372,6 +574,28 @@ function DevNotesCard({ sb, me, workspaceId, onClose }) {
           </div>
         </div>
       </div>
+
+      {/* Lightbox: full-size screenshot over a dim backdrop. Click outside, Esc or the close button dismisses; arrows step. */}
+      {lbShot ? (
+        <div role="dialog" aria-modal="true" aria-label="Screenshot" onClick={() => setLightbox(null)} style={css('position: absolute; inset: 0; z-index: 5; display: flex; align-items: center; justify-content: center; padding: 32px; background: rgba(0,0,0,0.72); pointer-events: auto; font-family: var(--font-main);')}>
+          <div onClick={(e) => e.stopPropagation()} style={css('position: relative; display: flex; flex-direction: column; gap: 10px; max-width: min(1200px, 100%); max-height: 100%;')}>
+            {urls[lbShot.path] ? <img src={urls[lbShot.path]} alt={lbNote.content} width={lbShot.w} height={lbShot.h} style={css('display: block; max-width: 100%; max-height: calc(100vh - 140px); width: auto; height: auto; object-fit: contain; border-radius: 12px; box-shadow: 0 24px 64px rgba(0,0,0,0.5); background: #111;')} /> : <p style={css('margin: 0; color: #fff;')}>Loading…</p>}
+            <div style={css('display: flex; align-items: center; gap: 10px; color: #fff; font-size: 12px;')}>
+              <p style={css('flex: 1; min-width: 0; margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; opacity: .85;')}>{lbNote.content}</p>
+              {lbShots.length > 1 ? (
+                <span style={css('display: inline-flex; align-items: center; gap: 2px;')}>
+                  <button type="button" aria-label="Previous screenshot" onClick={() => stepLightbox(-1)} style={css('display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border: 0; border-radius: 8px; background: rgba(255,255,255,0.12); color: #fff; cursor: pointer;')}>{P(I.left)}</button>
+                  <span style={css('min-width: 40px; text-align: center; font-variant-numeric: tabular-nums;')}>{lightbox.index + 1} / {lbShots.length}</span>
+                  <button type="button" aria-label="Next screenshot" onClick={() => stepLightbox(1)} style={css('display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border: 0; border-radius: 8px; background: rgba(255,255,255,0.12); color: #fff; cursor: pointer;')}>{P(I.right)}</button>
+                </span>
+              ) : null}
+              {urls[lbShot.path] ? <a href={urls[lbShot.path]} target="_blank" rel="noreferrer" style={css('color: #fff; opacity: .85; text-decoration: underline;')}>Open</a> : null}
+              {String(lbNote.id).startsWith('tmp-') ? null : <button type="button" onClick={() => removeShot(lbNote, lightbox.index)} style={css('min-height: 28px; padding: 0 10px; border: 0; border-radius: 8px; background: rgba(229,72,77,0.25); color: #fff; font-size: 11.5px; font-weight: 600; cursor: pointer;')}>Remove</button>}
+              <button type="button" aria-label="Close screenshot" onClick={() => setLightbox(null)} style={css('display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border: 0; border-radius: 8px; background: rgba(255,255,255,0.12); color: #fff; cursor: pointer;')}>{P(I.close)}</button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
