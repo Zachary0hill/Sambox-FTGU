@@ -3632,6 +3632,11 @@ export default function StudioView({ V }) {
                                   <svg aria-hidden="true" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"></rect><circle cx="9" cy="10" r="2"></circle><path d="M21 17l-5-5-9 8"></path></svg>
                                 </button>
                               ) : null}
+                              {V.ids.sel.canGenCover ? (
+                                <button type="button" aria-label="Generate cover with AI" title="Generate cover with AI" onClick={V.ids.sel.genCover} style={css("position: absolute; top: 6px; right: 42px; width: 30px; height: 30px; display: inline-flex; align-items: center; justify-content: center; padding: 0; border: 0; border-radius: 8px; background: #FFFFFF; color: #111111; box-shadow: 0 1px 4px rgba(0,0,0,0.25); cursor: pointer")}>
+                                  <svg aria-hidden="true" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"></path><path d="M19 16l.8 2.2L22 19l-2.2.8L19 22l-.8-2.2L16 19l2.2-.8z"></path></svg>
+                                </button>
+                              ) : null}
                             </div>
                             <div style={css("flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px")}>
                               <div style={css("display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding-right: 44px")}>
@@ -3719,7 +3724,30 @@ export default function StudioView({ V }) {
                               {V.ids.sel.isRefs ? (
                                 <div role="tabpanel" id="idp-refs" aria-labelledby="idt-refs" style={css("display: flex; flex-direction: column; gap: 10px")}>
                                   {V.ids.sel.noRefs ? <p style={css("margin: 0; padding: 12px 0; font-size: 14px; color: var(--muted)")}>No references yet.</p> : null}
-                                  {(V.ids.sel.refs || []).map((r, r__i) => {
+                                  {(V.ids.sel.visualRefs || []).length ? (
+                                    <div className="fb-ref-grid" style={css("display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 14px; margin-bottom: 4px")}>
+                                      {(V.ids.sel.visualRefs || []).map((r, r__i) => (
+                                        <div key={r__i} className="fb-ref-card" style={css("position: relative; display: flex; flex-direction: column; border: 1px solid var(--border); border-radius: 16px; background: var(--surface-2); overflow: hidden")}>
+                                          <a href={r.href} target="_blank" rel="noopener noreferrer" style={css("position: relative; display: block; aspect-ratio: 16 / 9; background: #111111; color: inherit; text-decoration: none")}>
+                                            <img src={r.image} alt="" loading="lazy" decoding="async" referrerPolicy="no-referrer" draggable="false" style={css(r.imgStyle)} />
+                                            {r.isVideo ? (
+                                              <span aria-hidden="true" style={css("position: absolute; left: 50%; top: 50%; width: 44px; height: 44px; margin: -22px 0 0 -22px; display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; background: rgba(17,17,17,0.72); color: #FFFFFF; box-shadow: 0 2px 8px rgba(0,0,0,0.35)")}>
+                                                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"></path></svg>
+                                              </span>
+                                            ) : null}
+                                            {r.site ? <span style={css("position: absolute; left: 8px; bottom: 8px; padding: 3px 8px; border-radius: 8px; background: rgba(17,17,17,0.72); color: #FFFFFF; font-size: 11px; font-weight: 700")}>{r.site}</span> : null}
+                                            <span style={css("position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)")}>{r.title} (opens in a new tab)</span>
+                                          </a>
+                                          <div style={css("display: flex; flex-direction: column; gap: 4px; padding: 10px 12px 12px")}>
+                                            <a href={r.href} target="_blank" rel="noopener noreferrer" style={css("font-size: 14px; font-weight: 600; line-height: 1.35; color: var(--ink); text-decoration: none; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden")}>{r.title}</a>
+                                            <span style={css("font-size: 12px; color: var(--muted); overflow-wrap: anywhere")}>{r.meta}</span>
+                                            {r.useCover ? <button type="button" className="fb-ni" onClick={r.useCover} style={css("align-self: flex-start; margin-top: 6px; min-height: 32px; padding: 0 12px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); font-size: 12px; font-weight: 600; color: var(--ink); cursor: pointer")}>{r.useCoverLabel}</button> : null}
+                                          </div>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  ) : null}
+                                  {(V.ids.sel.plainRefs || []).map((r, r__i) => {
                                     const inner = (
                                       <>
                                         <span aria-hidden="true" style={css(r.thumb)}>{r.thumbText}</span>
@@ -3822,6 +3850,9 @@ export default function StudioView({ V }) {
                                 <input id="ie-file" type="file" accept="image/*" onChange={V.ids.edit.onFile} style={css("position: absolute; width: 1px; height: 1px; opacity: 0")} />
                               </label>
                               {V.ids.edit.hasImg ? <button type="button" className="fb-ni" onClick={V.ids.edit.removeImg} style={css("min-height: 40px; padding: 0 12px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); font-size: 13px; font-weight: 600; color: var(--red-ink); cursor: pointer")}>Remove</button> : null}
+                              <button type="button" className="fb-ni" aria-pressed={V.ids.edit.aiPressed} aria-controls="ie-ai" onClick={V.ids.edit.toggleAi} style={css("display: inline-flex; align-items: center; gap: 8px; min-height: 40px; padding: 0 14px; border: 1px solid " + (V.ids.edit.aiOpen ? 'var(--ink)' : 'var(--border)') + "; border-radius: 12px; background: " + (V.ids.edit.aiOpen ? 'var(--inv)' : 'var(--surface)') + "; color: " + (V.ids.edit.aiOpen ? 'var(--inv-ink)' : 'var(--ink)') + "; font-size: 13px; font-weight: 600; cursor: pointer")}>
+                                <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"></path><path d="M19 16l.8 2.2L22 19l-2.2.8L19 22l-.8-2.2L16 19l2.2-.8z"></path></svg>Generate with AI
+                              </button>
                             </div>
                             <div style={css("display: flex; align-items: center; gap: 8px")}>
                               <span id="ie-cv" style={css("font-size: 13px; color: var(--muted)")}>Style</span>
@@ -3842,6 +3873,25 @@ export default function StudioView({ V }) {
                               </div>
                             </div>
                           </div>
+                          {V.ids.edit.aiOpen ? (
+                            <section id="ie-ai" aria-labelledby="ie-ai-h" style={css("display: flex; flex-direction: column; gap: 12px; padding: 16px clamp(16px, 4vw, 32px); border-bottom: 1px solid var(--line); background: var(--surface-2)")}>
+                              <div style={css("display: flex; flex-wrap: wrap; align-items: center; gap: 12px 24px")}>
+                                <span id="ie-ai-h" style={css("font-size: 13px; font-weight: 700")}>AI cover</span>
+                                <div style={css("display: flex; align-items: center; gap: 8px")}>
+                                  <span id="ie-ai-st" style={css("font-size: 13px; color: var(--muted)")}>Style</span>
+                                  <div role="group" aria-labelledby="ie-ai-st" style={css("display: inline-flex; padding: 3px; gap: 2px; border-radius: 12px; background: var(--chip)")}>
+                                    {(V.ids.edit.aiStyles || []).map((x) => <button key={x.label} type="button" aria-pressed={x.pressed} onClick={x.pick} style={css(x.style)}>{x.label}</button>)}
+                                  </div>
+                                </div>
+                              </div>
+                              <div style={css("display: flex; flex-wrap: wrap; align-items: center; gap: 8px")}>
+                                <label htmlFor="ie-ai-p" style={css("position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)")}>Extra direction for the image</label>
+                                <input id="ie-ai-p" type="text" autoComplete="off" maxLength="400" placeholder="Optional direction, like “a gym bag on a locker-room bench, moody lighting”" value={V.ids.edit.aiPrompt} onChange={V.ids.edit.onAiPrompt} disabled={V.ids.edit.aiBusy} style={css("flex: 1 1 320px; min-width: 0; box-sizing: border-box; min-height: 40px; padding: 0 14px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); font-family: inherit; font-size: 14px; color: var(--ink)")} />
+                                <button type="button" onClick={V.ids.edit.generate} disabled={V.ids.edit.aiBusy || !V.ids.edit.aiOn} aria-busy={V.ids.edit.aiBusy ? 'true' : 'false'} style={css(V.ids.edit.aiStyle)}>{V.ids.edit.aiLabel}</button>
+                              </div>
+                              <span role="status" style={css("font-size: 12px; color: var(--muted)")}>{V.ids.edit.aiSetup || V.ids.edit.aiHint}</span>
+                            </section>
+                          ) : null}
                           <div style={css("display: flex; flex-wrap: wrap; align-items: stretch")}>
                             <div style={css("flex: 999 1 520px; min-width: 0; box-sizing: border-box; padding: 24px clamp(16px, 4vw, 32px) 32px; display: flex; flex-direction: column; gap: 20px; border-right: 1px solid var(--line)")}>
                               <div style={css("display: flex; flex-wrap: wrap; align-items: center; gap: 8px")}>

@@ -14,6 +14,7 @@ export type Finding = {
   comments?: number;
   upvotes?: number;
   date?: string;
+  thumb?: string;
 };
 
 type Raw = Record<string, unknown>;
@@ -42,6 +43,7 @@ export function fromYoutube(items: Raw[], topic: string): Draft[] {
     source: 'youtube' as const, topic, title: str(i.title), url: str(i.url),
     snippet: clip(str(i.text), 240) || undefined, author: str(i.channelName) || undefined,
     views: num(i.viewCount), likes: num(i.likes), comments: num(i.commentsCount), date: str(i.date) || undefined,
+    thumb: /^https:/.test(str(i.thumbnailUrl)) ? str(i.thumbnailUrl) : undefined,
   }));
 }
 
@@ -53,6 +55,7 @@ export function fromTiktok(items: Raw[], topic: string): Draft[] {
       source: 'tiktok' as const, topic, title: clip(firstLine(text), 140), url: str(i.webVideoUrl),
       snippet: text.length > 140 ? clip(text, 240) : undefined, author: str(get(i, 'authorMeta.name')) || undefined,
       views: num(i.playCount), likes: num(i.diggCount), comments: num(i.commentCount), date: str(i.createTimeISO) || undefined,
+      thumb: /^https:/.test(str(get(i, 'videoMeta.coverUrl'))) ? str(get(i, 'videoMeta.coverUrl')) : undefined,
     };
   });
 }
