@@ -53,24 +53,37 @@ export async function imageModelConnected(ws: string): Promise<boolean> {
   return !!(data && data.length);
 }
 
-// OpenAI first, then Gemini when OpenAI is out of credits, rejects its key or is down (the same rule as text models).
+// Image models to try, newest first. A key may not have every model (older ones retire, newer ones roll out), so a
+// "does not exist" answer moves on to the next one.
+const OPENAI_IMAGE = ['gpt-image-2', 'gpt-image-1.5', 'gpt-image-1'];
+const GEMINI_IMAGE = ['gemini-3.1-flash-image-preview', 'gemini-2.5-flash-image'];
+const noSuchModel = (err: unknown) => {
+  const e = err as { statusCode?: number; status?: number; message?: string } | null;
+  return !!e && (Number(e.statusCode || e.status) === 404 || /does not exist|not found|not supported|unsupported model|invalid model|no longer available|deprecated/i.test(String(e.message || '')));
+};
+
+// OpenAI first, then Gemini: the next model or provider is tried when one is missing for this key, out of credits,
+// rejects its key or is down (the same rule as text models). Bad prompts and safety refusals are not retried.
 async function imageFromModel(ws: string, text: string): Promise<Img> {
   const [openai, gemini] = await Promise.all([getIntegration(ws, 'openai').catch(() => null), getIntegration(ws, 'gemini').catch(() => null)]);
   if (!openai && !gemini) throw new CoverError('Connect OpenAI or Gemini in Integrations to generate covers. Claude does not make images.', 409);
-  const tries: (() => Promise<Img>)[] = [];
-  if (openai) tries.push(async () => {
-    const r = await generateImage({ model: createOpenAI({ apiKey: openai.secret.apiKey }).image('gpt-image-1'), prompt: text, size: '1536x1024', providerOptions: { openai: { quality: 'medium' } } });
-    return { bytes: r.image.uint8Array, type: r.image.mediaType || 'image/png', model: 'OpenAI gpt-image-1' };
-  });
-  if (gemini) tries.push(async () => {
-    const r = await generateImage({ model: createGoogle({ apiKey: gemini.secret.apiKey }).image('gemini-2.5-flash-image'), prompt: text, aspectRatio: '16:9' });
-    return { bytes: r.image.uint8Array, type: r.image.mediaType || 'image/png', model: 'Gemini 2.5 Flash Image' };
-  });
+  const tries: { label: string; run: () => Promise<Img> }[] = [];
+  if (openai) for (const id of OPENAI_IMAGE) tries.push({ label: 'OpenAI ' + id, run: async () => {
+    const r = await generateImage({ model: createOpenAI({ apiKey: openai.secret.apiKey }).image(id), prompt: text, size: '1536x1024', providerOptions: { openai: { quality: 'medium' } } });
+    return { bytes: r.image.uint8Array, type: r.image.mediaType || 'image/png', model: 'OpenAI ' + id };
+  } });
+  if (gemini) for (const id of GEMINI_IMAGE) tries.push({ label: 'Gemini ' + id, run: async () => {
+    const r = await generateImage({ model: createGoogle({ apiKey: gemini.secret.apiKey }).image(id), prompt: text, aspectRatio: '16:9' });
+    return { bytes: r.image.uint8Array, type: r.image.mediaType || 'image/png', model: 'Gemini ' + id };
+  } });
   const failed: string[] = [];
   for (const t of tries) {
-    try { return await t(); } catch (err) { failed.push(cleanError(err)); if (!providerDown(err)) break; }
+    try { return await t.run(); } catch (err) {
+      failed.push(t.label + ': ' + cleanError(err));
+      if (!providerDown(err) && !noSuchModel(err)) break;
+    }
   }
-  throw new CoverError(failed.join(' Then: '), 502);
+  throw new CoverError(failed.join('  ·  '), 502);
 }
 
 async function imageFromUrl(raw: string): Promise<Img> {
