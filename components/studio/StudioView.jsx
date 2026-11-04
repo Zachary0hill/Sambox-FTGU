@@ -1,7 +1,8 @@
 'use client';
 // Generated from the design canvas (YouTube Studio Unified Board, Main.dc.html) by a markup converter.
 // Hand edits are marked with "app:" comments.
-import { Fragment } from 'react';
+import { Fragment, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { css } from '@/lib/studio/css';
 import DateField from './DateField';
 import HeaderCell, { DeleteColumnDialog } from './HeaderCell';
@@ -5813,27 +5814,43 @@ function CellPop({ ce, popStyle, close, dark }) {
 
 // app: Ideas & Research helpers. DD renders a vals mkDD object; Hook renders a banner hook from banner() fields.
 function DD({ d, id, className }) {
+  const open = !!(d && d.open), float = !!(d && d.float), close = d && d.close;
+  // Floating lists are pinned to the viewport from the button's rect. If the dialog scrolls or the window resizes
+  // the rect goes stale, so close rather than drift.
+  useEffect(() => {
+    if (!open || !float) return undefined;
+    const onMove = () => close && close();
+    window.addEventListener('scroll', onMove, true);
+    window.addEventListener('resize', onMove);
+    return () => { window.removeEventListener('scroll', onMove, true); window.removeEventListener('resize', onMove); };
+  }, [open, float, close]);
   if (!d) return null;
+  const list = d.open ? (
+    <>
+      <button type="button" tabIndex="-1" aria-label="Close list" onClick={d.close} style={css("position: fixed; inset: 0; z-index: " + (float ? '69' : '0') + "; border: 0; background: transparent; cursor: default")}></button>
+      <div role="listbox" aria-label={d.label} onKeyDown={float ? d.onKey : undefined} style={css(d.pop)}>
+        {(d.items || []).map((o, i) => (
+          <button key={i} type="button" role="option" className="mitem" aria-selected={o.sel} onClick={o.pick} style={css(o.style)}>
+            <span style={css(o.check)}><svg aria-hidden="true" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3.5 8.5l3 3 6-7"></path></svg></span>
+            <span style={css("flex: 1")}>{o.label}</span>
+          </button>
+        ))}
+        <InlineAdd a={d.add} flush={!(d.items || []).length} />
+      </div>
+    </>
+  ) : null;
+  // app: float lists portal to the studio root (it holds the theme variables and has no transform). Dialogs are centered
+  // with transform, which makes them the containing block for position: fixed, so a list rendered inside one would land
+  // at the wrong spot and get clipped by overflow.
+  const host = list && float && typeof document !== 'undefined' ? (document.querySelector('[data-studio-root]') || document.body) : null;
+  const floated = host ? createPortal(list, host) : list;
   return (
     <div className={className} style={css(d.wrap)} onKeyDown={d.onKey}>
       <button type="button" id={id} aria-haspopup="listbox" aria-expanded={d.exp} aria-label={d.aria} onClick={d.toggle} style={css(d.btn)}>
         <span style={css(d.valueStyle)}>{d.value}</span>
         <svg aria-hidden="true" width="16" height="16" viewBox="0 0 16 16" style={css(d.chev)}><path d="M4 6l4 4 4-4" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"></path></svg>
       </button>
-      {d.open ? (
-        <>
-          <button type="button" tabIndex="-1" aria-label="Close list" onClick={d.close} style={css("position: fixed; inset: 0; z-index: 0; border: 0; background: transparent; cursor: default")}></button>
-          <div role="listbox" aria-label={d.label} style={css(d.pop)}>
-            {(d.items || []).map((o, i) => (
-              <button key={i} type="button" role="option" className="mitem" aria-selected={o.sel} onClick={o.pick} style={css(o.style)}>
-                <span style={css(o.check)}><svg aria-hidden="true" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3.5 8.5l3 3 6-7"></path></svg></span>
-                <span style={css("flex: 1")}>{o.label}</span>
-              </button>
-            ))}
-            <InlineAdd a={d.add} flush={!(d.items || []).length} />
-          </div>
-        </>
-      ) : null}
+      {floated}
     </div>
   );
 }
