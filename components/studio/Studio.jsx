@@ -197,8 +197,8 @@ export default function Studio({ initialPath, initialProject }) {
     });
   }, [D, ctx, set]);
 
-  // Page shortcuts (Ideas & Research: N, Esc, Cmd/Ctrl+Enter, Cmd/Ctrl+S). The handler comes from the latest render and
-  // returns true when it used the key. Capture phase, so on the Ideas page N opens New idea before the Dev Notes hotkey.
+  // Page shortcuts (Ideas & Research: Esc, Cmd/Ctrl+Enter, Cmd/Ctrl+S). The handler comes from the latest render and
+  // returns true when it used the key. Capture phase. N is never claimed here: it belongs to the Dev Notes dock.
   const hotkey = useRef(null);
   useEffect(() => {
     const onKey = (e) => { if (hotkey.current && hotkey.current(e)) e.stopPropagation(); };
