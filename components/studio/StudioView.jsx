@@ -2757,9 +2757,10 @@ export default function StudioView({ V }) {
                       ))}
                     </div>
                     {" "}
+                    {V.lib.more ? <p style={css("margin: 16px 0 0; display: flex; flex-wrap: wrap; align-items: center; gap: 10px; font-size: 13px; color: var(--muted)")}>{V.lib.more}{/* app: older cards on demand */}<button type="button" onClick={V.lib.loadMore} style={css(V.lib.openBtn + " margin-left: 0;")}>Show more</button></p> : null}
                     {V.lib.empty ? (
                       <>
-                        <p style={css("margin: 0; padding: 24px 0; font-size: var(--text-body-sm); color: var(--muted)")}>{V.lib.emptyText /* app: says how to get YouTube videos in */}</p>
+                        <p style={css("margin: 0; padding: 24px 0; font-size: var(--text-body-sm); color: var(--muted)")}>{V.lib.emptyText /* app: says how to get videos and posts in */}</p>
                       </>
                     ) : null}
                     </>
