@@ -3,6 +3,7 @@ import { tool, type ToolSet } from 'ai';
 import { z } from 'zod';
 import type { Member } from '@/lib/integrations/auth';
 import { firecrawlSearch, firecrawlScrape } from '@/lib/integrations/providers/firecrawl';
+import { nextJob } from '@/lib/studio/job-code';
 import { EDIT_L, THUMB_L, APPROVAL_L, DIST_L, IDEA_TYPE_L, IDEA_STATUS_L, STAGE_L } from '@/lib/studio/model';
 
 // Assistant tools. Every read runs on the member's own Supabase session, so RLS decides what the assistant can see.
@@ -398,18 +399,3 @@ function normUrl(u: string) {
   }
 }
 
-// Next job number following the workspace's most common pattern, e.g. FTGU-041 -> FTGU-042.
-export function nextJob(codes: string[]) {
-  const groups: Record<string, { n: number; width: number; count: number }> = {};
-  codes.forEach((c) => {
-    const m = /^(.*?)(\d+)$/.exec(c.trim());
-    if (!m) return;
-    const g = (groups[m[1]] = groups[m[1]] || { n: 0, width: 0, count: 0 });
-    g.n = Math.max(g.n, Number(m[2]));
-    g.width = Math.max(g.width, m[2].length);
-    g.count++;
-  });
-  const best = Object.entries(groups).sort((a, b) => b[1].count - a[1].count)[0];
-  if (!best) return '';
-  return best[0] + String(best[1].n + 1).padStart(best[1].width, '0');
-}
