@@ -38,6 +38,7 @@ function loadTs(relative) {
   }).outputText, filename);
   return mod.exports;
 }
+const ORIGINAL_CALL = client.callTool;
 const { default: provider, vidiqTools, vidiqToolNames, DEFAULT_TOOLS } = loadTs('lib/integrations/providers/vidiq.ts');
 const { runSource } = loadTs('lib/research/sources.ts');
 const definition = (name, destructiveHint = false) => ({
@@ -102,4 +103,34 @@ test('research discovers and calls prefixed outliers and normalizes its results'
   assert.equal(findings[0].title, 'Example outlier');
   assert.equal(findings[0].source, 'vidiq');
   assert.equal(closed, 1);
+});
+
+// The live server (Nov 2026) answers as {"answer": "<markdown>"} with video IDs in backticks and no watch links.
+const LIVE_ANSWER = JSON.stringify({ answer: [
+  'Found 2 breakout long-form videos for "woodworking".', '',
+  '### 1. I built a $40 workbench', '- **Channel:** Shop_Notes · 22.2K subscribers · US · channelId `UCSdlDtyIkMl8lIf0tL9fxEg`',
+  '- **Performance:** 11.5K views · 1.8x breakout · 9.9 views/hour · 1.0% engagement', '- **Details:** published 2026-09-14 (1 month ago) · 1:36',
+  '- **Video:** videoId `eccZT0iZ6Qs` · thumbnail https://i.ytimg.com/vi/eccZT0iZ6Qs/maxresdefault.jpg', '',
+  '### 2. Hand tools only', '- **Channel:** Derrek Pearson · 3.6K subscribers · channelId `UC9ZcCMe4RziTRYRjM1UM5kQ`',
+  '- **Performance:** 3.9K views · 33x breakout · 1.2 views/hour · 2.7% engagement', '- **Details:** published 2026-06-25 (4 months ago) · 31:43',
+  '- **Video:** videoId `DQey3nyfWRw` · thumbnail https://i.ytimg.com/vi/DQey3nyfWRw/maxresdefault.jpg', '- **Trend categories:** full_episode',
+].join('\n'), _credits: { used: 5 } });
+test('research reads videos out of the live markdown answer', async () => {
+  definitions = [{ name: 'vidiq_outliers', inputSchema: { type: 'object', properties: { keyword: { type: 'string' }, seedVideoId: { type: 'string' } } }, annotations: {} }];
+  client.callTool = async (request) => { calls.push(request); return { content: [{ type: 'text', text: LIVE_ANSWER }] }; };
+  try {
+    const findings = await runSource('vidiq', { vidiq: { secret: { apiKey: 'offline-test' }, config: {} } }, {
+      topics: ['woodworking'], deadline: Date.now() + 120000, cancelled: async () => false,
+    });
+    assert.deepEqual(calls[0].arguments, { keyword: 'woodworking' });
+    assert.equal(findings.length, 2);
+    assert.deepEqual(findings[0], {
+      source: 'vidiq', topic: 'woodworking', title: 'I built a $40 workbench', url: 'https://www.youtube.com/watch?v=eccZT0iZ6Qs',
+      author: 'Shop_Notes', views: 11500, date: '2026-09-14', thumb: 'https://i.ytimg.com/vi/eccZT0iZ6Qs/maxresdefault.jpg', snippet: 'Outlier score 1.8x',
+    });
+    assert.equal(findings[1].views, 3900);
+    assert.equal(findings[1].snippet, 'Outlier score 33x');
+  } finally {
+    client.callTool = ORIGINAL_CALL;
+  }
 });

@@ -134,7 +134,19 @@ export function fromVidiq(text: string, topic: string): Draft[] {
     for (const k in o) walk(o[k], depth + 1);
   };
   walk(data, 0);
-  return out.length ? out : fromVidiqText(text, topic);
+  if (out.length) return out;
+  // The server now answers as {"answer": "<markdown>"} (plus _credits). Read the videos out of its prose.
+  const prose = strings(data, 0).map((t) => fromVidiqText(t, topic)).find((r) => r.length);
+  return prose || fromVidiqText(text, topic);
+}
+
+// Every string of real length inside a parsed result, longest first.
+function strings(node: unknown, depth: number): string[] {
+  if (depth > 4 || !node) return [];
+  if (typeof node === 'string') return node.length > 40 ? [node] : [];
+  if (typeof node !== 'object') return [];
+  const vals = Array.isArray(node) ? node : Object.values(node as Raw);
+  return vals.flatMap((v) => strings(v, depth + 1)).sort((a, b) => b.length - a.length);
 }
 
 // JSON inside a markdown code fence or prose ("Here are the outliers: [...]"). Undefined when none parses.
@@ -154,7 +166,50 @@ function embeddedJson(text: string): unknown {
 const YT_URL = /https?:\/\/(?:www\.|m\.)?(?:youtube\.com\/(?:watch\?[^\s)\]]*v=|shorts\/)|youtu\.be\/)([\w-]{11})[^\s)\]]*/i;
 const unmark = (t: string) => t.replace(/[*_`#>]+/g, ' ').replace(/^\s*(?:[-•]|\d+[.)])\s*/, '').replace(/\s+/g, ' ').trim().replace(/[\s:|–-]+$/, '').trim();
 
+// vidIQ's numbered markdown sections (Nov 2026), one per video:
+//   ### 1. Title
+//   - **Channel:** Name · 22.2K subscribers · US · channelId `UC...`
+//   - **Performance:** 11.5K views · 1.8x breakout · 9.9 views/hour · 1.0% engagement
+//   - **Details:** published 2026-09-14 (1 month ago) · 1:36
+//   - **Video:** videoId `eccZT0iZ6Qs` · thumbnail https://i.ytimg.com/vi/eccZT0iZ6Qs/maxresdefault.jpg
+// There is no watch link, so the video ID is read from the videoId field or the thumbnail path.
+const VIDEO_ID = /\bvideo\s?id\b\W*`?([\w-]{11})`?(?![\w-])/i;
+const THUMB_ID = /https?:\/\/i\.ytimg\.com\/vi\/([\w-]{11})\/\S+/i;
+export function fromVidiqBlocks(text: string, topic: string): Draft[] {
+  const out: Draft[] = [];
+  const seen = new Set<string>();
+  const parts = text.split(/\n(?=#{1,4}\s*\d+[.)]\s)/);
+  for (const part of parts) {
+    if (out.length >= 50) break;
+    const head = part.match(/^#{1,4}\s*\d+[.)]\s*(.+)/);
+    if (!head) continue;
+    const id = (part.match(VIDEO_ID) || part.match(THUMB_ID) || part.match(YT_URL) || [])[1];
+    if (!id) continue;
+    const url = 'https://www.youtube.com/watch?v=' + id;
+    if (seen.has(url)) continue;
+    const title = clip(unmark(head[1]), 200);
+    if (!title) continue;
+    seen.add(url);
+    const channel = part.match(/\*\*Channel:?\*\*\s*([^·\n]+)/i);
+    const views = part.match(/([\d.,]+\s*[KMB]?)\s*views\b(?!\s*(?:\/|per)\s*hour)/i);
+    const score = part.match(/([\d.,]+)\s*x\s*breakout/i) || part.match(/breakout(?:\s*score)?:?\s*([\d.,]+)\s*x/i);
+    const date = part.match(/published\s+(\d{4}-\d{2}-\d{2})/i);
+    const thumb = part.match(THUMB_ID);
+    out.push({
+      source: 'vidiq', topic, title, url,
+      author: channel ? channel[1].replace(/[*`]+/g, '').trim() || undefined : undefined, // keeps underscores in handles
+      views: views ? num(views[1]) : undefined,
+      date: date ? date[1] : undefined,
+      thumb: thumb ? thumb[0].replace(/[`*)]+$/, '') : undefined,
+      snippet: score ? 'Outlier score ' + score[1] + 'x' : undefined,
+    });
+  }
+  return out;
+}
+
 export function fromVidiqText(text: string, topic: string): Draft[] {
+  const blocks = fromVidiqBlocks(text, topic);
+  if (blocks.length) return blocks;
   const out: Draft[] = [];
   const seen = new Set<string>();
   const lines = text.split('\n');
