@@ -8,6 +8,7 @@ import { LIMITS, SOURCES, defaultTopics, parseTopics, sourceById, type SourceId 
 import { dedupe, type Finding, type IdeaDraft } from './normalize';
 import { runSource, type Conns } from './sources';
 import { draftIdeas, type BrandBrief } from './draft';
+import { coverNewIdeas } from '@/lib/ideas/cover';
 
 export type SourceState = { state: 'queued' | 'running' | 'done' | 'failed' | 'skipped' | 'cancelled'; count?: number; error?: string };
 export type RunInputs = { brandId: string; topics: string[]; sources: SourceId[]; count: number };
@@ -193,6 +194,9 @@ export async function executeRun(runId: string, m: Member) {
 
     const ids = await saveIdeas(m, runId, inputs.brandId, ideas, (brand && brand.name) || '');
     await save({ status: 'done', idea_ids: ids, findings: null, note, finished_at: new Date().toISOString(), error: null });
+    // Every drafted idea gets a cover from the image model, in what is left of the run's time. The run is already
+    // done above, so a slow or broke image provider never fails it.
+    await coverNewIdeas(ids, ws, m, Math.max(20000, LIMITS.runSecs * 1000 - (Date.now() - t0) - 5000));
   } catch (err) {
     await fail(msg(err));
   }

@@ -3890,6 +3890,7 @@ export default function StudioView({ V }) {
                                 <button type="button" onClick={V.ids.edit.generate} disabled={V.ids.edit.aiBusy || !V.ids.edit.aiOn} aria-busy={V.ids.edit.aiBusy ? 'true' : 'false'} style={css(V.ids.edit.aiStyle)}>{V.ids.edit.aiLabel}</button>
                               </div>
                               <span role="status" style={css("font-size: 12px; color: var(--muted)")}>{V.ids.edit.aiSetup || V.ids.edit.aiHint}</span>
+                              {V.ids.edit.hasAiErr ? <p role="alert" style={css("margin: 0; padding: 10px 12px; border-radius: 10px; background: var(--red-bg, #FDECEC); font-size: 13px; line-height: 1.45; color: var(--red-ink); overflow-wrap: anywhere")}>{V.ids.edit.aiErr}</p> : null}
                             </section>
                           ) : null}
                           <div style={css("display: flex; flex-wrap: wrap; align-items: stretch")}>
