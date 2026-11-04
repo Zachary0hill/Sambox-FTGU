@@ -1233,7 +1233,7 @@ export default function StudioView({ V }) {
                             <Fragment key={ig__i}>
                               <article style={css("display: flex; flex-direction: column; gap: 14px; padding: 18px; border: 1px solid var(--line); border-radius: 18px; background: var(--surface)")}>
                                 <div style={css("display: flex; align-items: center; gap: 12px")}>
-                                  <span aria-hidden="true" style={css(ig.tileStyle)}>{ig.logo ? <SocialIcon id={ig.logo} size={18} mono /> : ig.initials}</span>
+                                  <span aria-hidden="true" style={css(ig.tileStyle)}>{ig.logoUrl ? <img src={ig.logoUrl} alt="" width={24} height={24} style={css("display: block; width: 24px; height: 24px; object-fit: contain")} /> : ig.logo ? <SocialIcon id={ig.logo} size={18} mono /> : ig.initials}</span>
                                   {" "}
                                   <span style={css("flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px")}>
                                     <span style={css("font-size: 15px; font-weight: 600; color: var(--ink)")}>{ig.name}</span>
@@ -1811,7 +1811,7 @@ export default function StudioView({ V }) {
                         {" "}
                         {V.adm.wsInteg ? (
                           <>
-                            {/* app: integration keys, one card per provider grouped by purpose. Super Admin only. */}
+                            {/* app: integration keys, one tile per provider grouped by purpose; a tile opens its form. Super Admin only. */}
                             <div style={css("display: flex; flex-direction: column; gap: 24px; min-width: 0")}>
                               <section aria-labelledby="ws-in" style={css(V.ui.panel)}>
                                 <h2 id="ws-in" style={css(V.ui.h3)}>Integrations</h2>
@@ -1824,58 +1824,74 @@ export default function StudioView({ V }) {
                                     <h2 id={igg.hid} style={css(V.ui.h3)}>{igg.title}</h2>
                                     <p style={css("margin: 0; font-size: 13px; color: var(--muted)")}>{igg.desc}</p>
                                   </div>
-                                  <div style={css("display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr)); gap: 16px; align-items: start")}>
+                                  {/* app: a collapsed tile per provider. Dense packing keeps the row whole while the open panel sits under it. */}
+                                  <div style={css("display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 230px), 1fr)); grid-auto-flow: dense; gap: 12px; align-items: start")}>
                                     {igg.cards.map((ic) => (
-                                      <article key={ic.id} id={'ig-card-' + ic.id} tabIndex={-1} aria-label={ic.name + ' connection settings'} style={css("display: flex; flex-direction: column; gap: 14px; padding: 18px; box-sizing: border-box; border: 1px solid var(--line); border-radius: 18px; background: var(--surface); min-width: 0")}>
-                                        <div style={css("display: flex; align-items: center; gap: 12px")}>
-                                          <span aria-hidden="true" style={css(ic.tileStyle)}>{socialIdOf(ic.id) ? <SocialIcon id={ic.id} size={18} mono /> : ic.initials}</span>
-                                          <span style={css("flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px")}>
-                                            <span style={css("font-size: 15px; font-weight: 600; color: var(--ink)")}>{ic.name}</span>
-                                            <span style={css("font-size: 12px; color: var(--muted-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap")}>{ic.keyNote}</span>
+                                      <Fragment key={ic.id}>
+                                        <button type="button" id={'ig-card-' + ic.id} className="fb-card" aria-expanded={ic.open} aria-controls={ic.open ? 'ig-panel-' + ic.id : undefined} aria-label={ic.name + ', ' + ic.tileNote} onClick={ic.toggle} style={css(ic.tileBtnStyle)}>
+                                          <span aria-hidden="true" style={css("width: 40px; height: 40px; flex: none; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center; border-radius: 10px; border: 1px solid var(--line); background: #fff")}>
+                                            <img src={ic.logo} alt="" width={24} height={24} style={css("display: block; width: 24px; height: 24px; object-fit: contain")} />
                                           </span>
-                                          <span style={css(ic.statusStyle)}>{ic.status}</span>
-                                        </div>
-                                        <p style={css("margin: 0; font-size: 13px; line-height: 1.45; color: var(--muted)")}>{ic.desc}</p>
-                                        {ic.setupNote ? <p style={css("margin: 0; font-size: 12px; line-height: 1.5; color: var(--muted-2)")}>{ic.setupNote}</p> : null}
-                                        {ic.hasErr ? (
-                                          <p role="alert" style={css("margin: 0; font-size: 13px; line-height: 1.45; color: var(--red-ink)")}>{ic.err}</p>
-                                        ) : null}
-                                        {ic.isAi ? (
-                                          <button type="button" aria-pressed={ic.aiOn} onClick={ic.aiPick} style={css(ic.aiStyle)}>{ic.aiLabel}</button>
-                                        ) : null}
-                                        <form onSubmit={(e) => { e.preventDefault(); ic.save(); }} style={css("display: flex; flex-direction: column; gap: 12px; margin: 0")}>
-                                          {ic.fields.map((fl) => (
-                                            <div key={fl.id} style={css("display: flex; flex-direction: column; gap: 6px")}>
-                                              <label htmlFor={fl.id} style={css(V.fieldLabel)}>{fl.label}</label>
-                                              {fl.isSelect ? (
-                                                <select id={fl.id} disabled={ic.disabled} value={fl.value} onChange={fl.onInput} style={css(V.fieldInput)}>
-                                                  {fl.options.map((o) => (
-                                                    <option key={o.value} value={o.value}>{o.label}</option>
-                                                  ))}
-                                                </select>
-                                              ) : (
-                                                <input id={fl.id} disabled={ic.disabled} type={fl.type} value={fl.value} onChange={fl.onInput} placeholder={fl.placeholder} autoComplete={fl.auto} spellCheck={false} style={css(V.fieldInput)} />
-                                              )}
-                                              {fl.hasHelp ? (
-                                                <span style={css("font-size: 12px; line-height: 1.4; color: var(--muted-2)")}>{fl.help}</span>
-                                              ) : null}
+                                          <span style={css("flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px")}>
+                                            <span style={css("font-size: 15px; font-weight: 600; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap")}>{ic.name}</span>
+                                            <span style={css("display: flex; align-items: center; gap: 6px; min-width: 0; font-size: 12px; color: var(--muted)")}>
+                                              <span aria-hidden="true" style={css(ic.dotStyle)}></span>
+                                              <span style={css("overflow: hidden; text-overflow: ellipsis; white-space: nowrap")}>{ic.tileNote}</span>
+                                            </span>
+                                          </span>
+                                          <svg aria-hidden="true" width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={css(ic.chevStyle)}><path d="m4 6 4 4 4-4"></path></svg>
+                                        </button>
+                                        {ic.open ? (
+                                          <div id={'ig-panel-' + ic.id} role="region" aria-label={ic.name + ' connection settings'} style={css("grid-column: 1 / -1; display: flex; flex-direction: column; gap: 14px; padding: 18px; box-sizing: border-box; border: 1px solid var(--line); border-radius: 18px; background: var(--surface); min-width: 0")}>
+                                            <div style={css("display: flex; align-items: center; flex-wrap: wrap; gap: 8px 12px")}>
+                                              <span style={css("flex: 1; min-width: min(100%, 240px); font-size: 12px; color: var(--muted-2)")}>{ic.keyNote}</span>
+                                              <span style={css(ic.statusStyle)}>{ic.status}</span>
                                             </div>
-                                          ))}
-                                          <div style={css("display: flex; flex-wrap: wrap; gap: 8px")}>
-                                            <button type="submit" disabled={ic.disabled} aria-label={ic.saveAria} style={css(V.ui.btnPrimary)}>{ic.saveLabel}</button>
-                                            {ic.canSync ? (
-                                              <button type="button" disabled={ic.disabled} aria-label={ic.syncAria} onClick={ic.sync} style={css(V.ui.btnGhost)}>{ic.syncLabel}</button>
+                                            <p style={css("margin: 0; font-size: 13px; line-height: 1.45; color: var(--muted)")}>{ic.desc}</p>
+                                            {ic.setupNote ? <p style={css("margin: 0; font-size: 12px; line-height: 1.5; color: var(--muted-2)")}>{ic.setupNote}</p> : null}
+                                            {ic.hasErr ? (
+                                              <p role="alert" style={css("margin: 0; font-size: 13px; line-height: 1.45; color: var(--red-ink)")}>{ic.err}</p>
                                             ) : null}
-                                            {ic.canDisconnect ? (
-                                              <button type="button" disabled={ic.disabled} aria-label={ic.disconnectAria} onClick={ic.disconnect} style={css(V.ui.btnDanger)}>Disconnect</button>
+                                            {ic.isAi ? (
+                                              <button type="button" aria-pressed={ic.aiOn} onClick={ic.aiPick} style={css(ic.aiStyle)}>{ic.aiLabel}</button>
                                             ) : null}
+                                            <form onSubmit={(e) => { e.preventDefault(); ic.save(); }} style={css("display: flex; flex-direction: column; gap: 14px; margin: 0")}>
+                                              <div style={css("display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr)); gap: 12px 16px; align-items: start")}>
+                                                {ic.fields.map((fl) => (
+                                                  <div key={fl.id} style={css("display: flex; flex-direction: column; gap: 6px; min-width: 0")}>
+                                                    <label htmlFor={fl.id} style={css(V.fieldLabel)}>{fl.label}</label>
+                                                    {fl.isSelect ? (
+                                                      <select id={fl.id} disabled={ic.disabled} value={fl.value} onChange={fl.onInput} style={css(V.fieldInput)}>
+                                                        {fl.options.map((o) => (
+                                                          <option key={o.value} value={o.value}>{o.label}</option>
+                                                        ))}
+                                                      </select>
+                                                    ) : (
+                                                      <input id={fl.id} disabled={ic.disabled} type={fl.type} value={fl.value} onChange={fl.onInput} placeholder={fl.placeholder} autoComplete={fl.auto} spellCheck={false} style={css(V.fieldInput)} />
+                                                    )}
+                                                    {fl.hasHelp ? (
+                                                      <span style={css("font-size: 12px; line-height: 1.4; color: var(--muted-2)")}>{fl.help}</span>
+                                                    ) : null}
+                                                  </div>
+                                                ))}
+                                              </div>
+                                              <div style={css("display: flex; flex-wrap: wrap; gap: 8px")}>
+                                                <button type="submit" disabled={ic.disabled} aria-label={ic.saveAria} style={css(V.ui.btnPrimary)}>{ic.saveLabel}</button>
+                                                {ic.canSync ? (
+                                                  <button type="button" disabled={ic.disabled} aria-label={ic.syncAria} onClick={ic.sync} style={css(V.ui.btnGhost)}>{ic.syncLabel}</button>
+                                                ) : null}
+                                                {ic.canDisconnect ? (
+                                                  <button type="button" disabled={ic.disabled} aria-label={ic.disconnectAria} onClick={ic.disconnect} style={css(V.ui.btnDanger)}>Disconnect</button>
+                                                ) : null}
+                                              </div>
+                                            </form>
+                                            <div style={css("display: flex; flex-wrap: wrap; gap: 16px; font-size: 13px")}>
+                                              <a href={ic.keyUrl} target="_blank" rel="noreferrer" style={css("color: var(--link); text-decoration: underline; text-underline-offset: 3px")}>{ic.credentialLabel}</a>
+                                              <a href={ic.docs} target="_blank" rel="noreferrer" style={css("color: var(--link); text-decoration: underline; text-underline-offset: 3px")}>API docs</a>
+                                            </div>
                                           </div>
-                                        </form>
-                                        <div style={css("display: flex; flex-wrap: wrap; gap: 16px; font-size: 13px")}>
-                                          <a href={ic.keyUrl} target="_blank" rel="noreferrer" style={css("color: var(--link); text-decoration: underline; text-underline-offset: 3px")}>{ic.credentialLabel}</a>
-                                          <a href={ic.docs} target="_blank" rel="noreferrer" style={css("color: var(--link); text-decoration: underline; text-underline-offset: 3px")}>API docs</a>
-                                        </div>
-                                      </article>
+                                        ) : null}
+                                      </Fragment>
                                     ))}
                                   </div>
                                 </section>

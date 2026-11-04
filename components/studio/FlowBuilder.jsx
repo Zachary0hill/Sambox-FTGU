@@ -1097,5 +1097,5 @@ export function FlowLayer({ D, A, open, review, back, set }) {
   const row = (D.automations || []).find((a) => a.id === open);
   if (!row) return null;
   return <FlowBuilder key={row.id} D={D} A={A} row={row} review={review} onClose={() => set({ flowOpen: '', flowReview: false })}
-    goConnect={(provider) => set({ flowOpen: '', flowReview: false, flowReturn: row.id, nav: 'workspace', wsTab: 'integ', integFocus: provider })} />;
+    goConnect={(provider) => set({ flowOpen: '', flowReview: false, flowReturn: row.id, nav: 'workspace', wsTab: 'integ', integFocus: provider, integExpanded: provider })} />;
 }

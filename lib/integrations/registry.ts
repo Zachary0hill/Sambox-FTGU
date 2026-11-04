@@ -187,3 +187,6 @@ export const PROVIDERS: ProviderDef[] = [
 ];
 
 export const providerById = (id: string): ProviderDef | undefined => PROVIDERS.find((p) => p.id === id);
+
+// The software's own logo, served from public/logos. vidIQ and Virlo only publish raster icons.
+export const providerLogo = (id: ProviderId): string => '/logos/' + id + (id === 'vidiq' || id === 'virlo' ? '.png' : '.svg');
