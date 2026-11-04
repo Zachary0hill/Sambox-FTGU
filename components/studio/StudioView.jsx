@@ -3487,6 +3487,7 @@ export default function StudioView({ V }) {
                         {V.ids.summary}
                         {/* app: Show ideas from a research run filters to that run until cleared */}
                         {V.ids.hasRun ? <>{" "}<button type="button" onClick={V.ids.clearRun} style={css("padding: 0; border: 0; background: transparent; font-size: 13px; font-weight: 600; color: var(--ink); text-decoration: underline; cursor: pointer")}>Show all ideas</button></> : null}
+                        {V.ids.missingCovers || V.ids.fillBusy ? <>{" "}{V.ids.missingCovers ? V.ids.missingCovers + (V.ids.missingCovers === 1 ? ' idea has no cover.' : ' ideas have no cover.') : ''}{" "}<button type="button" onClick={V.ids.fillCovers} disabled={V.ids.fillBusy} style={css("padding: 0; border: 0; background: transparent; font-size: 13px; font-weight: 600; color: var(--ink); text-decoration: underline; cursor: pointer")}>{V.ids.fillLabel}</button></> : null}
                       </p>
                     )}
                     {" "}
