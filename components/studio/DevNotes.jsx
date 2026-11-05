@@ -17,8 +17,13 @@ const CATS = {
 const CAT_ORDER = ['idea', 'enhancement', 'bug'];
 const POS_KEY = 'ftgu.devNotes.pos';
 const CAT_KEY = 'ftgu.devNotes.cat';
-const WIDTH = 380;
+const WIDTH = 420;
 const MARGIN = 24;
+const MAX_CHARS = 2000; // the note is cut to this on save, so the composer stops here and counts down near it
+const COUNT_FROM = 1600;
+const LINE_H = 18; // composer line height, px
+const INPUT_MAX_H = LINE_H * 7; // the composer grows to seven lines, then scrolls
+const CLAMP_LINES = 5; // saved notes collapse past this
 const FALLBACK_H = 320;
 const DRAG_THRESHOLD = 4;
 const SNAP = 16;
@@ -233,6 +238,29 @@ export default function DevNotes({ sb, me, workspaceId }) {
   return <DevNotesCard sb={sb} me={me} workspaceId={workspaceId} onClose={() => setOpen(false)} />;
 }
 
+// A saved note's text: keeps its line breaks, collapses past CLAMP_LINES with a Show more toggle. The toggle only
+// appears when the text really is cut, re-measured if the card width changes.
+function NoteText({ text, resolved }) {
+  const [open, setOpen] = useState(false);
+  const [cut, setCut] = useState(false);
+  const ref = useRef(null);
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el || open) return undefined;
+    const measure = () => setCut(el.scrollHeight > el.clientHeight + 1);
+    measure();
+    const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(measure) : null;
+    if (ro) ro.observe(el);
+    return () => { if (ro) ro.disconnect(); };
+  }, [text, open]);
+  return (
+    <div style={css('flex: 1; min-width: 0;')}>
+      <p ref={ref} style={css('margin: 0; font-size: 12.5px; font-weight: 500; line-height: 1.4; white-space: pre-wrap; overflow-wrap: anywhere; ' + (open ? '' : 'display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: ' + CLAMP_LINES + '; overflow: hidden; ') + (resolved ? 'color: var(--muted); text-decoration: line-through;' : ''))}>{text}</p>
+      {cut || open ? <button type="button" aria-expanded={open} onClick={() => setOpen((v) => !v)} style={css('display: block; margin-top: 2px; padding: 2px 0; border: 0; background: transparent; color: var(--muted); font-size: 11.5px; font-weight: 600; cursor: pointer;')}>{open ? 'Show less' : 'Show more'}</button> : null}
+    </div>
+  );
+}
+
 function DevNotesCard({ sb, me, workspaceId, onClose }) {
   const [notes, setNotes] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -246,6 +274,7 @@ function DevNotesCard({ sb, me, workspaceId, onClose }) {
   const [urls, setUrls] = useState({}); // storage path -> displayable URL (signed, or the local blob just uploaded)
   const [dragOver, setDragOver] = useState(false);
   const [lightbox, setLightbox] = useState(null); // { noteId, index }
+  const [roomy, setRoomy] = useState(false); // the text outgrew one line, so the controls drop to their own row
   const cardRef = useRef(null);
   const inputRef = useRef(null);
   const fileRef = useRef(null);
@@ -256,6 +285,19 @@ function DevNotesCard({ sb, me, workspaceId, onClose }) {
   useEffect(() => { const saved = readJson(CAT_KEY); if (CATS[saved]) setCat(saved); }, []);
   useEffect(() => { if (inputRef.current) inputRef.current.focus(); }, []);
   useEffect(() => () => { pending.forEach((p) => URL.revokeObjectURL(p.url)); }, []);
+
+  // Composer height follows the text. Going roomy is sticky until the text is cleared: the wider textarea could fit
+  // the text on one line again, and flipping back would make the layout jitter on every keystroke.
+  useLayoutEffect(() => {
+    const el = inputRef.current;
+    if (!el) return;
+    el.style.height = 'auto';
+    const h = el.scrollHeight;
+    el.style.height = Math.min(h, INPUT_MAX_H) + 'px';
+    el.style.overflowY = h > INPUT_MAX_H ? 'auto' : 'hidden';
+    if (!value) setRoomy(false);
+    else if (h > LINE_H * 1.5) setRoomy(true);
+  }, [value, roomy]);
 
   const flash = (msg) => { setActionError(msg); window.setTimeout(() => setActionError((c) => (c === msg ? '' : c)), 3500); };
   const unfade = (id) => setFading((c) => { const s = new Set(c); s.delete(id); return s; });
@@ -406,7 +448,7 @@ function DevNotesCard({ sb, me, workspaceId, onClose }) {
     const path = pagePath() || null;
     const tempId = 'tmp-' + Date.now();
     const top = notes.length ? Math.min(...notes.map((n) => n.sort_order)) : 1;
-    const row = { workspace_id: workspaceId, content: content.slice(0, 2000), category: cat, priority: 'medium', page_path: path ? path.slice(0, 512) : null, sort_order: top - 1, created_by: me.id, created_by_email: me.email || null };
+    const row = { workspace_id: workspaceId, content: content.slice(0, MAX_CHARS), category: cat, priority: 'medium', page_path: path ? path.slice(0, 512) : null, sort_order: top - 1, created_by: me.id, created_by_email: me.email || null };
     const temp = { ...row, id: tempId, is_resolved: false, created_at: new Date().toISOString(), attachments: shots.map((s) => ({ path: s.url, w: s.w, h: s.h })) };
     if (shots.length) setUrls((c) => ({ ...c, ...Object.fromEntries(shots.map((s) => [s.url, s.url])) }));
     setNotes((c) => sortNotes([temp, ...c]));
@@ -459,7 +501,7 @@ function DevNotesCard({ sb, me, workspaceId, onClose }) {
     <div data-dev-notes="" style={css('position: fixed; inset: 0; z-index: 90; pointer-events: none;')}>
       <div ref={cardRef} className="fb-devnotes" style={css('position: absolute; left: 0; top: 0; width: ' + WIDTH + 'px; max-width: calc(100vw - ' + MARGIN * 2 + 'px); pointer-events: auto;')}>
         <div role="dialog" aria-label="Dev notes" className="fb-float" onPaste={onPaste} onDragEnter={onDragEnter} onDragOver={onDragOver} onDragLeave={onDragLeave} onDrop={onDrop}
-          style={css('position: relative; display: flex; flex-direction: column; max-height: min(72vh, 600px); border: 1px solid ' + (dragOver ? meta.dot : 'var(--line-4)') + '; border-radius: 18px; background: var(--surface); color: var(--ink); box-shadow: 0 1px 2px rgba(0,0,0,0.06), 0 24px 64px rgba(0,0,0,0.22); overflow: hidden; font-family: var(--font-main);')}>
+          style={css('position: relative; display: flex; flex-direction: column; max-height: min(80vh, 720px); border: 1px solid ' + (dragOver ? meta.dot : 'var(--line-4)') + '; border-radius: 18px; background: var(--surface); color: var(--ink); box-shadow: 0 1px 2px rgba(0,0,0,0.06), 0 24px 64px rgba(0,0,0,0.22); overflow: hidden; font-family: var(--font-main);')}>
           {dragOver ? (
             <div aria-hidden="true" style={css('position: absolute; inset: 0; z-index: 2; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; border-radius: 18px; background: color-mix(in srgb, var(--surface) 86%, transparent); backdrop-filter: blur(2px); pointer-events: none;')}>
               <span style={css('display: inline-flex; align-items: center; justify-content: center; width: 48px; height: 48px; border-radius: 14px; background: ' + meta.soft + '; color: ' + meta.ink + ';')}>{P(I.image, 'width: 22px; height: 22px')}</span>
@@ -492,12 +534,19 @@ function DevNotesCard({ sb, me, workspaceId, onClose }) {
 
           {/* Quick add */}
           <form onSubmit={(e) => { e.preventDefault(); add(); }} style={css('margin: 0 12px 8px; display: flex; flex-direction: column; box-sizing: border-box; border: 1px solid ' + (value || pending.length ? meta.dot + '99' : 'var(--border)') + '; border-radius: 12px; background: var(--surface-2);')}>
-            <div style={css('display: flex; align-items: center; gap: 10px; min-height: 42px; padding: 0 6px 0 12px;')}>
-              <span aria-hidden="true" style={css('width: 8px; height: 8px; flex: none; border-radius: 999px; background: ' + meta.dot + ';')} />
-              <input ref={inputRef} type="text" value={value} aria-label="Log a dev note" placeholder={pending.length ? 'Add a caption (optional)…' : meta.placeholder} autoComplete="off"
+            <div style={css('display: flex; flex-wrap: wrap; align-items: ' + (roomy ? 'flex-start' : 'center') + '; column-gap: 10px; row-gap: 6px; min-height: 42px; padding: ' + (roomy ? '11px 6px 6px 12px' : '0 6px 0 12px') + ';')}>
+              <span aria-hidden="true" style={css('width: 8px; height: 8px; flex: none; border-radius: 999px; background: ' + meta.dot + ';' + (roomy ? ' margin-top: 5px;' : ''))} />
+              <textarea ref={inputRef} rows={1} value={value} maxLength={MAX_CHARS} aria-label="Log a dev note" placeholder={pending.length ? 'Add a caption (optional)…' : meta.placeholder} autoComplete="off"
                 onChange={(e) => setValue(e.target.value)}
-                onKeyDown={(e) => { e.stopPropagation(); if (e.key === 'Escape') { if (value) setValue(''); else if (pending.length) pending.forEach((p) => dropPending(p.id)); else onClose(); } }}
-                style={css('flex: 1; min-width: 0; border: 0; outline: none; background: transparent; font-size: 13px; color: var(--ink); padding: 0;')} />
+                onKeyDown={(e) => {
+                  e.stopPropagation();
+                  if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) { e.preventDefault(); add(); }
+                  else if (e.key === 'Escape') { if (value) setValue(''); else if (pending.length) pending.forEach((p) => dropPending(p.id)); else onClose(); }
+                }}
+                style={css('display: block; flex: ' + (roomy ? '1 1 calc(100% - 24px)' : '1 1 0') + '; min-width: 0; margin: 0; border: 0; outline: none; background: transparent; font-size: 13px; line-height: ' + LINE_H + 'px; color: var(--ink); padding: 0; resize: none; overflow-wrap: anywhere;')} />
+              {roomy ? (
+                <span style={css('flex: 1 1 0; min-width: 0; font-size: 10.5px; color: ' + (value.length >= MAX_CHARS ? 'var(--red-ink)' : 'var(--faint)') + '; font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;')}>{value.length >= COUNT_FROM ? value.length + ' / ' + MAX_CHARS : 'Shift + Enter for a new line'}</span>
+              ) : null}
               <input ref={fileRef} type="file" accept={IMAGE_TYPES.join(',')} multiple hidden onChange={(e) => { addFiles(e.target.files); e.target.value = ''; }} />
               <button type="button" className="fb-ni" aria-label="Attach a screenshot" title="Attach a screenshot · or paste / drop one" disabled={pending.length >= MAX_SHOTS} onClick={() => fileRef.current && fileRef.current.click()}
                 style={css('display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; flex: none; border: 0; border-radius: 8px; background: transparent; cursor: pointer; color: ' + (pending.length ? meta.ink : 'var(--faint)') + (pending.length >= MAX_SHOTS ? '; opacity: .4; cursor: default' : '') + ';')}>{P(I.clip, 'width: 15px; height: 15px')}</button>
@@ -541,14 +590,14 @@ function DevNotesCard({ sb, me, workspaceId, onClose }) {
               const c = CATS[n.category] || CATS.idea;
               const author = authorOf(n);
               return (
-                <div key={n.id} className="fb-devnote" style={css('position: relative; display: flex; align-items: stretch; overflow: hidden; border: 1px solid var(--line-3); border-radius: 12px; background: var(--surface-2); transition: opacity .3s ease;' + (fading.has(n.id) ? ' opacity: 0.4; pointer-events: none;' : ''))}>
+                <div key={n.id} className="fb-devnote" style={css('position: relative; flex: none; display: flex; align-items: stretch; overflow: hidden; border: 1px solid var(--line-3); border-radius: 12px; background: var(--surface-2); transition: opacity .3s ease;' + (fading.has(n.id) ? ' opacity: 0.4; pointer-events: none;' : ''))}>
                   <span aria-hidden="true" style={css('width: 3px; flex: none; background: ' + c.dot + ';')} />
                   <div style={css('flex: 1; min-width: 0; display: flex; align-items: flex-start; gap: 10px; padding: 9px 8px 9px 10px;')}>
                     <button type="button" aria-label={n.is_resolved ? 'Reopen note' : 'Mark as resolved'} onClick={() => resolve(n)} style={css('flex: none; margin-top: 1px; padding: 0; border: 0; background: transparent; cursor: pointer; color: ' + (n.is_resolved ? 'var(--green-ink)' : 'var(--faint)') + ';')}>{P(n.is_resolved ? I.check : I.circle)}</button>
                     <div style={css('flex: 1; min-width: 0;')}>
                       <div style={css('display: flex; align-items: flex-start; gap: 8px;')}>
                         <button type="button" aria-label={c.label + ' category, click to change'} title={c.label + ' · click to change'} onClick={() => cycleCat(n)} style={css('flex: none; width: 8px; height: 8px; margin-top: 6px; padding: 0; border: 0; border-radius: 999px; cursor: pointer; background: ' + c.dot + ';')} />
-                        <p style={css('flex: 1; min-width: 0; margin: 0; font-size: 12.5px; font-weight: 500; line-height: 1.4; overflow-wrap: anywhere; ' + (n.is_resolved ? 'color: var(--muted); text-decoration: line-through;' : ''))}>{n.content}</p>
+                        <NoteText text={n.content} resolved={n.is_resolved} />
                         <button type="button" className="fb-devnote-x" aria-label="Delete note" onClick={() => remove(n.id)} style={css('flex: none; padding: 2px; border: 0; background: transparent; cursor: pointer; color: var(--faint); opacity: 0;')}>{P(I.trash, 'width: 13px; height: 13px')}</button>
                       </div>
                       {shotsOf(n).length ? (
