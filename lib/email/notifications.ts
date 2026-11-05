@@ -82,11 +82,21 @@ export async function sendQueuedEmails(opts: { workspaceId: string | null; baseU
   const defaults = new Map((settings.data || []).map((s) => [s.workspace_id, (s.notify_defaults || {}) as Record<string, boolean>]));
   const projectOf = new Map((projects.data || []).map((p) => [p.id, p]));
 
-  const finish = (id: string, status: 'sent' | 'skipped' | 'failed' | 'queued', error: string | null) =>
-    admin.from('email_outbox').update({ status, error, sent_at: status === 'sent' ? new Date().toISOString() : null }).eq('id', id);
+  const finish = async (id: string, status: 'sent' | 'skipped' | 'failed' | 'queued', error: string | null) => {
+    const result = await admin.from('email_outbox').update({ status, error, sent_at: status === 'sent' ? new Date().toISOString() : null }).eq('id', id);
+    if (result.error) throw new Error(result.error.message);
+  };
 
   let first = true;
+  const deferredRecipients = new Set<string>();
   for (const r of rows) {
+    // A retry or quiet-hour hold must not let later events overtake this recipient.
+    if (deferredRecipients.has(r.user_id)) {
+      const released = await admin.from('email_outbox').update({ status: 'queued', attempts: Math.max(0, r.attempts - 1), claimed_at: null }).eq('id', r.id);
+      if (released.error) throw new Error(released.error.message);
+      out.held++;
+      continue;
+    }
     const to = profileOf.get(r.user_id);
     const p = r.project_id ? projectOf.get(r.project_id) : null;
     const skip =
@@ -99,7 +109,7 @@ export async function sendQueuedEmails(opts: { workspaceId: string | null; baseU
       : '';
     if (skip) { await finish(r.id, 'skipped', skip); out.skipped++; continue; }
     // Quiet hours: back to the queue without using up a try.
-    if (quietNow(to)) { await admin.from('email_outbox').update({ status: 'queued', attempts: Math.max(0, r.attempts - 1) }).eq('id', r.id); out.held++; continue; }
+    if (quietNow(to)) { deferredRecipients.add(r.user_id); await admin.from('email_outbox').update({ status: 'queued', attempts: Math.max(0, r.attempts - 1) }).eq('id', r.id); out.held++; continue; }
 
     const d = r.data || {};
     const tpl = buildNotificationEmail({
@@ -115,6 +125,7 @@ export async function sendQueuedEmails(opts: { workspaceId: string | null; baseU
     if (res.sent) { await finish(r.id, 'sent', null); out.sent++; continue; }
     console.error('Notification email failed for', to!.email, '-', res.error);
     await finish(r.id, r.attempts >= MAX_ATTEMPTS ? 'failed' : 'queued', res.error);
+    if (r.attempts < MAX_ATTEMPTS) deferredRecipients.add(r.user_id);
     out.failed++;
   }
   return out;
