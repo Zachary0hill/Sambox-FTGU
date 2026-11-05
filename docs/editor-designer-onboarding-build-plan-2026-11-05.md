@@ -271,7 +271,8 @@ Remaining recipient-controlled or full-workflow acceptance:
 - [x] Desktop and 390×844 responsive browser checks: welcome, assigned queue, all five layouts, Settings reopening/dismissal, persisted progress. Mobile Account navigation repaired.
 - [x] Signed-out notification destinations preserve project and comments-tab query parameters through the login redirect.
 - [x] Live responsive mobile browser acceptance at 390×844 for both roles.
-- [ ] Physical iOS/Android and representative large-file uploads; responsive browser checks do not exercise device-specific pickers or network interruptions.
+- [x] Representative large uploads and interrupted-transfer recovery: 215 MiB MP4 and 17 MiB PNG; downloaded hashes match. Reviewer revision/resubmission/approval buttons verified for both roles.
+- [ ] Physical iOS/Android file pickers; responsive browser checks do not exercise device-specific behavior.
 
 These are acceptance checks, not evidence of a known remaining implementation failure. Do not label the entire original verification matrix complete solely from delivery events or rollback SQL tests.
 
@@ -291,3 +292,7 @@ See [the workflow verification report](onboarding-workflow-verification-2026-11-
 - 19 automated tests passed; production build and focused lint passed (existing StudioView warnings remain). Production rollback SQL verifies equal timestamps, batch boundaries, in-flight exclusion, and stale-claim recovery.
 - Same-timestamp live regression sent assignment → revision → approval in order at 21:22:52.834, 21:22:53.555, and 21:22:54.340 UTC. Mailbox delivery/display order is controlled downstream and cannot be guaranteed by the sender.
 - Desktop and mobile browser workflow evidence is recorded in the linked verification report. Recipient password-reset completion and designer Inbox/Spam confirmation remain recipient-controlled checks.
+
+### Large upload and reviewer follow-up — 2026-11-05
+
+See [large upload verification](onboarding-large-upload-verification-2026-11-05.md). Fixed the production 50 MB upload limit, added resumable chunks and persistent progress/retry, retained the board during failed refreshes, exposed all reviewer revision/approval actions, and excluded archived projects from welcome counts. Final application deployment `a372524` succeeded. Full browser reload resume is not supported; keep the upload tab open.
