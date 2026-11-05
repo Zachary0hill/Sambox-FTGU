@@ -5,6 +5,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import StudioView from './StudioView';
 import DevNotes from './DevNotes';
+import MemberWelcome from './MemberWelcome';
 import { FlowLayer, flowGuard } from './FlowBuilder';
 import { supabaseBrowser } from '@/lib/supabase/client';
 import { loadContext, loadWorkspace, loadPortalDetail } from '@/lib/studio/load';
@@ -152,6 +153,7 @@ export default function Studio({ initialPath, initialProject }) {
     ['projects', 'project_edits', 'project_thumbnails', 'sponsorships', 'comments', 'project_assets', 'distribution_tasks', 'inbox_items', 'research_runs',
       'ideas', 'idea_comments', 'project_checklist', 'project_last_edit', 'automation_runs', 'project_publish', 'buffer_publications', 'content_entries'].forEach((table) =>
       ch.on('postgres_changes', { event: '*', schema: 'public', table }, bump));
+    ch.on('postgres_changes', { event: '*', schema: 'public', table: 'invite_deliveries', filter: 'workspace_id=eq.' + rtWs }, bump);
     ch.on('postgres_changes', { event: '*', schema: 'public', table: 'notifications', filter: 'user_id=eq.' + rtUser }, bump);
     // If the realtime connection drops, poll every 45 seconds while the tab is visible, and catch up when the tab
     // comes back or the network returns.
@@ -253,7 +255,7 @@ export default function Studio({ initialPath, initialProject }) {
   // Automations > New flow and the flow builder canvas (s.flowOpen: 'new' or a workflow id).
   V.flowLayer = me.uiRole === 'admin' && (s.flowOpen || s.flowReturn)
     ? <FlowLayer D={D} A={A} open={s.flowOpen} review={!!s.flowReview} back={s.flowReturn} set={set} /> : null;
-  return <StudioView V={V} />;
+  return <MemberWelcome key={ctx.workspace_id + ctx.user_id} sb={sb} ctx={ctx} D={D} nav={s.nav} set={set} reload={reload}><StudioView V={V} /></MemberWelcome>;
 }
 
 function Shell({ children }) {

@@ -10,10 +10,13 @@ import { css } from '@/lib/studio/css';
 // /auth/callback has already signed them in, so there is no token and only the new password is saved. Opened
 // without that session (signed out, or from the sign in page's "Forgot password?"), it asks for the email instead
 // and sends the reset link.
-export default function SetupForm({ tokenHash, type }: { tokenHash: string; type: EmailOtpType }) {
+export default function SetupForm({ tokenHash, type, passwordSetup = false }: { tokenHash: string; type: EmailOtpType; passwordSetup?: boolean }) {
   const sb = supabaseBrowser();
-  const signIn = type === 'magiclink';
+  const signIn = type === 'magiclink' && !passwordSetup;
   const reset = type === 'recovery';
+  const invite = !signIn && !reset;
+  const [verified, setVerified] = useState(false);
+  const [checkingSetup, setCheckingSetup] = useState(invite);
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
   const [showPw, setShowPw] = useState(false);
@@ -24,11 +27,24 @@ export default function SetupForm({ tokenHash, type }: { tokenHash: string; type
   // Reset only: null while checking, then whether the reset link signed this browser in.
   const [hasSession, setHasSession] = useState<boolean | null>(reset ? null : true);
   const requesting = reset && hasSession === false;
+  const missingSetup = !tokenHash && !reset && !verified && !checkingSetup;
+  const submitDisabled = busy || checkingSetup || hasSession === null || missingSetup;
 
   useEffect(() => {
     if (!reset) return;
     sb.auth.getSession().then((res: { data: { session: unknown } }) => setHasSession(!!res.data.session));
   }, [reset, sb]);
+
+  useEffect(() => {
+    if (!invite) return;
+    let active = true;
+    setupRequest({ action: 'resume', tokenHash }).then((data) => {
+      if (active) setVerified(data.verified === true);
+    }).catch(() => {
+      // Verification on submit can still recover after a transient resume failure.
+    }).finally(() => { if (active) setCheckingSetup(false); });
+    return () => { active = false; };
+  }, [invite, tokenHash]);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -45,11 +61,19 @@ export default function SetupForm({ tokenHash, type }: { tokenHash: string; type
     if (!signIn && password !== confirm) return setErr('The passwords do not match.');
     setBusy(true);
     try {
-      if (!reset) {
+      if (invite) {
+        // A separate response persists the verified context before password saving can fail.
+        if (!verified) {
+          await setupRequest({ action: 'verify', tokenHash, tokenType: type });
+          setVerified(true);
+          window.history.replaceState(null, '', '/auth/setup');
+        }
+        await setupRequest({ action: 'password', tokenHash, password });
+      } else if (!reset) {
         const v = await sb.auth.verifyOtp({ token_hash: tokenHash, type });
         if (v.error) throw new Error(/expired|invalid/i.test(v.error.message) ? 'This link has expired or was already used. Ask whoever invited you to resend it.' : v.error.message);
       }
-      if (!signIn) {
+      if (reset) {
         const u = await sb.auth.updateUser({ password });
         if (u.error && reset && /session/i.test(u.error.message)) { setHasSession(false); throw new Error('This reset link has expired. Enter your email to get a new one.'); }
         if (u.error) throw u.error;
@@ -84,8 +108,8 @@ export default function SetupForm({ tokenHash, type }: { tokenHash: string; type
             {signIn ? 'Continue to open the board with your account.' : requesting ? 'Enter the email you sign in with and we will send you a link to choose a new password.' : reset ? 'Enter a new password for your account. You will use it with your email to sign in.' : 'Choose a password to finish accepting your invite. You will use it with this email to sign in.'}
           </p>
         </div>
-        {!tokenHash && !reset ? (
-          <p role="alert" style={css('margin: 0; padding: 10px 12px; border-radius: 10px; background: var(--red-soft); color: var(--red-ink); font-size: 13px; font-weight: 600;')}>This link is missing its token. Open the button in your invite email again.</p>
+        {missingSetup ? (
+          <p role="alert" style={css('margin: 0; padding: 10px 12px; border-radius: 10px; background: var(--red-soft); color: var(--red-ink); font-size: 13px; font-weight: 600;')}>Open your invite email to begin. If you already started setup, use password recovery to finish.</p>
         ) : null}
         {requesting ? (
           <div style={css('display: flex; flex-direction: column; gap: 6px')}>
@@ -115,10 +139,13 @@ export default function SetupForm({ tokenHash, type }: { tokenHash: string; type
           </>
         ) : null}
         {err ? <p role="alert" style={css('margin: 0; padding: 10px 12px; border-radius: 10px; background: var(--red-soft); color: var(--red-ink); font-size: 13px; font-weight: 600;')}>{err}</p> : null}
-        <button type="submit" disabled={busy || hasSession === null || (!tokenHash && !reset)} style={css('min-height: 44px; padding: 0 18px; border: 0; border-radius: 14px; background: var(--inv); color: var(--inv-ink); cursor: pointer; opacity: ' + (busy || hasSession === null || (!tokenHash && !reset) ? '0.6' : '1') + ';')}>
+        <button type="submit" disabled={submitDisabled} style={css('min-height: 44px; padding: 0 18px; border: 0; border-radius: 14px; background: var(--inv); color: var(--inv-ink); cursor: pointer; opacity: ' + (submitDisabled ? '0.6' : '1') + ';')}>
           {signIn ? 'Continue to the board' : requesting ? (sent ? 'Send again' : 'Email me a reset link') : reset ? 'Save new password' : 'Set password and continue'}
         </button>
-        {reset ? (
+        {invite && (err || missingSetup) ? (
+          <Link href="/auth/setup?type=recovery" style={css('font-size: 13px; color: var(--ink); text-decoration: underline;')}>Recover your password</Link>
+        ) : null}
+        {reset || invite ? (
           <Link href="/login" style={css('align-self: center; font-size: 13px; font-weight: 600; color: var(--muted); text-decoration: underline; text-underline-offset: 3px;')}>Back to sign in</Link>
         ) : null}
       </form>
@@ -137,4 +164,13 @@ function EyeToggle({ shown, toggle, controls }: { shown: boolean; toggle: () => 
       )}
     </button>
   );
+}
+
+async function setupRequest(body: Record<string, string>) {
+  const response = await fetch('/api/auth/setup', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
+  });
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.error || 'Could not finish setup. Please try again.');
+  return data;
 }

@@ -6,7 +6,7 @@ const DEFAULT_FROM = 'SantosStudios <onboarding@resend.dev>';
 // Whether invites can reach anyone: a Resend key is set, and the sender is not Resend's onboarding@resend.dev test address.
 export function emailHealth() {
   const from = process.env.EMAIL_FROM || DEFAULT_FROM;
-  return { configured: !!process.env.RESEND_API_KEY, sandboxSender: /@resend\.dev>?\s*$/i.test(from) };
+  return { webhookConfigured: !!process.env.RESEND_WEBHOOK_SECRET, configured: !!process.env.RESEND_API_KEY, sandboxSender: /@resend\.dev>?\s*$/i.test(from) };
 }
 
 export type SendResult = { sent: true; id: string } | { sent: false; error: string };
@@ -19,7 +19,8 @@ export async function sendEmail({ to, subject, html, text }: { to: string; subje
     const resend = new Resend(key);
     const { data, error } = await resend.emails.send({ from: process.env.EMAIL_FROM || DEFAULT_FROM, to, subject, html, text });
     if (error) return { sent: false, error: error.message };
-    return { sent: true, id: data ? data.id : '' };
+    if (!data?.id) return { sent: false, error: 'The email provider did not return a message ID.' };
+    return { sent: true, id: data.id };
   } catch (err) {
     return { sent: false, error: err instanceof Error ? err.message : 'Resend request failed.' };
   }

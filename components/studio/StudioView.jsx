@@ -370,6 +370,8 @@ export default function StudioView({ V }) {
                               {" "}
                               <div role="cell" style={css("padding: 0 16px")}>
                                 <span style={css(m.statusStyle)}>{m.status}</span>
+                                <div style={css('font-size: 11px; margin-top: 6px; color: var(--muted); overflow-wrap: anywhere;')} title={m.delivery}>{m.delivery}</div>
+                                {m.onboarding ? <div style={css('font-size: 11px; color: var(--muted);')}>{m.onboarding}</div> : null}
                               </div>
                               {" "}
                               <div role="cell" style={css("padding: 0 16px; font-size: 13px; color: var(--ink-3); white-space: nowrap")}>{m.lastActive}</div>
@@ -491,7 +493,7 @@ export default function StudioView({ V }) {
                       <div style={css("display: flex; justify-content: flex-end; gap: 8px; margin-top: 24px")}>
                         <button type="button" className="fb-ni" onClick={V.closeAddUser} style={css("min-height: 44px; padding: 0 18px; border: 0; border-radius: 14px; background: transparent; color: var(--ink-3); cursor: pointer")}>Cancel</button>
                         {" "}
-                        <button type="button" onClick={V.addMember} style={css("min-height: 44px; padding: 0 18px; border: 0; border-radius: 14px; background: var(--inv); color: var(--inv-ink); cursor: pointer")}>Send invite</button>
+                        <button type="button" onClick={V.addMember} disabled={V.nuBusy} style={css("min-height: 44px; padding: 0 18px; border: 0; border-radius: 14px; background: var(--inv); color: var(--inv-ink); cursor: pointer")}>{V.nuBusy ? 'Sending…' : 'Send invite'}</button>
                       </div>
                     </dialog>
                   </>

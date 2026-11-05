@@ -44,7 +44,7 @@ export async function POST(request: Request) {
 
   try {
     const d = await deliverInvite({
-      baseUrl: baseUrlFor(request), email, name, role: role as InviteRole, account,
+      workspaceId: ctx.workspace_id, actorId: ctx.user_id, baseUrl: baseUrlFor(request), email, name, role: role as InviteRole, account,
       workspace: ctx.workspace_name, inviter: (ctx.profile && ctx.profile.full_name) || 'Your team',
       existingUser: saved.data === 'added',
     });
