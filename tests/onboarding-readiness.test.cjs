@@ -94,3 +94,15 @@ test('editor and designer invitations inherit role layouts unless deliberately c
     assert.deepEqual(calls.at(-1).p_views, ['table']);
   }
 });
+
+test('signed-out email project links retain project and tab through the login redirect', async () => {
+  const { proxy } = load('proxy.ts', {
+    'next/server': { NextResponse: { next: () => ({ cookies: { set() {} } }), redirect: url => url } },
+    '@supabase/ssr': { createServerClient: () => ({ auth: { getClaims: async () => ({ data: null }) } }) },
+  });
+  const source = new URL('https://studio.example/projects?project=QA-1&tab=comments');
+  source.clone = () => new URL(source);
+  const result = await proxy({ nextUrl: source, cookies: { getAll: () => [] } });
+  assert.equal(result.pathname, '/login');
+  assert.equal(result.searchParams.get('next'), '/projects?project=QA-1&tab=comments');
+});
