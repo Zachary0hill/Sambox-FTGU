@@ -73,3 +73,24 @@ test('callback uses the public origin behind Railway and preserves recovery dest
     assert.equal(missing.headers.get('location'), 'https://studio.example/login?error=link');
   } finally { if (old === undefined) delete process.env.APP_BASE_URL; else process.env.APP_BASE_URL = old; }
 });
+
+test('editor and designer invitations inherit role layouts unless deliberately customized', async () => {
+  const calls = [];
+  const { POST } = load('app/api/invites/route.ts', {
+    'next/server': { NextResponse: { json: (body, init) => Response.json(body, init) } },
+    '@/lib/supabase/server': { supabaseServer: async () => ({ rpc: async (name, args) => {
+      if (name === 'my_context') return { data: { role: 'super_admin', workspace_id: 'ws', user_id: 'admin' } };
+      calls.push(args); return { data: 'invited' };
+    } }) },
+    '@/lib/email/invite': { baseUrlFor: () => 'https://studio.example', deliverInvite: async () => ({ email: { sent: true } }) },
+  });
+  for (const role of ['editor', 'designer']) {
+    const request = (views) => new Request('https://studio.example/api/invites', { method: 'POST', body: JSON.stringify({ email: 'pilot@example.test', name: 'Pilot', role, views }) });
+    assert.equal((await POST(request(undefined))).status, 200);
+    assert.equal(calls.at(-1).p_views, null);
+    assert.equal((await POST(request([]))).status, 200);
+    assert.equal(calls.at(-1).p_views, null);
+    assert.equal((await POST(request(['table']))).status, 200);
+    assert.deepEqual(calls.at(-1).p_views, ['table']);
+  }
+});

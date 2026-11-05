@@ -18,7 +18,7 @@ export async function POST(request: Request) {
   const role = String(body.role || '');
   const views = Array.isArray(body.views) ? body.views.filter((v: string) => VIEWS.includes(v)) : [];
   const accountId = body.accountId || null;
-  if (!name || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || !ROLES.includes(role) || (!views.length && !['client', 'sponsor'].includes(role))) {
+  if (!name || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || !ROLES.includes(role) || (!views.length && !['editor', 'designer', 'client', 'sponsor'].includes(role))) {
     return NextResponse.json({ error: 'Name, a valid email, a user type and at least one view are required.' }, { status: 400 });
   }
 
