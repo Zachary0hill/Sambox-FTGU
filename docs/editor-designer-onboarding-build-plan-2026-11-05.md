@@ -262,11 +262,32 @@ Follow-up implementation:
 - Email operations guide now identifies Railway and separates provider delivery, inbox placement, authentication, and notification evidence.
 
 Remaining recipient-controlled or full-workflow acceptance:
-- [ ] Designer recipient confirms Inbox/Spam placement and completes their invitation.
+- [x] Designer accepted the invitation, set a password, and completed welcome onboarding (2026-11-05 20:40 UTC).
+- [ ] Designer recipient confirms Inbox/Spam placement for invitation and workflow notifications.
 - [ ] Recipient completes password recovery and subsequent login; existing passwords are never changed by unattended testing.
-- [ ] Real browser storage upload, first assignment review/revision, and assignment/revision email receipt for both roles. Database authorization and metadata writes already pass.
-- [ ] Cross-device/mobile live acceptance. Mobile component behavior has local coverage.
+- [x] Authenticated production API checks: real MP4/PNG storage uploads and byte-identical downloads, review → revision → replacement upload → resubmission → approval for both roles, revision comments/replies, reviewer signed previews, and denied anonymous downloads/deadline changes.
+- [x] Deployed notification dispatcher: 10/10 sends, all Delivered in Resend; editor and reviewer Gmail Inbox placement verified.
+- [x] Production browser file-picker uploads, previews, review submissions, revision comments, replacement uploads, resubmissions, and authenticated email-to-project destinations for both roles.
+- [x] Desktop and 390×844 responsive browser checks: welcome, assigned queue, all five layouts, Settings reopening/dismissal, persisted progress. Mobile Account navigation repaired.
+- [x] Signed-out notification destinations preserve project and comments-tab query parameters through the login redirect.
+- [x] Live responsive mobile browser acceptance at 390×844 for both roles.
+- [ ] Physical iOS/Android and representative large-file uploads; responsive browser checks do not exercise device-specific pickers or network interruptions.
 
 These are acceptance checks, not evidence of a known remaining implementation failure. Do not label the entire original verification matrix complete solely from delivery events or rollback SQL tests.
 
 Production email OTP lifetime was inspected in Supabase: 3,600 seconds. Invitation record expiry is separate. No password-policy setting was changed.
+
+
+### Live workflow verification — 2026-11-05 20:51 UTC
+
+See [the workflow verification report](onboarding-workflow-verification-2026-11-05.md) for scope, evidence, cleanup, and remaining acceptance. No application code or deployment changed in this verification run.
+
+
+### Ordering and browser follow-up — 2026-11-05
+
+- `fc7d85f`: ordered outbox claims, deterministic ties, overlapping recipient batch protection, and retry deferral; production migration applied.
+- `133b7c9`: Account Settings stays reachable in compact mobile navigation.
+- `6af1bae`: signed-out project email links retain their full destination through login.
+- 19 automated tests passed; production build and focused lint passed (existing StudioView warnings remain). Production rollback SQL verifies equal timestamps, batch boundaries, in-flight exclusion, and stale-claim recovery.
+- Same-timestamp live regression sent assignment → revision → approval in order at 21:22:52.834, 21:22:53.555, and 21:22:54.340 UTC. Mailbox delivery/display order is controlled downstream and cannot be guaranteed by the sender.
+- Desktop and mobile browser workflow evidence is recorded in the linked verification report. Recipient password-reset completion and designer Inbox/Spam confirmation remain recipient-controlled checks.
