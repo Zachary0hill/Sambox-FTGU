@@ -206,6 +206,10 @@ export default function StudioView({ V }) {
                 </button>
               </Fragment>
             ))}
+            {/* Account stays reachable when the desktop sidebar is hidden on phones. */}
+            <button type="button" aria-label="Account settings" aria-current={V.acctCurrent} onClick={V.openSettings} style={css("flex: none; width: 44px; height: 44px; display: inline-flex; align-items: center; justify-content: center; border: 0; border-radius: 12px; cursor: pointer; " + (V.acctCurrent ? "background: var(--chip-2); color: var(--ink);" : "background: transparent; color: var(--ink-4);"))}>
+              <span aria-hidden="true" style={css("font-size: 13px; font-weight: 700")}>{V.acctInitial}</span>
+            </button>
           </nav>
           {" "}
           {V.showAdmin ? (
