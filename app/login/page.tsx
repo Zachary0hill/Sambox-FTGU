@@ -1,4 +1,5 @@
 'use client';
+import NextImage from 'next/image';
 import { safeAuthNext } from '@/lib/auth/safe-next';
 import { useState } from 'react';
 import { supabaseBrowser } from '@/lib/supabase/client';
@@ -51,7 +52,7 @@ export default function LoginPage() {
       <form onSubmit={submit} style={css('width: 440px; max-width: 100%; box-sizing: border-box; padding: 28px; background: var(--surface); border: 1px solid var(--line-4); border-radius: 28px; box-shadow: 0 1px 2px rgba(0,0,0,0.04), 0 24px 60px rgba(0,0,0,0.06); display: flex; flex-direction: column; gap: 18px;')}>
         <div style={css('display: flex; align-items: center; gap: 12px')}>
           <span aria-hidden="true" style={css('width: 36px; height: 36px; flex: none; border-radius: 10px; display: inline-flex; align-items: center; justify-content: center; background: #111111;')}>
-            <img src="/ftgu-logo.png" alt="" width={24} height={18} style={css('display: block; width: 24px; height: auto')} />
+            <NextImage src="/ftgu-logo.png" alt="" width={24} height={18} style={css('display: block; width: 24px; height: auto')} />
           </span>
           <div style={css('display: flex; flex-direction: column; gap: 2px')}>
             <p style={css('margin: 0; font-family: var(--font-title); font-size: 15px; font-weight: var(--weight-black); line-height: 1.25; letter-spacing: -0.01em;')}>SantosStudios</p>

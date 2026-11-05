@@ -1,10 +1,12 @@
 'use client';
+import NextImage from 'next/image';
 // Dev Notes: the floating "press N anywhere" dock for Super Admins. A shared development backlog for the workspace:
 // jot down an idea, enhancement or bug while browsing and it is tagged with the page you were on. Drag the header to
 // move it (position is remembered), double-click the header to re-centre, arrow keys nudge when the grip is focused,
 // Esc closes. Ported from the ZZMEDIA and Parish dashboards; rows live in dev_notes behind RLS (Super Admins only).
 // Screenshots: paste, drop onto the card, or pick with the paperclip. Up to four per note; large images are downscaled
 // in the browser, stored in the private dev-note-shots bucket under <workspace>/<note>/ and shown through signed URLs.
+// Keep signed URLs and local blob previews direct with unoptimized images.
 /* eslint-disable react-hooks/exhaustive-deps, react-hooks/set-state-in-effect */
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { css } from '@/lib/studio/css';
@@ -560,7 +562,7 @@ function DevNotesCard({ sb, me, workspaceId, onClose }) {
               <div style={css('display: flex; gap: 6px; padding: 0 10px 10px; overflow-x: auto;')}>
                 {pending.map((p) => (
                   <span key={p.id} className="fb-devshot" style={css('position: relative; flex: none; width: 64px; height: 48px; border-radius: 8px; overflow: hidden; border: 1px solid var(--line-4); background: var(--chip);')}>
-                    <img src={p.url} alt="" width={p.w} height={p.h} style={css('display: block; width: 100%; height: 100%; object-fit: cover;')} />
+                    <NextImage unoptimized src={p.url} alt="" width={p.w} height={p.h} style={css('display: block; width: 100%; height: 100%; object-fit: cover;')} />
                     <button type="button" aria-label="Remove image" onClick={() => dropPending(p.id)} style={css('position: absolute; top: 3px; right: 3px; display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 18px; padding: 0; border: 0; border-radius: 999px; background: rgba(0,0,0,0.6); color: #fff; cursor: pointer;')}>{P(I.close, 'width: 10px; height: 10px')}</button>
                   </span>
                 ))}
@@ -605,7 +607,7 @@ function DevNotesCard({ sb, me, workspaceId, onClose }) {
                           {shotsOf(n).map((a, i) => (
                             <button key={a.path} type="button" aria-label={'Open screenshot ' + (i + 1) + ' of ' + shotsOf(n).length} onClick={() => setLightbox({ noteId: n.id, index: i })}
                               style={css('flex: none; width: 72px; height: 54px; padding: 0; border: 1px solid var(--line-4); border-radius: 8px; overflow: hidden; background: var(--chip); cursor: zoom-in;' + (n.is_resolved ? ' opacity: .6;' : ''))}>
-                              {urls[a.path] ? <img src={urls[a.path]} alt="" width={a.w} height={a.h} loading="lazy" style={css('display: block; width: 100%; height: 100%; object-fit: cover;')} /> : <span style={css('display: flex; width: 100%; height: 100%; align-items: center; justify-content: center; color: var(--faint);')}>{P(I.image, 'width: 14px; height: 14px')}</span>}
+                              {urls[a.path] ? <NextImage unoptimized src={urls[a.path]} alt="" width={a.w} height={a.h} loading="lazy" style={css('display: block; width: 100%; height: 100%; object-fit: cover;')} /> : <span style={css('display: flex; width: 100%; height: 100%; align-items: center; justify-content: center; color: var(--faint);')}>{P(I.image, 'width: 14px; height: 14px')}</span>}
                             </button>
                           ))}
                         </div>
@@ -628,7 +630,7 @@ function DevNotesCard({ sb, me, workspaceId, onClose }) {
       {lbShot ? (
         <div role="dialog" aria-modal="true" aria-label="Screenshot" onClick={() => setLightbox(null)} style={css('position: absolute; inset: 0; z-index: 5; display: flex; align-items: center; justify-content: center; padding: 32px; background: rgba(0,0,0,0.72); pointer-events: auto; font-family: var(--font-main);')}>
           <div onClick={(e) => e.stopPropagation()} style={css('position: relative; display: flex; flex-direction: column; gap: 10px; max-width: min(1200px, 100%); max-height: 100%;')}>
-            {urls[lbShot.path] ? <img src={urls[lbShot.path]} alt={lbNote.content} width={lbShot.w} height={lbShot.h} style={css('display: block; max-width: 100%; max-height: calc(100vh - 140px); width: auto; height: auto; object-fit: contain; border-radius: 12px; box-shadow: 0 24px 64px rgba(0,0,0,0.5); background: #111;')} /> : <p style={css('margin: 0; color: #fff;')}>Loading…</p>}
+            {urls[lbShot.path] ? <NextImage unoptimized src={urls[lbShot.path]} alt={lbNote.content} width={lbShot.w} height={lbShot.h} style={css('display: block; max-width: 100%; max-height: calc(100vh - 140px); width: auto; height: auto; object-fit: contain; border-radius: 12px; box-shadow: 0 24px 64px rgba(0,0,0,0.5); background: #111;')} /> : <p style={css('margin: 0; color: #fff;')}>Loading…</p>}
             <div style={css('display: flex; align-items: center; gap: 10px; color: #fff; font-size: 12px;')}>
               <p style={css('flex: 1; min-width: 0; margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; opacity: .85;')}>{lbNote.content}</p>
               {lbShots.length > 1 ? (

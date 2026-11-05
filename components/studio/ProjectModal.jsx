@@ -1,7 +1,9 @@
 'use client';
+import NextImage from 'next/image';
 // app: the project modal, laid out like the ZZMEDIA dashboard's project card (CardDetailPanel): cover, header with the
 // state row, tabs with quick actions beside them, then the tab body next to a Details sidebar. Every value comes from
 // lib/studio/vals.js (V.dr); this file only lays it out.
+// User media uses unoptimized images to preserve signed URLs and local blob previews.
 import { Fragment, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { css } from '@/lib/studio/css';
@@ -169,7 +171,7 @@ function BannerRow({ b }) {
         <span style={css('min-width: 0; flex: 1; display: flex; flex-wrap: wrap; align-items: center; gap: 4px; min-height: 28px')}>
           {b.has ? (
             <>
-              {b.url ? <img src={b.url} alt="" loading="lazy" decoding="async" draggable={false} style={css('width: 48px; height: 28px; flex: none; margin-right: 4px; border-radius: 6px; object-fit: cover; background: var(--panel)')} /> : null}
+              {b.url ? <NextImage unoptimized width={48} height={28} src={b.url} alt="" loading="lazy" decoding="async" draggable={false} style={css('width: 48px; height: 28px; flex: none; margin-right: 4px; border-radius: 6px; object-fit: cover; background: var(--panel)')} /> : null}
               <button type="button" className="fb-ni" aria-label="Change banner" onClick={b.pick} style={css(TEXT_BTN)}>Change</button>
               {b.canRemove ? <button type="button" className="fb-ni" aria-label="Remove banner" onClick={b.remove} style={css(TEXT_BTN)}>Remove</button> : null}
             </>
@@ -261,8 +263,8 @@ function Comments({ V }) {
                   {cm.hasImages ? (
                     <div style={css(cm.imgGrid)}>
                       {cm.images.map((im) => (
-                        <button key={im.key} type="button" aria-label={'Open ' + im.name} onClick={im.open} style={css('display: block; padding: 0; border: 1px solid var(--line-3); border-radius: 12px; overflow: hidden; background: var(--panel); aspect-ratio: 4 / 3; cursor: zoom-in')}>
-                          {im.has ? <img src={im.url} alt={im.name} loading="lazy" style={css('width: 100%; height: 100%; object-fit: cover; display: block')} /> : <span style={css('font-size: 12px; color: var(--muted)')}>{im.name}</span>}
+                        <button key={im.key} type="button" aria-label={'Open ' + im.name} onClick={im.open} style={css('position: relative; display: block; padding: 0; border: 1px solid var(--line-3); border-radius: 12px; overflow: hidden; background: var(--panel); aspect-ratio: 4 / 3; cursor: zoom-in')}>
+                          {im.has ? <NextImage unoptimized fill src={im.url} alt={im.name} loading="lazy" style={css('width: 100%; height: 100%; object-fit: cover; display: block')} /> : <span style={css('font-size: 12px; color: var(--muted)')}>{im.name}</span>}
                         </button>
                       ))}
                     </div>
@@ -317,7 +319,7 @@ function Comments({ V }) {
               <div style={css('display: flex; flex-wrap: wrap; gap: 6px; padding: 4px 10px 6px')}>
                 {(dr.pending || []).map((p) => (
                   <span key={p.key} style={css('display: inline-flex; align-items: center; gap: 6px; max-width: 240px; min-height: 34px; padding: 0 4px; border: 1px solid var(--line-3); border-radius: 10px; background: var(--surface)')}>
-                    {p.isImage ? <img src={p.url} alt="" style={css('width: 26px; height: 26px; border-radius: 6px; object-fit: cover; display: block')} /> : <span style={css(p.badge)}>{p.label}</span>}
+                    {p.isImage ? <NextImage unoptimized width={26} height={26} src={p.url} alt="" style={css('width: 26px; height: 26px; border-radius: 6px; object-fit: cover; display: block')} /> : <span style={css(p.badge)}>{p.label}</span>}
                     <span style={css('min-width: 0; font-size: 12px; font-weight: 600; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis')}>{p.name}</span>
                     <button type="button" aria-label={'Remove ' + p.name} onClick={p.remove} className="fb-ni" style={css('flex: none; width: 26px; height: 26px; border: 0; border-radius: 8px; background: transparent; color: var(--muted); display: inline-flex; align-items: center; justify-content: center; cursor: pointer')}><I d="M18 6 6 18M6 6l12 12" size={11} /></button>
                   </span>
@@ -441,8 +443,8 @@ function Overview({ V }) {
           <div style={css('display: grid; grid-template-columns: repeat(auto-fill, minmax(min(140px, 100%), 1fr)); gap: 10px')}>
             {dr.filesPeek.items.map((fp) => (
               <a key={fp.key} href="#" onClick={fp.open} aria-label={'Open ' + fp.name} style={css('display: flex; flex-direction: column; min-width: 0; border: 1px solid var(--line-4); border-radius: 12px; overflow: hidden; background: var(--surface); color: var(--ink); text-decoration: none')}>
-                <span aria-hidden="true" style={css('aspect-ratio: 16 / 10; display: flex; align-items: center; justify-content: center; background: var(--panel); overflow: hidden')}>
-                  {fp.hasPreview ? <img src={fp.preview} alt="" loading="lazy" style={css('width: 100%; height: 100%; object-fit: cover; display: block')} /> : <span style={css(fp.badge)}>{fp.typeLabel}</span>}
+                <span aria-hidden="true" style={css('position: relative; aspect-ratio: 16 / 10; display: flex; align-items: center; justify-content: center; background: var(--panel); overflow: hidden')}>
+                  {fp.hasPreview ? <NextImage unoptimized fill src={fp.preview} alt="" loading="lazy" style={css('width: 100%; height: 100%; object-fit: cover; display: block')} /> : <span style={css(fp.badge)}>{fp.typeLabel}</span>}
                 </span>
                 <span style={css('display: flex; flex-direction: column; gap: 2px; min-width: 0; padding: 8px 10px')}>
                   <span style={css('font-size: 12.5px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis')}>{fp.name}</span>
@@ -561,7 +563,7 @@ function Files({ V, CellPop }) {
               {(dr.assets || []).map((as) => (
                 <li key={as.key} style={css('display: flex; flex-direction: column; min-width: 0; border: 1px solid var(--line-3); border-radius: 14px; overflow: hidden; background: var(--surface)')}>
                   <a href="#" aria-label={as.aria} onClick={as.open} style={css('position: relative; display: flex; align-items: center; justify-content: center; aspect-ratio: 4 / 3; background: var(--panel); color: var(--ink-3); text-decoration: none')}>
-                    {as.hasPreview ? <img src={as.preview} alt="" loading="lazy" style={css('width: 100%; height: 100%; object-fit: cover; display: block')} /> : null}
+                    {as.hasPreview ? <NextImage unoptimized fill src={as.preview} alt="" loading="lazy" style={css('width: 100%; height: 100%; object-fit: cover; display: block')} /> : null}
                     {as.noPreview ? (
                       <span style={css('display: flex; flex-direction: column; align-items: center; gap: 10px')}>
                         <svg aria-hidden="true" width="40" height="48" viewBox="0 0 44 52" fill="none"><path d="M4 2h24l12 12v34a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z" fill="var(--surface)" stroke="var(--line-4)" strokeWidth="2"></path><path d="M28 2v12h12" stroke="var(--line-4)" strokeWidth="2" strokeLinejoin="round"></path></svg>
@@ -593,7 +595,7 @@ function Files({ V, CellPop }) {
               {(dr.assets || []).map((as) => (
                 <div key={as.key} style={css(as.rowStyle)}>
                   <span aria-hidden="true" style={css('width: 40px; height: 40px; flex: none; border-radius: 10px; overflow: hidden; display: inline-flex; align-items: center; justify-content: center; background: var(--panel)')}>
-                    {as.hasPreview ? <img src={as.preview} alt="" loading="lazy" style={css('width: 100%; height: 100%; object-fit: cover; display: block')} /> : <span style={css(as.badgeSm)}>{as.typeLabel}</span>}
+                    {as.hasPreview ? <NextImage unoptimized width={40} height={40} src={as.preview} alt="" loading="lazy" style={css('width: 100%; height: 100%; object-fit: cover; display: block')} /> : <span style={css(as.badgeSm)}>{as.typeLabel}</span>}
                   </span>
                   <span style={css('flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px')}>
                     <span title={as.name} style={css('font-size: 13.5px; font-weight: 600; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis')}>{as.name}{as.hasVersion ? '  ·  ' + as.version : ''}</span>
@@ -666,7 +668,7 @@ export default function ProjectModal({ V, CellPop }) {
         {/* Cover: the uploaded banner, else the latest thumbnail in Files, collapsible from the header */}
         {dr.cover.show ? (
           <div className="fb-dlg-cover" style={css('position: relative; flex: none; width: 100%; overflow: hidden; transition: height .25s ease; height: ' + (dr.cover.open ? '150px' : '0'))}>
-            <img src={dr.cover.url} alt="" loading="lazy" decoding="async" draggable={false} style={css('width: 100%; height: 100%; object-fit: cover; display: block')} />
+            <NextImage unoptimized fill src={dr.cover.url} alt="" loading="lazy" decoding="async" draggable={false} style={css('width: 100%; height: 100%; object-fit: cover; display: block')} />
             <div aria-hidden="true" style={css('position: absolute; inset: 0; background: linear-gradient(to top, color-mix(in srgb, var(--surface) 70%, transparent), transparent 55%)')}></div>
             <button type="button" onClick={dr.cover.view} style={css('position: absolute; right: 12px; bottom: 10px; min-height: 28px; padding: 0 10px; border: 1px solid var(--line-4); border-radius: 8px; background: color-mix(in srgb, var(--surface) 80%, transparent); color: var(--ink); font-size: 11px; font-weight: 600; cursor: pointer; backdrop-filter: blur(6px)')}>{dr.cover.viewLabel}</button>
           </div>

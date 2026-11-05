@@ -1,6 +1,8 @@
 'use client';
+import NextImage from 'next/image';
 // Generated from the design canvas (YouTube Studio Unified Board, Main.dc.html) by a markup converter.
 // Hand edits are marked with "app:" comments.
+// User and external media stays unoptimized to preserve signed URLs, referrers, and cover fallbacks.
 import { Fragment, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { css } from '@/lib/studio/css';
@@ -23,7 +25,6 @@ import Workload from './Workload';
 import BrandEditor from './BrandEditor';
 import Dropdown from './Dropdown';
 import SocialIcon, { TextLogo } from './SocialIcon';
-import { socialIdOf } from '@/lib/studio/socials';
 import { RichText, Thinking, Steps, MsgActions, ModelPicker, ModeToggle, GearButton, AiSettings, ChatScroll } from './ChatKit';
 
 export default function StudioView({ V }) {
@@ -85,7 +86,7 @@ export default function StudioView({ V }) {
           <div style={css("position: sticky; top: 0; z-index: 35; height: calc(100vh - 32px); min-height: 560px; display: flex; flex-direction: column; overflow-x: hidden; overflow-y: auto")}>
             <div style={css(V.sideHead)}>
               <span aria-hidden="true" style={css(V.tileStyle)}>
-                {/* app: FTGU logo */}<img src="/ftgu-logo.png" alt="" width={24} height={18} style={css("display: block; width: 24px; height: auto")} />
+                {/* app: FTGU logo */}<NextImage src="/ftgu-logo.png" alt="" width={24} height={18} style={css("display: block; width: 24px; height: auto")} />
               </span>
               {" "}
               {V.panelOpen ? (
@@ -1240,7 +1241,7 @@ export default function StudioView({ V }) {
                             <Fragment key={ig__i}>
                               <article style={css("display: flex; flex-direction: column; gap: 14px; padding: 18px; border: 1px solid var(--line); border-radius: 18px; background: var(--surface)")}>
                                 <div style={css("display: flex; align-items: center; gap: 12px")}>
-                                  <span aria-hidden="true" style={css(ig.tileStyle)}>{ig.logoUrl ? <img src={ig.logoUrl} alt="" width={24} height={24} style={css("display: block; width: 24px; height: 24px; object-fit: contain")} /> : ig.logo ? <SocialIcon id={ig.logo} size={18} mono /> : ig.initials}</span>
+                                  <span aria-hidden="true" style={css(ig.tileStyle)}>{ig.logoUrl ? <NextImage src={ig.logoUrl} alt="" width={24} height={24} style={css("display: block; width: 24px; height: 24px; object-fit: contain")} /> : ig.logo ? <SocialIcon id={ig.logo} size={18} mono /> : ig.initials}</span>
                                   {" "}
                                   <span style={css("flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px")}>
                                     <span style={css("font-size: 15px; font-weight: 600; color: var(--ink)")}>{ig.name}</span>
@@ -1837,7 +1838,7 @@ export default function StudioView({ V }) {
                                       <Fragment key={ic.id}>
                                         <button type="button" id={'ig-card-' + ic.id} className="fb-card" aria-expanded={ic.open} aria-controls={ic.open ? 'ig-panel-' + ic.id : undefined} aria-label={ic.name + ', ' + ic.tileNote} onClick={ic.toggle} style={css(ic.tileBtnStyle)}>
                                           <span aria-hidden="true" style={css("width: 40px; height: 40px; flex: none; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center; border-radius: 10px; border: 1px solid var(--line); background: #fff")}>
-                                            <img src={ic.logo} alt="" width={24} height={24} style={css("display: block; width: 24px; height: 24px; object-fit: contain")} />
+                                            <NextImage src={ic.logo} alt="" width={24} height={24} style={css("display: block; width: 24px; height: 24px; object-fit: contain")} />
                                           </span>
                                           <span style={css("flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px")}>
                                             <span style={css("font-size: 15px; font-weight: 600; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap")}>{ic.name}</span>
@@ -3091,7 +3092,7 @@ export default function StudioView({ V }) {
                                   <div style={css("display: flex; flex-direction: column; border: 1px solid var(--line); border-radius: 12px; overflow: hidden")}>
                                     <button type="button" className="fb-ni" aria-label={lo.aria} onClick={lo.open} style={css("display: flex; align-items: center; justify-content: center; height: 96px; padding: 12px; border: 0; cursor: pointer; background: repeating-conic-gradient(var(--chip) 0% 25%, var(--surface) 0% 50%) 50% / 16px 16px")}>
                                       {lo.hasUrl ? (
-                                        <img src={lo.url} alt="" style={css("max-width: 100%; max-height: 100%; object-fit: contain")} />
+                                        <span style={css("position: relative; display: block; width: 100%; height: 100%")}><NextImage unoptimized fill src={lo.url} alt="" style={css("object-fit: scale-down")} /></span>
                                       ) : (
                                         <span style={css("font-size: 12px; font-weight: 600; color: var(--muted)")}>Preview unavailable</span>
                                       )}
@@ -3738,7 +3739,7 @@ export default function StudioView({ V }) {
                                       {(V.ids.sel.visualRefs || []).map((r, r__i) => (
                                         <div key={r__i} className="fb-ref-card" style={css("position: relative; display: flex; flex-direction: column; border: 1px solid var(--border); border-radius: 16px; background: var(--surface-2); overflow: hidden")}>
                                           <a href={r.href} target="_blank" rel="noopener noreferrer" style={css("position: relative; display: block; aspect-ratio: 16 / 9; background: #111111; color: inherit; text-decoration: none")}>
-                                            <img src={r.image} alt="" loading="lazy" decoding="async" referrerPolicy="no-referrer" draggable="false" style={css(r.imgStyle)} />
+                                            <NextImage unoptimized fill src={r.image} alt="" loading="lazy" decoding="async" referrerPolicy="no-referrer" draggable="false" style={css(r.imgStyle)} />
                                             {r.isVideo ? (
                                               <span aria-hidden="true" style={css("position: absolute; left: 50%; top: 50%; width: 44px; height: 44px; margin: -22px 0 0 -22px; display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; background: rgba(17,17,17,0.72); color: #FFFFFF; box-shadow: 0 2px 8px rgba(0,0,0,0.35)")}>
                                                 <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"></path></svg>
@@ -5151,8 +5152,8 @@ export default function StudioView({ V }) {
                                           </>
                                         ) : null}
                                         {k.hasCover ? (
-                                          <div aria-hidden="true" className="fb-pcard-cover" style={css("height: 112px; flex: none; border-radius: 11px 11px 0 0; overflow: hidden; background: var(--panel)")}>
-                                            <img src={k.cover} alt="" loading="lazy" decoding="async" draggable="false" onError={(e) => { if (k.coverFull && e.currentTarget.src !== k.coverFull) e.currentTarget.src = k.coverFull; }} style={css("width: 100%; height: 100%; object-fit: cover; display: block")} />
+                                          <div aria-hidden="true" className="fb-pcard-cover" style={css("position: relative; height: 112px; flex: none; border-radius: 11px 11px 0 0; overflow: hidden; background: var(--panel)")}>
+                                            <NextImage unoptimized fill src={k.cover} alt="" loading="lazy" decoding="async" draggable="false" onError={(e) => { if (k.coverFull && e.currentTarget.src !== k.coverFull) e.currentTarget.src = k.coverFull; }} style={css("width: 100%; height: 100%; object-fit: cover; display: block")} />
                                           </div>
                                         ) : null}
                                         <div style={css(k.bodyStyle)}>
