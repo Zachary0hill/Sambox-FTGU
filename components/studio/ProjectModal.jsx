@@ -750,7 +750,7 @@ export default function ProjectModal({ V, CellPop }) {
           </div>
         </header>
         {/* ─── Tabs + quick actions ─── */}
-        <div className="fb-dlg-tabs" style={css('flex: none; display: flex; align-items: center; gap: 10px; padding: 0 14px 0 16px; border-bottom: 1px solid var(--line)')}>
+        <div className="fb-dlg-tabs" style={css('flex: none; display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 0 14px 0 16px; border-bottom: 1px solid var(--line)')}>
           <div role="tablist" aria-label="Project sections" style={css('display: flex; align-items: center; gap: 2px; min-width: 0; overflow-x: auto; scrollbar-width: none')}>
             {(dr.tabs || []).map((t) => (
               <button key={t.key} type="button" role="tab" className={'fb-tab' + (t.isDetails ? ' fb-tab-details' : '')} id={t.id} aria-selected={t.selected} aria-controls="drawer-panel" onClick={t.pick} style={css(t.style)}>
@@ -761,7 +761,7 @@ export default function ProjectModal({ V, CellPop }) {
             ))}
           </div>
           <span style={css('flex: 1')}></span>
-          <div className="fb-dlg-quick" style={css('flex: none; display: flex; align-items: center; gap: 6px; padding: 5px 0')}>
+          <div className="fb-dlg-quick" style={css('flex: 0 1 auto; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 5px 0')}>
             {(dr.quick || []).map((q) => (
               <button key={q.label} type="button" onClick={q.pick} style={css(q.primary ? QUICK_P : QUICK)}>
                 {q.primary ? <I d="M22 11.1V12a10 10 0 1 1-5.9-9.1M22 4 12 14l-3-3" size={13} /> : null}{q.label}
