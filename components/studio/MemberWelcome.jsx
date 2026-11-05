@@ -13,7 +13,7 @@ export default function MemberWelcome({ children, sb, ctx, D, nav, set, reload, 
   const open = eligible && (manual || automatic);
   const editor = ctx.role === 'editor';
   const can = (resource, action) => (ctx.perms || []).some(([r, a]) => r === resource && a === action);
-  const assigned = D.rows.filter((r) => (editor ? r.editorId : r.designerId) === ctx.user_id).length;
+  const assigned = D.rows.filter((r) => !r.archived && (editor ? r.editorId : r.designerId) === ctx.user_id).length;
   const button = { minHeight: 44, padding: '10px 18px', borderRadius: 10, border: '1px solid #ccc', cursor: 'pointer', background: '#fff', color: '#111' };
   async function finish(action, destination) {
     if (busy) return;

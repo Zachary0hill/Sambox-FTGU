@@ -4,6 +4,7 @@
 /* eslint-disable react-hooks/refs, react-hooks/preserve-manual-memoization */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import StudioView from './StudioView';
+import UploadStatus from './UploadStatus';
 import DevNotes from './DevNotes';
 import MemberWelcome from './MemberWelcome';
 import { FlowLayer, flowGuard } from './FlowBuilder';
@@ -255,7 +256,7 @@ export default function Studio({ initialPath, initialProject }) {
   // Automations > New flow and the flow builder canvas (s.flowOpen: 'new' or a workflow id).
   V.flowLayer = me.uiRole === 'admin' && (s.flowOpen || s.flowReturn)
     ? <FlowLayer D={D} A={A} open={s.flowOpen} review={!!s.flowReview} back={s.flowReturn} set={set} /> : null;
-  return <MemberWelcome key={ctx.workspace_id + ctx.user_id} sb={sb} ctx={ctx} D={D} nav={s.nav} set={set} reload={reload} openMyQueue={V.openMyQueue}><StudioView V={V} /></MemberWelcome>;
+  return <MemberWelcome key={ctx.workspace_id + ctx.user_id} sb={sb} ctx={ctx} D={D} nav={s.nav} set={set} reload={reload} openMyQueue={V.openMyQueue}><StudioView V={V} /><UploadStatus /></MemberWelcome>;
 }
 
 function Shell({ children }) {
