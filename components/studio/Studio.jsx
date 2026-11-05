@@ -86,6 +86,7 @@ export default function Studio({ initialPath, initialProject }) {
       // Older Activity Log pages loaded on demand survive the reload (the loader reads the newest 400).
       setD((prev) => ({ ...data, portalDetail: prev ? prev.portalDetail : {}, olderActivity: prev ? prev.olderActivity || [] : [], activityEnd: prev ? !!prev.activityEnd : false }));
       setS((prev) => prev || initialUi(c, data, initialPath, initialProject));
+      setError('');
     } catch (err) {
       setError(err.message || String(err));
     } finally {
@@ -106,6 +107,11 @@ export default function Studio({ initialPath, initialProject }) {
   const switchAccount = useCallback((id) => { writeAcct(id); set({ openJob: '' }); reload(); }, [reload, set]);
 
   useEffect(() => { reload(); sb.rpc('touch_presence'); }, [reload, sb]);
+  useEffect(() => {
+    const reconnect = () => reload();
+    window.addEventListener('online', reconnect);
+    return () => window.removeEventListener('online', reconnect);
+  }, [reload]);
 
   // Connector cards open the matching credential form, including cards below the fold.
   useEffect(() => {
@@ -246,7 +252,7 @@ export default function Studio({ initialPath, initialProject }) {
 
   if (mfa) return <MfaGate state={mfa} setState={setMfa} sb={sb} onDone={() => { setMfa(null); reload(); }} />;
   if (error === 'no-access') return <Gate title="No workspace access yet" body="Your account is signed in but is not an active member of a workspace. Ask a Super Admin to invite this email, then sign in again." action={() => A.signOut('local')} actionLabel="Sign out" />;
-  if (error) return <Gate title="Could not load the board" body={error} action={() => { setError(''); reload(); }} actionLabel="Try again" />;
+  if (error && (!ctx || !D || !s || !me)) return <><Gate title="Could not load the board" body={error} action={() => { setError(''); reload(); }} actionLabel="Try again" /><UploadStatus /></>;
   if (!ctx || !D || !s || !me) return <Loading />;
 
   const V = computeVals({ s, set, D, A, me, now: new Date() });
@@ -256,7 +262,7 @@ export default function Studio({ initialPath, initialProject }) {
   // Automations > New flow and the flow builder canvas (s.flowOpen: 'new' or a workflow id).
   V.flowLayer = me.uiRole === 'admin' && (s.flowOpen || s.flowReturn)
     ? <FlowLayer D={D} A={A} open={s.flowOpen} review={!!s.flowReview} back={s.flowReturn} set={set} /> : null;
-  return <MemberWelcome key={ctx.workspace_id + ctx.user_id} sb={sb} ctx={ctx} D={D} nav={s.nav} set={set} reload={reload} openMyQueue={V.openMyQueue}><StudioView V={V} /><UploadStatus /></MemberWelcome>;
+  return <MemberWelcome key={ctx.workspace_id + ctx.user_id} sb={sb} ctx={ctx} D={D} nav={s.nav} set={set} reload={reload} openMyQueue={V.openMyQueue}><StudioView V={V} />{error && <div role="status" style={{ position: 'fixed', top: 12, left: '50%', transform: 'translateX(-50%)', zIndex: 10000, maxWidth: 'calc(100vw - 24px)', padding: '12px 16px', borderRadius: 12, background: '#fff4d6', color: '#493600', boxShadow: '0 2px 12px #0002', fontSize: 14 }}>Could not refresh. Showing the last loaded board. <button type="button" onClick={reload}>Try again</button></div>}<UploadStatus /></MemberWelcome>;
 }
 
 function Shell({ children }) {
