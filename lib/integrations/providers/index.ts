@@ -1,6 +1,7 @@
 import 'server-only';
 import type { ProviderId } from '../registry';
 import type { ProviderModule } from './types';
+import xai from './xai';
 import anthropic from './anthropic';
 import openai from './openai';
 import gemini from './gemini';
@@ -19,5 +20,5 @@ import vidiq from './vidiq';
 import virlo from './virlo';
 
 export const MODULES: Record<ProviderId, ProviderModule> = {
-  anthropic, openai, gemini, monday, apify, browserbase, firecrawl, slack, youtube, buffer, n8n, drive, gmail, frame, vidiq, virlo,
+  xai, anthropic, openai, gemini, monday, apify, browserbase, firecrawl, slack, youtube, buffer, n8n, drive, gmail, frame, vidiq, virlo,
 };

@@ -1,4 +1,6 @@
 'use client';
+import ManagerClients from './ManagerClients';
+import IdeaPlanning from './IdeaPlanning';
 import NextImage from 'next/image';
 // Generated from the design canvas (YouTube Studio Unified Board, Main.dc.html) by a markup converter.
 // Hand edits are marked with "app:" comments.
@@ -213,6 +215,7 @@ export default function StudioView({ V }) {
             </button>
           </nav>
           {" "}
+          {V.managerClients ? <ManagerClients {...V.managerClients} /> : null}
           {V.showAdmin ? (
             <>
               <div className="fb-page" style={css("padding: 32px 40px 40px; box-sizing: border-box; display: flex; flex-direction: column; gap: 24px")}>
@@ -3662,7 +3665,7 @@ export default function StudioView({ V }) {
                                   ))}
                                 </div>
                               </div>
-                              <h2 id="idea-title" style={css("margin: 0; font-family: var(--font-title); font-weight: 900; font-size: clamp(20px, 2.4vw, 24px); line-height: 1.2; letter-spacing: -0.02em; text-wrap: balance")}>{V.ids.sel.title}</h2>
+                              <h2 id="idea-title" style={css("margin: 0; font-family: var(--font-title); font-weight: 900; font-size: clamp(20px, 2.4vw, 24px); line-height: 1.2; letter-spacing: -0.02em; text-wrap: balance")}>{V.ids.sel.title}</h2><div style={{ whiteSpace: 'pre-wrap', fontSize: 14 }}>{V.ids.sel.titleOptions.length > 0 && <p><strong>Title options</strong>{'\n' + V.ids.sel.titleOptions.join('\n')}</p>}{V.ids.sel.thumbnailBrief && <p><strong>Thumbnail direction</strong>{'\n' + V.ids.sel.thumbnailBrief}</p>}{V.ids.sel.retryTransfer && <button type="button" onClick={V.ids.sel.retryTransfer}>Retry asset transfer</button>}</div>
                               <p style={css("margin: 0; font-size: 13px; color: var(--muted)")}>{V.ids.sel.byline}</p>
                               {V.ids.sel.hasNote ? <p style={css("margin: 0; font-size: 13px; color: var(--muted)")}>{V.ids.sel.note}</p> : null}
                             </div>
@@ -3912,6 +3915,7 @@ export default function StudioView({ V }) {
                                 <h2 id="ie-h" style={css("margin: 0 0 0 auto; font-size: 13px; font-weight: 600; color: var(--muted)")}>Edit idea</h2>
                               </div>
                               <div style={css("display: flex; flex-direction: column; gap: 6px")}>
+                                <IdeaPlanning {...V.ids.edit.planning} />
                                 <label htmlFor="ie-title" style={css(V.fieldLabel)}>Title</label>
                                 <input id="ie-title" className="fb-field" type="text" autoComplete="off" value={V.ids.edit.title} onChange={V.ids.edit.onTitle} style={css("min-height: 52px; box-sizing: border-box; padding: 0 14px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface-2); font-family: var(--font-title); font-weight: 900; font-size: 22px; letter-spacing: -0.02em; color: var(--ink)")} />
                               </div>
@@ -4063,6 +4067,7 @@ export default function StudioView({ V }) {
                               <fieldset style={css("margin: 0; padding: 0; border: 0; min-width: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr)); gap: 16px")}>
                                 <legend style={css(V.ids.legend)}>Basics</legend>
                                 <div style={css("grid-column: 1 / -1; display: flex; flex-direction: column; gap: 6px")}>
+                                  <IdeaPlanning {...V.ids.ni.planning} />
                                   <label htmlFor="ni-title" style={css(V.fieldLabel)}>Title</label>
                                   <input id="ni-title" type="text" autoComplete="off" autoFocus placeholder="What is the idea?" value={V.ids.ni.title} onChange={V.ids.ni.onTitle} style={css(V.fieldInput + " font-size: 15px;")} />
                                 </div>
@@ -4563,7 +4568,7 @@ export default function StudioView({ V }) {
                       </>
                     ) : null}
                     {" "}
-                    {V.canEdit ? (
+                    {V.canCreateProject ? (
                       <>
                         <button type="button" onClick={V.newProject} style={css("min-height: 44px; padding: 0 18px; border: 0; border-radius: 14px; background: var(--inv); color: var(--inv-ink); display: inline-flex; align-items: center; gap: 8px; cursor: pointer")}>
                           <svg aria-hidden="true" width="14" height="14" viewBox="0 0 16 16">

@@ -9,7 +9,7 @@ import { providerById, type ProviderId } from '@/lib/integrations/registry';
 
 export type WorkspaceModel = { provider: ProviderId; modelId: string; model: LanguageModel };
 
-const AI: ProviderId[] = ['anthropic', 'openai', 'gemini'];
+const AI: ProviderId[] = ['anthropic', 'openai', 'gemini', 'xai'];
 const defaultModel = (id: ProviderId) => providerById(id)?.fields.find((f) => f.key === 'model')?.defaultValue || '';
 
 // The language model the workspace's assistant and research agent use, built from the Super Admin's key.
@@ -68,6 +68,7 @@ export async function withFallback<T>(models: WorkspaceModel[], fn: (m: Workspac
 export const providerName = (id: ProviderId) => (providerById(id) || { name: id }).name;
 
 export function buildModel(provider: ProviderId, apiKey: string, modelId: string): WorkspaceModel | null {
+  if (provider === 'xai') return { provider, modelId, model: createOpenAI({ apiKey, baseURL: 'https://api.x.ai/v1', name: 'xai' }).chat(modelId) };
   if (provider === 'anthropic') return { provider, modelId, model: createAnthropic({ apiKey })(modelId) };
   if (provider === 'openai') return { provider, modelId, model: createOpenAI({ apiKey })(modelId) };
   if (provider === 'gemini') return { provider, modelId, model: createGoogle({ apiKey })(modelId) };

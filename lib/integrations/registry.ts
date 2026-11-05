@@ -3,7 +3,7 @@
 // integrations.config.
 
 export type ProviderId =
-  | 'anthropic' | 'openai' | 'gemini' | 'monday' | 'apify' | 'browserbase' | 'firecrawl' | 'slack' | 'youtube' | 'buffer' | 'n8n' | 'drive' | 'gmail' | 'frame' | 'vidiq' | 'virlo';
+  | 'xai' | 'anthropic' | 'openai' | 'gemini' | 'monday' | 'apify' | 'browserbase' | 'firecrawl' | 'slack' | 'youtube' | 'buffer' | 'n8n' | 'drive' | 'gmail' | 'frame' | 'vidiq' | 'virlo';
 
 export type ProviderGroup = 'ai' | 'projects' | 'research' | 'inbox' | 'content' | 'automation';
 
@@ -41,9 +41,13 @@ export const GROUPS: [ProviderGroup, string, string][] = [
   ['automation', 'Automation', 'Hand workflow events to other tools.'],
 ];
 
-export const AI_PROVIDERS: ProviderId[] = ['anthropic', 'openai', 'gemini'];
+export const AI_PROVIDERS: ProviderId[] = ['anthropic', 'openai', 'gemini', 'xai'];
 
 export const PROVIDERS: ProviderDef[] = [
+  { id: 'xai', name: 'Grok', group: 'ai', docs: 'https://docs.x.ai/developers/rest-api-reference/inference', keyUrl: 'https://console.x.ai',
+    description: 'Use Grok for the Daily assistant, project proposals and research drafting.',
+    setupNote: 'Add an xAI API key and choose a language model. Import existing Claude or Grok briefs from New idea; chat subscriptions do not supply an API key.',
+    fields: [{ key: 'apiKey', label: 'xAI API key', secret: true }, { key: 'model', label: 'Language model', choices: 'models', help: 'Choose a language model available to your key.' }] },
   {
     id: 'drive', name: 'Google Drive', group: 'projects',
     description: 'Connect a Google account for project files and folders.',

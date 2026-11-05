@@ -320,7 +320,7 @@ export function assistantTools(env: ToolEnv): ToolSet {
     });
   }
 
-  if (ctx.role !== 'editor') {
+  if (ctx.role !== 'editor' && (ctx.role !== 'manager' || can('ideas:create'))) {
     tools.add_idea = tool({
       description: 'Propose a new idea, script or research note for Ideas & Research. This does not save anything: it ' +
         'checks the brand and shows the user a card with an Add idea button.',
@@ -329,17 +329,21 @@ export function assistantTools(env: ToolEnv): ToolSet {
         brand: z.string().optional().describe('Brand name. Required when the member can see more than one brand.'),
         type: z.enum(['Idea', 'Script', 'Research']).optional(),
         hook: z.string().max(400).optional(),
+        titleOptions: z.array(z.string().max(300)).max(12).optional(),
+        thumbnailBrief: z.string().max(12000).optional(),
         body: z.array(z.string().max(2000)).max(20).optional().describe('Paragraphs or outline points'),
       }),
       execute: async (a) => {
         const bk = await sb.from('brand_kits').select('id, name').eq('workspace_id', ws).order('name');
         const brands = bk.data || [];
         if (!brands.length) return fail('There are no brands this member can add ideas to.');
-        const hit = a.brand ? brands.find((b) => lower(b.name) === lower(a.brand)) || brands.find((b) => lower(b.name).includes(lower(a.brand))) : brands.length === 1 ? brands[0] : null;
+        const exact = a.brand ? brands.find(b => lower(b.name) === lower(a.brand)) : null;
+        const matches = a.brand ? brands.filter(b => lower(b.name).includes(lower(a.brand))) : brands;
+        const hit = exact || (matches.length === 1 ? matches[0] : null);
         if (!hit) return fail((a.brand ? 'No brand called "' + a.brand + '". ' : 'Ask which brand this is for. ') + 'Options: ' + brands.map((b) => b.name).join(', '));
         const body = (a.hook ? ['Hook: ' + a.hook.trim()] : []).concat((a.body || []).map((x) => x.trim()).filter(Boolean));
         return {
-          proposal: { kind: 'idea', title: a.title.trim(), brand: str(hit.name), brandId: str(hit.id), type: a.type || 'Idea', body },
+          proposal: { kind: 'idea', title: a.title.trim(), brand: str(hit.name), brandId: str(hit.id), type: a.type || 'Idea', body, titleOptions: a.titleOptions || [], thumbnailBrief: a.thumbnailBrief || '' },
           note: PROPOSAL_NOTE,
         };
       },

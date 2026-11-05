@@ -3,7 +3,7 @@ import { supabaseServer } from '@/lib/supabase/server';
 import { deliverInvite, baseUrlFor } from '@/lib/email/invite';
 import type { InviteRole } from '@/lib/email/invite-template';
 
-const ROLES = ['super_admin', 'editor', 'designer', 'sponsor', 'client'];
+const ROLES = ['super_admin', 'manager', 'editor', 'designer', 'sponsor', 'client'];
 const VIEWS = ['table', 'kanban', 'list', 'timeline', 'calendar'];
 
 // Super Admin invites someone: save the invitation (RLS-checked RPC on the admin's session), then email it.
@@ -28,7 +28,7 @@ export async function POST(request: Request) {
     if (accountId && ['client', 'sponsor'].includes(role) && saved.error.message === 'That email already has a pending invite') {
       const pending = await supabase.from('invitations').select('role')
         .eq('workspace_id', ctx.workspace_id).eq('email', email).is('accepted_at', null)
-        .in('role', ['super_admin', 'editor', 'designer']).limit(1);
+        .in('role', ['super_admin', 'manager', 'editor', 'designer']).limit(1);
       if (pending.data?.length) {
         return NextResponse.json({ error: email + ' has a pending team invite. Open Users to cancel it before inviting them as a client or sponsor, or use a different email.' }, { status: 409 });
       }

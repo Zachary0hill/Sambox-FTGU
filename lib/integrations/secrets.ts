@@ -40,7 +40,7 @@ export async function assistantProvider(workspaceId: string): Promise<ProviderId
   const admin = supabaseAdmin();
   const [st, rows] = await Promise.all([
     admin.from('workspace_settings').select('ai_provider').eq('workspace_id', workspaceId).maybeSingle(),
-    admin.from('integrations').select('provider').eq('workspace_id', workspaceId).eq('status', 'connected').in('provider', ['anthropic', 'openai', 'gemini']).order('sort'),
+    admin.from('integrations').select('provider').eq('workspace_id', workspaceId).eq('status', 'connected').in('provider', ['anthropic', 'openai', 'gemini', 'xai']).order('sort'),
   ]);
   const live = (rows.data || []).map((r) => r.provider as ProviderId);
   const pick = st.data?.ai_provider as ProviderId | null | undefined;

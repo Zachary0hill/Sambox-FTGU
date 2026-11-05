@@ -2,6 +2,7 @@
 // square role block in the role's tone. Tables and inline styles only, for email clients.
 
 const ROLE = {
+  manager: { label: 'Manager', bg: '#E4F4E8', fg: '#185B2C', blurb: 'production projects, ideas and client management, with access set by your workspace admin' },
   super_admin: { label: 'Super Admin', bg: '#111111', fg: '#FFFFFF', blurb: 'the full board, every admin page and every setting' },
   editor: { label: 'Editor', bg: '#2F5BD3', fg: '#FFFFFF', blurb: 'your edit queue across longform and shortform' },
   designer: { label: 'Designer', bg: '#7A45C4', fg: '#FFFFFF', blurb: 'your design queue, thumbnail status and due dates' },

@@ -2,11 +2,12 @@ import 'server-only';
 import type { MemberContext } from '@/lib/integrations/auth';
 
 const ROLE_NAME: Record<MemberContext['role'], string> = {
-  super_admin: 'Super Admin', editor: 'Editor', designer: 'Designer', sponsor: 'Sponsor', client: 'Client',
+  super_admin: 'Super Admin', manager: 'Manager', editor: 'Editor', designer: 'Designer', sponsor: 'Sponsor', client: 'Client',
 };
 
 // What each role sees in the left nav, so help answers match the member's own screens.
 const PAGES: Record<MemberContext['role'], string> = {
+  manager: 'Daily, Projects, Ideas & Research, Brand, Inbox, Content, Performance, Clients & Sponsors, and personal Settings. Operational permissions are configured by a Super Admin.',
   super_admin: 'Daily (this assistant), Projects, Ideas & Research, Brand, Inbox, Content, and the admin pages: Users, Roles & Permissions, Workload, Clients & Sponsors, Finance, Automations, Activity Log, Workspace Settings (including Integrations).',
   editor: 'Projects (their edit queue), Brand, Inbox, Settings.',
   designer: 'Projects (their design queue), Ideas & Research, Brand, Inbox, Settings.',
@@ -15,6 +16,7 @@ const PAGES: Record<MemberContext['role'], string> = {
 };
 
 const ROLE_RULES: Record<MemberContext['role'], string> = {
+  manager: 'Can manage production and clients according to role permissions. Cannot manage users, integrations, credentials, finance, workspace settings or automations. Never claim to have permissions that a tool denies.',
   super_admin: 'Sees and can change everything in the workspace.',
   editor: 'Sees only projects they are assigned to edit (unless the workspace shares all projects with editors). Can change their own Editor Status, deadlines they own, comments and uploads. Can change project Status only if Workspace Settings allow it. Cannot add ideas.',
   designer: 'Sees only projects they design thumbnails for (unless shared with all designers). Can change their own Thumbnail status, comments and uploads, and can add ideas.',

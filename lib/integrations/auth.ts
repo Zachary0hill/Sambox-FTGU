@@ -7,7 +7,7 @@ export type MemberContext = {
   user_id: string;
   workspace_id: string;
   workspace_name: string;
-  role: 'super_admin' | 'editor' | 'designer' | 'sponsor' | 'client';
+  role: 'super_admin' | 'manager' | 'editor' | 'designer' | 'sponsor' | 'client';
   is_owner: boolean;
   profile: { full_name?: string; email?: string } | null;
 };

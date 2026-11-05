@@ -26,7 +26,7 @@ const blockedHost = (h: string) => /^(localhost|.*\.local|.*\.internal|.*\.local
 
 export class CoverError extends Error { status: number; constructor(message: string, status = 502) { super(message); this.status = status; } }
 
-type IdeaRow = { id: string; workspace_id: string; brand_id: string; title: string; hook: string | null; audience: string | null; promise: string | null; cover_path: string | null; cover_mode: string; body: string[] };
+type IdeaRow = { project_id: string | null; id: string; workspace_id: string; brand_id: string; title: string; hook: string | null; audience: string | null; promise: string | null; cover_path: string | null; cover_mode: string; body: string[] };
 type Brand = { name: string; color: string | null; tone: string[] } | null;
 type Img = { bytes: Uint8Array; type: string; model: string };
 
@@ -114,7 +114,7 @@ export type CoverResult = { path: string; url: string; coverMode: string; model:
 export async function makeIdeaCover(q: CoverRequest): Promise<CoverResult> {
   const admin = supabaseAdmin();
   const reader = q.member ? q.member.supabase : admin;
-  const { data: idea } = await reader.from('ideas').select('id, workspace_id, brand_id, title, hook, audience, promise, cover_path, cover_mode, body').eq('id', q.ideaId).eq('workspace_id', q.ws).maybeSingle();
+  const { data: idea } = await reader.from('ideas').select('id, project_id, workspace_id, brand_id, title, hook, audience, promise, cover_path, cover_mode, body').eq('id', q.ideaId).eq('workspace_id', q.ws).maybeSingle();
   if (!idea) throw new CoverError('That idea is not available.', 404);
   const i = idea as IdeaRow;
   if (q.onlyIfMissing && i.cover_path) return { path: i.cover_path, url: '', coverMode: i.cover_mode, model: '', skipped: true };
@@ -139,7 +139,7 @@ export async function makeIdeaCover(q: CoverRequest): Promise<CoverResult> {
     if (q.onlyIfMissing && !saved.error) return { path: '', url: '', coverMode: i.cover_mode, model: img.model, skipped: true };
     throw new CoverError(saved.error ? saved.error.message : 'You cannot change this idea.', 403);
   }
-  if (i.cover_path && i.cover_path !== path) await admin.storage.from('idea-covers').remove([i.cover_path]).catch(() => {});
+  if (i.cover_path && i.cover_path !== path && !i.project_id) await admin.storage.from('idea-covers').remove([i.cover_path]).catch(() => {});
 
   const action = q.mode === 'url' ? 'set the cover from a reference' : 'generated a cover with ' + img.model;
   if (q.member) {
