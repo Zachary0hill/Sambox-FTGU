@@ -18,12 +18,18 @@ export default function MemberWelcome({ children, sb, ctx, D, nav, set, reload }
   async function finish(action, destination) {
     if (busy) return;
     setBusy(true); setError('');
-    const result = await sb.rpc('save_my_onboarding', { p_action: action }).catch(() => ({ error: true }));
-    if (result.error) { setError('Could not save your welcome progress. Please try again.'); setBusy(false); return; }
-    setClosed(true); setManual(false);
-    if (destination) set({ nav: destination });
-    await reload();
-    setBusy(false);
+    try {
+      // Supabase RPC builders are PromiseLike, not Promises: await them instead of calling .catch().
+      const result = await sb.rpc('save_my_onboarding', { p_action: action });
+      if (result.error) throw result.error;
+      setClosed(true); setManual(false);
+      if (destination) set({ nav: destination });
+      await reload();
+    } catch {
+      setError('Could not save your welcome progress. Please try again.');
+    } finally {
+      setBusy(false);
+    }
   }
   if (!open) return <>{eligible && nav === 'settings' ? <div style={{ padding: 16, background: '#fff', color: '#111' }}><button style={button} onClick={() => setManual(true)}>Getting started as {editor ? 'an editor' : 'a designer'}</button></div> : null}{children}</>;
   return <main aria-labelledby="member-welcome-title" style={{ minHeight: '100vh', padding: 24, display: 'grid', placeItems: 'center', background: '#f5f5f5', color: '#111', fontFamily: 'var(--font-main)' }}>
