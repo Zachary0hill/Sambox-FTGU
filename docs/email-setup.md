@@ -1,6 +1,6 @@
 # Email setup guide
 
-How to get invite and notification emails reaching real people, locally and on Amplify.
+How to get invite and notification emails reaching real people, locally and on Railway.
 
 ## How email works here
 
@@ -44,9 +44,9 @@ CRON_SECRET=any-long-random-string
 - `APP_BASE_URL` is the origin used in email links. Without it, links use the address the request came from.
 - Restart `next dev` after changing env.
 
-## 4. Production environment (Amplify)
+## 4. Production environment (Railway)
 
-Amplify console > the app > **Hosting > Environment variables**. Add:
+Railway project **FTGU Studio**, service **Sambox-FTGU**, production environment > **Variables**. Deploys follow `main` from `Zachary0hill/Sambox-FTGU`. The canonical domain is `https://santosstudios.online`. Add:
 
 | Variable | Value |
 |---|---|
@@ -54,11 +54,11 @@ Amplify console > the app > **Hosting > Environment variables**. Add:
 | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Supabase publishable key |
 | `SUPABASE_SECRET_KEY` | Supabase secret key |
 | `RESEND_API_KEY` | Key from step 2 |
-| `EMAIL_FROM` | `FTGU Studio <studio@mail.yourdomain.com>` (no extra quotes; `amplify.yml` adds them) |
+| `EMAIL_FROM` | `SantosStudios <onboarding@santosstudios.online>` |
 | `APP_BASE_URL` | The live `https://` origin, no trailing slash |
 | `CRON_SECRET` | Long random string |
 
-`amplify.yml` writes these into `.env.production` at build time, so **redeploy** after changing any of them.
+Redeploy the Railway service after changing application variables. The legacy `amplify.yml` is not the production deployment target.
 
 ## 5. Schedule notification sending
 
@@ -76,12 +76,13 @@ same pattern at `/api/automations/run` every 5 minutes.
 
 These don't go through our code. In the Supabase dashboard:
 
-1. **Authentication > URL Configuration:** set **Site URL** to the live origin and add it (and
-   `http://localhost:3000/**`) to **Redirect URLs**.
+1. **Authentication > URL Configuration:** set **Site URL** to `https://santosstudios.online` and allow
+   `https://santosstudios.online/auth/callback?next=**` in **Redirect URLs**. Use a separate development project for localhost.
+   Both sign-in links and recovery use this callback. It must redirect using the public `APP_BASE_URL`, not Railway's internal request hostname.
 2. **Authentication > Emails > SMTP Settings:** turn on custom SMTP. To reuse Resend:
    - Host `smtp.resend.com`, port `465`
    - Username `resend`, password = a Resend API key
-   - Sender email on the verified domain, sender name `FTGU Studio`
+   - Sender email on the verified domain, sender name `SantosStudios`
 3. Without custom SMTP, Supabase's built-in sender is rate limited to a few emails an hour and is meant for testing only.
 
 ## 7. Test it
@@ -98,7 +99,7 @@ These don't go through our code. In the Supabase dashboard:
 | Symptom | Cause |
 |---|---|
 | Only you receive invites | `EMAIL_FROM` is still `@resend.dev`, or the domain isn't verified |
-| Toast: `RESEND_API_KEY is not set.` | Env missing, or Amplify not redeployed after adding it |
+| Toast: `RESEND_API_KEY is not set.` | Env missing, or Railway not redeployed after adding it |
 | Resend error about the domain | `EMAIL_FROM` domain doesn't match the verified domain |
 | Link points to the wrong site | `APP_BASE_URL` missing or wrong |
 | "This link has expired or was already used" | Token used or expired; use **Resend invite** |
@@ -114,9 +115,7 @@ view, server-only reservation/event RPCs, and member welcome progress. It enroll
 memberships automatically; existing members can open **Settings → Getting started**. Completion and dismissal are
 stored per workspace membership, independently from invitation acceptance.
 
-The hosting instructions above describe the earlier Amplify setup. Confirm the application's actual hosting target
-before changing environment variables; the rollout itself is platform-independent. No production configuration was
-changed as part of local implementation.
+The migration was applied to production as version `20261105195804`; the original release and welcome fix were deployed through commit `5bc0199`. The signed Resend webhook is configured on the canonical domain.
 
 Configure a Resend webhook pointing to `https://<canonical-dashboard-domain>/api/webhooks/resend` and set its signing
 secret as `RESEND_WEBHOOK_SECRET` in that application's server environment. Enable `email.sent`, `email.delivered`,
@@ -150,3 +149,21 @@ After migration and deployment, verify both roles with explicitly designated tes
 recovery, resend, delivered event, first login, welcome completion, sign-out/password login, and password reset. Check
 Supabase SMTP separately. Local mock tests do not prove real inbox delivery. No test emails are automatically sent by
 the repository tests.
+
+## Production readiness evidence — November 5, 2026
+
+- Real editor access and Supabase recovery emails reached the designated Gmail inbox, with SPF, DKIM, and DMARC passing. A new designer invitation received a signed provider delivery event; its inbox is not connected for independent inspection.
+- The first recovery test exposed a localhost Site URL and empty redirect allowlist. Site URL and the callback allowlist above are now saved in Supabase. A replacement email carries the correct callback URL.
+- The application callback also needed a public-origin fix for Railway (`localhost:8080` internally). Keep this covered by `tests/onboarding-readiness.test.cjs`.
+- Supabase Vault `app_base_url` matches the canonical domain, and `cron_secret` exists. `ftgu-notifications` runs every 15 minutes; recent HTTP responses returned 200 with no failures. This proves idle dispatch, not delivery of an assignment/revision notification.
+- A sending-only Resend key may not list domains. The admin health endpoint returns `domainStatus: unknown` in that case, without exposing provider errors or secrets. This does not contradict successful signed delivery events.
+- Never reset existing pilot accounts' passwords as part of unattended testing. The recipient completes their password entry. Do not alter an existing editor/client role to repurpose an address for testing.
+
+## Repeatable acceptance checks
+
+Run Node 22+: `node --test tests/invite-setup.test.cjs tests/onboarding-delivery.test.cjs tests/onboarding-readiness.test.cjs`.
+Run `tests/onboarding-production-rollback.sql` through a privileged SQL connection as one transaction. It creates isolated fixtures, impersonates authenticated roles for RLS checks, and rolls back all rows and queued notifications. Do not remove its rollback or run individual fixture statements outside the transaction. It tests project visibility, review updates, asset metadata, forbidden assignment/deadline changes, invitation expiry/cancellation, accepted-invite replay, and removed portal access. It does not upload storage bytes or send mail.
+
+For a designated real inbox, verify Users → Send access email (existing account) or Add user (new account), Inbox/Spam placement, the canonical URL, login, welcome, assigned work, a small test upload, review, and revision. Request recovery from the signed-out production form and open it in the same browser so the PKCE verifier is present. Ask the recipient to enter their password; confirm subsequent login without recording the password. Test accounts must be explicitly identified before cleanup; preserve real members and their assignments.
+
+Production email OTP/link expiry was inspected at 3,600 seconds (one hour). Resend generates a fresh token; the 14-day invitation record does not extend an authentication token.

@@ -1,4 +1,5 @@
 'use client';
+import { safeAuthNext } from '@/lib/auth/safe-next';
 import { useState } from 'react';
 import { supabaseBrowser } from '@/lib/supabase/client';
 import Link from 'next/link';
@@ -17,7 +18,7 @@ export default function LoginPage() {
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<{ tone: 'err' | 'ok'; text: string } | null>(null);
 
-  const next = typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('next') || '/' : '/';
+  const next = typeof window !== 'undefined' ? safeAuthNext(new URLSearchParams(window.location.search).get('next')) : '/';
   const redirectTo = typeof window !== 'undefined' ? window.location.origin + '/auth/callback?next=' + encodeURIComponent(next) : undefined;
 
   async function submit(e: React.FormEvent) {

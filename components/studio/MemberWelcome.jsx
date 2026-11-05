@@ -2,7 +2,7 @@
 import { useState } from 'react';
 
 // A full-page introduction avoids leaving interactive dashboard controls behind a modal.
-export default function MemberWelcome({ children, sb, ctx, D, nav, set, reload }) {
+export default function MemberWelcome({ children, sb, ctx, D, nav, set, reload, openMyQueue }) {
   const [manual, setManual] = useState(false);
   const [closed, setClosed] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -23,7 +23,8 @@ export default function MemberWelcome({ children, sb, ctx, D, nav, set, reload }
       const result = await sb.rpc('save_my_onboarding', { p_action: action });
       if (result.error) throw result.error;
       setClosed(true); setManual(false);
-      if (destination) set({ nav: destination });
+      if (destination === 'projects' && openMyQueue) openMyQueue();
+      else if (destination) set({ nav: destination });
       await reload();
     } catch {
       setError('Could not save your welcome progress. Please try again.');

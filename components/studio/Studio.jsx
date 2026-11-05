@@ -255,7 +255,7 @@ export default function Studio({ initialPath, initialProject }) {
   // Automations > New flow and the flow builder canvas (s.flowOpen: 'new' or a workflow id).
   V.flowLayer = me.uiRole === 'admin' && (s.flowOpen || s.flowReturn)
     ? <FlowLayer D={D} A={A} open={s.flowOpen} review={!!s.flowReview} back={s.flowReturn} set={set} /> : null;
-  return <MemberWelcome key={ctx.workspace_id + ctx.user_id} sb={sb} ctx={ctx} D={D} nav={s.nav} set={set} reload={reload}><StudioView V={V} /></MemberWelcome>;
+  return <MemberWelcome key={ctx.workspace_id + ctx.user_id} sb={sb} ctx={ctx} D={D} nav={s.nav} set={set} reload={reload} openMyQueue={V.openMyQueue}><StudioView V={V} /></MemberWelcome>;
 }
 
 function Shell({ children }) {

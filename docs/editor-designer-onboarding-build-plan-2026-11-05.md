@@ -1,13 +1,13 @@
 # Editor and Designer Email Onboarding — Build Plan
 
 Date: November 5, 2026
-Status: Recovery, delivery tracking, resend support, and welcome implemented locally; deployment and live verification pending
+Status: Core release deployed and live-verified; readiness follow-up adds explicit personal queues, configuration diagnostics, real-inbox checks, and authentication callback fixes. Recipient-controlled acceptance remains tracked below.
 
 ## Outcome
 
 A Super Admin can invite an editor or designer by email, see whether delivery and account setup succeeded, recover a failed invitation, and know when the person has reached the correct dashboard. New members understand their role and what to do even when no work has been assigned.
 
-This plan follows a source review of the invitation routes, authentication forms, member management UI, and database migrations. Findings describe local implementation, not a verified production configuration or successful inbox-delivery test.
+This plan follows a source review of the invitation routes, authentication forms, member management UI, and database migrations. The original findings below are historical. Current release evidence and remaining acceptance items are recorded at the end of this document.
 
 ## Existing behavior to preserve
 
@@ -179,14 +179,14 @@ Use additive migrations and backward-compatible readers during rollout. Roll bac
 
 ## Definition of done
 
-- [ ] Password setup survives recoverable failures and refresh without identity confusion.
-- [ ] New and existing users have reliable email recovery/resend paths.
-- [ ] Admins see persistent, accurate delivery and expiration status.
-- [ ] Editors and designers receive useful first-login guidance and empty states.
-- [ ] Permissions remain enforced by server/database checks.
+- [x] Password setup survives recoverable failures and refresh without identity confusion.
+- [x] New and existing users have reliable email recovery/resend paths.
+- [x] Admins see persistent, accurate delivery and expiration status.
+- [x] Editors and designers receive useful first-login guidance and empty states.
+- [x] Permissions remain enforced by server/database checks.
 - [ ] Production invite and recovery email configuration is verified.
 - [ ] Both roles pass designated-inbox, first-login, assignment, and subsequent-login tests.
-- [ ] Documentation and verification evidence distinguish implemented behavior from live proof.
+- [x] Documentation and verification evidence distinguish implemented behavior from live proof.
 
 
 ## Implementation log — November 5, 2026
@@ -236,13 +236,37 @@ node tests/welcome-browser.cjs
 psql "$ONBOARDING_TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -f tests/onboarding-db.sql
 ```
 
-### Release prerequisites still pending
+### Historical release prerequisites (resolved in the production release except noted acceptance checks)
 
 1. Apply `20261105000100_member_onboarding_delivery.sql` to the target database before deploying the application.
 2. Configure the signed Resend webhook and `RESEND_WEBHOOK_SECRET`; confirm sender/domain, canonical URL, and Supabase SMTP/redirect settings on the actual hosting target.
 3. Run designated-inbox acceptance for editor and designer, including subsequent password login and password recovery. Verify cancellation, removed-member access, and sponsor/client regressions against the actual deployed auth/database configuration.
 4. Confirm CI and live verification separately. No production migrations, deploys, or emails have been performed by this implementation.
 
-Phase 4 provider-domain verification and live operational checks remain pending. The presence of an API key or webhook secret is configuration evidence only, not proof of domain readiness or delivery.
+At the end of local implementation, Phase 4 provider-domain verification and live operational checks remained pending. See the current readiness log below. The presence of an API key or webhook secret is configuration evidence only, not proof of domain readiness or delivery.
 
 Final local checks for this increment: production build/TypeScript passed; full lint passed with 0 errors and 20 warnings; all 9 Node tests passed; isolated PostgreSQL migration checks passed; mobile welcome browser checks passed; production-build setup browser regression passed, including replacement magic-link password setup. The local test servers/database were stopped after verification.
+
+## Current readiness follow-up — November 5, 2026
+
+Completed production release: migration `20261105195804`, signed Resend webhook, canonical Railway APP_BASE_URL, invite/resend/cooldown, both role welcomes, saved completion/dismissal, and subsequent password login (disposable simulator accounts). Initial release `90b5690`; welcome fix `5bc0199`.
+
+Follow-up implementation:
+- Explicit Assigned to me queue matches the role's assignment by user ID. Welcome entry clears obstructing search/unread/view filters for the visit without overwriting saved view preferences.
+- Admin email diagnostics distinguish verified, unverified, and unavailable domain verification, validate the canonical HTTPS origin, and identify Supabase Auth as a separate verification path.
+- Authentication return paths reject external/protocol-relative/backslash destinations. Railway callbacks use the configured public origin.
+- Production SQL rollback tests verify role boundaries, review updates, asset metadata, expired/canceled invitation handling, deactivation/replay denial, and client acceptance/removal without lasting fixtures or messages.
+- Real Gmail inbox checks confirmed editor access and Supabase reset delivery with SPF/DKIM/DMARC passing. Designer invitation has provider delivery confirmation.
+- Supabase Site URL and redirect allowlist were corrected after finding localhost recovery redirects. A replacement email contains the canonical callback.
+- Notification scheduler and Vault URL verified; recent idle dispatch HTTP responses are 200 with no failures.
+- Email operations guide now identifies Railway and separates provider delivery, inbox placement, authentication, and notification evidence.
+
+Remaining recipient-controlled or full-workflow acceptance:
+- [ ] Designer recipient confirms Inbox/Spam placement and completes their invitation.
+- [ ] Recipient completes password recovery and subsequent login; existing passwords are never changed by unattended testing.
+- [ ] Real browser storage upload, first assignment review/revision, and assignment/revision email receipt for both roles. Database authorization and metadata writes already pass.
+- [ ] Cross-device/mobile live acceptance. Mobile component behavior has local coverage.
+
+These are acceptance checks, not evidence of a known remaining implementation failure. Do not label the entire original verification matrix complete solely from delivery events or rollback SQL tests.
+
+Production email OTP lifetime was inspected in Supabase: 3,600 seconds. Invitation record expiry is separate. No password-policy setting was changed.
