@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Local QA artifacts and scripts are also excluded from version control.
+    "qa-report/**",
   ]),
 ]);
 
