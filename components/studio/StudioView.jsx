@@ -1,6 +1,7 @@
 'use client';
 import ManagerClients from './ManagerClients';
 import IdeaPlanning from './IdeaPlanning';
+import IdeaImport from './IdeaImport';
 import NextImage from 'next/image';
 // Generated from the design canvas (YouTube Studio Unified Board, Main.dc.html) by a markup converter.
 // Hand edits are marked with "app:" comments.
@@ -3380,6 +3381,7 @@ export default function StudioView({ V }) {
                 {" "}
                 {V.pg.isIdeas ? (
                   <>
+                    {V.ids.canCreate && <div style={{ display: 'flex', justifyContent: 'flex-end' }}><IdeaImport {...V.ids.importProps} /></div>}
                     {/* app: research run strip (Super Admin), live through the research_runs realtime subscription */}
                     {V.ids.rs.hasPanel ? (
                       <section aria-label={V.ids.rs.strip.title} aria-live="polite" style={css("display: flex; flex-direction: column; gap: 12px; padding: 14px 16px; border: 1px solid var(--border); border-radius: 16px; background: var(--surface-2)")}>
