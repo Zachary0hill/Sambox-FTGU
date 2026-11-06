@@ -25,6 +25,7 @@ import { PickBox } from './Prims';
 import SyncPicker from './SyncPicker';
 import Performance from './Performance';
 import Workload from './Workload';
+import AiUsage from './AiUsage';
 import BrandEditor from './BrandEditor';
 import Dropdown from './Dropdown';
 import SocialIcon, { TextLogo } from './SocialIcon';
@@ -1820,6 +1821,8 @@ export default function StudioView({ V }) {
                             </section>
                           </>
                         ) : null}
+                        {" "}
+                        {V.adm.wsAi ? <AiUsage /> : null}
                         {" "}
                         {V.adm.wsInteg ? (
                           <>
@@ -4352,6 +4355,19 @@ export default function StudioView({ V }) {
                 {V.pg.isSettings ? (
                   <>
                     <div style={css("display: grid; grid-template-columns: repeat(auto-fit, minmax(min(340px, 100%), 1fr)); gap: 16px; align-items: start")}>
+                      {/* app: reopen the first sign in guide (editors, designers, sponsors, clients) */}
+                      {V.guide ? (
+                        <section aria-labelledby="st-guide" style={css(V.ui.panel + " grid-column: 1 / -1; flex-direction: row; flex-wrap: wrap; align-items: center; gap: 16px")}>
+                          <span aria-hidden="true" style={css("width: 40px; height: 40px; flex: none; border-radius: 12px; display: inline-flex; align-items: center; justify-content: center; background: var(--chip); color: var(--ink)")}>
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"></path></svg>
+                          </span>
+                          <span style={css("flex: 1 1 240px; display: flex; flex-direction: column; gap: 4px; min-width: 0")}>
+                            <h2 id="st-guide" style={css(V.ui.h3 + " margin: 0")}>Getting started</h2>
+                            <span style={css("font-size: 14px; line-height: 1.5; color: var(--muted)")}>A quick tour of where your work lives and what to do first.</span>
+                          </span>
+                          <button type="button" onClick={V.guide.open} style={css(V.ui.btnGhost)}>Open guide</button>
+                        </section>
+                      ) : null}
                       <section aria-labelledby="st-prof" style={css(V.ui.panel)}>
                         <h2 id="st-prof" style={css(V.ui.h3)}>Profile</h2>
                         {" "}

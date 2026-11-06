@@ -6,7 +6,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import StudioView from './StudioView';
 import UploadStatus from './UploadStatus';
 import DevNotes from './DevNotes';
-import MemberWelcome from './MemberWelcome';
+import MemberWelcome, { welcomeKind } from './MemberWelcome';
 import { FlowLayer, flowGuard } from './FlowBuilder';
 import { supabaseBrowser } from '@/lib/supabase/client';
 import { loadContext, loadWorkspace, loadPortalDetail } from '@/lib/studio/load';
@@ -51,6 +51,8 @@ export default function Studio({ initialPath, initialProject }) {
   // Two-step sign in: the session is aal1 but the person has a verified authenticator, so ask for a code first.
   const [mfa, setMfa] = useState(null);
   const [s, setS] = useState(null);
+  // The getting started guide, reopened from Settings.
+  const [guide, setGuide] = useState(false);
   const dRef = useRef(null);
   const meRef = useRef(null);
   const loading = useRef(false);
@@ -262,7 +264,9 @@ export default function Studio({ initialPath, initialProject }) {
   // Automations > New flow and the flow builder canvas (s.flowOpen: 'new' or a workflow id).
   V.flowLayer = me.uiRole === 'admin' && (s.flowOpen || s.flowReturn)
     ? <FlowLayer D={D} A={A} open={s.flowOpen} review={!!s.flowReview} back={s.flowReturn} set={set} /> : null;
-  return <MemberWelcome key={ctx.workspace_id + ctx.user_id} sb={sb} ctx={ctx} D={D} nav={s.nav} set={set} reload={reload} openMyQueue={V.openMyQueue}><StudioView V={V} />{error && <div role="status" style={{ position: 'fixed', top: 12, left: '50%', transform: 'translateX(-50%)', zIndex: 10000, maxWidth: 'calc(100vw - 24px)', padding: '12px 16px', borderRadius: 12, background: '#fff4d6', color: '#493600', boxShadow: '0 2px 12px #0002', fontSize: 14 }}>Could not refresh. Showing the last loaded board. <button type="button" onClick={reload}>Try again</button></div>}<UploadStatus /></MemberWelcome>;
+  // Settings shows a Getting started card for roles that have a guide.
+  V.guide = welcomeKind(ctx.role) ? { open: () => setGuide(true) } : null;
+  return <MemberWelcome key={ctx.workspace_id + ctx.user_id} sb={sb} ctx={ctx} D={D} set={set} reload={reload} openMyQueue={V.openMyQueue} rootStyle={V.rootStyle} manual={guide} onManualClose={() => setGuide(false)}><StudioView V={V} />{error && <div role="status" style={{ position: 'fixed', top: 12, left: '50%', transform: 'translateX(-50%)', zIndex: 10000, maxWidth: 'calc(100vw - 24px)', padding: '12px 16px', borderRadius: 12, background: '#fff4d6', color: '#493600', boxShadow: '0 2px 12px #0002', fontSize: 14 }}>Could not refresh. Showing the last loaded board. <button type="button" onClick={reload}>Try again</button></div>}<UploadStatus /></MemberWelcome>;
 }
 
 function Shell({ children }) {

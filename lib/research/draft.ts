@@ -1,5 +1,5 @@
 import 'server-only';
-import { generateText, Output, type LanguageModel } from 'ai';
+import { generateText, Output, type LanguageModel, type LanguageModelUsage } from 'ai';
 import { z } from 'zod';
 import { findingLine, groundIdeas, type Finding, type IdeaDraft } from './normalize';
 
@@ -20,6 +20,8 @@ export type BrandBrief = { name: string; voicePrompt: string; tone: string[]; do
 
 export async function draftIdeas(model: LanguageModel, a: {
   brand: BrandBrief; topics: string[]; findings: Finding[]; count: number; existing: string[]; timeoutMs: number;
+  // Called with the call's token usage (for the AI usage page) once the model answers.
+  onUsage?: (u: LanguageModelUsage) => void | Promise<void>;
 }): Promise<IdeaDraft[]> {
   const b = a.brand;
   const brief = [
@@ -46,5 +48,6 @@ export async function draftIdeas(model: LanguageModel, a: {
     maxRetries: 1,
     timeout: a.timeoutMs,
   });
+  if (a.onUsage) await a.onUsage(res.totalUsage);
   return groundIdeas(res.output.ideas, a.findings, a.existing, a.count);
 }

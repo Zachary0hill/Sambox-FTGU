@@ -9,6 +9,7 @@ import { dedupe, type Finding, type IdeaDraft } from './normalize';
 import { runSource, type Conns } from './sources';
 import { draftIdeas, type BrandBrief } from './draft';
 import { coverNewIdeas } from '@/lib/ideas/cover';
+import { recordUsage } from '@/lib/ai/usage';
 
 export type SourceState = { state: 'queued' | 'running' | 'done' | 'failed' | 'skipped' | 'cancelled'; count?: number; error?: string };
 export type RunInputs = { brandId: string; topics: string[]; sources: SourceId[]; count: number };
@@ -184,6 +185,7 @@ export async function executeRun(runId: string, m: Member) {
     const drafted = await withFallback(models, (wm) => draftIdeas(wm.model, {
       brand: brief(brand), topics: inputs.topics, findings, count: inputs.count,
       existing: (prior || []).map((i) => i.title).slice(0, 80), timeoutMs: Math.max(30000, Math.min(left, 120000)),
+      onUsage: (usage) => recordUsage({ workspaceId: ws, userId: m.ctx.user_id, feature: 'research', provider: wm.provider, model: wm.modelId, usage }),
     }));
     const ideas = drafted.result;
     const note = drafted.skipped.length

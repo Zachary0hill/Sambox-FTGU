@@ -4,6 +4,7 @@ import { createOpenAI } from '@ai-sdk/openai';
 import { createGoogle } from '@ai-sdk/google';
 import { getIntegration } from '@/lib/integrations/secrets';
 import { providerDown } from '@/lib/ai/model';
+import { recordUsage } from '@/lib/ai/usage';
 import { supabaseAdmin } from '@/lib/supabase/admin';
 import type { Member } from '@/lib/integrations/auth';
 
@@ -28,7 +29,7 @@ export class CoverError extends Error { status: number; constructor(message: str
 
 type IdeaRow = { project_id: string | null; id: string; workspace_id: string; brand_id: string; title: string; hook: string | null; audience: string | null; promise: string | null; cover_path: string | null; cover_mode: string; body: string[] };
 type Brand = { name: string; color: string | null; tone: string[] } | null;
-type Img = { bytes: Uint8Array; type: string; model: string };
+type Img = { bytes: Uint8Array; type: string; model: string; provider?: string; modelId?: string };
 
 function prompt(i: IdeaRow, brand: Brand, style: string, extra: string) {
   return [
@@ -64,21 +65,26 @@ const noSuchModel = (err: unknown) => {
 
 // OpenAI first, then Gemini: the next model or provider is tried when one is missing for this key, out of credits,
 // rejects its key or is down (the same rule as text models). Bad prompts and safety refusals are not retried.
-async function imageFromModel(ws: string, text: string): Promise<Img> {
+async function imageFromModel(ws: string, text: string, userId?: string | null): Promise<Img> {
   const [openai, gemini] = await Promise.all([getIntegration(ws, 'openai').catch(() => null), getIntegration(ws, 'gemini').catch(() => null)]);
   if (!openai && !gemini) throw new CoverError('Connect OpenAI or Gemini in Integrations to generate covers. Claude does not make images.', 409);
   const tries: { label: string; run: () => Promise<Img> }[] = [];
   if (openai) for (const id of OPENAI_IMAGE) tries.push({ label: 'OpenAI ' + id, run: async () => {
     const r = await generateImage({ model: createOpenAI({ apiKey: openai.secret.apiKey }).image(id), prompt: text, size: '1536x1024', providerOptions: { openai: { quality: 'medium' } } });
-    return { bytes: r.image.uint8Array, type: r.image.mediaType || 'image/png', model: 'OpenAI ' + id };
+    return { bytes: r.image.uint8Array, type: r.image.mediaType || 'image/png', model: 'OpenAI ' + id, provider: 'openai', modelId: id };
   } });
   if (gemini) for (const id of GEMINI_IMAGE) tries.push({ label: 'Gemini ' + id, run: async () => {
     const r = await generateImage({ model: createGoogle({ apiKey: gemini.secret.apiKey }).image(id), prompt: text, aspectRatio: '16:9' });
-    return { bytes: r.image.uint8Array, type: r.image.mediaType || 'image/png', model: 'Gemini ' + id };
+    return { bytes: r.image.uint8Array, type: r.image.mediaType || 'image/png', model: 'Gemini ' + id, provider: 'gemini', modelId: id };
   } });
   const failed: string[] = [];
   for (const t of tries) {
-    try { return await t.run(); } catch (err) {
+    try {
+      const img = await t.run();
+      // Images are priced per picture on the AI usage page, so only the count is logged.
+      await recordUsage({ workspaceId: ws, userId, feature: 'cover', provider: img.provider || 'other', model: img.modelId || img.model, images: 1 });
+      return img;
+    } catch (err) {
       failed.push(t.label + ': ' + cleanError(err));
       if (!providerDown(err) && !noSuchModel(err)) break;
     }
@@ -123,7 +129,7 @@ export async function makeIdeaCover(q: CoverRequest): Promise<CoverResult> {
   if (q.mode === 'url') img = await imageFromUrl(String(q.url || ''));
   else {
     const { data: brand } = await reader.from('brand_kits').select('name, color, tone').eq('id', i.brand_id).maybeSingle();
-    img = await imageFromModel(q.ws, prompt(i, brand as Brand, String(q.style || 'photo'), String(q.prompt || '').slice(0, 400)));
+    img = await imageFromModel(q.ws, prompt(i, brand as Brand, String(q.style || 'photo'), String(q.prompt || '').slice(0, 400)), q.member ? q.member.ctx.user_id : q.actorId);
   }
 
   const path = q.ws + '/' + i.id + '/cover-' + (q.mode === 'url' ? 'ref' : 'ai') + '-' + Date.now() + '.' + (EXT[img.type] || 'png');

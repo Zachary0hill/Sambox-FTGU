@@ -10,6 +10,7 @@ import { virloClient, virloTools } from '@/lib/integrations/providers/virlo';
 import type { MCPClient } from '@ai-sdk/mcp';
 import { systemPrompt } from '@/lib/ai/prompt';
 import { aiProviders, readPrefs, type AssistantMode } from '@/lib/ai/settings';
+import { recordUsage } from '@/lib/ai/usage';
 
 // The Daily assistant. Any active member can use it; tools run on their own session, so RLS scopes every answer.
 // GET tells the client whether a model is connected, which models the picker offers and the default answer mode
@@ -223,6 +224,7 @@ export async function POST(request: Request) {
       name = providerName(wm.provider);
       const result = start(wm);
       let failed: unknown = null;
+      let usage: import('ai').LanguageModelUsage | null = null;
       // Keep reading even if the browser goes away, so the reply is still saved to the thread.
       try {
         for await (const part of result.stream) {
@@ -242,12 +244,16 @@ export async function POST(request: Request) {
             const out = part.output as { proposal?: Record<string, unknown> } | null;
             if (out && out.proposal && typeof out.proposal === 'object' && proposals.length < 10) { proposals.push(out.proposal); send({ t: 'proposal', p: out.proposal }); }
           }
+          else if (part.type === 'finish') usage = part.totalUsage;
           else if (part.type === 'error') { failed = part.error; error = readable(part.error, name); }
           else if (part.type === 'abort') error = 'The answer was stopped before it finished.';
         }
       } catch (err) {
         failed = err; error = readable(err, name);
       }
+      // Every attempt is logged, so tokens a failed provider billed before the fallback still show on AI usage.
+      if (!usage) usage = await Promise.resolve(result.totalUsage).catch(() => null);
+      await recordUsage({ workspaceId: ws, userId: ctx.user_id, feature: 'assistant', provider: wm.provider, model: wm.modelId, usage, ok: !failed });
       const untouched = !reply.trim() && !thinking && !used.length && !proposals.length;
       if (failed && untouched && attempt < models.length - 1 && providerDown(failed) && !request.signal.aborted) {
         const next = models[attempt + 1];
