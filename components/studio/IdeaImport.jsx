@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { IDEA_TEMPLATE, IMPORT_LIMIT, parseIdeaDocument, validateImportIdea } from '../../lib/ideas/import-document';
+import { HOOK_LIMIT, IDEA_TEMPLATE, IMPORT_LIMIT, decodeImportFile, parseIdeaDocument, validateImportIdea } from '../../lib/ideas/import-document';
 
 const field = { width: '100%', boxSizing: 'border-box', padding: 10, border: '1px solid var(--border)', borderRadius: 10, background: 'var(--surface-2)', color: 'var(--ink)', font: 'inherit' };
 const button = { ...field, width: 'auto', minHeight: 44, cursor: 'pointer' };
@@ -21,9 +21,13 @@ export default function IdeaImport({ brands, onImport, onComplete }) {
 
   const update = (index, patch) => setRows(old => old.map((row, i) => i === index ? { ...row, ...patch } : row));
   const selected = (rows || []).filter(r => r.selected);
-  const invalid = selected.some(r => {
-    try { validateImportIdea(r); return !brands.some(b => b.id === r.brandId); } catch { return true; }
-  });
+  // Checked live, so fixing a field in the preview clears the problem.
+  const problemOf = r => {
+    try { validateImportIdea(r); } catch (err) { return err.message; }
+    return brands.some(b => b.id === r.brandId) ? '' : 'Choose a client for this idea.';
+  };
+  const needsAttention = selected.filter(problemOf).length;
+  const invalid = needsAttention > 0;
   const close = () => {
     if (running.current) return;
     if (!result && (rows || text) && !window.confirm(attempted ? 'The last import could not be confirmed. You can retry this same document safely later. Close this preview?' : 'Close and discard this import preview?')) return;
@@ -38,9 +42,11 @@ export default function IdeaImport({ brands, onImport, onComplete }) {
     const version = ++readVersion.current;
     setError(''); setReading(true);
     try {
-      if (!/\.(md|markdown|txt|json)$/i.test(file.name)) throw new Error('Choose a Markdown (.md), text (.txt), or JSON file.');
-      if (file.size > IMPORT_LIMIT * 4) throw new Error('Choose a file smaller than 1 MB.');
-      const content = await file.text();
+      if (!/\.(md|markdown|txt|json)$/i.test(file.name)) throw new Error(/\.(docx?|pdf|pages|rtf|odt|gdoc)$/i.test(file.name)
+        ? 'Word, Google Docs and PDF files cannot be uploaded directly. Export as Markdown or plain text (.md or .txt), or copy the text and paste it below.'
+        : 'Choose a Markdown (.md), text (.txt), or JSON file.');
+      if (file.size > IMPORT_LIMIT * 4) throw new Error('Choose a file smaller than 1 MB, or split the shoot list into smaller files.');
+      const content = decodeImportFile(await file.arrayBuffer());
       if (content.length > IMPORT_LIMIT) throw new Error('Choose a document of up to 250,000 characters.');
       if (version === readVersion.current) { setText(content); setFilename(file.name); setRows(null); }
     } catch (err) { if (version === readVersion.current) setError(err.message); }
@@ -49,7 +55,8 @@ export default function IdeaImport({ brands, onImport, onComplete }) {
   const preview = () => {
     try {
       const parsed = parseIdeaDocument(text, brands, filename);
-      setRows(parsed.ideas.map(idea => ({ ...idea, selected: true })));
+      // Ideas that cannot be saved as-is start deselected, so the rest can be imported straight away.
+      setRows(parsed.ideas.map(idea => ({ ...idea, selected: !idea.error })));
       setError('');
     } catch (err) { setError(err.message); }
   };
@@ -61,7 +68,8 @@ export default function IdeaImport({ brands, onImport, onComplete }) {
       setResult(outcome);
       onComplete?.(outcome);
     } catch (err) {
-      setError('Import could not be confirmed. Retry this batch; identical ideas will not be duplicated. ' + (err.message || 'Check your connection.'));
+      if (err.permanent) { setAttempted(false); setError(err.message); }
+      else setError('Import could not be confirmed. Retry this batch; identical ideas will not be duplicated. ' + (err.message || 'Check your connection.'));
     } finally { running.current = false; setBusy(false); }
   };
   const download = () => {
@@ -87,13 +95,13 @@ export default function IdeaImport({ brands, onImport, onComplete }) {
             <label style={stack}>Upload document<input type="file" accept=".md,.markdown,.txt,.json,text/markdown,text/plain,application/json" onChange={read} disabled={reading} /></label>
             {filename && <p>{filename}</p>}
             <label style={stack}>Or paste your document<textarea value={text} onChange={event => { setText(event.target.value); setFilename(''); setError(''); }} rows={10} maxLength={IMPORT_LIMIT} disabled={reading} style={field} /></label>
-            <p>Use a “## Idea title” heading for each idea and “Client: POD HUT” to match a brand. Descriptions, scripts and reference links are preserved. Up to 100 ideas per import.</p>
+            <p>Use a “## Idea title” heading (or an “Idea 1: Title” line) for each idea and “Client: POD HUT” to match a brand. Descriptions, scripts and reference links are preserved. “Hook:” becomes the cover text (up to 24 characters); longer hooks stay in the content. Up to 100 ideas per import.</p>
             <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
               <button type="button" onClick={download} style={button}>Download Markdown template</button>
               <button type="button" onClick={preview} disabled={reading || !text.trim()} style={button}>{reading ? 'Reading document…' : 'Preview ideas'}</button>
             </div>
           </> : <>
-            <p>{rows.length} ideas found · {selected.length} selected. Review suggested clients; unknown or ambiguous names need a selection. Identical imports are skipped.</p>
+            <p>{rows.length} {rows.length === 1 ? 'idea' : 'ideas'} found · {selected.length} selected.{rows.some(r => r.error) ? ' Ideas that need changes start unselected.' : ''} Review suggested clients; unknown or ambiguous names need a selection. Identical imports are skipped.</p>
             <fieldset disabled={busy || attempted} style={{ border: 0, padding: 0, minWidth: 0, ...stack }}>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, alignItems: 'end' }}>
                 <label style={{ flex: '1 1 220px', ...stack }}>Client for unassigned ideas<select style={field} value={defaultBrand} onChange={e => setDefaultBrand(e.target.value)}><option value="">Choose client</option>{brands.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}</select></label>
@@ -105,16 +113,19 @@ export default function IdeaImport({ brands, onImport, onComplete }) {
                 <label>Title<input aria-label={`Title ${i + 1}`} style={field} value={row.title} maxLength={300} onChange={e => update(i, { title: e.target.value })} /></label>
                 <label>Brand / client<select aria-label={`Client ${i + 1}`} style={field} value={row.brandId} onChange={e => update(i, { brandId: e.target.value, brandWarning: '' })}><option value="">Choose client</option>{brands.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}</select></label>
                 {row.brandWarning && <p style={{ margin: 0 }}>{row.brandWarning}</p>}
-                <details><summary>Review content and references ({row.refs.length})</summary><div style={{ ...stack, marginTop: 12 }}>
-                  <label>Content<textarea aria-label={`Content ${i + 1}`} rows={8} maxLength={30000} style={field} value={row.body} onChange={e => update(i, { body: e.target.value })} /></label>
+                <label>Cover hook ({row.hook.length}/{HOOK_LIMIT})<input aria-label={`Cover hook ${i + 1}`} style={field} value={row.hook} maxLength={HOOK_LIMIT} placeholder="2 to 4 punchy words (optional)" onChange={e => update(i, { hook: e.target.value.slice(0, HOOK_LIMIT), hookWarning: '' })} /></label>
+                {row.hookWarning && <p style={{ margin: 0 }}>{row.hookWarning}</p>}
+                {problemOf(row) && problemOf(row) !== 'Choose a client for this idea.' && <p style={{ margin: 0, color: 'var(--red-ink)' }}>Needs a change: {problemOf(row)}</p>}
+                {row.warnings?.length > 0 && <ul style={{ margin: 0, paddingLeft: 20 }}>{row.warnings.map(w => <li key={w}>{w}</li>)}</ul>}
+                <details open={!!row.error}><summary>Review content and references ({row.refs.length})</summary><div style={{ ...stack, marginTop: 12 }}>
+                  <label>Content ({row.body.length.toLocaleString('en-US')}/30,000)<textarea aria-label={`Content ${i + 1}`} rows={8} maxLength={30000} style={field} value={row.body} onChange={e => update(i, { body: e.target.value })} /></label>
                   <label>References (one URL per line)<textarea aria-label={`References ${i + 1}`} rows={3} style={field} value={row.refs.join('\n')} onChange={e => update(i, { refs: e.target.value.split('\n') })} /></label>
-                  {row.hook && <p>Hook: {row.hook}</p>}
                   {row.titleOptions.length > 0 && <p>Title options: {row.titleOptions.join(' · ')}</p>}
                   {row.thumbnailBrief && <p>Thumbnail direction: {row.thumbnailBrief}</p>}
                 </div></details>
               </article>)}
             </fieldset>
-            {invalid && <p role="status">Every selected idea needs a title, an available client, and valid reference links.</p>}
+            {invalid && <p role="status">{needsAttention === 1 ? '1 selected idea needs' : `${needsAttention} selected ideas need`} a change before importing. See the note on each card, or unselect {needsAttention === 1 ? 'it' : 'them'}.</p>}
             <footer style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
               {!attempted && <button type="button" style={button} onClick={() => { setRows(null); setError(''); }}>Back to document</button>}
               <button type="button" style={{ ...button, background: 'var(--inv)', color: 'var(--inv-ink)' }} disabled={busy || invalid || !selected.length} onClick={save}>{busy ? 'Importing…' : attempted ? 'Retry import' : `Import ${selected.length} drafts`}</button>

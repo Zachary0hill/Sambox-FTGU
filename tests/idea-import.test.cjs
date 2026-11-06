@@ -10,7 +10,7 @@ function load(file) {
   new Function('require', 'module', 'exports', code)(name => load(path.resolve(path.dirname(file), name + '.js')), mod, mod.exports);
   return mod.exports;
 }
-const { parseIdeaDocument, IDEA_TEMPLATE, validateImportIdea } = load('lib/ideas/import-document.js');
+const { parseIdeaDocument, IDEA_TEMPLATE, validateImportIdea, decodeImportFile } = load('lib/ideas/import-document.js');
 const { saveIdeaImport } = load('lib/ideas/import-save.js');
 const brands = [{ id: 'pod', name: 'POD HUT' }, { id: 'other', name: 'Other Client' }];
 
@@ -74,7 +74,13 @@ test('JSON lists map description and references while ignoring supplied IDs, aut
 });
 
 test('malformed, excessive and unsafe content fails visibly without truncating scripts', () => {
-  for (const raw of ['', 'x'.repeat(250001), '{bad', 'ordinary prose without headings', '[]', JSON.stringify(Array.from({ length: 101 }, () => ({ title: 'One' }))), JSON.stringify({ title: 'One', references: ['javascript:alert(1)'] }), JSON.stringify({ title: 'One', body: 'x'.repeat(30001) })]) assert.throws(() => parseIdeaDocument(raw, brands));
+  for (const raw of ['', 'x'.repeat(250001), '{bad', 'ordinary prose without headings', '[]', JSON.stringify(Array.from({ length: 101 }, () => ({ title: 'One' })))]) assert.throws(() => parseIdeaDocument(raw, brands));
+  // Per-idea problems are flagged on that idea rather than rejecting the document.
+  const unsafe = parseIdeaDocument(JSON.stringify({ title: 'One', references: ['javascript:alert(1)', 'https://ok.example'] }), brands).ideas[0];
+  assert.deepEqual(unsafe.refs, ['https://ok.example']); assert.match(unsafe.warnings[0], /not an http/);
+  const long = parseIdeaDocument(JSON.stringify([{ title: 'One', body: 'x'.repeat(30001) }, { title: 'Two' }]), brands).ideas;
+  assert.equal(long[0].body.length, 30001); assert.match(long[0].error, /Content is 30,001 characters/); assert.equal(long[1].error, '');
+  assert.throws(() => parseIdeaDocument(JSON.stringify([{ title: 'Fine' }, { title: 'Bad', hook: 5 }]), brands), /Idea 2 “Bad”: Hook must be text/);
   const body = 'x'.repeat(28000);
   assert.equal(parseIdeaDocument(JSON.stringify({ title: 'One', body }), brands).ideas[0].body, body);
   assert.throws(() => validateImportIdea({ ...parseIdeaDocument('## One\nBody').ideas[0], refs: ['invalid'] }), /valid http/);
@@ -124,6 +130,59 @@ test('bad client or invalid item prevents the batch from being sent; permission 
   const input = { sb: db.sb, workspaceId: 'ws', userId: 'me', brands, ideas };
   await assert.rejects(saveIdeaImport({ ...input, ideas: [ideas[0], { ...ideas[1], brandId: 'foreign' }] }), /available client/);
   assert.equal(db.calls.length, 0);
-  db.setFail(true); await assert.rejects(saveIdeaImport(input), /permission denied/);
+  await assert.rejects(saveIdeaImport({ ...input, ideas: [ideas[0], { ...ideas[1], hook: 'x'.repeat(25) }] }), err => err.permanent && /^Idea 2 “A studio tour in 60 seconds”: Cover hook/.test(err.message));
+  db.setFail(true); await assert.rejects(saveIdeaImport(input), err => err.permanent && /permission to add ideas/.test(err.message));
   assert.equal(db.records.size, 0);
+});
+
+test('long spoken hooks stay in the content instead of failing the import', () => {
+  const raw = 'Client: POD HUT\n## Idea 1: Cost myth\nDescription: Walk the floor.\nHook: PEOPLE THINK STARTING A CLOTHING BRAND COSTS $80K\n### Script\nTalk.\n## Idea 2: Pizza\nHook: OUR PRINTS ARE SO REAL';
+  const { ideas } = parseIdeaDocument(raw, brands);
+  assert.equal(ideas[0].hook, '');
+  assert.match(ideas[0].hookWarning, /24-character/);
+  assert.match(ideas[0].body, /COSTS \$80K/);
+  assert.equal(ideas[1].hook, 'OUR PRINTS ARE SO REAL');
+  assert.equal(ideas[1].hookWarning, '');
+  const json = parseIdeaDocument(JSON.stringify({ title: 'One', description: 'Body', hook: 'A HOOK THAT IS FAR TOO LONG FOR A COVER' }), brands).ideas[0];
+  assert.equal(json.hook, '');
+  assert.match(json.body, /Hook: A HOOK THAT IS FAR TOO LONG/);
+  assert.throws(() => validateImportIdea({ ...ideas[1], hook: 'x'.repeat(25) }), /hook/);
+});
+
+test('plain-text "Idea N:" lines split ideas when the document has no Markdown headings', () => {
+  const raw = 'POD HUT Shoot List\nClient: POD HUT\nIdea 1: First\nDescription: One https://example.com/a\nScript\nSay it.\nTitle options\n\n* Option A\n* Option B\n\nThumbnail direction\nBold text.\nIdea 2: Second\nDescription: Two';
+  const { ideas } = parseIdeaDocument(raw, brands);
+  assert.deepEqual(ideas.map(i => i.title), ['First', 'Second']);
+  assert.equal(ideas[0].brandId, 'pod');
+  assert.deepEqual(ideas[0].titleOptions, ['Option A', 'Option B']);
+  assert.equal(ideas[0].thumbnailBrief, 'Bold text.');
+  // A heading-based document is not re-split by an "Idea 2:" mention inside its content.
+  assert.equal(parseIdeaDocument('## One\nIdea 2: see the other video\n## Two\nBody', brands).ideas.length, 2);
+});
+
+test('oversized fields are fitted per idea without losing text, and documents still import', () => {
+  const ok = 'Client: POD HUT\n## Idea 1: Fine\nDescription: ok\n';
+  const many = parseIdeaDocument(ok + '## Idea 2: Options\n### Title options\n' + Array.from({ length: 15 }, (_, i) => '- Option ' + i).join('\n'), brands).ideas[1];
+  assert.equal(many.titleOptions.length, 12); assert.match(many.body, /Option 14/); assert.equal(many.error, '');
+  const note = parseIdeaDocument(ok + '## Idea 2: Note\nTitle options:\n' + 'A long note about the title. '.repeat(12), brands).ideas[1];
+  assert.deepEqual(note.titleOptions, []); assert.match(note.warnings[0], /over 300/); assert.equal(note.error, '');
+  const links = parseIdeaDocument(ok + '## Idea 2: Links\n' + Array.from({ length: 35 }, (_, i) => 'https://example.com/' + i).join('\n'), brands).ideas[1];
+  assert.equal(links.refs.length, 30); assert.match(links.body, /example.com\/34/); assert.equal(links.error, '');
+  const title = parseIdeaDocument('Idea 1: ' + 'Long title words '.repeat(25) + '\nDescription: x\nIdea 2: Short', brands).ideas[0];
+  assert.ok(title.title.length <= 300 && title.title.endsWith('…')); assert.match(title.body, /Full title:/); assert.equal(title.error, '');
+  const shared = parseIdeaDocument('Client: POD HUT\n' + 'Shared brief line. '.repeat(1700) + '\n' + '## One\nBody\n## Two\nBody', brands).ideas;
+  assert.ok(shared.every(i => !i.error && i.body.length <= 30000 && i.brandId === 'pod')); assert.match(shared[0].warnings[0], /shared notes/);
+  const transcript = parseIdeaDocument(ok + '## Idea 2: Transcript\n' + 'word '.repeat(7000), brands).ideas;
+  assert.equal(transcript[0].error, ''); assert.match(transcript[1].error, /Content is 3\d,\d{3} characters/);
+  assert.deepEqual(parseIdeaDocument(ok + '## Idea 2: Bold\nReference: **https://instagram.com/x**, and _https://a.example/b_.', brands).ideas[1].refs, ['https://instagram.com/x', 'https://a.example/b']);
+});
+
+test('uploaded files decode from UTF-8, UTF-16 and Windows-1252', () => {
+  const doc = 'Client: POD HUT\n## Idea 1: Café “quotes”\nBody';
+  const utf16 = Buffer.concat([Buffer.from([0xFF, 0xFE]), Buffer.from(doc, 'utf16le')]);
+  assert.equal(decodeImportFile(utf16), doc);
+  assert.equal(decodeImportFile(Buffer.from(doc, 'utf16le')), doc);
+  assert.equal(decodeImportFile(Buffer.concat([Buffer.from([0xEF, 0xBB, 0xBF]), Buffer.from(doc)])), doc);
+  assert.equal(decodeImportFile(Buffer.from([0x43, 0x61, 0x66, 0xE9, 0x20, 0x93, 0x71, 0x94])), 'Café “q”');
+  assert.equal(parseIdeaDocument(decodeImportFile(utf16), brands).ideas[0].title, 'Café “quotes”');
 });
