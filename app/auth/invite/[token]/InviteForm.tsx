@@ -1,28 +1,53 @@
 'use client';
-import NextImage from 'next/image';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { supabaseBrowser } from '@/lib/supabase/client';
 import { css } from '@/lib/studio/css';
+import { Shell, Steps, Notice, Skeleton, Arrow, Success, PasswordFields, LABEL, INPUT, H1, BTN_PRIMARY, BTN_GHOST, TEXT_LINK } from '@/app/auth/ui';
 
-// Shared invite link landing page. Step one checks the typed email against the invitation (/api/invites/accept);
-// step two sets a password, which creates the account and applies the invite, then signs in with it.
+// Shared invite link landing page (/auth/invite/<token>). On load it asks /api/invites/accept to describe the invite
+// (workspace, role, who sent it, a masked email hint) so the page can say what it is before anyone types, and show a
+// clear state for expired or already-used links. Step one checks the typed email against the invitation; step two
+// sets a password, which creates the account and applies the invite, then signs in with it.
+
+type Peek = { state: 'open' | 'expired' | 'accepted'; workspace: string; role: string; account: string; inviter: string; emailHint: string; expiresAt: string };
+type Verified = { name: string; workspace: string; role: string; account: string };
+
+// Role chips use the same tones as the invite email so the link and the inbox match.
+const ROLE_COPY: Record<string, { label: string; bg: string; fg: string; body: string; perks: string[] }> = {
+  super_admin: { label: 'Super Admin', bg: '#111111', fg: '#FFFFFF', body: 'You will manage projects, people and workspace settings.', perks: ['Every project and view', 'Invite and manage people', 'Workspace settings'] },
+  manager: { label: 'Manager', bg: '#E4F4E8', fg: '#185B2C', body: 'You will plan projects, assign work and keep clients up to date.', perks: ['Plan and assign projects', 'Review cuts and thumbnails', 'Client and sponsor updates'] },
+  editor: { label: 'Editor', bg: '#2F5BD3', fg: '#FFFFFF', body: 'You will see the edits assigned to you, upload cuts and move them through review.', perks: ['Your edit queue with due dates', 'Upload cuts as versions', 'Review notes in your Inbox'] },
+  designer: { label: 'Designer', bg: '#7A45C4', fg: '#FFFFFF', body: 'You will see the thumbnails assigned to you, upload options and pitch ideas.', perks: ['Your thumbnail queue', 'Upload options side by side', 'Pitch ideas to the team'] },
+  sponsor: { label: 'Sponsor', bg: '#9A6A00', fg: '#FFFFFF', body: 'You will follow {account} projects, review drafts and approve videos before they publish.', perks: ['Every {account} project and its stage', 'Review drafts before they go live', 'Approve or request changes'] },
+  client: { label: 'Client', bg: '#9A6A00', fg: '#FFFFFF', body: 'You will follow {account} projects, review drafts and share feedback with the team.', perks: ['Every {account} project and its stage', 'Publish dates at a glance', 'Share feedback with the team'] },
+};
+
+const daysLeft = (iso: string) => Math.max(0, Math.ceil((new Date(iso).getTime() - Date.now()) / 86400000));
+
 export default function InviteForm({ token }: { token: string }) {
   const sb = supabaseBrowser();
+  const [peek, setPeek] = useState<Peek | null | 'loading' | 'invalid'>('loading');
   const [email, setEmail] = useState('');
-  const [verified, setVerified] = useState<{ name: string; workspace: string } | null>(null);
+  const [verified, setVerified] = useState<Verified | null>(null);
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
-  const [showPw, setShowPw] = useState(false);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
+  const [done, setDone] = useState<'' | 'opening' | 'signin'>('');
 
   async function post(body: Record<string, string>) {
-    const res = await fetch('/api/invites/accept', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token, email: email.trim(), ...body }) });
+    const res = await fetch('/api/invites/accept', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token, ...body }) });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(data.error || 'Something went wrong.');
     return data;
   }
+
+  useEffect(() => {
+    let active = true;
+    post({}).then((d) => { if (active) setPeek(d as Peek); }).catch(() => { if (active) setPeek('invalid'); });
+    return () => { active = false; };
+  }, [token]); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -32,14 +57,15 @@ export default function InviteForm({ token }: { token: string }) {
     setBusy(true);
     try {
       if (!verified) {
-        const data = await post({});
-        setVerified({ name: data.name || '', workspace: data.workspace || '' });
+        const data = await post({ email: email.trim() });
+        setVerified({ name: data.name || '', workspace: data.workspace || '', role: data.role || '', account: data.account || '' });
         setBusy(false);
         return;
       }
-      await post({ password });
+      await post({ email: email.trim(), password });
+      setDone('opening');
       const s = await sb.auth.signInWithPassword({ email: email.trim(), password });
-      if (s.error) throw new Error('Your account is ready, but signing in failed: ' + s.error.message);
+      if (s.error) { setDone('signin'); setBusy(false); return; }
       window.location.href = window.location.origin + '/';
     } catch (e2) {
       setErr(e2 instanceof Error ? e2.message : 'Something went wrong.');
@@ -47,77 +73,114 @@ export default function InviteForm({ token }: { token: string }) {
     }
   }
 
-  const label = 'margin: 0; font-size: 13px; font-weight: 600; color: var(--ink-2);';
-  const input = 'width: 100%; min-height: 44px; box-sizing: border-box; padding: 0 14px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface-2); font-size: 14px; color: var(--ink);';
-  const first = verified && verified.name ? verified.name.split(' ')[0] : '';
+  const info = peek && typeof peek === 'object' ? peek : null;
+  const roleKey = verified?.role || info?.role || '';
+  const role = ROLE_COPY[roleKey] || null;
+  const account = verified?.account || info?.account || '';
+  const workspace = verified?.workspace || info?.workspace || '';
+  const first = verified?.name ? verified.name.split(' ')[0] : '';
+  const fill = (s: string) => s.replace('{account}', account || 'your');
+
+  // Full-card states that need no form: still loading, bad link, used link, expired link, and the success screen.
+  if (peek === 'loading') {
+    return (
+      <Shell workspace="">
+        <div aria-busy="true" aria-live="polite" style={css('display: flex; flex-direction: column; gap: 12px')}>
+          <Skeleton w="60%" h={28} /><Skeleton w="90%" h={14} /><Skeleton w="100%" h={64} r={16} /><Skeleton w="100%" h={44} r={12} />
+          <span style={css('position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0);')}>Checking your invite…</span>
+        </div>
+      </Shell>
+    );
+  }
+  if (peek === 'invalid' || !info) {
+    return (
+      <Shell workspace="">
+        <Notice tone="red" title="This invite link is not valid" body="The link may have been copied incompletely, or it has been replaced. Ask whoever invited you to send a fresh one." />
+        <Link href="/login" style={css(BTN_GHOST)}>Go to sign in</Link>
+      </Shell>
+    );
+  }
+  if (info.state === 'accepted') {
+    return (
+      <Shell workspace={workspace}>
+        <Notice tone="green" title="This invite is already in use" body={'An account for ' + (info.emailHint || 'this invite') + ' is set up. Sign in with that email and your password.'} />
+        <Link href="/login" style={css(BTN_PRIMARY)}>Sign in<Arrow /></Link>
+        <Link href="/auth/setup?type=recovery" style={css(TEXT_LINK + ' align-self: center;')}>Forgot your password?</Link>
+      </Shell>
+    );
+  }
+  if (info.state === 'expired') {
+    return (
+      <Shell workspace={workspace}>
+        <Notice tone="amber" title="This invite has expired" body={'Invite links work for 14 days. Ask ' + (info.inviter || 'whoever invited you') + ' to copy a fresh link from Users, or resend your invite email.'} />
+        <Link href="/login" style={css(BTN_GHOST)}>Already have an account? Sign in</Link>
+      </Shell>
+    );
+  }
+  if (done) return <Shell workspace={workspace}><Success first={first} workspace={workspace} mode={done} /></Shell>;
+
+  const left = daysLeft(info.expiresAt);
+  const pwOk = password.length >= 8;
+  const matchOk = confirm.length > 0 && password === confirm;
 
   return (
-    <main style={css('--page: #EBEBEB; --surface: #FFFFFF; --surface-2: #FAFAFA; --ink: #111111; --ink-2: #2A2A2A; --muted: #666666; --muted-2: #707070; --faint: #8A8A8A; --border: #E6E6E6; --line-4: #ECECEC; --inv: #111111; --inv-ink: #FFFFFF; --red-soft: #FDE8E5; --red-ink: #9B1C13; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 16px; box-sizing: border-box; background: var(--page); font-family: var(--font-main); color: var(--ink);')}>
-      <form onSubmit={submit} style={css('width: 440px; max-width: 100%; box-sizing: border-box; padding: 28px; background: var(--surface); border: 1px solid var(--line-4); border-radius: 28px; box-shadow: 0 1px 2px rgba(0,0,0,0.04), 0 24px 60px rgba(0,0,0,0.06); display: flex; flex-direction: column; gap: 18px;')}>
-        <div style={css('display: flex; align-items: center; gap: 12px')}>
-          <span aria-hidden="true" style={css('width: 36px; height: 36px; flex: none; border-radius: 10px; display: inline-flex; align-items: center; justify-content: center; background: #111111;')}>
-            <NextImage src="/ftgu-logo.png" alt="" width={24} height={18} style={css('display: block; width: 24px; height: auto')} />
-          </span>
-          <div style={css('display: flex; flex-direction: column; gap: 2px')}>
-            <p style={css('margin: 0; font-family: var(--font-title); font-size: 15px; font-weight: var(--weight-black); line-height: 1.25; letter-spacing: -0.01em;')}>SantosStudios</p>
-            <p style={css('margin: 0; font-size: 13px; line-height: 1.3; color: var(--muted-2);')}>Production board</p>
+    <Shell workspace={workspace} as="form" onSubmit={submit}>
+      <Steps current={verified ? 2 : 1} />
+      <div style={css('display: flex; flex-direction: column; gap: 8px')}>
+        <h1 style={css(H1)}>
+          {verified ? (first ? 'Welcome, ' + first : 'Create your password') : workspace ? 'Join ' + workspace : 'Accept your invite'}
+        </h1>
+        <p style={css('margin: 0; font-size: 14px; line-height: 1.5; color: var(--muted);')}>
+          {verified
+            ? 'Choose a password to finish joining' + (workspace ? ' ' + workspace : ' the board') + '. You will use it with this email to sign in.'
+            : (info.inviter ? info.inviter + ' invited you' : 'You have been invited') + ' to the ' + (workspace || 'SantosStudios') + ' production board' + (role ? ' as ' + (/^[aeiou]/i.test(role.label) ? 'an ' : 'a ') + role.label.toLowerCase() : '') + '.'}
+        </p>
+      </div>
+
+      {role ? (
+        <div style={css('display: flex; flex-direction: column; gap: 10px; padding: 14px; border-radius: 16px; background: var(--surface-2); border: 1px solid var(--line-4);')}>
+          <div style={css('display: flex; gap: 10px; align-items: center; flex-wrap: wrap')}>
+            <span style={css('display: inline-flex; align-items: center; height: 24px; padding: 0 10px; border-radius: 999px; font-size: 12px; font-weight: 600; background: ' + role.bg + '; color: ' + role.fg + ';')}>{role.label}</span>
+            {account ? <span style={css('font-size: 13px; font-weight: 600; color: var(--ink-2);')}>{account}</span> : null}
           </div>
+          <ul style={css('margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 6px;')}>
+            {role.perks.map((p) => (
+              <li key={p} style={css('display: flex; gap: 8px; align-items: flex-start; font-size: 13px; line-height: 1.45; color: var(--ink-2);')}>
+                <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={css('flex: none; margin-top: 2px; color: var(--green-ink);')}><path d="M20 6 9 17l-5-5" /></svg>
+                <span>{fill(p)}</span>
+              </li>
+            ))}
+          </ul>
         </div>
-        <div style={css('display: flex; flex-direction: column; gap: 8px')}>
-          <h1 style={css('margin: 0; font-family: var(--font-title); font-size: var(--text-h3); font-weight: var(--weight-black); line-height: 1.15; letter-spacing: -0.03em;')}>
-            {verified ? (first ? 'Welcome, ' + first : 'Set your password') : 'Accept your invite'}
-          </h1>
-          <p style={css('margin: 0; font-size: 14px; line-height: 1.5; color: var(--muted);')}>
-            {verified
-              ? 'Choose a password to join' + (verified.workspace ? ' ' + verified.workspace : ' the board') + '. You will use it with this email to sign in.'
-              : 'Enter the email address you were invited with to continue.'}
-          </p>
-        </div>
-        <div style={css('display: flex; flex-direction: column; gap: 6px')}>
-          <label htmlFor="inv-email" style={css(label)}>Email</label>
-          <input id="inv-email" type="email" required autoComplete="email" placeholder="name@company.com" value={email} readOnly={!!verified}
-            onChange={(e) => setEmail(e.target.value)} style={css(input + (verified ? ' color: var(--muted);' : ''))} />
-          {verified ? (
-            <button type="button" onClick={() => { setVerified(null); setPassword(''); setConfirm(''); setErr(''); }} style={css('align-self: flex-start; padding: 0; border: 0; background: transparent; font-size: 13px; font-weight: 600; color: var(--muted); text-decoration: underline; text-underline-offset: 3px; cursor: pointer;')}>Use a different email</button>
-          ) : null}
-        </div>
-        {verified ? (
-          <>
-            <div style={css('display: flex; flex-direction: column; gap: 6px')}>
-              <label htmlFor="inv-pw" style={css(label)}>Password</label>
-              <div style={css('position: relative')}>
-                <input id="inv-pw" type={showPw ? 'text' : 'password'} required minLength={8} autoComplete="new-password" autoFocus value={password} onChange={(e) => setPassword(e.target.value)} style={css(input + ' padding-right: 48px;')} />
-                <EyeToggle shown={showPw} toggle={() => setShowPw((v) => !v)} controls="inv-pw inv-pw2" />
-              </div>
-            </div>
-            <div style={css('display: flex; flex-direction: column; gap: 6px')}>
-              <label htmlFor="inv-pw2" style={css(label)}>Confirm password</label>
-              <div style={css('position: relative')}>
-                <input id="inv-pw2" type={showPw ? 'text' : 'password'} required minLength={8} autoComplete="new-password" value={confirm} onChange={(e) => setConfirm(e.target.value)} style={css(input + ' padding-right: 48px;')} />
-                <EyeToggle shown={showPw} toggle={() => setShowPw((v) => !v)} controls="inv-pw inv-pw2" />
-              </div>
-            </div>
-          </>
-        ) : null}
-        {err ? <p role="alert" style={css('margin: 0; padding: 10px 12px; border-radius: 10px; background: var(--red-soft); color: var(--red-ink); font-size: 13px; font-weight: 600;')}>{err}</p> : null}
-        <button type="submit" disabled={busy} style={css('min-height: 44px; padding: 0 18px; border: 0; border-radius: 14px; background: var(--inv); color: var(--inv-ink); cursor: pointer; opacity: ' + (busy ? '0.6' : '1') + ';')}>
-          {verified ? 'Set password and continue' : 'Continue'}
-        </button>
-        <Link href="/login" style={css('align-self: center; font-size: 13px; font-weight: 600; color: var(--muted); text-decoration: underline; text-underline-offset: 3px;')}>Already have an account? Sign in</Link>
-      </form>
-    </main>
-  );
-}
+      ) : null}
 
-// Same show/hide control as the sign in and setup pages. One switch reveals both fields so they can be compared.
-function EyeToggle({ shown, toggle, controls }: { shown: boolean; toggle: () => void; controls: string }) {
-  return (
-    <button type="button" onClick={toggle} aria-label={shown ? 'Hide password' : 'Show password'} aria-pressed={shown} aria-controls={controls} style={css('position: absolute; top: 50%; right: 6px; transform: translateY(-50%); width: 36px; height: 36px; display: inline-flex; align-items: center; justify-content: center; padding: 0; border: 0; border-radius: 10px; background: transparent; color: var(--muted); cursor: pointer;')}>
-      {shown ? (
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68M6.61 6.61A13.53 13.53 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61M14.12 14.12a3 3 0 1 1-4.24-4.24M2 2l20 20" /></svg>
-      ) : (
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z" /><circle cx="12" cy="12" r="3" /></svg>
-      )}
-    </button>
+      <div style={css('display: flex; flex-direction: column; gap: 6px')}>
+        <div style={css('display: flex; justify-content: space-between; align-items: baseline; gap: 8px;')}>
+          <label htmlFor="inv-email" style={css(LABEL)}>Email</label>
+          {!verified && info.emailHint ? <span style={css('font-size: 12px; color: var(--muted-2);')}>Invited as {info.emailHint}</span> : null}
+        </div>
+        <input id="inv-email" type="email" required autoComplete="email" placeholder="name@company.com" value={email} readOnly={!!verified} autoFocus={!verified}
+          onChange={(e) => setEmail(e.target.value)} style={css(INPUT + (verified ? ' color: var(--muted);' : ''))} />
+        {verified ? (
+          <button type="button" onClick={() => { setVerified(null); setPassword(''); setConfirm(''); setErr(''); }} style={css('align-self: flex-start; padding: 0; border: 0; background: transparent; cursor: pointer; ' + TEXT_LINK)}>Use a different email</button>
+        ) : (
+          <p style={css('margin: 0; font-size: 12px; line-height: 1.45; color: var(--muted-2);')}>Use the exact address your invite was sent to. The link alone does not grant access.</p>
+        )}
+      </div>
+
+      {verified ? <PasswordFields id="inv" password={password} confirm={confirm} onPassword={setPassword} onConfirm={setConfirm} autoFocus /> : null}
+
+      {err ? <p role="alert" style={css('margin: 0; padding: 10px 12px; border-radius: 10px; background: var(--red-soft); color: var(--red-ink); font-size: 13px; font-weight: 600;')}>{err}</p> : null}
+
+      <button type="submit" disabled={busy || (!!verified && !(pwOk && matchOk))} style={css(BTN_PRIMARY + ' opacity: ' + (busy || (verified && !(pwOk && matchOk)) ? '0.6' : '1') + ';')}>
+        {busy ? (verified ? 'Creating your account…' : 'Checking…') : verified ? 'Set password and open the board' : 'Continue'}
+        {!busy ? <Arrow /> : null}
+      </button>
+
+      <div style={css('display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap;')}>
+        <Link href="/login" style={css(TEXT_LINK)}>Already have an account? Sign in</Link>
+        {left <= 3 ? <span style={css('font-size: 12px; font-weight: 600; color: var(--amber-ink);')}>{left === 0 ? 'Expires today' : 'Expires in ' + left + ' day' + (left === 1 ? '' : 's')}</span> : <span style={css('font-size: 12px; color: var(--faint);')}>Link valid for {left} days</span>}
+      </div>
+    </Shell>
   );
 }

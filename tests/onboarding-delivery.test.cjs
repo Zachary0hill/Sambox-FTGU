@@ -55,16 +55,32 @@ test('submission failures persist safe summaries; accepted mail is not labeled f
 });
 
 test('welcome automatically enrolls only new eligible members and respects role capabilities', () => {
-  const Welcome = load('components/studio/MemberWelcome.jsx').default;
-  const base = { sb: {}, ctx: { role: 'editor', user_id: 'editor', workspace_name: 'Studio', perms: [['edits','edit'],['assets','create']] }, D: { rows: [], myMembership: { onboarding_required: true }, brands: [] }, nav: 'projects', children: React.createElement('p', null, 'Dashboard') };
-  const markup = renderToStaticMarkup(React.createElement(Welcome, base));
-  assert.match(markup, /Your account is ready/); assert.match(markup, /upload a cut/);
-  const designer = renderToStaticMarkup(React.createElement(Welcome, { ...base, ctx: { ...base.ctx, role: 'designer', perms: [] } }));
-  assert.match(designer, /view-only for work status/); assert.match(designer, /does not include uploads/);
-  const existing = renderToStaticMarkup(React.createElement(Welcome, { ...base, D: { ...base.D, myMembership: { onboarding_required: false } }, nav: 'settings' }));
-  assert.match(existing, /Getting started as/); assert.match(existing, /Dashboard/); assert.doesNotMatch(existing, /Your account is ready/);
-  const completed = renderToStaticMarkup(React.createElement(Welcome, { ...base, D: { ...base.D, myMembership: { onboarding_required: true, onboarding_completed_at: 'now' } } }));
+  const model = load('lib/studio/model.js');
+  const mocks = { '@/lib/studio/model': model, '@/lib/studio/css': load('lib/studio/css.js'), 'next/image': { __esModule: true, default: () => null } };
+  const Welcome = load('components/studio/MemberWelcome.jsx', mocks).default;
+  const render = (props) => renderToStaticMarkup(React.createElement(Welcome, props));
+  const base = { sb: {}, ctx: { role: 'editor', user_id: 'editor', workspace_name: 'Studio', profile: { full_name: 'Ana Reyes' }, perms: [['edits','edit'],['assets','create']], accounts: [] }, D: { rows: [], myMembership: { onboarding_required: true }, brands: [] }, children: React.createElement('p', null, 'Dashboard') };
+  const markup = render(base);
+  assert.match(markup, /Welcome, Ana/); assert.match(markup, /Your first edit will show up/); assert.match(markup, /Upload your cuts/); assert.match(markup, /Open my edit queue/);
+  const editorWork = render({ ...base, D: { ...base.D, rows: [{ editorId: 'editor', editStatus: 'Needs Revision', iso: {} }, { editorId: 'editor', editStatus: 'Approved', iso: {} }, { editorId: 'other', editStatus: 'Editing', iso: {} }] } });
+  assert.match(editorWork, /You have 1 edit in progress/);
+  const designer = render({ ...base, ctx: { ...base.ctx, role: 'designer', perms: [] } });
+  assert.match(designer, /Status is view only/); assert.match(designer, /does not include uploads/); assert.match(designer, /Pitch ideas/);
+  const acct = { id: 'a', name: 'Acme', allow_approve: true, allow_comment: true, allow_drafts: false };
+  const sponsorD = { ...base.D, account: acct, rows: [{ status: 'Sponsor Review', approval: 'Pending', g: 'post' }, { status: 'Live', approval: 'Approved', g: 'pub' }] };
+  const sponsor = render({ ...base, ctx: { ...base.ctx, role: 'sponsor', perms: [], accounts: [acct] }, D: sponsorD });
+  assert.match(sponsor, />Sponsor</); assert.match(sponsor, /Acme projects with Studio/); assert.match(sponsor, /Review 1 pending approval</); assert.match(sponsor, /Approve or request changes/); assert.doesNotMatch(sponsor, /Switch accounts/);
+  const client = render({ ...base, ctx: { ...base.ctx, role: 'client', perms: [], accounts: [{ ...acct, allow_approve: false, allow_comment: false }, { id: 'b', name: 'Beta' }] }, D: { ...sponsorD, account: { ...acct, allow_approve: false, allow_comment: false } } });
+  assert.match(client, />Client</); assert.match(client, /handles sign off/); assert.match(client, /View my projects/); assert.match(client, /access to 2 accounts/);
+  const admin = render({ ...base, ctx: { ...base.ctx, role: 'super_admin' } });
+  assert.equal(admin, '<p>Dashboard</p>');
+  const existing = render({ ...base, D: { ...base.D, myMembership: { onboarding_required: false } } });
+  assert.equal(existing, '<p>Dashboard</p>');
+  const reopened = render({ ...base, D: { ...base.D, myMembership: { onboarding_required: false } }, manual: true });
+  assert.match(reopened, /How it works/); assert.match(reopened, />Close</);
+  const completed = render({ ...base, D: { ...base.D, myMembership: { onboarding_required: true, onboarding_completed_at: 'now' } } });
   assert.equal(completed, '<p>Dashboard</p>');
+  assert.equal(model.UI_ROLE.client, 'sponsor');
 });
 
 test('Resend webhook rejects bad signatures and records only authenticated supported events', async () => {
@@ -93,4 +109,42 @@ test('active-member access endpoint rejects non-admin and deactivated recipients
   const req = () => new Request('https://studio.example/api/invites/access', { method: 'POST', body: JSON.stringify({ userId: 'member' }) });
   assert.equal((await POST(req())).status, 403);
   role = 'super_admin'; assert.equal((await POST(req())).status, 400); assert.equal(sent, 0);
+});
+
+test('welcome lists concrete projects to open first, revisions and approvals ahead of the rest', () => {
+  const model = load('lib/studio/model.js');
+  const mocks = { '@/lib/studio/model': model, '@/lib/studio/css': load('lib/studio/css.js'), 'next/image': { __esModule: true, default: () => null } };
+  const Welcome = load('components/studio/MemberWelcome.jsx', mocks).default;
+  const render = (props) => renderToStaticMarkup(React.createElement(Welcome, props));
+  const ctx = { role: 'editor', user_id: 'editor', workspace_name: 'Studio', profile: { full_name: 'Ana Reyes' }, perms: [], accounts: [] };
+  const rows = [
+    { id: '1', job: 'J1', title: 'Later cut', editorId: 'editor', editStatus: 'Editing', iso: { editDue: '2999-01-02' }, editDue: 'Jan 2' },
+    { id: '2', job: 'J2', title: 'Fix me', editorId: 'editor', editStatus: 'Needs Revision', iso: {} },
+    { id: '3', job: 'J3', title: 'Not mine', editorId: 'other', editStatus: 'Editing', iso: {} },
+  ];
+  const editor = render({ sb: {}, ctx, D: { rows, myMembership: { onboarding_required: true }, brands: [] }, children: null });
+  assert.match(editor, /Start here/); assert.ok(editor.indexOf('Fix me') < editor.indexOf('Later cut')); assert.doesNotMatch(editor, /Not mine/); assert.match(editor, /Due Jan 2/);
+  const acct = { id: 'a', name: 'Acme', allow_approve: true };
+  const sponsorRows = [{ id: '4', job: 'J4', title: 'Live one', status: 'Live', g: 'pub', iso: { pub: '2020-01-01' } }, { id: '5', job: 'J5', title: 'Sign off', status: 'Sponsor Review', approval: 'Pending', g: 'post', iso: {} }];
+  const sponsor = render({ sb: {}, ctx: { ...ctx, role: 'sponsor', accounts: [acct] }, D: { rows: sponsorRows, account: acct, myMembership: { onboarding_required: true }, brands: [] }, children: null });
+  assert.match(sponsor, /Waiting on you/); assert.match(sponsor, /Needs your review/); assert.ok(sponsor.indexOf('Sign off') < sponsor.indexOf('Live one'));
+});
+
+test('invite link peek describes the invite without the email and reports used or expired links', async () => {
+  const inv = { id: 'i', email: 'ana@example.test', full_name: 'Ana Reyes', role: 'editor', accepted_at: null, expires_at: new Date(Date.now() + 3 * 86400000).toISOString(), invited_by: 'admin', workspaces: { name: 'Studio' }, accounts: null };
+  const admin = { from: (table) => ({ select: () => ({ eq: () => ({ maybeSingle: async () => ({ data: table === 'invitations' ? inv : { full_name: 'Sam Admin' } }) }) }) }) };
+  const { POST } = load('app/api/invites/accept/route.ts', {
+    'next/server': { NextResponse: { json: (body, init) => Response.json(body, init) } },
+    '@/lib/supabase/admin': { supabaseAdmin: () => admin },
+  });
+  const call = async (body) => { const r = await POST(new Request('https://studio.example/api/invites/accept', { method: 'POST', body: JSON.stringify(body) })); return { status: r.status, data: await r.json() }; };
+  const peek = await call({ token: 't' });
+  assert.equal(peek.status, 200); assert.equal(peek.data.state, 'open'); assert.equal(peek.data.inviter, 'Sam Admin'); assert.equal(peek.data.emailHint, 'a•••@example.test'); assert.equal(JSON.stringify(peek.data).includes('ana@'), false);
+  assert.equal((await call({ token: 't', email: 'wrong@example.test' })).status, 403);
+  assert.equal((await call({ token: 't', email: 'Ana@Example.test' })).data.name, 'Ana Reyes');
+  inv.expires_at = new Date(Date.now() - 1000).toISOString();
+  assert.equal((await call({ token: 't' })).data.state, 'expired'); assert.equal((await call({ token: 't', email: 'ana@example.test' })).status, 410);
+  inv.accepted_at = 'now';
+  assert.equal((await call({ token: 't' })).data.state, 'accepted');
+  assert.equal((await call({})).status, 404);
 });

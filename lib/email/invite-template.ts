@@ -12,6 +12,9 @@ const ROLE = {
 
 export type InviteRole = keyof typeof ROLE;
 
+// New accounts get a three-line preview of the sign up so the button feels less like a leap.
+const stepsFor = (role: InviteRole) => ['Set a password (takes under a minute)', ['editor', 'designer', 'sponsor', 'client'].includes(role) ? 'See a short guide to your part of the board' : 'Take a look around the board', 'Open your projects'];
+
 const esc = (s: string) => s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c] as string));
 
 export function buildInviteEmail(opts: {
@@ -19,6 +22,7 @@ export function buildInviteEmail(opts: {
 }) {
   const r = ROLE[opts.role] || ROLE.editor;
   const first = (opts.name || '').trim().split(' ')[0] || 'there';
+  const STEPS = stepsFor(opts.role);
   const scope = opts.account ? r.blurb + ' for ' + opts.account : r.blurb;
   const cta = opts.existingUser ? 'Open the board' : 'Set your password';
   const subject = opts.existingUser
@@ -53,6 +57,12 @@ export function buildInviteEmail(opts: {
     ${opts.account ? `<td style="padding-left:8px;font-size:13px;color:#4A4A4A;">${esc(opts.account)}</td>` : ''}
   </tr></table>
 </td></tr>
+${opts.existingUser ? '' : `<tr><td style="padding:24px 32px 0;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#FAFAFA;border-radius:16px;">
+    <tr><td style="padding:14px 16px 4px;font-size:12px;font-weight:600;letter-spacing:0.02em;text-transform:uppercase;color:#707070;">What happens next</td></tr>
+    ${STEPS.map((st, i) => `<tr><td style="padding:6px 16px ${i === STEPS.length - 1 ? '14px' : '6px'};font-size:14px;line-height:1.5;color:#2A2A2A;"><span style="display:inline-block;width:20px;color:#8A8A8A;">${i + 1}.</span>${st}</td></tr>`).join('')}
+  </table>
+</td></tr>`}
 <tr><td style="padding:28px 32px 0;">
   <table role="presentation" cellpadding="0" cellspacing="0"><tr><td style="background:#111111;border-radius:14px;">
     <a href="${esc(opts.link)}" style="display:inline-block;padding:14px 22px;font-size:14px;font-weight:600;color:#FFFFFF;text-decoration:none;">${cta}</a>
@@ -66,6 +76,7 @@ export function buildInviteEmail(opts: {
 
   const text = [
     'Hi ' + first + ',', '', lead, '', 'Your access: ' + r.label + (opts.account ? ' (' + opts.account + ')' : ''), '',
+    ...(opts.existingUser ? [] : ['What happens next:', ...STEPS.map((st, i) => (i + 1) + '. ' + st), '']),
     cta + ': ' + opts.link, '', fine,
   ].join('\n');
 
