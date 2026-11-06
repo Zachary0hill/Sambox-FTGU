@@ -1,6 +1,6 @@
-# Dev Notes workflow fixes — local verification
+# Dev Notes workflow fixes — deployed and verified
 
-Implemented on `codex/dev-notes-workflow-gaps`, based on `cc86d92f9694f5a4e5622505d332f7228cdd07fa`. This work has not been applied to production or deployed. No production ideas, accounts, roles, or Dev Notes completion statuses were changed.
+Implemented on `codex/dev-notes-workflow-gaps`, based on `cc86d92f9694f5a4e5622505d332f7228cdd07fa`. The four migrations and application were deployed on 2026-11-05. See [deployment and live verification](DEPLOYMENT.md). Existing production ideas, accounts, member roles, and Dev Notes completion statuses were left unchanged; disposable verification records were removed.
 
 ## Delivered
 
@@ -24,14 +24,14 @@ Implemented on `codex/dev-notes-workflow-gaps`, based on `cc86d92f9694f5a4e56225
 
 ## Rollout and remaining user input
 
-Apply these four migrations in order before deploying the application. The enum migration must commit before the policies that use the enum values:
+These four migrations were applied in order before deploying the application. The enum migration committed before the policies that use its enum value:
 
 1. `20261106000100_manager_role.sql`
 2. `20261106000200_manager_permissions.sql`
 3. `20261106000300_idea_production_package.sql`
 4. `20261106000400_grok_integration.sql`
 
-Then smoke-test an actual Manager session, one approved idea with a cover, and client account editing. No existing member is automatically made a Manager. No approved backlog is automatically promoted.
+Live smoke tests passed using authenticated disposable Manager and Editor sessions, idea approval with a cover, and client account editing. No existing member was made a Manager. No approved backlog was automatically promoted.
 
 - Grok still needs an xAI API key and accessible model selected in Integrations; no paid/live Grok request was made. API reference: https://docs.x.ai/developers/rest-api-reference/inference/models
 - The Municipal idea (`56abca60-4f33-477a-9eaa-64dc8fc549de`) was left unchanged pending confirmation of its intended brand.

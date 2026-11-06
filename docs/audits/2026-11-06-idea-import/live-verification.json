@@ -1,0 +1,29 @@
+{
+  "started": "2026-11-06T10:08:57.208Z",
+  "workspace": "975cf21a-77d2-4b28-b75d-d67eb5be5f07",
+  "checks": [
+    "Production login and Ideas & Research expose Import ideas for Manager",
+    "Live Markdown file preview splits two ideas, matches Podhut, requires unknown-client resolution and fits mobile",
+    "Live import persists two drafts with separate clients, full scripts, URLs, title options and thumbnail direction",
+    "Imported cards remain on the production idea board after reload",
+    "Repeated live import skips both duplicates and preserves a manual title edit",
+    "Pasted Markdown supports preview title editing and imports only selected ideas",
+    "Live UI sends imported draft for review and approves it into a project with its client and complete production package",
+    "Production database rejects Editor imports and revoked Manager creation permission",
+    "No browser JavaScript errors or HTTP 5xx responses during verification"
+  ],
+  "browserErrors": [],
+  "httpErrors": [],
+  "cleanup": [
+    "Temporary workspace, ideas, project and test users removed; zero test workspace/ideas/projects remain."
+  ],
+  "excluded": [
+    "Global notification and automation queue drains suppressed in this browser; import database writes and approval HTTP requests use real production services."
+  ],
+  "importedIds": [
+    "57ada2ed-3c82-8f1b-8314-283cbacc9add",
+    "cc3c2a5b-9bf6-8e8b-baa2-014d667a451b"
+  ],
+  "projectId": "0eec97fb-e9ab-45a5-bafa-71095ab6fc6f",
+  "finished": "2026-11-06T10:09:11.292Z"
+}

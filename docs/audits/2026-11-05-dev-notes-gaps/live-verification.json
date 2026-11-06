@@ -1,0 +1,23 @@
+{
+  "workspace": "457b8216-bcb2-4dd1-b5a2-10cad00e049e",
+  "checks": [
+    "Manager authenticates with production role configuration",
+    "Manager creates and renames account, channel and brand together without enabling portal",
+    "Manager cannot enable portal access",
+    "Anonymous and Editor approval requests are denied",
+    "Concurrent live approvals create exactly one project with corrected brand, full brief and snapshot",
+    "Missing cover reports a retryable warning while retaining the created project",
+    "Live asset retry copies identical cover bytes once without duplicating project or file",
+    "Manager edits projects but cannot alter settings, promote self, invite users or read integration credentials",
+    "Manager cannot read ideas in the real workspace from the isolated test workspace",
+    "Revoked Manager edit and approval permissions take effect immediately",
+    "Grok integration is seeded without credentials or accidental activation"
+  ],
+  "cleanup": [
+    "Temporary workspace, users and storage objects removed"
+  ],
+  "started": "2026-11-05T23:26:25.485Z",
+  "project": "2baee663-e48c-4794-897a-d12054fad69d",
+  "idea": "c7bbbd74-c0c5-4f56-9db3-edb8f70e237c",
+  "finished": "2026-11-05T23:26:35.052Z"
+}
