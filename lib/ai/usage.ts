@@ -5,7 +5,7 @@ import { supabaseAdmin } from '@/lib/supabase/admin';
 // Logs one AI model call to public.ai_usage for the AI usage page. Never throws and never blocks a reply: a missing
 // table (migration 20261106000600 not run yet) or a failed insert is only warned about.
 
-export type UsageFeature = 'assistant' | 'research' | 'cover' | 'other';
+export type UsageFeature = 'assistant' | 'research' | 'cover' | 'script' | 'other';
 
 export type UsageEntry = {
   workspaceId: string;

@@ -199,23 +199,6 @@ export function DetailsRail({ V, CellPop }) {
   );
 }
 
-// ---------- Pipeline ----------
-function Pipeline({ steps }) {
-  return (
-    <ol aria-label="Production pipeline" className="fb-dlg-pipe" style={css('margin: 0; padding: 14px 14px 12px; list-style: none; display: grid; grid-template-columns: repeat(' + (steps || []).length + ', minmax(0, 1fr)); ' + CARD + ' padding: 14px 14px 12px;')}>
-      {(steps || []).map((st) => (
-        <li key={st.label} aria-current={st.current} style={css('position: relative; display: flex; flex-direction: column; gap: 4px; min-width: 0; padding-right: 12px')}>
-          {!st.last ? <span aria-hidden="true" style={css(st.line)}></span> : null}
-          <span aria-hidden="true" style={css(st.marker)}></span>
-          <span style={css('margin-top: 6px; font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis')}>{st.label}</span>
-          <span style={css(st.valueStyle)}>{st.value}</span>
-          {st.meta ? <span style={css('font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis')}>{st.meta}</span> : null}
-        </li>
-      ))}
-    </ol>
-  );
-}
-
 // ---------- Comments (on Overview) ----------
 function Comments({ V }) {
   const dr = V.dr;
@@ -293,7 +276,7 @@ function Comments({ V }) {
           ))}
         </ol>
         {dr.noComments ? <p style={css('margin: 0; font-size: 13px; color: var(--muted)')}>No comments yet. Start the thread below.</p> : null}
-        {/* app: comment box. Shows who is posting, takes images and documents, Cmd+Enter posts */}
+        {/* app: comment box. Shows who is posting, takes images and documents, Enter posts (Shift+Enter for a new line) */}
         <div ref={boxRef} style={css('position: relative; display: flex; flex-direction: column; gap: 6px')}>
           {dr.mention.open ? (
             <ul id="dr-mentions" role="listbox" aria-label="People to mention" style={css('position: absolute; z-index: 6; left: 0; bottom: calc(100% + 4px); width: min(320px, 100%); max-height: 240px; overflow-y: auto; margin: 0; padding: 6px; box-sizing: border-box; list-style: none; background: var(--surface); border: 1px solid var(--line-4); border-radius: 12px; box-shadow: 0 16px 48px rgba(0,0,0,0.16)')}>
@@ -312,9 +295,10 @@ function Comments({ V }) {
             <span>Commenting as <span style={css('font-weight: 700; color: var(--ink-2)')}>{dr.asName}</span></span>
             <span style={css('margin-left: auto')}>{dr.commentNote}</span>
           </div>
-          <div className="fb-composer" style={css('display: flex; flex-direction: column; border: 1px solid var(--border); border-radius: 12px; background: var(--surface-2); overflow: hidden')}>
+          {/* app: a click anywhere in the box (not on its buttons) lands the cursor in the textarea */}
+          <div className="fb-composer" onMouseDown={(e) => { if (e.target.closest('button, input, textarea, a, [role="listbox"]')) return; e.preventDefault(); const t = e.currentTarget.querySelector('#dr-comment'); if (t && !t.disabled) t.focus(); }} style={css('display: flex; flex-direction: column; border: 1px solid var(--border); border-radius: 12px; background: var(--surface-2); overflow: hidden; cursor: text')}>
             <label htmlFor="dr-comment" style={css(SR)}>Write a comment</label>
-            <textarea id="dr-comment" rows={2} disabled={!dr.canComment} placeholder={dr.placeholder} value={dr.draft ?? ''} onChange={dr.onDraft} onKeyDown={dr.onDraftKey} onSelect={dr.mention.onSelect} onBlur={dr.mention.onBlur} aria-autocomplete="list" aria-controls={dr.mention.open ? 'dr-mentions' : undefined} aria-activedescendant={dr.mention.activeId} style={css('width: 100%; min-height: 56px; max-height: 180px; box-sizing: border-box; padding: 10px 12px 6px; border: 0; background: transparent; resize: vertical; font-family: inherit; font-size: 13.5px; line-height: 1.5; color: var(--ink); outline: none')}></textarea>
+            <textarea id="dr-comment" rows={2} disabled={!dr.canComment} placeholder={dr.placeholder} value={dr.draft ?? ''} onChange={dr.onDraft} onKeyDown={dr.onDraftKey} onSelect={dr.mention.onSelect} onBlur={dr.mention.onBlur} aria-autocomplete="list" aria-controls={dr.mention.open ? 'dr-mentions' : undefined} aria-activedescendant={dr.mention.activeId} style={css('width: 100%; min-height: 72px; max-height: 220px; box-sizing: border-box; padding: 12px 14px 8px; border: 0; background: transparent; resize: vertical; font-family: inherit; font-size: 14px; line-height: 1.5; color: var(--ink); outline: none')}></textarea>
             {dr.hasPending ? (
               <div style={css('display: flex; flex-wrap: wrap; gap: 6px; padding: 4px 10px 6px')}>
                 {(dr.pending || []).map((p) => (
@@ -355,20 +339,6 @@ function Overview({ V }) {
   const dr = V.dr;
   return (
     <>
-      {(dr.steps || []).length ? <Section icon={ICON.type} title="Pipeline"><Pipeline steps={dr.steps} /></Section> : null}
-      <Section icon="M22 7 13.5 15.5 8.5 10.5 2 17M16 7h6v6" title="Progress">
-        <div style={css(CARD)}>
-          <div style={css('display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 8px')}>
-            <span style={css('font-size: 12.5px; font-weight: 600; color: var(--ink-2)')}>Project progress</span>
-            <span style={css('font-size: 15px; font-weight: 800; font-variant-numeric: tabular-nums; color: var(--ink)')}>{dr.progress.text}</span>
-          </div>
-          <span role="progressbar" aria-label="Project progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow={dr.progress.pct} style={css('display: block; height: 6px; border-radius: 999px; overflow: hidden; background: var(--chip-2)')}><span style={css(dr.progress.bar)}></span></span>
-          <div style={css('display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 8px')}>
-            <span style={css('font-size: 11.5px; color: var(--muted)')}>{dr.progress.note}</span>
-            <button type="button" onClick={dr.progress.goTasks} style={css(LINK_ACT)}>Go to tasks</button>
-          </div>
-        </div>
-      </Section>
       {dr.brief.show ? (
         <Section icon="M21 6H3M15 12H3M17 18H3" title="Brief">
           {dr.brief.editing ? (
@@ -378,6 +348,30 @@ function Overview({ V }) {
           ) : (
             <p style={css('margin: 0; padding: 12px 14px; border: 1px solid var(--line-4); border-radius: 12px; font-size: 14px; line-height: 1.6; white-space: pre-wrap; overflow-wrap: anywhere; color: var(--ink-2)')}>{dr.brief.text}</p>
           )}
+        </Section>
+      ) : null}
+      {/* app: the script lives on the idea this project came from; the card previews it and opens the idea's Script tab */}
+      {dr.script && dr.script.show ? (
+        <Section icon="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9zM14 3v6h6M8 13h8M8 17h5" title="Script" action={<button type="button" onClick={dr.script.open} style={css(LINK_ACT)}>{dr.script.openLabel}</button>}>
+          <button type="button" className="fb-ni" onClick={dr.script.open} aria-label={dr.script.openLabel + ' on the Ideas page'} title="Opens the Script tab of the idea" style={css(CARD + ' width: 100%; display: flex; flex-direction: column; gap: 10px; text-align: left; font-family: inherit; letter-spacing: normal; color: var(--ink); cursor: pointer;')}>
+            <span style={css('display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 6px 12px')}>
+              <span style={css('font-size: 13.5px; font-weight: 700; color: var(--ink)')}>{dr.script.summary}</span>
+              <span style={css('font-size: 12px; color: var(--muted); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap')}>{dr.script.from}</span>
+            </span>
+            {dr.script.empty ? (
+              <span style={css('font-size: 13px; line-height: 1.5; color: var(--muted)')}>Nothing written yet. Open the idea to write it beat by beat or draft it with AI.</span>
+            ) : (
+              <span style={css('display: flex; flex-direction: column')}>
+                {(dr.script.beats || []).map((b, i) => (
+                  <span key={i} style={css('display: grid; grid-template-columns: 52px minmax(0, 1fr); gap: 10px; padding: 7px 0; border-top: 1px solid var(--line)')}>
+                    <span style={css('font-size: 12px; font-weight: 600; color: var(--muted); font-variant-numeric: tabular-nums')}>{b.time}</span>
+                    <span style={css('min-width: 0; font-size: 13px; line-height: 1.45; color: var(--ink-2); overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical')}><span style={css('font-weight: 700; color: var(--ink)')}>{b.label}</span>{b.text ? ' · ' + b.text : ''}</span>
+                  </span>
+                ))}
+                {dr.script.more ? <span style={css('padding-top: 7px; border-top: 1px solid var(--line); font-size: 12px; font-weight: 600; color: var(--muted)')}>{dr.script.more}</span> : null}
+              </span>
+            )}
+          </button>
         </Section>
       ) : null}
       {dr.deliverables.show ? (
@@ -393,8 +387,13 @@ function Overview({ V }) {
       ) : null}
       {/* app: the project's Social post, sent to Buffer by a Publish to Buffer workflow */}
       {dr.publish && dr.publish.show ? (
-        <Section icon="M22 2 11 13M22 2l-7 20-4-9-9-4z" title="Social post">
-          <div style={css(CARD + ' display: flex; flex-direction: column; gap: 12px;')}>
+        <Section icon="M22 2 11 13M22 2l-7 20-4-9-9-4z" title="Social post" action={
+          <button type="button" className="fb-ni" aria-expanded={dr.publish.open ? 'true' : 'false'} aria-controls="drawer-social" onClick={dr.publish.toggle} style={css(LINK_ACT + ' display: inline-flex; align-items: center; gap: 6px; text-decoration: none;')}>
+            <span>{dr.publish.summary}</span>
+            <I d={dr.publish.open ? 'M18 15l-6-6-6 6' : 'M6 9l6 6 6-6'} size={13} />
+          </button>
+        }>
+          {dr.publish.open ? <div id="drawer-social" style={css(CARD + ' display: flex; flex-direction: column; gap: 12px;')}>
             <p style={css('margin: 0; font-size: 12.5px; line-height: 1.45; color: var(--muted)')}>{dr.publish.whenText}</p>
             <label style={css('display: flex; flex-direction: column; gap: 6px')}>
               <span style={css('font-size: var(--text-caption); font-weight: 600; color: var(--muted-2)')}>Caption</span>
@@ -435,7 +434,7 @@ function Overview({ V }) {
                 ))}
               </ul>
             ) : null}
-          </div>
+          </div> : null}
         </Section>
       ) : null}
       {dr.filesPeek.show ? (
@@ -719,7 +718,7 @@ export default function ProjectModal({ V, CellPop }) {
           ) : (
             <h2 id="drawer-title" className="fb-dlg-ttl" style={css('margin: 0; font-family: var(--font-title); font-size: 24px; font-weight: var(--weight-black); line-height: 1.2; letter-spacing: -0.02em; color: var(--ink)')}>{dr.title}</h2>
           )}
-          {/* State row: where it is, how far along, when it is due, who is on it */}
+          {/* State row: status, type, progress, due, who is on it. Job #, type and dates are not repeated in the Details rail. */}
           <div style={css('display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; margin-top: 2px')}>
             {dr.headStatus.show ? (
               <span style={css('position: relative; display: inline-flex')}>
@@ -735,10 +734,11 @@ export default function ProjectModal({ V, CellPop }) {
               </span>
             ) : null}
             {dr.typeBlock ? <span style={css(dr.typeBlock.style + ' border-radius: 999px; height: 26px; gap: 5px;')}><TextLogo text={dr.typeBlock.text} size={13} />{dr.typeBlock.text}</span> : null}
-            <span style={css('display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px; font-weight: 600; color: var(--ink-2)')} title={dr.progress.note}>
+            {/* app: progress lives here only; click it to open Tasks */}
+            <button type="button" className="fb-ni" onClick={dr.progress.goTasks} aria-label={'Project progress ' + dr.progress.text + '. ' + dr.progress.note + '. Open tasks'} title={dr.progress.note} style={css('display: inline-flex; align-items: center; gap: 6px; padding: 0; border: 0; background: transparent; font-family: inherit; font-size: 11.5px; font-weight: 600; color: var(--ink-2); cursor: pointer')}>
               <span role="progressbar" aria-label="Project progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow={dr.progress.pct} style={css('display: block; width: 64px; height: 4px; border-radius: 999px; overflow: hidden; background: var(--chip-2)')}><span style={css(dr.progress.bar)}></span></span>
               <span style={css('font-variant-numeric: tabular-nums')}>{dr.progress.text}</span>
-            </span>
+            </button>
             {dr.due.show ? <span style={css(dr.due.style)}>{dr.due.text}</span> : null}
             {dr.metaLine ? <span style={css('font-size: 11.5px; color: var(--muted)')}>{dr.metaLine}</span> : null}
             <span style={css('margin-left: auto; display: inline-flex; align-items: center; gap: 10px')}>

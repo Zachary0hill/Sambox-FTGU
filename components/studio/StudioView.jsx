@@ -3729,14 +3729,99 @@ export default function StudioView({ V }) {
                                 </div>
                               ) : null}
                               {V.ids.sel.isScript ? (
-                                <div role="tabpanel" id="idp-script" aria-labelledby="idt-script" style={css("display: flex; flex-direction: column")}>
-                                  {V.ids.sel.noBeats ? <p style={css("margin: 0; padding: 12px 0; font-size: 14px; color: var(--muted)")}>No script yet. Add one in Edit: one paragraph per beat, like “0:20 The problem: what it costs”.</p> : null}
-                                  {(V.ids.sel.beats || []).map((bt, bt__i) => (
-                                    <div key={bt__i} style={css("display: grid; grid-template-columns: 72px minmax(0, 1fr); gap: 16px; padding: 14px 0; border-bottom: 1px solid var(--line)")}>
-                                      <span style={css("font-size: 13px; font-weight: 600; color: var(--muted); font-variant-numeric: tabular-nums")}>{bt.time || '–'}</span>
-                                      <div style={css("display: flex; flex-direction: column; gap: 4px; min-width: 0")}><span style={css("font-size: 14px; font-weight: 700")}>{bt.label}</span><span style={css("font-size: 14px; line-height: 1.55; color: var(--ink-3); white-space: pre-line; overflow-wrap: anywhere")}>{bt.text}</span></div>
-                                    </div>
-                                  ))}
+                                <div role="tabpanel" id="idp-script" aria-labelledby="idt-script" style={css("display: flex; flex-direction: column; gap: 14px")}>
+                                  {/* app: Script tab. Read the saved beats, edit them in place (time, name, lines), or draft them with the workspace's text model. Values in lib/studio/vals-ideas.js (detail.script). */}
+                                  {!V.ids.sel.script.editing ? (
+                                    <>
+                                      <div style={css("display: flex; flex-wrap: wrap; align-items: center; gap: 8px")}>
+                                        <div style={css("flex: 1 1 240px; min-width: 0; display: flex; flex-direction: column; gap: 2px")}>
+                                          <span style={css("font-size: 14px; font-weight: 700; color: var(--ink)")}>{V.ids.sel.script.empty ? 'No script yet' : V.ids.sel.script.summary}</span>
+                                          {V.ids.sel.script.source ? <span style={css("font-size: 12.5px; color: var(--muted)")}>{V.ids.sel.script.source}</span> : null}
+                                        </div>
+                                        {V.ids.sel.script.canAi ? <button type="button" className="fb-ni" onClick={V.ids.sel.script.ai} style={css(V.ids.sel.script.btn)}><IdeaIcon name="spark" />{V.ids.sel.script.aiLabel}</button> : null}
+                                        {V.ids.sel.script.canEdit ? <button type="button" className="fb-ni" onClick={V.ids.sel.script.edit} style={css(V.ids.sel.script.btnP)}><IdeaIcon name="edit" />{V.ids.sel.script.editLabel}</button> : null}
+                                      </div>
+                                      {V.ids.sel.script.empty ? (
+                                        <div style={css("display: flex; flex-direction: column; align-items: flex-start; gap: 8px; padding: 20px; border: 1px dashed var(--border-2); border-radius: 16px")}>
+                                          <p style={css("margin: 0; font-size: 14px; line-height: 1.5; color: var(--ink-2)")}>Write the script beat by beat: a start time, a name like “Cold open” or “The problem”, and the lines said on camera with b-roll notes in [brackets].</p>
+                                          {V.ids.sel.script.canAi ? <p style={css("margin: 0; font-size: 13px; color: var(--muted)")}>Or let the model draft one from the title, hook, angle, description and references. You review it before anything is saved.</p> : null}
+                                          {V.ids.sel.script.aiOff ? <p style={css("margin: 0; font-size: 13px; color: var(--muted)")}>Connect a text model in Workspace Settings › Integrations to draft scripts with AI.</p> : null}
+                                        </div>
+                                      ) : null}
+                                      <div style={css("display: flex; flex-direction: column")}>
+                                        {(V.ids.sel.beats || []).map((bt, bt__i) => (
+                                          <div key={bt__i} style={css("display: grid; grid-template-columns: 72px minmax(0, 1fr); gap: 16px; padding: 14px 0; border-bottom: 1px solid var(--line)")}>
+                                            <span style={css("font-size: 13px; font-weight: 600; color: var(--muted); font-variant-numeric: tabular-nums")}>{bt.time || '–'}</span>
+                                            <div style={css("display: flex; flex-direction: column; gap: 4px; min-width: 0")}><span style={css("font-size: 14px; font-weight: 700")}>{bt.label}</span><span style={css("font-size: 14px; line-height: 1.55; color: var(--ink-3); white-space: pre-line; overflow-wrap: anywhere")}>{bt.text}</span></div>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <div style={css("position: sticky; top: -20px; z-index: 2; margin: -20px -24px 0; padding: 12px 24px; background: var(--surface); border-bottom: 1px solid var(--line); display: flex; flex-wrap: wrap; align-items: center; gap: 8px")}>
+                                        <div style={css("flex: 1 1 200px; min-width: 0; display: flex; flex-direction: column; gap: 2px")}>
+                                          <span style={css("font-size: 14px; font-weight: 700; color: var(--ink)")}>{V.ids.sel.script.draftSummary}</span>
+                                          {V.ids.sel.script.draftSource ? <span style={css("font-size: 12.5px; color: var(--muted)")}>{V.ids.sel.script.draftSource}</span> : null}
+                                        </div>
+                                        {V.ids.sel.script.canAi && !V.ids.sel.script.aiOpen ? <button type="button" className="fb-ni" onClick={V.ids.sel.script.openAi} style={css(V.ids.sel.script.btn)}><IdeaIcon name="spark" />Draft with AI</button> : null}
+                                        <button type="button" className="fb-ni" onClick={V.ids.sel.script.discard} disabled={V.ids.sel.script.busy} style={css(V.ids.sel.script.btn)}>{V.ids.sel.script.discardLabel}</button>
+                                        <button type="button" onClick={V.ids.sel.script.save} disabled={!V.ids.sel.script.canSave} style={css(V.ids.sel.script.saveStyle)}>{V.ids.sel.script.saveLabel}</button>
+                                      </div>
+                                      {V.ids.sel.script.hasErr ? <p role="alert" style={css("margin: 0; padding: 10px 14px; border-radius: 12px; background: var(--red-soft); color: var(--red-ink); font-size: 13px; font-weight: 600")}>{V.ids.sel.script.err}</p> : null}
+                                      {V.ids.sel.script.aiOpen ? (
+                                        <div style={css("display: flex; flex-direction: column; gap: 12px; padding: 16px; border-radius: 16px; background: var(--surface-2); border: 1px solid var(--border)")}>
+                                          <div style={css("display: flex; align-items: flex-start; gap: 10px")}>
+                                            <div style={css("flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px")}>
+                                              <span style={css("font-size: 15px; font-weight: 700")}>{V.ids.sel.script.aiTitle}</span>
+                                              <span style={css("font-size: 13px; line-height: 1.45; color: var(--muted)")}>{V.ids.sel.script.aiHint}</span>
+                                            </div>
+                                            <button type="button" className="fb-ni" aria-label="Close AI panel" onClick={V.ids.sel.script.closeAi} style={css(V.ids.sel.script.iconBtn)}><svg aria-hidden="true" width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><path d="M4 4l8 8M12 4l-8 8"></path></svg></button>
+                                          </div>
+                                          <div style={css("display: flex; flex-direction: column; gap: 6px")}>
+                                            <label htmlFor="is-notes" style={css(V.fieldLabel)}>Direction for the writer <span style={css("font-weight: 400; color: var(--muted)")}>(optional)</span></label>
+                                            <textarea id="is-notes" rows="3" placeholder="Open on the gym footage, keep it under two minutes, land on the cost per order…" value={V.ids.sel.script.notes} onChange={V.ids.sel.script.onNotes} style={css(V.ids.textarea)} />
+                                          </div>
+                                          <div style={css("display: flex; flex-direction: column; gap: 6px")}>
+                                            <span style={css(V.fieldLabel)}>Length</span>
+                                            <div role="group" aria-label="Script length" style={css("display: flex; flex-wrap: wrap; gap: 8px")}>
+                                              {(V.ids.sel.script.lengths || []).map((l) => (
+                                                <button key={l.label} type="button" className="fb-ni" aria-pressed={l.pressed} onClick={l.pick} style={css(l.style)}><span style={css("font-size: 13px; font-weight: 700")}>{l.label}</span><span style={css("font-size: 12px; color: var(--muted)")}>{l.hint}</span></button>
+                                              ))}
+                                            </div>
+                                            <span style={css("font-size: 12px; color: var(--muted)")}>{V.ids.sel.script.lengthHint}</span>
+                                          </div>
+                                          <div style={css("display: flex; justify-content: flex-end")}>
+                                            <button type="button" onClick={V.ids.sel.script.generate} disabled={V.ids.sel.script.busy} style={css(V.ids.sel.script.generateStyle)}><IdeaIcon name="spark" />{V.ids.sel.script.generateLabel}</button>
+                                          </div>
+                                        </div>
+                                      ) : null}
+                                      <ol aria-label="Script beats" style={css("margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 10px")}>
+                                        {(V.ids.sel.script.beats || []).map((bt) => (
+                                          <li key={bt.key} style={css("display: grid; grid-template-columns: 28px minmax(0, 1fr); gap: 10px; padding: 12px 14px; border-radius: 14px; background: var(--surface-2); border: 1px solid var(--border)")}>
+                                            <span aria-hidden="true" style={css("width: 28px; height: 28px; display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; background: var(--inv); color: var(--inv-ink); font-size: 12px; font-weight: 700")}>{bt.num}</span>
+                                            <div style={css("display: flex; flex-direction: column; gap: 8px; min-width: 0")}>
+                                              <div style={css("display: flex; flex-wrap: wrap; align-items: center; gap: 8px")}>
+                                                <label htmlFor={'is-t-' + bt.key} style={css("position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)")}>{bt.timeLabel}</label>
+                                                <input id={'is-t-' + bt.key} type="text" inputMode="numeric" placeholder="0:00" autoComplete="off" value={bt.time} onChange={bt.onTime} style={css(V.ids.sel.script.timeField)} />
+                                                <label htmlFor={'is-l-' + bt.key} style={css("position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)")}>{bt.labelLabel}</label>
+                                                <input id={'is-l-' + bt.key} type="text" placeholder={bt.labelHint} autoComplete="off" value={bt.label} onChange={bt.onLabel} style={css(V.ids.sel.script.labelField)} />
+                                                <span style={css("display: inline-flex; gap: 4px; margin-left: auto")}>
+                                                  <button type="button" className="fb-ni" aria-label={'Move beat ' + bt.num + ' up'} title="Move up" disabled={!bt.canUp} onClick={bt.up} style={css(V.ids.sel.script.iconBtn + (bt.canUp ? '' : ' opacity: 0.35;'))}><svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 15l-6-6-6 6"></path></svg></button>
+                                                  <button type="button" className="fb-ni" aria-label={'Move beat ' + bt.num + ' down'} title="Move down" disabled={!bt.canDown} onClick={bt.down} style={css(V.ids.sel.script.iconBtn + (bt.canDown ? '' : ' opacity: 0.35;'))}><svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9l6 6 6-6"></path></svg></button>
+                                                  <button type="button" className="fb-ni" aria-label={'Add a beat after beat ' + bt.num} title="Add beat below" onClick={bt.addBelow} style={css(V.ids.sel.script.iconBtn)}><svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M12 5v14M5 12h14"></path></svg></button>
+                                                  <button type="button" className="fb-ni" aria-label={'Remove beat ' + bt.num} title="Remove beat" onClick={bt.remove} style={css(V.ids.sel.script.iconBtn + ' color: var(--red-ink);')}><IdeaIcon name="trash" /></button>
+                                                </span>
+                                              </div>
+                                              <label htmlFor={'is-x-' + bt.key} style={css("position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)")}>{bt.textLabel}</label>
+                                              <textarea id={'is-x-' + bt.key} rows="3" placeholder={bt.placeholder} value={bt.text} onChange={bt.onText} style={css(V.ids.sel.script.textField)} />
+                                            </div>
+                                          </li>
+                                        ))}
+                                      </ol>
+                                      <button type="button" className="fb-ni" onClick={V.ids.sel.script.addBeat} style={css("align-self: flex-start; display: inline-flex; align-items: center; gap: 6px; min-height: 40px; padding: 0 14px; border: 1px dashed var(--border-strong); border-radius: 12px; background: transparent; color: var(--ink-2); font-size: 13px; font-weight: 600; cursor: pointer")}><svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M12 5v14M5 12h14"></path></svg>Add beat</button>
+                                    </>
+                                  )}
                                 </div>
                               ) : null}
                               {V.ids.sel.isRefs ? (
@@ -3943,7 +4028,7 @@ export default function StudioView({ V }) {
                               <div style={css("display: flex; flex-direction: column; gap: 6px")}>
                                 <label htmlFor="ie-body" style={css(V.fieldLabel)}>Content</label>
                                 <textarea id="ie-body" rows="7" aria-describedby="ie-body-h" value={V.ids.edit.body} onChange={V.ids.edit.onBody} style={css(V.ids.textarea + " font-size: 15px; line-height: 1.55;")} />
-                                <span id="ie-body-h" style={css("font-size: 12px; color: var(--muted)")}>Blank lines split paragraphs. For the Script tab, start a paragraph with a time and a label, like “0:20 The problem: …”.</span>
+                                <span id="ie-body-h" style={css("font-size: 12px; color: var(--muted)")}>Blank lines split paragraphs. The script itself lives on the Script tab, where it can be written by hand or drafted with AI.</span>
                               </div>
                               <div style={css("display: flex; flex-direction: column; gap: 8px")}>
                                 <span id="ie-tags-l" style={css(V.fieldLabel)}>Tags</span>
@@ -5929,7 +6014,8 @@ const IDEA_ICON = {
   copy: 'M8 8h12v12H8zM16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3',
   archive: 'M3 4h18v5H3zM5 9v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V9M10 13h4',
   restore: 'M3 12a9 9 0 1 0 3-6.7L3 8M3 3v5h5',
-  trash: 'M4 7h16M10 7V4h4v3M6 7l1 13h10l1-13'
+  trash: 'M4 7h16M10 7V4h4v3M6 7l1 13h10l1-13',
+  spark: 'M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8zM19 16l.8 2.2L22 19l-2.2.8L19 22l-.8-2.2L16 19l2.2-.8z'
 };
 function IdeaIcon({ name }) {
   if (!IDEA_ICON[name]) return null;

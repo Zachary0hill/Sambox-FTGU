@@ -200,7 +200,6 @@ textarea:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px }
   .fb-dlg-hd { padding-left: 16px !important }
   .fb-dlg-ttl { font-size: 22px !important }
   .fb-dlg-x { display: none !important }
-  .fb-dlg-pipe { grid-template-columns: none !important; grid-auto-flow: column; grid-auto-columns: 136px; overflow-x: auto }
   .fb-dlg-2up { grid-template-columns: minmax(0, 1fr) !important }
   .fb-dlg-cover { height: 110px !important }
   .fb-dlg-body { display: flex !important; flex-direction: column !important; overflow-y: auto }
