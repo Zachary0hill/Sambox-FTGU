@@ -4,6 +4,7 @@
 /* eslint-disable react-hooks/refs, react-hooks/preserve-manual-memoization */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import StudioView from './StudioView';
+import { startActivityTracking } from '@/lib/activity-tracking';
 import UploadStatus from './UploadStatus';
 import DevNotes from './DevNotes';
 import MemberWelcome, { welcomeKind } from './MemberWelcome';
@@ -108,7 +109,11 @@ export default function Studio({ initialPath, initialProject }) {
 
   const switchAccount = useCallback((id) => { writeAcct(id); set({ openJob: '' }); reload(); }, [reload, set]);
 
-  useEffect(() => { reload(); sb.rpc('touch_presence'); }, [reload, sb]);
+  useEffect(() => { reload(); }, [reload]);
+  useEffect(() => {
+    if (!ctx?.user_id || !ctx?.workspace_id || mfa || error) return;
+    return startActivityTracking(() => sb.rpc('record_dashboard_activity', { p_workspace_id: ctx.workspace_id }));
+  }, [sb, ctx?.user_id, ctx?.workspace_id, mfa, error]);
   useEffect(() => {
     const reconnect = () => reload();
     window.addEventListener('online', reconnect);
