@@ -22,12 +22,13 @@ Production reconciliation copied 12 unambiguous, active editor mappings into can
 
 ## Validation
 
-- `node --test tests/*.test.cjs`: 127 passing, zero failures.
+- `node --test tests/*.test.cjs`: 129 passing, zero failures.
 - Full ESLint and production Next build pass (only Babel large-source formatting notice).
 - Disposable PostgreSQL 17.11 acceptance uses every application migration, with Auth/Storage/Vault/cron test scaffolding and no real scheduler/network execution. `tests/completion-db.sql` validates rollback, original preservation, comment idempotency/notifications, MFA AAL1/AAL2, manager permissions, content drafts, source gate, digest claim/retry, paused jobs, budget caps and stale/deduplicated research commits.
 - Two actual concurrent budget transactions: exactly one 0.60 reservation admitted under a 1.00 daily cap; the other rejected.
 - Built-app QA in a separate workspace/account: fresh password sign-in, comment draft retained after close and reload, one successful comment and activity, keyboard focus containment/restoration and status dropdown search/escape.
 - Long job identifier Close right-edge measurements: 306/320, 361/375, 376/390, 754/768 pixels. Viewport restored after testing.
+- Live disposable-account MFA test: enrolled AAL1 project reads returned no rows, RPC returned 403, protected API returned 403; AAL2 API returned 200. Disposable factor removed afterward.
 - Production policy catalog: zero unguarded exposed definer RPCs; zero protected tables missing the restrictive MFA policy.
 
 To reproduce database tests, create a **new disposable database** and run:
