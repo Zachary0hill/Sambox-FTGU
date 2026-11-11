@@ -48,6 +48,10 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .fb-day:hover { background: var(--hover) }
 .fb-yt:hover .fb-yt-thumb { transform: translateY(-2px); box-shadow: 0 12px 28px rgba(0,0,0,0.16) }
 .fb-yt-thumb { transition: transform .18s ease, box-shadow .18s ease }
+.fb-yt-acts { position: absolute; top: 12px; right: 12px; display: flex; gap: 4px; opacity: 0; transition: opacity .12s ease }
+.fb-yt-acts button { min-height: 30px; padding: 0 10px; border: 0; border-radius: 8px; background: rgba(17,17,17,0.82); color: #FFFFFF; font: inherit; font-size: 12px; font-weight: 600; cursor: pointer }
+.fb-ycard:hover .fb-yt-acts, .fb-ycard:focus-within .fb-yt-acts { opacity: 1 }
+@media (hover: none) { .fb-yt-acts { display: none } }
 @media (prefers-reduced-motion: reduce) { .fb-yt-thumb { transition: none } }
 @keyframes fbIn { from { opacity: 0; transform: translateY(8px) } to { opacity: 1; transform: none } }
 .fb-float { animation: fbIn .4s ease both }

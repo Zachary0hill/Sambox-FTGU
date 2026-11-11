@@ -26,6 +26,9 @@ import SyncPicker from './SyncPicker';
 import Performance from './Performance';
 import Workload from './Workload';
 import AiUsage from './AiUsage';
+import IdeaRules from './IdeaRules';
+import IdeaConvert from './IdeaConvert';
+import IdeaResearch, { ScoreSliders } from './IdeaResearch';
 import BrandEditor from './BrandEditor';
 import Dropdown from './Dropdown';
 import SocialIcon, { TextLogo } from './SocialIcon';
@@ -2351,6 +2354,7 @@ export default function StudioView({ V }) {
                       </>
                     ) : null}
                     {" "}
+                    {V.pg.isIdeas && V.ids.rulesProps ? <IdeaRules {...V.ids.rulesProps} triggerStyle={css(V.ui.btnGhost)} /> : null}
                     {V.pg.hasGhost ? (
                       <>
                         <button type="button" onClick={V.pg.ghostPick} style={css(V.ui.btnGhost + (V.pg.ghostLogo ? ' display: inline-flex; align-items: center; gap: 8px;' : ''))}>{V.pg.ghostLogo ? <SocialIcon id={V.pg.ghostLogo} size={16} /> : null}{V.pg.ghost}</button>
@@ -3384,7 +3388,15 @@ export default function StudioView({ V }) {
                 {" "}
                 {V.pg.isIdeas ? (
                   <>
-                    {V.ids.canCreate && <div style={{ display: 'flex', justifyContent: 'flex-end' }}><IdeaImport {...V.ids.importProps} /></div>}
+                    {V.ids.convert ? <IdeaConvert {...V.ids.convert} /> : null}
+                    <div role="group" aria-label="Pipeline" style={css("display: flex; flex-wrap: wrap; align-items: center; gap: 8px")}>
+                      {(V.ids.stats || []).map((c) => c.pick
+                        ? <button key={c.label} type="button" onClick={c.pick} style={css("display: inline-flex; align-items: baseline; gap: 6px; min-height: 36px; padding: 0 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); color: var(--ink); font: inherit; font-size: 13px; cursor: pointer")}><strong>{c.value}</strong><span style={css("color: var(--muted)")}>{c.label}</span></button>
+                        : <span key={c.label} style={css("display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 0 12px; border: 1px solid var(--line); border-radius: 10px; font-size: 13px")}><strong>{c.value}</strong><span style={css("color: var(--muted)")}>{c.label}</span></span>)}
+                      {V.ids.canOpenRules
+                        ? <button type="button" onClick={() => document.getElementById('idea-rules-open').click()} style={css("min-height: 36px; padding: 0 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); color: var(--muted); font: inherit; font-size: 13px; cursor: pointer")}>{V.ids.autoResearch}</button>
+                        : <span style={css("display: inline-flex; align-items: center; min-height: 36px; padding: 0 12px; border: 1px solid var(--line); border-radius: 10px; color: var(--muted); font-size: 13px")}>{V.ids.autoResearch}</span>}
+                    </div>
                     {/* app: research run strip (Super Admin), live through the research_runs realtime subscription */}
                     {V.ids.rs.hasPanel ? (
                       <section aria-label={V.ids.rs.strip.title} aria-live="polite" style={css("display: flex; flex-direction: column; gap: 12px; padding: 14px 16px; border: 1px solid var(--border); border-radius: 16px; background: var(--surface-2)")}>
@@ -3439,6 +3451,9 @@ export default function StudioView({ V }) {
                     {/* app: smart views, filters, sort and layout (docs/design/ideas-research/Main) */}
                     <div style={css("display: flex; flex-direction: column; gap: 14px")}>
                       <div style={css("display: flex; flex-wrap: wrap; align-items: center; gap: 8px")}>
+                      <div role="group" aria-label="Stages" style={css("display: flex; flex-wrap: wrap; align-items: center; gap: 8px")}>
+                        {(V.ids.tabs || []).map((v) => <button key={v.label} type="button" aria-pressed={v.pressed} onClick={v.pick} style={css(v.style)}>{v.label}<span style={css("color: var(--muted); font-variant-numeric: tabular-nums")}>{v.count}</span></button>)}
+                      </div>
                       <div role="group" aria-label="Smart views" className="fb-views" style={css("flex: 0 1 auto; min-width: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 8px")}>
                         {(V.ids.views || []).map((v, v__i) => (
                           <button key={v__i} type="button" aria-pressed={v.pressed} onClick={v.pick} style={css(v.style)}>
@@ -3483,6 +3498,11 @@ export default function StudioView({ V }) {
                         <DD d={V.dd.ideaType} id="idea-type" className="fb-ifilter" />
                         <DD d={V.dd.ideaFormat} id="idea-format" className="fb-ifilter" />
                         <DD d={V.dd.ideaPillar} id="idea-pillar" className="fb-ifilter" />
+                        <DD d={V.dd.ideaPlatform} id="idea-platform" className="fb-ifilter" />
+                        <DD d={V.dd.ideaOwner} id="idea-owner" className="fb-ifilter" />
+                        <DD d={V.dd.ideaScore} id="idea-score" className="fb-ifilter" />
+                        <DD d={V.dd.ideaRec} id="idea-rec" className="fb-ifilter" />
+                        <DD d={V.dd.ideaShow} id="idea-show" className="fb-ifilter" />
                         <span className="fb-ispacer" style={css("flex: 1 1 0; min-width: 0")}></span>
                         <DD d={V.dd.ideaSort} id="idea-sort" className="fb-ifilter" />
                         <div role="group" aria-label="Layout" style={css("display: inline-flex; padding: 3px; gap: 2px; border-radius: 14px; background: var(--chip)")}>
@@ -3511,7 +3531,8 @@ export default function StudioView({ V }) {
                     {V.ids.isGallery ? (
                       <div style={css("display: grid; grid-template-columns: repeat(auto-fill, minmax(min(300px, 100%), 1fr)); gap: 32px 24px")}>
                         {(V.ids.cards || []).map((ic2, ic2__i) => (
-                          <button key={ic2__i} type="button" className="fb-yt" onClick={ic2.open} aria-label={ic2.aria} style={css("display: flex; flex-direction: column; gap: 14px; min-width: 0; padding: 0; border: 0; background: transparent; text-align: left; color: inherit; cursor: pointer; letter-spacing: normal; line-height: 1.3; font-weight: 400")}>
+                          <div key={ic2__i} className="fb-ycard" style={css("position: relative; min-width: 0")}>
+                          <button type="button" className="fb-yt" onClick={ic2.open} aria-label={ic2.aria} style={css("display: flex; flex-direction: column; gap: 14px; min-width: 0; padding: 0; border: 0; background: transparent; text-align: left; color: inherit; cursor: pointer; letter-spacing: normal; line-height: 1.3; font-weight: 400")}>
                             <span className="fb-yt-thumb" style={css(ic2.thumbStyle)}>
                               <span style={css("position: absolute; top: 12px; left: 12px; right: 12px; display: flex; align-items: center; gap: 6px")}>
                                 <span style={css(ic2.priStyle)}>{ic2.pri}</span>
@@ -3530,9 +3551,11 @@ export default function StudioView({ V }) {
                                   {ic2.format ? <span>{ic2.format}</span> : null}
                                 </span>
                               </span>
-                              <span style={css(ic2.scoreStyle)} title="ICE score"><span style={css("position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)")}>ICE score </span>{ic2.score}</span>
+                              {ic2.rec ? <span style={css(ic2.recStyle)}>{ic2.rec}</span> : <span style={css(ic2.scoreStyle)} title="Score"><span style={css("position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)")}>Score </span>{ic2.score}</span>}
                             </span>
                           </button>
+                          <span className="fb-yt-acts">{ic2.acts.map((a) => <button key={a.label} type="button" onClick={a.pick}>{a.label}</button>)}</span>
+                          </div>
                         ))}
                       </div>
                     ) : null}
@@ -3594,8 +3617,8 @@ export default function StudioView({ V }) {
                         <table style={css("width: 100%; min-width: 860px; border-collapse: collapse; font-size: 14px; color: var(--ink)")}>
                           <thead>
                             <tr style={css("background: var(--surface-2); text-align: left")}>
-                              {['Idea', 'Brand', 'Type', 'Status', 'Format', 'ICE', 'Owner', 'Updated'].map((h) => (
-                                <th key={h} scope="col" style={css("padding: 12px 16px; font-size: 12px; font-weight: 600; color: var(--muted); border-bottom: 1px solid var(--line); white-space: nowrap")}>{h}</th>
+                              {(V.ids.listHeads || []).map((h) => (
+                                <th key={h.label} scope="col" aria-sort={h.on ? 'other' : undefined} style={css("padding: 12px 16px; font-size: 12px; font-weight: 600; color: var(--muted); border-bottom: 1px solid var(--line); white-space: nowrap")}><button type="button" onClick={h.sort} style={css("padding: 0; border: 0; background: none; color: " + (h.on ? "var(--ink)" : "inherit") + "; font: inherit; cursor: pointer")}>{h.label}</button></th>
                               ))}
                             </tr>
                           </thead>
@@ -3604,15 +3627,16 @@ export default function StudioView({ V }) {
                               <tr key={r__i} className="fb-row">
                                 <td style={css("padding: 10px 16px; border-bottom: 1px solid var(--line)")}>
                                   <button type="button" onClick={r.open} aria-label={r.aria} style={css("display: flex; align-items: center; gap: 12px; padding: 0; border: 0; background: transparent; text-align: left; letter-spacing: normal; color: var(--ink); cursor: pointer")}>
-                                    <span aria-hidden="true" style={css(r.miniThumb)}></span><span style={css("font-weight: 600; line-height: 1.35")}>{r.title}</span>
+                                    <span aria-hidden="true" style={css(r.miniThumb)}></span><span style={css("display: grid; gap: 2px")}><span style={css("font-weight: 600; line-height: 1.35")}>{r.title}</span>{r.hookLine ? <span style={css("font-size: 12px; color: var(--muted)")}>{r.hookLine}</span> : null}</span>
                                   </button>
                                 </td>
                                 <td style={css("padding: 10px 16px; border-bottom: 1px solid var(--line); color: var(--ink-3); white-space: nowrap")}>{r.brand}</td>
                                 <td style={css("padding: 10px 16px; border-bottom: 1px solid var(--line)")}><span style={css(r.typeStyle)}>{r.type}</span></td>
                                 <td style={css("padding: 10px 16px; border-bottom: 1px solid var(--line); white-space: nowrap")}><span style={css("display: inline-flex; align-items: center; gap: 6px")}><span aria-hidden="true" style={css(r.dot)}></span>{r.status}</span></td>
-                                <td style={css("padding: 10px 16px; border-bottom: 1px solid var(--line); color: var(--ink-3); white-space: nowrap")}>{r.format || '–'}</td>
-                                <td style={css("padding: 10px 16px; border-bottom: 1px solid var(--line)")}><span style={css(r.smallScoreStyle)}>{r.score}</span></td>
+                                                                <td style={css("padding: 10px 16px; border-bottom: 1px solid var(--line)")}><span style={css(r.smallScoreStyle)}>{r.score}</span></td>
+                                <td style={css("padding: 10px 16px; border-bottom: 1px solid var(--line); white-space: nowrap")}>{r.rec ? <span style={css(r.recStyle)}>{r.rec}</span> : '–'}</td>
                                 <td style={css("padding: 10px 16px; border-bottom: 1px solid var(--line); color: var(--ink-3); white-space: nowrap")}>{r.owner}</td>
+                                <td style={css("padding: 10px 16px; border-bottom: 1px solid var(--line); color: var(--ink-3)")}>{r.sources}</td>
                                 <td style={css("padding: 10px 16px; border-bottom: 1px solid var(--line); color: var(--muted); white-space: nowrap")}>{r.updated}</td>
                               </tr>
                             ))}
@@ -3679,9 +3703,10 @@ export default function StudioView({ V }) {
                             <div className="fb-idea-pad" style={css("flex: none; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; padding: 8px 24px; background: var(--surface-2); border-bottom: 1px solid var(--line)")}>
                               <ol aria-label="Status" style={css("flex: 999 1 420px; min-width: 0; margin: 0; padding: 0; list-style: none; display: flex; flex-wrap: wrap; align-items: center; gap: 4px")}>
                                 {(V.ids.sel.steps || []).map((st, st__i) => (
-                                  <li key={st__i} aria-current={st.current} style={css(st.style)}><span aria-hidden="true" style={css(st.dotStyle)}>{st.num}</span><span style={css(st.labelStyle)}>{st.label}</span></li>
+                                  <li key={st__i} aria-current={st.current} style={css(st.style)}>{st.pick ? <button type="button" onClick={st.pick} aria-label={'Move to ' + st.label} style={css("display: flex; align-items: center; gap: 8px; width: 100%; min-width: 0; min-height: 36px; padding: 0; border: 0; background: none; color: inherit; font: inherit; cursor: pointer")}><span aria-hidden="true" style={css(st.dotStyle)}>{st.num}</span><span style={css(st.labelStyle)}>{st.label}</span></button> : <><span aria-hidden="true" style={css(st.dotStyle)}>{st.num}</span><span style={css(st.labelStyle)}>{st.label}</span></>}</li>
                                 ))}
                               </ol>
+                              {V.ids.sel.gateError ? <p role="alert" style={css("flex: 1 1 100%; margin: 0; font-size: 13px; font-weight: 600; color: var(--red-ink)")}>{V.ids.sel.gateError}</p> : null}
                               {V.ids.sel.hasCta || V.ids.sel.hasBack ? (
                                 <div style={css("flex: 1 1 auto; display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px")}>
                                   {V.ids.sel.hasBack ? <button type="button" className="fb-ni" onClick={V.ids.sel.back} style={css("min-height: 38px; padding: 0 14px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); font-size: 13px; font-weight: 600; color: var(--ink); cursor: pointer")}>{V.ids.sel.backLabel}</button> : null}
@@ -3863,6 +3888,7 @@ export default function StudioView({ V }) {
                                   })}
                                 </div>
                               ) : null}
+                              {V.ids.sel.isResearch ? <IdeaResearch {...V.ids.sel.research} /> : null}
                               {V.ids.sel.isHistory ? (
                                 <ol role="tabpanel" id="idp-history" aria-labelledby="idt-history" style={css("margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column")}>
                                   {(V.ids.sel.history || []).map((h, h__i) => (
@@ -3894,8 +3920,11 @@ export default function StudioView({ V }) {
                             </div>
                             <aside aria-label="Properties" className="fb-idea-rail fb-idea-pad" style={css("position: relative; min-width: 0; min-height: 0; overflow-x: hidden; overflow-y: auto; box-sizing: border-box; padding: 16px 20px 24px; display: flex; flex-direction: column; gap: 16px; background: var(--surface-2)")}>
                               <div style={css("display: flex; flex-direction: column; gap: 8px; padding: 14px; border-radius: 14px; background: var(--surface); border: 1px solid var(--border)")}>
-                                <div style={css("display: flex; align-items: center; justify-content: space-between")}><span style={css("font-size: 13px; font-weight: 600; color: var(--muted)")}>ICE score</span><span style={css(V.ids.sel.scoreTagStyle)}>{V.ids.sel.scoreTag}</span></div>
+                                <div style={css("display: flex; align-items: center; justify-content: space-between")}><span style={css("font-size: 13px; font-weight: 600; color: var(--muted)")}>{V.ids.sel.scoreHeading}</span><span style={css(V.ids.sel.scoreTagStyle)}>{V.ids.sel.scoreTag}</span></div>
                                 <span style={css("font-family: var(--font-title); font-weight: 900; font-size: 32px; line-height: 1; font-variant-numeric: tabular-nums")}>{V.ids.sel.score}</span>
+                                {V.ids.sel.scoreRows ? <ScoreSliders rows={V.ids.sel.scoreRows} canEdit={V.ids.sel.canScore} onCommit={V.ids.sel.onScore} /> : null}
+                                {V.ids.sel.scoreOverridden ? <span style={css("font-size: 12px; color: var(--muted)")}>Overridden by hand</span> : null}
+                                {V.ids.sel.clearScore ? <button type="button" onClick={V.ids.sel.clearScore} style={css("align-self: flex-start; padding: 0; border: 0; background: none; color: var(--muted); font: inherit; font-size: 13px; text-decoration: underline; cursor: pointer")}>Clear score</button> : null}
                                 {(V.ids.sel.iceBars || []).map((k) => (
                                   <div key={k.label} style={css("display: grid; grid-template-columns: 84px minmax(0, 1fr) 20px; align-items: center; gap: 10px; font-size: 13px")}>
                                     <span style={css("color: var(--ink-3)")}>{k.label}</span>
@@ -3912,10 +3941,10 @@ export default function StudioView({ V }) {
                                 <dt style={css("color: var(--muted)")}>Target window</dt><dd style={css("margin: 0; font-weight: 500; color: " + (V.ids.sel.windowSet ? "var(--ink)" : "var(--muted)"))}>{V.ids.sel.window}</dd>
                                 <dt style={css("color: var(--muted)")}>Sponsor</dt><dd style={css("margin: 0; font-weight: 500; color: " + (V.ids.sel.sponsorSet ? "var(--ink)" : "var(--muted)"))}>{V.ids.sel.sponsor}</dd>
                                 <dt style={css("color: var(--muted)")}>Source</dt><dd style={css("margin: 0; font-weight: 500")}>{V.ids.sel.source}</dd>
-                                <dt style={css("color: var(--muted)")}>Project</dt><dd style={css("margin: 0; font-weight: 500; overflow-wrap: anywhere; color: " + (V.ids.sel.projectSet ? "var(--ink)" : "var(--muted)"))}>{V.ids.sel.project}</dd>
+                                <dt style={css("color: var(--muted)")}>Converted to</dt><dd style={css("margin: 0; display: grid; gap: 4px; font-weight: 500; overflow-wrap: anywhere")}>{V.ids.sel.noConversions ? <span style={css("color: var(--muted)")}>Not promoted yet</span> : null}{V.ids.sel.conversions.map((c, c__i) => c.open ? <button key={c__i} type="button" onClick={c.open} style={css("padding: 0; border: 0; background: none; color: var(--ink); font: inherit; text-align: left; text-decoration: underline; cursor: pointer")}>{c.text}</button> : <span key={c__i}>{c.text}</span>)}{V.ids.sel.addConversion ? <button type="button" onClick={V.ids.sel.addConversion} style={css("justify-self: start; padding: 0; border: 0; background: none; color: var(--muted); font: inherit; text-decoration: underline; cursor: pointer")}>Add conversion</button> : null}</dd>
                               </dl>
                               <div style={css("display: flex; flex-direction: column; gap: 10px; padding-top: 16px; border-top: 1px solid var(--line)")}>
-                                <div style={css("display: flex; justify-content: space-between; align-items: baseline")}><span style={css("font-size: 14px; font-weight: 600")}>Ready to produce</span><span style={css("font-size: 13px; font-weight: 600; color: var(--ink-3); font-variant-numeric: tabular-nums")}>{V.ids.sel.readyLabel}</span></div>
+                                <div style={css("display: flex; justify-content: space-between; align-items: baseline")}><span style={css("font-size: 14px; font-weight: 600")}>Needed for Ready</span><span style={css("font-size: 13px; font-weight: 600; color: var(--ink-3); font-variant-numeric: tabular-nums")}>{V.ids.sel.readyLabel}</span></div>
                                 <CheckList items={V.ids.sel.ready} />
                               </div>
                             </aside>
@@ -4105,9 +4134,10 @@ export default function StudioView({ V }) {
                         <dialog open aria-modal="true" aria-labelledby="ni-h" onKeyDown={V.ids.ni.onKey} style={css("position: fixed; z-index: 41; top: 50%; left: 50%; transform: translate(-50%, -50%); margin: 0; width: 1120px; max-width: calc(100vw - 32px); max-height: calc(100vh - 48px); overflow-y: auto; box-sizing: border-box; padding: 0; background: var(--surface); border: 1px solid var(--line-4); border-radius: 28px; box-shadow: 0 24px 80px rgba(0,0,0,0.28); color: var(--ink); font-family: var(--font-main)")}>
                           <header style={css("display: flex; flex-wrap: wrap; align-items: flex-start; gap: 16px; padding: 28px clamp(16px, 3vw, 28px) 20px; border-bottom: 1px solid var(--line)")}>
                             <div style={css("flex: 1 1 300px; display: flex; flex-direction: column; gap: 6px; min-width: 0")}>
-                              <h2 id="ni-h" style={css("margin: 0; font-family: var(--font-title); font-weight: 900; font-size: 24px; letter-spacing: -0.02em")}>New idea</h2>
-                              <p style={css("margin: 0; font-size: 14px; color: var(--muted)")}>Ideas start as Draft and belong to one brand. Capture fast, add the brief when you have it.</p>
+                              <h2 id="ni-h" style={css("margin: 0; font-family: var(--font-title); font-weight: 900; font-size: 24px; letter-spacing: -0.02em")}>Capture idea</h2>
+                              <p style={css("margin: 0; font-size: 14px; color: var(--muted)")}>Ideas start in Inbox and belong to one brand. Capture fast, add the brief when you have it.</p>
                             </div>
+                            {V.ids.canCreate ? <IdeaImport {...V.ids.importProps} /> : null}
                             <div role="group" aria-label="Form depth" style={css("display: inline-flex; padding: 3px; gap: 2px; border-radius: 14px; background: var(--chip)")}>
                               {(V.ids.ni.modes || []).map((m) => <button key={m.label} type="button" aria-pressed={m.pressed} onClick={m.pick} style={css(m.style)}>{m.label}</button>)}
                             </div>
@@ -4159,7 +4189,8 @@ export default function StudioView({ V }) {
                                 <div style={css("grid-column: 1 / -1; display: flex; flex-direction: column; gap: 6px")}>
                                   <IdeaPlanning {...V.ids.ni.planning} />
                                   <label htmlFor="ni-title" style={css(V.fieldLabel)}>Title</label>
-                                  <input id="ni-title" type="text" autoComplete="off" autoFocus placeholder="What is the idea?" value={V.ids.ni.title} onChange={V.ids.ni.onTitle} style={css(V.fieldInput + " font-size: 15px;")} />
+                                  <input id="ni-title" type="text" autoComplete="off" autoFocus placeholder="What is the idea? Or paste a link." value={V.ids.ni.title} onChange={V.ids.ni.onTitle} onPaste={V.ids.ni.onTitlePaste} style={css(V.fieldInput + " font-size: 15px;")} />
+                                  {V.ids.ni.hasLink ? <p style={css("margin: 6px 0 0; font-size: 13px; color: var(--muted)")}>First reference: {V.ids.ni.linkLabel} <button type="button" onClick={V.ids.ni.clearLink} style={css("padding: 0; border: 0; background: none; color: var(--ink); font: inherit; text-decoration: underline; cursor: pointer")}>Remove</button></p> : null}
                                 </div>
                                 <div style={css("display: flex; flex-direction: column; gap: 6px")}>
                                   <div style={css("display: flex; justify-content: space-between; align-items: baseline")}><label htmlFor="ni-hook" style={css(V.fieldLabel)}>Banner hook</label><span style={css("font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums")}>{V.ids.ni.hookCount}</span></div>

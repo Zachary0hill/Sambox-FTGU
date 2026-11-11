@@ -42,9 +42,9 @@ export default function IdeaImport({ brands, onImport, onComplete }) {
     const version = ++readVersion.current;
     setError(''); setReading(true);
     try {
-      if (!/\.(md|markdown|txt|json)$/i.test(file.name)) throw new Error(/\.(docx?|pdf|pages|rtf|odt|gdoc)$/i.test(file.name)
+      if (!/\.(md|markdown|txt|json|csv)$/i.test(file.name)) throw new Error(/\.(docx?|pdf|pages|rtf|odt|gdoc)$/i.test(file.name)
         ? 'Word, Google Docs and PDF files cannot be uploaded directly. Export as Markdown or plain text (.md or .txt), or copy the text and paste it below.'
-        : 'Choose a Markdown (.md), text (.txt), or JSON file.');
+        : 'Choose a Markdown (.md), text (.txt), JSON or CSV file.');
       if (file.size > IMPORT_LIMIT * 4) throw new Error('Choose a file smaller than 1 MB, or split the shoot list into smaller files.');
       const content = decodeImportFile(await file.arrayBuffer());
       if (content.length > IMPORT_LIMIT) throw new Error('Choose a document of up to 250,000 characters.');
@@ -82,17 +82,17 @@ export default function IdeaImport({ brands, onImport, onComplete }) {
     <dialog ref={dialog} aria-labelledby="idea-import-title" onCancel={event => { event.preventDefault(); close(); }} style={{ width: 'min(880px, calc(100vw - 32px))', maxHeight: '90dvh', boxSizing: 'border-box', padding: 24, border: '1px solid var(--border)', borderRadius: 20, background: 'var(--surface)', color: 'var(--ink)' }}>
       <div style={stack}>
         <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', gap: 16 }}>
-          <div><h2 id="idea-import-title" style={{ margin: 0 }}>Import ideas</h2><p>Upload or paste a shoot list. Review each idea and its client before adding drafts to the board.</p></div>
+          <div><h2 id="idea-import-title" style={{ margin: 0 }}>Import ideas</h2><p>Upload a shoot list or CSV, or paste a list with one idea per line. Review each idea and its client before adding them to Inbox.</p></div>
           <button type="button" aria-label="Close idea import" style={button} disabled={busy} onClick={close}>Close</button>
         </header>
         {error && <p role="alert" style={{ color: 'var(--red-ink)' }}>{error}</p>}
         {result ? <div role="status" style={stack}>
           <h3>{result.created} {result.created === 1 ? 'idea' : 'ideas'} imported</h3>
-          <p>{result.skipped ? `${result.skipped} identical ideas were skipped. ` : ''}New ideas are saved as drafts. Open an idea and use “Approve & create project” when it is ready for production.</p>
+          <p>{result.skipped ? `${result.skipped} identical ideas were skipped. ` : ''}New ideas are saved to Inbox. Move an idea to Ready, then use Approve when it is ready for production.</p>
           <button type="button" style={button} onClick={close}>Done</button>
         </div> : <>
           {!rows ? <>
-            <label style={stack}>Upload document<input type="file" accept=".md,.markdown,.txt,.json,text/markdown,text/plain,application/json" onChange={read} disabled={reading} /></label>
+            <label style={stack}>Upload document<input type="file" accept=".md,.markdown,.txt,.json,.csv,text/markdown,text/plain,application/json,text/csv" onChange={read} disabled={reading} /></label>
             {filename && <p>{filename}</p>}
             <label style={stack}>Or paste your document<textarea value={text} onChange={event => { setText(event.target.value); setFilename(''); setError(''); }} rows={10} maxLength={IMPORT_LIMIT} disabled={reading} style={field} /></label>
             <p>Use a “## Idea title” heading (or an “Idea 1: Title” line) for each idea and “Client: POD HUT” to match a brand. Descriptions, scripts and reference links are preserved. “Hook:” becomes the cover text (up to 24 characters); longer hooks stay in the content. Up to 100 ideas per import.</p>

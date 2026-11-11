@@ -12,7 +12,7 @@ import type { ProviderModule } from './types';
 const API = 'https://api.apify.com/v2';
 const DONE = ['SUCCEEDED', 'FAILED', 'TIMED-OUT', 'ABORTED'];
 
-export type ApifyRun = { id: string; status: string; defaultDatasetId: string; statusMessage?: string };
+export type ApifyRun = { id: string; status: string; defaultDatasetId: string; statusMessage?: string; usageTotalUsd?: number };
 export type ApifyLimits = { timeoutSecs: number; maxItems: number; maxTotalChargeUsd: number; memoryMbytes?: number };
 
 async function call<T>(token: string, path: string, init: RequestInit = {}, signal?: AbortSignal): Promise<T> {
