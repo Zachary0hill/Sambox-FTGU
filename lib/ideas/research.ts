@@ -75,18 +75,22 @@ export async function cancelIdeaResearch(m: Member, ideaId: string): Promise<{ e
 // Writes the run's end state only if it is still the run on the idea, so a stale worker can never overwrite a newer one.
 async function finishRun(ideaId: string, run: IdeaRun, patch: Partial<IdeaRun>, extra: Record<string, unknown> = {}) {
   const next = { ...run, ...patch, finished_at: new Date().toISOString() };
-  return supabaseAdmin().from('ideas').update({ run: next, ...extra }).eq('id', ideaId).filter('run->>id', 'eq', run.id!).filter('run->>state', 'in', '(queued,running)').select('id').maybeSingle();
+  const result = await supabaseAdmin().from('ideas').update({ run: next, ...extra }).eq('id', ideaId).filter('run->>id', 'eq', run.id!).filter('run->>state', 'in', '(queued,running)').select('id').maybeSingle();
+  if (result.error) throw new Error('Research result could not be saved.');
+  return result;
 }
 
 // The whole run for one idea. Safe to call twice: only the caller that claims the queued run does any work.
 export async function processIdeaResearch(ideaId: string, runId: string): Promise<void> {
   const admin = supabaseAdmin();
-  const { data: row } = await admin.from('ideas').select('run').eq('id', ideaId).maybeSingle();
+  const { data: row, error: readError } = await admin.from('ideas').select('run').eq('id', ideaId).maybeSingle();
+  if (readError) throw new Error('Research queue could not load.');
   const queued = row && parseRun(row.run);
   if (!queued || queued.id !== runId || queued.state !== 'queued') return;
   const running: IdeaRun = { ...queued, state: 'running', started_at: new Date().toISOString() };
-  const { data: idea } = await admin.from('ideas').update({ run: running }).eq('id', ideaId).filter('run->>id', 'eq', runId).filter('run->>state', 'eq', 'queued')
+  const { data: idea, error: claimError } = await admin.from('ideas').update({ run: running }).eq('id', ideaId).filter('run->>id', 'eq', runId).filter('run->>state', 'eq', 'queued')
     .select('id, workspace_id, brand_id, title, idea_type, body, refs, stage').maybeSingle();
+  if (claimError) throw new Error('Research run could not be claimed.');
   if (!idea) return;
 
   const ws: string = idea.workspace_id;
@@ -145,7 +149,8 @@ export async function processIdeaResearch(ideaId: string, runId: string): Promis
 export async function researchTick(): Promise<{ processed: number; expired: number }> {
   const admin = supabaseAdmin();
   const now = Date.now();
-  const { data: live } = await admin.from('ideas').select('id, run').filter('run->>state', 'in', '(queued,running)').limit(50);
+  const { data: live, error: liveError } = await admin.from('ideas').select('id, run').filter('run->>state', 'in', '(queued,running)').limit(50);
+  if (liveError) throw new Error('Research queue could not load.');
   let expired = 0;
   const retry: { id: string; runId: string }[] = [];
   for (const row of live || []) {
@@ -159,13 +164,15 @@ export async function researchTick(): Promise<{ processed: number; expired: numb
     }
   }
 
-  const { data: auto } = await admin.from('ideas_rules').select('workspace_id, rules').filter('rules->>auto_research', 'eq', 'true');
+  const { data: auto, error: autoError } = await admin.from('ideas_rules').select('workspace_id, rules').filter('rules->>auto_research', 'eq', 'true');
+  if (autoError) throw new Error('Research rules could not load.');
   for (const row of auto || []) {
     if (retry.length >= TICK_LIMIT) break;
     const rules = normalizeIdeasRules(row.rules);
     if (!rules.auto_research_since) continue;
-    const { data: fresh } = await admin.from('ideas').select('id').eq('workspace_id', row.workspace_id).is('run', null).is('archived_at', null).eq('stage', 'inbox')
+    const { data: fresh, error: freshError } = await admin.from('ideas').select('id').eq('workspace_id', row.workspace_id).is('run', null).is('archived_at', null).eq('stage', 'inbox')
       .gte('created_at', rules.auto_research_since).order('created_at').limit(TICK_LIMIT - retry.length);
+    if (freshError) throw new Error('Research candidates could not load.');
     for (const idea of fresh || []) {
       if (await refuseSpend(row.workspace_id, rules, SEARCH_USD, 0)) break;
       const run: IdeaRun = { id: randomUUID(), state: 'queued', queued_at: new Date().toISOString(), by: 'auto' };

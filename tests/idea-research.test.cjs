@@ -69,6 +69,8 @@ function harness(over = {}) {
     let patch = null;
     const f = [];
     const finish = () => {
+      if (over.dbError) return { data: null, error: { message: 'Database unavailable' } };
+      if (over.finishError && patch?.run?.finished_at) return { data: null, error: { message: 'Write unavailable' } };
       if (table !== 'ideas') return { data: null, error: null };
       if (!matches(f)) return { data: null, error: null };
       if (patch) Object.assign(idea, patch);
@@ -77,7 +79,7 @@ function harness(over = {}) {
     const b = {
       select: () => b, update: (p) => { patch = p; return b; }, insert: async () => ({ error: null }),
       eq: (c, v) => { f.push([c, 'eq', v]); return b; }, filter: (c, op, v) => { f.push([c, op, v]); return b; },
-      maybeSingle: async () => finish(), then: (ok) => ok(finish()),
+      limit: () => b, maybeSingle: async () => finish(), then: (ok) => ok(finish()),
     };
     return b;
   };
@@ -158,4 +160,16 @@ test('cancellation during search prevents the next model call',async()=>{
 test('paid model attempts reserve first and have bounded output without SDK retries',async()=>{
  const {calls,mod}=harness();await mod.processIdeaResearch('i','r1');
  assert.equal(calls.reservations.length,2);assert.equal(calls.options[0].maxRetries,0);assert.equal(calls.options[0].maxOutputTokens,1500);
+});
+
+test('database queue failure rejects the worker instead of reporting success',async()=>{
+ const {calls,mod}=harness({dbError:true});
+ await assert.rejects(mod.researchTick(),/queue could not load/);
+ await assert.rejects(mod.processIdeaResearch('i','r1'),/queue could not load/);
+ assert.equal(calls.search,0);
+});
+test('failed research finalization rejects and keeps the running claim for recovery',async()=>{
+ const {idea,mod}=harness({finishError:true});
+ await assert.rejects(mod.processIdeaResearch('i','r1'),/result could not be saved/);
+ assert.equal(idea.run.state,'running');
 });
