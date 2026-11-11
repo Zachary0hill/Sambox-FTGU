@@ -17,7 +17,7 @@ import { isGraph, graphOf, fillTokens, delayText, FIELDS, type Node, type Crit }
 //   failed   out of tries, or a failure retrying cannot fix (no editor assigned, not connected)
 //   skipped  the workflow was turned off or deleted, or Pause all automations is on
 //   test     a Test run: actions described, nothing sent or changed
-// Actions that already worked are not repeated on a retry (output.done), so a retry never double-posts.
+// Completed effects are journaled. Ambiguous external outcomes require review; definite DB failures may retry.
 //
 // Flows built in the flow builder (lib/automations/graph.ts) walk their graph instead: a split takes the first path
 // whose criteria match the project (remembered in output.paths, so a resumed run keeps its path), a delay parks the
@@ -48,6 +48,8 @@ const RETRY_MIN = 5;
 
 // A failure that trying again cannot fix.
 class Permanent extends Error {}
+class Uncertain extends Permanent {}
+class SafeRetry extends Error {}
 
 export type RunSummary = { scheduled: number; done: number; retried: number; waiting: number; failed: number; skipped: number; pruned: number };
 
@@ -84,7 +86,7 @@ export async function testAutomation(workspaceId: string, automationId: string, 
     automation_id: automationId, workspace_id: workspaceId, project_id: p.data ? p.data.id : null, trigger_key: t.key,
     status: 'running', is_test: true, attempts: 1, payload: { value: t.value, sample: true },
   }).select('*').single();
-  if (ins.error) throw new Error(ins.error.message);
+  if (ins.error) throw new SafeRetry(ins.error.message);
   await executeRun(ins.data as Run, baseUrl, draft);
   const done = await admin.from('automation_runs').select('*').eq('id', ins.data.id).single();
   return done.data;
@@ -94,7 +96,7 @@ async function executeRun(r: Run, baseUrl: string, draft?: ReturnType<typeof gra
   const admin = supabaseAdmin();
   const finish = async (status: string, patch: Record<string, unknown>) => {
     const res = await admin.from('automation_runs').update({ status, finished_at: status === 'retry' ? null : new Date().toISOString(), ...patch }).eq('id', r.id);
-    if (res.error) console.warn('automation_runs', res.error.message);
+    if (res.error) throw new Error('Could not save automation progress: ' + res.error.message);
   };
   const [aRes, sRes, wRes] = await Promise.all([
     admin.from('automations').select('*').eq('id', r.automation_id).maybeSingle(),
@@ -106,7 +108,11 @@ async function executeRun(r: Run, baseUrl: string, draft?: ReturnType<typeof gra
   const auto = st.automation || {};
   const workspace = (wRes.data && wRes.data.name) || 'SantosStudios';
   if (!a) { await finish('skipped', { error: 'The workflow was deleted.' }); return 'skipped'; }
-  if (!r.is_test && (auto.paused || !a.enabled || a.is_draft)) {
+  if (!r.is_test && auto.paused) {
+    await finish('retry', { next_attempt_at: new Date(Date.now() + 60000).toISOString(), attempts: Math.max(0, r.attempts - 1), error: null });
+    return 'waiting';
+  }
+  if (!r.is_test && (!a.enabled || a.is_draft)) {
     await finish('skipped', { error: auto.paused ? 'Pause all automations is on.' : 'The workflow is turned off.' });
     return 'skipped';
   }
@@ -143,11 +149,36 @@ async function executeRun(r: Run, baseUrl: string, draft?: ReturnType<typeof gra
   const step = async (id: string, action: string, fn: () => Promise<string>) => {
     if (done.includes(id)) return true;
     try {
-      steps.push({ id, action, ok: true, detail: await fn() });
+      if (!r.is_test) {
+        const claim = await admin.from('automation_effects').insert({ run_id: r.id, step_id: id, status: 'started' });
+        if (claim.error) {
+          if (claim.error.code !== '23505') throw new Permanent('Could not reserve this step: ' + claim.error.message);
+          const priorEffect = await admin.from('automation_effects').select('status,detail').eq('run_id', r.id).eq('step_id', id).single();
+          if (priorEffect.error || priorEffect.data?.status !== 'done') throw new Uncertain('This step may already have taken effect. Check the destination before creating a new run; automatic replay is held to prevent duplicates.');
+          steps.push({ id, action, ok: true, detail: priorEffect.data.detail || 'Completed previously.' });
+          done.push(id);
+          return true;
+        }
+      }
+      const detail = await fn();
+      if (!r.is_test) {
+        const saved = await admin.from('automation_effects').update({ status: 'done', detail, updated_at: new Date().toISOString() }).eq('run_id', r.id).eq('step_id', id);
+        if (saved.error) throw new Uncertain('The action ran, but its confirmation could not be saved. Check the destination before retrying.');
+      }
+      steps.push({ id, action, ok: true, detail });
       done.push(id);
+      const checkpoint = await admin.from('automation_runs').update({ output: { ...prev, done, steps, waited, paths } }).eq('id', r.id);
+      if (checkpoint.error) throw new Uncertain('The action completed but the run checkpoint could not be saved.');
       return true;
     } catch (err) {
       failure = err instanceof Error ? err : new Error(String(err));
+      if (!r.is_test && (err instanceof SafeRetry || (err instanceof Permanent && !(err instanceof Uncertain)))) {
+        const released = await admin.from('automation_effects').delete().eq('run_id', r.id).eq('step_id', id).eq('status', 'started');
+        if (released.error) failure = new Permanent('Step reservation could not be released. Check its destination before retrying.');
+      } else if (!r.is_test) {
+        await admin.from('automation_effects').update({ status: 'uncertain', detail: failure.message, updated_at: new Date().toISOString() }).eq('run_id', r.id).eq('step_id', id).eq('status', 'started');
+        failure = new Permanent(failure.message + ' Check this step’s destination before starting a replacement run.');
+      }
       steps.push({ id, action, ok: false, detail: failure.message });
       return false;
     }
@@ -164,6 +195,8 @@ async function executeRun(r: Run, baseUrl: string, draft?: ReturnType<typeof gra
           paths[n.id] = pick.id;
           steps.push({ id: n.id, action: 'split', ok: true, detail: (n.name || 'Split') + ': took ' + pick.name + '.' });
           done.push(n.id);
+          const saved = await admin.from('automation_runs').update({ output: { ...prev, done, steps, waited, paths } }).eq('id', r.id);
+          if (saved.error) throw new Permanent('Could not save the chosen workflow branch.');
         }
         if (!(await walkSteps(pick.steps))) return false;
         continue;
@@ -275,7 +308,7 @@ async function addTask(n: Node, ctx: Ctx): Promise<string> {
   if (!owners.length) throw new Permanent('There is nobody to give the task to.');
   if (ctx.test) return 'Would add the task "' + text + '" for ' + owners.length + ' ' + (owners.length === 1 ? 'person' : 'people') + '.';
   const ins = await admin.from('tasks').insert(owners.map((o) => ({ workspace_id: ctx.r.workspace_id, owner_id: o, text, priority: 'med', project_id: ctx.p ? ctx.p.id : null })));
-  if (ins.error) throw new Error(ins.error.message);
+  if (ins.error) throw new SafeRetry(ins.error.message);
   return 'Added the task "' + text + '" for ' + owners.length + ' ' + (owners.length === 1 ? 'person' : 'people') + '.';
 }
 
@@ -351,7 +384,7 @@ async function perform(key: string, message: string, ctx: Ctx): Promise<string> 
     }
     if (ctx.test) return 'Would move ' + ctx.subject + ' from ' + ctx.statusName(p.status_id) + ' to ' + next.label + '.';
     const up = await admin.from('projects').update({ status_id: next.id }).eq('id', p.id).eq('status_id', p.status_id);
-    if (up.error) throw new Error(up.error.message);
+    if (up.error) throw new SafeRetry(up.error.message);
     await logAutomation(ctx, 'moved Status to ' + next.label + ' on');
     return 'Moved Status from ' + ctx.statusName(p.status_id) + ' to ' + next.label + '.';
   }
@@ -362,7 +395,7 @@ async function perform(key: string, message: string, ctx: Ctx): Promise<string> 
     const text = (note || a.name) + (p ? ': ' + p.title + ' (' + p.job_code + ')' : '');
     if (ctx.test) return 'Would add the To-Do "' + text + '" for ' + people.length + ' Super Admin' + (people.length === 1 ? '' : 's') + '.';
     const ins = await admin.from('tasks').insert(people.map((x) => ({ workspace_id: ctx.r.workspace_id, owner_id: x.id, text, priority: 'high', project_id: p ? p.id : null })));
-    if (ins.error) throw new Error(ins.error.message);
+    if (ins.error) throw new SafeRetry(ins.error.message);
     return 'Added the To-Do "' + text + '" for ' + people.length + ' Super Admin' + (people.length === 1 ? '' : 's') + '.';
   }
 
@@ -392,7 +425,7 @@ async function perform(key: string, message: string, ctx: Ctx): Promise<string> 
       throw err;
     }
     // Channels that posted are recorded and skipped on a retry, so only the failed ones are tried again.
-    if (res.failed.length) throw res.retry ? new Error(res.detail) : new Permanent(res.detail);
+    if (res.failed.length) throw new Uncertain(res.detail);
     if (!ctx.test) await logAutomation(ctx, 'published to Buffer');
     return res.detail;
   }

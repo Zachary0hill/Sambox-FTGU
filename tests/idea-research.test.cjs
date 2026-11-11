@@ -60,7 +60,7 @@ test('the brief fills placeholders and its first line is the search', () => {
 function harness(over = {}) {
   const idea = { id: 'i', workspace_id: 'w', brand_id: 'b', title: 'T', idea_type: 'Idea', body: ['n'], refs: [], stage: 'inbox', research: null,
     run: { id: 'r1', state: 'queued', queued_at: new Date().toISOString(), by: 'u' }, ...over.idea };
-  const calls = { search: 0, model: 0, usage: [] };
+  const calls = { search: 0, model: 0, usage: [], reservations: [], options: [] };
   const matches = (f) => f.every(([col, op, val]) => {
     const got = col === 'run->>id' ? idea.run && idea.run.id : col === 'run->>state' ? idea.run && idea.run.state : idea[col];
     return op === 'in' ? val.replace(/[()]/g, '').split(',').includes(got) : got === val;
@@ -85,11 +85,11 @@ function harness(over = {}) {
   const mod = loader({
     '@/lib/supabase/admin': { supabaseAdmin: () => ({ from: builder }) },
     '@/lib/integrations/secrets': { getIntegration: async () => ({ secret: { apiKey: 'k' } }) },
-    '@/lib/integrations/providers/firecrawl': { firecrawlSearch: async () => { calls.search++; return [{ url: 'https://x.com', title: 'X' }]; } },
+    '@/lib/integrations/providers/firecrawl': { firecrawlSearch: async () => { calls.search++; if(over.cancelSearch)idea.run.state='canceled'; return [{ url: 'https://x.com', title: 'X' }]; } },
     '@/lib/ai/model': { workspaceModels: async () => [{ provider: 'anthropic', modelId: 'm', model: {} }], withFallback: async (models, fn) => ({ result: await fn(models[0]), used: models[0], skipped: [] }) },
     '@/lib/ai/usage': { recordUsage: async (e) => { calls.usage.push(e); } },
-    '@/lib/ai/spend': { priceOverrides: async () => ({}), modelCostUsd: () => 0.02, refuseSpend: over.refuse || (async () => null) },
-    ai: { generateText: async (a) => { calls.model++; return generate(a, idea); }, Output: { object: (x) => x } },
+    '@/lib/ai/spend': { priceOverrides: async () => ({}), modelUsageCost: () => 0.02, modelAllowance: () => 0.03, reserveSpend: async (...args) => { calls.reservations.push(args); if(over.reserveError)throw new Error(over.reserveError); return async () => {}; }, refuseSpend: over.refuse || (async () => null) },
+    ai: { generateText: async (a) => { calls.model++; calls.options.push(a); return generate(a, idea); }, Output: { object: (x) => x } },
   })('lib/ideas/research.ts');
   return { idea, calls, mod };
 }
@@ -144,4 +144,18 @@ test('a model failure is written to the run', async () => {
   await mod.processIdeaResearch('i', 'r1');
   assert.equal(idea.run.state, 'failed');
   assert.equal(idea.run.error, 'Provider down');
+});
+
+test('a reservation failure starts no paid search', async()=>{
+ const {idea,calls,mod}=harness({reserveError:'Budget already reserved'});
+ await mod.processIdeaResearch('i','r1');
+ assert.equal(calls.search,0);assert.equal(calls.model,0);assert.match(idea.run.error,/Budget/);
+});
+test('cancellation during search prevents the next model call',async()=>{
+ const {idea,calls,mod}=harness({cancelSearch:true});await mod.processIdeaResearch('i','r1');
+ assert.equal(calls.search,1);assert.equal(calls.model,0);assert.equal(idea.run.state,'canceled');
+});
+test('paid model attempts reserve first and have bounded output without SDK retries',async()=>{
+ const {calls,mod}=harness();await mod.processIdeaResearch('i','r1');
+ assert.equal(calls.reservations.length,2);assert.equal(calls.options[0].maxRetries,0);assert.equal(calls.options[0].maxOutputTokens,1500);
 });

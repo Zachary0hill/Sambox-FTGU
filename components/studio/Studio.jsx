@@ -10,6 +10,7 @@ import DevNotes from './DevNotes';
 import MemberWelcome, { welcomeKind } from './MemberWelcome';
 import { FlowLayer, flowGuard } from './FlowBuilder';
 import { supabaseBrowser } from '@/lib/supabase/client';
+import { readAll } from '@/lib/studio/paging';
 import { loadContext, loadWorkspace, loadPortalDetail } from '@/lib/studio/load';
 import { makeActions } from '@/lib/studio/actions';
 import { computeVals } from '@/lib/studio/vals';
@@ -32,7 +33,10 @@ const readAcct = () => { try { return window.localStorage.getItem(ACCT_KEY) || '
 const initialUi = (c, data, path, project) => {
   const prefs = (c.profile && c.profile.prefs) || {};
   const settings = data.settings || {};
+  let projectDrafts={};
+  try { projectDrafts=JSON.parse(sessionStorage.getItem('santos-drafts:'+c.user_id)||'{}'); } catch { /* storage unavailable */ }
   return {
+    projectDrafts, ...(projectDrafts[project] || {}),
     role: UI_ROLE[c.role], nav: navFromPath(path || '/'), openJob: project || '', ideaOpen: new URLSearchParams(window.location.search).get('idea') || '', dTab: project && new URLSearchParams(window.location.search).get('tab') === 'comments' ? 'comments' : 'overview',
     panel: prefs.panel === undefined ? true : !!prefs.panel, theme: prefs.theme || settings.default_theme || 'light',
     density: prefs.density || 'Comfortable', view: prefs.view || settings.default_view || 'table',
@@ -60,7 +64,15 @@ export default function Studio({ initialPath, initialProject }) {
   const again = useRef(false);
 
   const setD = useCallback((fn) => setDState((prev) => { const next = typeof fn === 'function' ? fn(prev) : fn; dRef.current = next; return next; }), []);
-  const set = useCallback((o) => setS((prev) => ({ ...prev, ...(typeof o === 'function' ? o(prev) : o) })), []);
+  const set = useCallback((o) => setS(prev => {
+    const patch = typeof o === 'function' ? o(prev) : o;
+    if (prev && Object.hasOwn(patch,'openJob') && patch.openJob !== prev.openJob) {
+      const drafts = { ...(prev.projectDrafts || {}) };
+      if (prev.openJob) drafts[prev.openJob] = { draft: prev.draft || '', dFiles: prev.dFiles || [], dBrief: prev.dBrief || null };
+      return { ...prev, ...patch, draft: '', dFiles: [], dBrief: null, ...(drafts[patch.openJob] || {}), projectDrafts: drafts };
+    }
+    return { ...prev, ...patch };
+  }), []);
 
   const toastTimer = useRef(null);
   // An action ({ label, run, ms }) adds a button, such as Undo, and keeps the toast up for ms (default 10 seconds).
@@ -87,7 +99,7 @@ export default function Studio({ initialPath, initialProject }) {
       setCtx((prev) => (prev && JSON.stringify(prev) === JSON.stringify(c) ? prev : c));
       const data = await loadWorkspace(sb, c, readAcct());
       // Older Activity Log pages loaded on demand survive the reload (the loader reads the newest 400).
-      setD((prev) => ({ ...data, portalDetail: prev ? prev.portalDetail : {}, olderActivity: prev ? prev.olderActivity || [] : [], activityEnd: prev ? !!prev.activityEnd : false }));
+      setD((prev) => ({ ...data, portalDetail: prev ? prev.portalDetail : {}, projectActivity: prev ? prev.projectActivity || {} : {}, olderActivity: prev ? prev.olderActivity || [] : [], activityEnd: prev ? !!prev.activityEnd : false }));
       setS((prev) => prev || initialUi(c, data, initialPath, initialProject));
       setError('');
     } catch (err) {
@@ -148,12 +160,37 @@ export default function Studio({ initialPath, initialProject }) {
     return () => window.removeEventListener('popstate', onPop);
   }, [set]);
 
+  useEffect(() => {
+    if (!s || !ctx) return;
+    const drafts={...(s.projectDrafts || {})};
+    if(s.openJob)drafts[s.openJob]={draft:s.draft||'',dBrief:s.dBrief||null};
+    const safe=Object.fromEntries(Object.entries(drafts).map(([job,d])=>[job,{draft:d.draft||'',dBrief:d.dBrief||null}]));
+    try { sessionStorage.setItem('santos-drafts:'+ctx.user_id,JSON.stringify(safe)); } catch { /* storage unavailable */ }
+  }, [s?.draft,s?.dBrief,s?.openJob,s?.projectDrafts,ctx]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    const dirty=s?.draft?.trim() || s?.dFiles?.length || s?.dBrief || s?.ideaScript?.dirty;
+    if(!dirty)return;
+    const leave=e=>{e.preventDefault();e.returnValue='';};
+    window.addEventListener('beforeunload',leave);return()=>window.removeEventListener('beforeunload',leave);
+  },[s?.draft,s?.dFiles,s?.dBrief,s?.ideaScript?.dirty]);
+
   // Sponsor and client drawers fetch comments and files through the portal RPCs.
   const openId = s && D && s.openJob ? (D.rows.find((r) => r.job === s.openJob) || {}).id : null;
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- async fetch; state updates after the response
     if (openId && ctx && UI_ROLE[ctx.role] === 'sponsor') reloadPortal(openId);
   }, [openId, ctx, reloadPortal]);
+
+  useEffect(() => {
+    if (!openId || !ctx || UI_ROLE[ctx.role] === 'sponsor') return;
+    let live = true;
+    readAll(() => sb.from('activity_log').select('*').eq('project_id', openId).order('created_at', { ascending: false }).order('id')).then(result => {
+      if (!live) return;
+      if (result.error) { toast('Project history could not load. Close and reopen to retry.'); return; }
+      setD(d => ({ ...d, projectActivity: { ...d.projectActivity, [openId]: result.data } }));
+    });
+    return () => { live = false; };
+  }, [openId, ctx, sb, setD, toast]);
 
   // Realtime: RLS applies per subscriber, so each person only hears about rows they can read. Keyed on the workspace
   // and user, not the ctx object, so a reload that changes the profile does not re-subscribe (and reload again).

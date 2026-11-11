@@ -2,6 +2,7 @@ import { useState } from 'react';
 
 export default function ManagerClients({ D, A, canCreate, canEdit, canLink, openProject }) {
   const [name, setName] = useState('');
+  const [search, setSearch] = useState('');
   const [type, setType] = useState('client');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -22,9 +23,11 @@ export default function ManagerClients({ D, A, canCreate, canEdit, canLink, open
       <select aria-label="Account type" value={type} onChange={e => setType(e.target.value)} style={field}><option value="client">Client</option><option value="sponsor">Sponsor</option></select>
       <button disabled={busy} style={field}>Add account</button>
     </form>}
-    {(D.accounts || []).map(a => {
-      const channel = D.channels.find(c => c.owner_account_id === a.id);
-      const projects = D.rows.filter(r => a.type === 'client' ? channel && r.channelId === channel.id : r.sponsor === a.name);
+    <input aria-label="Search accounts" value={search} onChange={e => setSearch(e.target.value)} placeholder="Search accounts…" style={field} />
+    {(D.accounts || []).filter(a => a.name.toLowerCase().includes(search.toLowerCase())).map(a => {
+      const channels = D.channels.filter(c => c.owner_account_id === a.id);
+      const channel = channels[0];
+      const projects = D.rows.filter(r => a.type === 'client' ? channels.some(c => r.channelId === c.id) : r.sponsor === a.name);
       return <section key={a.id} style={{ padding: 20, border: '1px solid var(--border)', borderRadius: 16, display: 'grid', gap: 10 }}>
         <h2>{a.name}</h2><p>{a.type === 'client' ? 'Client' : 'Sponsor'} · {projects.length} projects</p>
         {projects.map(r => <button key={r.id} onClick={() => openProject(r.job)} style={field}>{r.title}</button>)}

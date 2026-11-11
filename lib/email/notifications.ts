@@ -175,7 +175,7 @@ async function sendSlackAlerts(workspaceId: string | null, base: string, out: Se
 // notifications from the last day and their deadlines and publish dates for the coming week.
 async function sendDigests(workspaceId: string | null, base: string, out: SendSummary) {
   const admin = supabaseAdmin();
-  let mq = admin.from('workspace_members').select('workspace_id, user_id, role').eq('status', 'active').in('role', ['super_admin', 'editor', 'designer']);
+  let mq = admin.from('workspace_members').select('workspace_id, user_id, role').eq('status', 'active').in('role', ['super_admin', 'manager', 'editor', 'designer']);
   if (workspaceId) mq = mq.eq('workspace_id', workspaceId);
   const members = (await mq).data || [];
   if (!members.length) return;
@@ -185,8 +185,8 @@ async function sendDigests(workspaceId: string | null, base: string, out: SendSu
     const { day, hour } = localParts(p.timezone);
     if (hour < 8) continue;
     const m = members.find((x) => x.user_id === p.id)!;
-    const claim = await admin.from('digest_log').insert({ user_id: p.id, day, status: 'sending' });
-    if (claim.error) continue; // already sent (or being sent) today
+    const claim = await admin.rpc('claim_digest', { p_user: p.id, p_day: day });
+    if (claim.error || !claim.data) continue;
     const ws = m.workspace_id as string;
     const since = new Date(Date.now() - 86400000).toISOString();
     const inWeek = (iso: string | null) => !!iso && iso >= day && iso <= addDays(day, 7);
@@ -207,7 +207,7 @@ async function sendDigests(workspaceId: string | null, base: string, out: SendSu
       const x = proj.get(t.project_id);
       if (x && t.thumb_status !== 'done' && inWeek(t.thumb_due)) due.push([dateLabel(t.thumb_due), 'Thumbnail: ' + x.title + ' (' + x.job_code + ')']);
     });
-    const publishing: [string, string][] = m.role === 'super_admin'
+    const publishing: [string, string][] = ['super_admin', 'manager'].includes(m.role)
       ? Array.from(proj.values()).filter((x) => inWeek(x.publish_date)).sort((a, b) => String(a.publish_date).localeCompare(String(b.publish_date))).slice(0, 10).map((x) => [dateLabel(x.publish_date), x.title + ' (' + x.job_code + ')'])
       : [];
     const unread = ((nRes.data || []) as { actor_label: string; text: string; target_label: string }[]).map((n) => ['', [n.actor_label, n.text, n.target_label].filter(Boolean).join(' ')] as [string, string]);
@@ -223,7 +223,7 @@ async function sendDigests(workspaceId: string | null, base: string, out: SendSu
       cards, cta: { label: 'Open the board', url: base + '/projects' },
       fine: 'You get this digest because Daily email digest is on in your Settings.', fineLink: { label: 'Settings', url: base + '/settings' },
     });
-    const res = await sendEmail({ to: p.email, subject: tpl.subject, html: tpl.html, text: tpl.text });
+    const res = await sendEmail({ to: p.email, subject: tpl.subject, html: tpl.html, text: tpl.text, idempotencyKey: `digest/${p.id}/${day}` });
     await admin.from('digest_log').update({ status: res.sent ? 'sent' : 'failed', error: res.sent ? null : res.error }).eq('user_id', p.id).eq('day', day);
     if (res.sent) out.digests++;
     else console.error('Digest email failed for', p.email, '-', res.error);

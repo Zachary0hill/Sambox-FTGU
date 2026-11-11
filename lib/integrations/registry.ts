@@ -124,6 +124,7 @@ export const PROVIDERS: ProviderDef[] = [
     id: 'browserbase', name: 'Browserbase', group: 'research',
     docs: 'https://docs.browserbase.com', keyUrl: 'https://www.browserbase.com/settings',
     fields: [
+      { key: 'researchAllowanceUsd', label: 'Estimated research allowance (USD)', optional: true, help: 'Required for research. Conservative estimated cost of one source run across all selected topics. Reservations count against Rules limits; provider billing may differ.' },
       { key: 'apiKey', label: 'API key', secret: true, placeholder: 'bb_live_...' },
       { key: 'projectId', label: 'Project ID', placeholder: 'Project ID from Settings' },
     ],
@@ -139,6 +140,7 @@ export const PROVIDERS: ProviderDef[] = [
     docs: 'https://vidiq.com/mcp/', keyUrl: 'https://app.vidiq.com/account/settings/mcp', credentialLabel: 'Create an MCP API key',
     setupNote: 'Uses vidIQ\'s MCP server with a read-only API key, so it can research but never edit your channels. Each research call spends vidIQ credits (most cost 5).',
     fields: [
+      { key: 'researchAllowanceUsd', label: 'Estimated research allowance (USD)', optional: true, help: 'Required for research. Conservative estimated cost of one source run across all selected topics. Reservations count against Rules limits; provider billing may differ.' },
       { key: 'apiKey', label: 'MCP API key', secret: true, help: 'vidIQ > Account settings > MCP > Create API key. Works on every vidIQ plan, including Free.' },
       { key: 'tools', label: 'Tools', optional: true, placeholder: 'vidiq_keyword_research, vidiq_outliers, vidiq_trending_videos, vidiq_subscriber_insights, vidiq_video_transcript, vidiq_generate_titles', help: 'vidIQ tool names the assistant may call, comma separated. Leave blank for the defaults shown. Names with or without the vidiq_ prefix are accepted.' },
     ],

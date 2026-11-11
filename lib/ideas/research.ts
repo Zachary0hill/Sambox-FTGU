@@ -8,7 +8,7 @@ import { firecrawlSearch } from '@/lib/integrations/providers/firecrawl';
 import { supabaseAdmin } from '@/lib/supabase/admin';
 import { workspaceModels, withFallback } from '@/lib/ai/model';
 import { recordUsage } from '@/lib/ai/usage';
-import { modelCostUsd, priceOverrides, refuseSpend } from '@/lib/ai/spend';
+import { modelUsageCost, modelAllowance, priceOverrides, refuseSpend, reserveSpend } from '@/lib/ai/spend';
 import { normalizeIdeasRules, type IdeasRules } from './rules-shared';
 import { RESEARCH_INSTRUCTIONS, fillBrief, isActiveRun, parseResearchOutput, parseRun, pickSources, researchPrompt, searchQueryFromBrief, type IdeaRun } from './research-shared';
 
@@ -54,7 +54,10 @@ export async function queueIdeaResearch(m: Member, ideaId: string): Promise<{ ru
   const refused = await refuseSpend(idea.workspace_id, rules, SEARCH_USD, 0);
   if (refused) return { error: refused, status: 429 };
   const run: IdeaRun = { id: randomUUID(), state: 'queued', queued_at: new Date().toISOString(), by: m.ctx.user_id };
-  const { error } = await supabaseAdmin().from('ideas').update({ run }).eq('id', ideaId);
+  let admission = supabaseAdmin().from('ideas').update({ run }).eq('id', ideaId);
+  admission = idea.run == null ? admission.is('run', null) : admission.eq('run', JSON.stringify(idea.run));
+  const { data: admitted, error } = await admission.select('id').maybeSingle();
+  if (!error && !admitted) return { error: 'Another research request changed this idea. Refresh and try again.', status: 409 };
   if (error) return { error: 'The run could not be queued.', status: 500 };
   return { runId: run.id! };
 }
@@ -101,20 +104,22 @@ export async function processIdeaResearch(ideaId: string, runId: string): Promis
     const query = searchQueryFromBrief(brief);
     const refusedSearch = await refuseSpend(ws, rules, SEARCH_USD, spent);
     if (refusedSearch) throw new Error(refusedSearch);
+    const settleSearch = await reserveSpend(ws, runId, rules, 'firecrawl', 'search', SEARCH_USD);
     const hits = await firecrawlSearch(firecrawl.secret.apiKey, query, { limit: rules.max_sources });
+    await settleSearch(SEARCH_USD);
     spent += SEARCH_USD;
     await recordUsage({ workspaceId: ws, userId, feature: 'research', provider: 'firecrawl', model: 'search', costUsd: SEARCH_USD, runId });
 
     const sources = pickSources((idea.refs || []).filter((r: string) => /^https?:\/\//i.test(r)), hits, rules.max_sources);
     const prompt = researchPrompt({ brief, sources, criteria: rules.scoring, voice: brand?.voice_prompt || '' });
     const prices = await priceOverrides(ws);
-    const estimate = modelCostUsd(models[0].provider, models[0].modelId, { input: Math.ceil((prompt.length + RESEARCH_INSTRUCTIONS.length) / 4), output: ANSWER_TOKENS }, prices);
-    const refusedModel = await refuseSpend(ws, rules, estimate, spent);
-    if (refusedModel) throw new Error(refusedModel);
-
     const drafted = await withFallback(models, async (wm) => {
-      const res = await generateText({ model: wm.model, instructions: RESEARCH_INSTRUCTIONS, prompt, output: Output.object({ schema }), maxRetries: 2, timeout: 120000 });
-      const costUsd = modelCostUsd(wm.provider, wm.modelId, { input: res.totalUsage.inputTokens || 0, output: res.totalUsage.outputTokens || 0 }, prices);
+      const active = await admin.from('ideas').select('id').eq('id', ideaId).filter('run->>id', 'eq', runId).filter('run->>state', 'eq', 'running').maybeSingle();
+      if (active.error || !active.data) throw new Error('Research was canceled or replaced.');
+      const settle = await reserveSpend(ws, runId, rules, wm.provider, wm.modelId, modelAllowance(wm.provider, wm.modelId, prompt + RESEARCH_INSTRUCTIONS, ANSWER_TOKENS, prices));
+      const res = await generateText({ model: wm.model, instructions: RESEARCH_INSTRUCTIONS, prompt, output: Output.object({ schema }), maxRetries: 0, maxOutputTokens: ANSWER_TOKENS, timeout: 120000 });
+      const costUsd = modelUsageCost(wm.provider, wm.modelId, res.totalUsage, prices);
+      await settle(costUsd);
       await recordUsage({ workspaceId: ws, userId, feature: 'research', provider: wm.provider, model: wm.modelId, usage: res.totalUsage, costUsd, runId });
       return { output: res.output, costUsd };
     });

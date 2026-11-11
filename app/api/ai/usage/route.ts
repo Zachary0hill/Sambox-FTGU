@@ -111,9 +111,19 @@ export async function GET(request: Request) {
     (data || []).forEach((p) => names.set(p.id as string, String(p.full_name || p.email || 'Member')));
   }
 
+  const configured = await m.supabase.from('integrations').select('provider,config').eq('workspace_id',ws).eq('status','connected').in('provider',['anthropic','openai','gemini','xai']);
+  const candidates: {provider:string;model:string;image?:boolean}[] = Object.keys(overrides).map(key=>({provider:key.slice(0,key.indexOf(':')),model:key.slice(key.indexOf(':')+1),image:overrides[key].image != null}));
+  for(const c of configured.data || []) {
+    const def=providerById(c.provider);
+    const model=String(c.config?.model || def?.fields.find(x=>x.key==='model')?.defaultValue || '');
+    if(model)candidates.push({provider:c.provider,model});
+    const images=c.provider==='openai'?['gpt-image-2','gpt-image-1.5','gpt-image-1']:c.provider==='gemini'?['gemini-3.1-flash-image-preview','gemini-2.5-flash-image']:[];
+    for(const model of images)candidates.push({provider:c.provider,model,image:true});
+  }
+  for(const c of candidates) {const key=priceKey(c.provider,c.model);if(!byModel.has(key))byModel.set(key,{...empty(),provider:c.provider,model:c.model});}
   const models = [...byModel.entries()].map(([key, b]) => {
     const { price, source } = priceFor(b.provider, b.model, overrides);
-    return { key, ...b, providerName: (providerById(b.provider) || { name: b.provider }).name, price, priceSource: source };
+    return { key, ...b, imageModel: candidates.some(c=>c.image && priceKey(c.provider,c.model)===key), providerName: (providerById(b.provider) || { name: b.provider }).name, price, priceSource: source };
   }).sort((a, b) => b.cost - a.cost || b.requests - a.requests);
 
   return NextResponse.json({

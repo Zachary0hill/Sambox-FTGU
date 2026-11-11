@@ -3,7 +3,7 @@ import { useEffect, useSyncExternalStore } from 'react';
 import { subscribeUploads, getUploads, getServerUploads, dismissUpload } from '@/lib/studio/uploads';
 export default function UploadStatus() {
   const tasks = useSyncExternalStore(subscribeUploads, getUploads, getServerUploads);
-  const busy = tasks.some((t) => t.status !== 'complete');
+  const busy = tasks.some((t) => ['uploading','saving','retrying'].includes(t.status));
   useEffect(() => {
     if (!busy) return;
     const warn = (e) => { e.preventDefault(); e.returnValue = ''; };
@@ -18,6 +18,7 @@ export default function UploadStatus() {
       <progress aria-label={'Upload progress for '+t.name} max={t.total} value={t.loaded} style={{width:'100%'}} />
       <div role={t.status==='error'?'alert':'status'} style={{fontSize:12}}>{t.status==='error'?t.message:t.status==='complete'?'Uploaded':t.status==='saving'?'Saving to project…':t.status==='retrying'?'Connection interrupted. Retrying…':Math.floor(t.loaded/t.total*100)+'% uploaded'}</div>
       {t.status==='error'&&<button type="button" onClick={t.retry} style={{minHeight:44,marginTop:4}}>Retry upload</button>}
+      {t.status==='error'&&<button type="button" onClick={t.cancel} style={{minHeight:44,marginLeft:8}}>Cancel upload</button>}
       {t.status==='complete'&&<button type="button" onClick={()=>dismissUpload(t.id)} style={{minHeight:44,marginTop:4}}>Dismiss upload</button>}
     </div>)}
     {busy&&<p style={{fontSize:12,marginBottom:0}}>Keep this tab open. Interrupted transfers retry automatically.</p>}
