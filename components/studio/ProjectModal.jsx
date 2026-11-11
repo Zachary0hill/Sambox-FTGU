@@ -1,4 +1,5 @@
 'use client';
+import { useDialogFocus } from './FocusDialog';
 import NextImage from 'next/image';
 // app: the project modal, laid out like the ZZMEDIA dashboard's project card (CardDetailPanel): cover, header with the
 // state row, tabs with quick actions beside them, then the tab body next to a Details sidebar. Every value comes from
@@ -121,7 +122,7 @@ function RowPop({ children }) {
   return (
     <>
       <span ref={anchor} hidden></span>
-      {root ? createPortal(<div ref={box} style={css('position: fixed; z-index: 46')}>{children}</div>, root) : null}
+      {root ? createPortal(<div data-modal-portal="" ref={box} style={css('position: fixed; z-index: 46')}>{children}</div>, root) : null}
     </>
   );
 }
@@ -654,13 +655,15 @@ function Activity({ V }) {
 
 // ---------- The modal ----------
 export default function ProjectModal({ V, CellPop }) {
+  const ref = useRef(null);
+  useDialogFocus(ref);
   const dr = V.dr;
   const IB = V.dIconBtn + ' width: 34px; height: 34px; border-radius: 10px;';
   return (
     <>
       <button type="button" aria-label="Close project details" onClick={V.closeDrawer} onDragOver={dr.refuseDrag} onDrop={dr.refuseDrop} style={css('position: fixed; inset: 0; z-index: 44; border: 0; background: rgba(17,17,17,0.5); cursor: default')}></button>
       {/* app: files dropped anywhere on the panel upload to Files */}
-      <dialog open aria-modal="true" aria-labelledby="drawer-title" className={'fb-dlg' + (dr.split ? ' fb-dlg-split' : '')} onKeyDown={dr.onKey} onDragOver={dr.onDragOver} onDragLeave={dr.onDragLeave} onDrop={dr.onDrop} style={css(dr.panelStyle)}>
+      <dialog ref={ref} data-focus-dialog="" tabIndex={-1} open aria-modal="true" aria-labelledby="drawer-title" className={'fb-dlg' + (dr.split ? ' fb-dlg-split' : '')} onKeyDown={dr.onKey} onDragOver={dr.onDragOver} onDragLeave={dr.onDragLeave} onDrop={dr.onDrop} style={css(dr.panelStyle)}>
         {dr.dragging ? (
           <div aria-hidden="true" style={css('position: absolute; inset: 10px; z-index: 5; display: flex; align-items: center; justify-content: center; border: 2px dashed var(--ink); border-radius: 20px; background: color-mix(in srgb, var(--surface) 88%, transparent); font-size: 16px; font-weight: 700; color: var(--ink); pointer-events: none')}>{dr.dropText}</div>
         ) : null}
@@ -675,7 +678,7 @@ export default function ProjectModal({ V, CellPop }) {
         {/* ─── Header ─── */}
         <header className="fb-dlg-hd" style={css('position: relative; z-index: 3; flex: none; display: flex; flex-direction: column; gap: 6px; padding: 12px 14px 12px 22px; border-bottom: 1px solid var(--line)')}>
           <div style={css('display: flex; align-items: center; gap: 2px; min-width: 0')}>
-            <span style={css(dr.jobStyle + ' height: 24px; border-radius: 6px; white-space: nowrap;')}>{dr.job}</span>
+            <span style={css(dr.jobStyle + ' height: 24px; border-radius: 6px; white-space: nowrap; min-width: 0; max-width: min(38vw, 240px); overflow: hidden; text-overflow: ellipsis; flex-shrink: 1;')}>{dr.job}</span>
             <span style={css('display: inline-flex; align-items: center; gap: 6px; margin-left: 8px; min-width: 0; font-size: 11.5px; font-weight: 600; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis')}>
               <span aria-hidden="true" style={css(dr.stageDot)}></span>{dr.breadcrumb || dr.stage}
             </span>

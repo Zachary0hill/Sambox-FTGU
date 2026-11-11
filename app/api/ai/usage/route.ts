@@ -15,7 +15,7 @@ const PAGE = 1000;
 
 type Row = {
   user_id: string | null; feature: string; provider: string; model: string; created_at: string; ok: boolean;
-  input_tokens: number; cache_read_tokens: number; cache_write_tokens: number; output_tokens: number; reasoning_tokens: number; images: number;
+  input_tokens: number; cache_read_tokens: number; cache_write_tokens: number; output_tokens: number; reasoning_tokens: number; images: number; cost_usd: number | null;
 };
 
 type Bucket = UsageTotals & { requests: number; failed: number; reasoning: number; cost: number; unpriced: number };
@@ -68,7 +68,7 @@ export async function GET(request: Request) {
   const rows: Row[] = [];
   for (let from = 0; from < MAX_ROWS; from += PAGE) {
     const { data, error } = await m.supabase.from('ai_usage')
-      .select('user_id, feature, provider, model, created_at, ok, input_tokens, cache_read_tokens, cache_write_tokens, output_tokens, reasoning_tokens, images')
+      .select('user_id, feature, provider, model, created_at, ok, input_tokens, cache_read_tokens, cache_write_tokens, output_tokens, reasoning_tokens, images, cost_usd')
       .eq('workspace_id', ws).gte('created_at', since).order('created_at', { ascending: false }).range(from, from + PAGE - 1);
     if (error) {
       if (/ai_usage|does not exist|schema cache/i.test(error.message)) {
@@ -89,7 +89,9 @@ export async function GET(request: Request) {
     const day = dayKey(r.created_at, fmt);
     if (day < first || !byDay.has(day)) continue;
     const { price } = priceFor(r.provider, r.model, overrides);
-    const cost = costOf({ input: r.input_tokens, cacheRead: r.cache_read_tokens, cacheWrite: r.cache_write_tokens, output: r.output_tokens, images: r.images }, price);
+    // Web searches and scrapers have no tokens to price, so their cost is stored on the row.
+    const flatFee = r.cost_usd != null && !r.input_tokens && !r.output_tokens && !r.images;
+    const cost = flatFee ? Number(r.cost_usd) : costOf({ input: r.input_tokens, cacheRead: r.cache_read_tokens, cacheWrite: r.cache_write_tokens, output: r.output_tokens, images: r.images }, price);
     add(total, r, cost);
     add(byDay.get(day)!, r, cost);
     const mk = priceKey(r.provider, r.model);
@@ -109,9 +111,19 @@ export async function GET(request: Request) {
     (data || []).forEach((p) => names.set(p.id as string, String(p.full_name || p.email || 'Member')));
   }
 
+  const configured = await m.supabase.from('integrations').select('provider,config').eq('workspace_id',ws).eq('status','connected').in('provider',['anthropic','openai','gemini','xai']);
+  const candidates: {provider:string;model:string;image?:boolean}[] = Object.keys(overrides).map(key=>({provider:key.slice(0,key.indexOf(':')),model:key.slice(key.indexOf(':')+1),image:overrides[key].image != null}));
+  for(const c of configured.data || []) {
+    const def=providerById(c.provider);
+    const model=String(c.config?.model || def?.fields.find(x=>x.key==='model')?.defaultValue || '');
+    if(model)candidates.push({provider:c.provider,model});
+    const images=c.provider==='openai'?['gpt-image-2','gpt-image-1.5','gpt-image-1']:c.provider==='gemini'?['gemini-3.1-flash-image-preview','gemini-2.5-flash-image']:[];
+    for(const model of images)candidates.push({provider:c.provider,model,image:true});
+  }
+  for(const c of candidates) {const key=priceKey(c.provider,c.model);if(!byModel.has(key))byModel.set(key,{...empty(),provider:c.provider,model:c.model});}
   const models = [...byModel.entries()].map(([key, b]) => {
     const { price, source } = priceFor(b.provider, b.model, overrides);
-    return { key, ...b, providerName: (providerById(b.provider) || { name: b.provider }).name, price, priceSource: source };
+    return { key, ...b, imageModel: candidates.some(c=>c.image && priceKey(c.provider,c.model)===key), providerName: (providerById(b.provider) || { name: b.provider }).name, price, priceSource: source };
   }).sort((a, b) => b.cost - a.cost || b.requests - a.requests);
 
   return NextResponse.json({

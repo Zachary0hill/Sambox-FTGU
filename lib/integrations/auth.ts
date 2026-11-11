@@ -17,6 +17,8 @@ export type Member = { supabase: Awaited<ReturnType<typeof supabaseServer>>; ctx
 // The signed-in member and their session client, or null when signed out or not an active member.
 export async function getMember(): Promise<Member | null> {
   const supabase = await supabaseServer();
+  const assurance = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+  if (assurance.error || (assurance.data?.nextLevel === 'aal2' && assurance.data.currentLevel !== 'aal2')) return null;
   const { data } = await supabase.rpc('my_context');
   return data ? { supabase, ctx: data as MemberContext } : null;
 }

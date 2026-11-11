@@ -97,7 +97,7 @@ function Table({ caption, cols, rows }) {
 
 function PriceEditor({ m, onSaved, onCancel }) {
   const p = m.price || {};
-  const isImage = m.images > 0 && !(m.input || m.output);
+  const isImage = m.imageModel || (m.images > 0 && !(m.input || m.output));
   const [v, setV] = useState({ in: p.in ?? '', out: p.out ?? '', cacheRead: p.cacheRead ?? '', image: p.image ?? '' });
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');

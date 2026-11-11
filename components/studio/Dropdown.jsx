@@ -128,7 +128,7 @@ export default function Dropdown({ id, label, hideLabel, value, options, onChang
       {open && root ? createPortal(
         <>
           <button type="button" tabIndex={-1} aria-label="Close" onClick={() => close()} style={css(scrimStyle + ' position: fixed; z-index: 60;')}></button>
-          <div ref={menu} {...(searchable ? {} : listProps)} tabIndex={-1} aria-activedescendant={searchable ? undefined : listId + '-' + act} onKeyDown={onMenuKey} className="fb-pop"
+          <div data-modal-portal="" ref={menu} {...(searchable ? {} : listProps)} tabIndex={-1} aria-activedescendant={searchable ? undefined : listId + '-' + act} onKeyDown={onMenuKey} className="fb-pop"
             style={css(popStyle({ width: pos ? pos.width : minMenuWidth, maxH: pos ? pos.maxH : MENU_MAX, top: (pos ? pos.top : 0) + 'px', x: pos ? pos.left : 0 }) + ' position: fixed; z-index: 61; outline: none;' + (searchable ? ' overflow: hidden;' : '') + (pos ? '' : ' visibility: hidden;'))}>
             {searchable ? (
               <>

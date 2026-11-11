@@ -4,7 +4,7 @@ import { z } from 'zod';
 import type { Member } from '@/lib/integrations/auth';
 import { firecrawlSearch, firecrawlScrape } from '@/lib/integrations/providers/firecrawl';
 import { nextJob } from '@/lib/studio/job-code';
-import { EDIT_L, THUMB_L, APPROVAL_L, DIST_L, IDEA_TYPE_L, IDEA_STATUS_L, STAGE_L } from '@/lib/studio/model';
+import { EDIT_L, THUMB_L, APPROVAL_L, DIST_L, IDEA_STAGE_L, STAGE_L } from '@/lib/studio/model';
 
 // Assistant tools. Every read runs on the member's own Supabase session, so RLS decides what the assistant can see.
 // Nothing here writes: create_project and add_idea return proposals the member confirms with a click.
@@ -197,21 +197,22 @@ export function assistantTools(env: ToolEnv): ToolSet {
       inputSchema: z.object({
         query: z.string().optional().describe('Words to match in title, hook or tags'),
         brand: z.string().optional().describe('Brand name'),
-        type: z.enum(['Idea', 'Script', 'Research']).optional(),
-        status: z.enum(['Draft', 'In Review', 'Approved', 'Archived']).optional(),
+        type: z.string().max(60).optional(),
+        stage: z.enum(['Inbox', 'Research', 'Ready', 'Approved', 'Archived']).optional(),
         limit: z.number().int().min(1).max(40).optional(),
       }),
       execute: async (a) => {
         const [res, names] = await Promise.all([
-          sb.from('ideas').select('title, type, status, hook, body, tags, author_id, created_at, brand_kits(name)').eq('workspace_id', ws).order('created_at', { ascending: false }).limit(300),
+          sb.from('ideas').select('id, title, idea_type, stage, archived_at, hook, body, tags, author_id, created_at, brand_kits(name)').eq('workspace_id', ws).order('created_at', { ascending: false }).limit(300),
           people(),
         ]);
         if (res.error) return fail(dbError(res.error));
         let rows = (res.data || []) as unknown as Rec[];
         if (a.brand) rows = rows.filter((i) => lower(one(i.brand_kits).name).includes(lower(a.brand)));
-        if (a.type) rows = rows.filter((i) => IDEA_TYPE_L[str(i.type)] === a.type);
-        if (a.status) rows = rows.filter((i) => IDEA_STATUS_L[str(i.status)] === a.status);
-        else rows = rows.filter((i) => i.status !== 'archived');
+        if (a.type) rows = rows.filter((i) => lower(str(i.idea_type)) === lower(a.type));
+        const stageOf = (i: Rec) => (i.archived_at ? 'Archived' : IDEA_STAGE_L[str(i.stage)]);
+        if (a.stage) rows = rows.filter((i) => stageOf(i) === a.stage);
+        else rows = rows.filter((i) => !i.archived_at);
         if (a.query) {
           const words = lower(a.query).split(/\s+/).filter(Boolean);
           rows = rows.filter((i) => { const hay = lower([i.title, i.hook, ((i.tags || []) as string[]).join(' ')].join(' ')); return words.every((w) => hay.includes(w)); });
@@ -220,7 +221,7 @@ export function assistantTools(env: ToolEnv): ToolSet {
         return {
           total: rows.length,
           ideas: rows.slice(0, limit).map((i) => compact({
-            title: clip(i.title, 140), brand: one(i.brand_kits).name, type: IDEA_TYPE_L[str(i.type)], status: IDEA_STATUS_L[str(i.status)],
+            id: str(i.id), title: clip(i.title, 140), brand: one(i.brand_kits).name, type: str(i.idea_type), stage: stageOf(i),
             untrusted: compact({ hook: clip(i.hook, 200), summary: clip(((i.body || []) as string[]).join(' '), 240) }), tags: ((i.tags || []) as string[]).slice(0, 6),
             by: names[str(i.author_id)] || '', created: str(i.created_at).slice(0, 10),
           })),
@@ -327,11 +328,12 @@ export function assistantTools(env: ToolEnv): ToolSet {
       inputSchema: z.object({
         title: z.string().min(1).max(200),
         brand: z.string().optional().describe('Brand name. Required when the member can see more than one brand.'),
-        type: z.enum(['Idea', 'Script', 'Research']).optional(),
+        type: z.string().max(60).optional(),
         hook: z.string().max(400).optional(),
         titleOptions: z.array(z.string().max(300)).max(12).optional(),
         thumbnailBrief: z.string().max(12000).optional(),
         body: z.array(z.string().max(2000)).max(20).optional().describe('Paragraphs or outline points'),
+        links: z.array(z.string().url().max(2000)).max(10).optional().describe('Reference links for the idea'),
       }),
       execute: async (a) => {
         const bk = await sb.from('brand_kits').select('id, name').eq('workspace_id', ws).order('name');
@@ -343,9 +345,25 @@ export function assistantTools(env: ToolEnv): ToolSet {
         if (!hit) return fail((a.brand ? 'No brand called "' + a.brand + '". ' : 'Ask which brand this is for. ') + 'Options: ' + brands.map((b) => b.name).join(', '));
         const body = (a.hook ? ['Hook: ' + a.hook.trim()] : []).concat((a.body || []).map((x) => x.trim()).filter(Boolean));
         return {
-          proposal: { kind: 'idea', title: a.title.trim(), brand: str(hit.name), brandId: str(hit.id), type: a.type || 'Idea', body, titleOptions: a.titleOptions || [], thumbnailBrief: a.thumbnailBrief || '' },
+          proposal: { kind: 'idea', title: a.title.trim(), brand: str(hit.name), brandId: str(hit.id), type: a.type || 'Idea', body, titleOptions: a.titleOptions || [], thumbnailBrief: a.thumbnailBrief || '', refs: a.links || [] },
           note: PROPOSAL_NOTE,
         };
+      },
+    });
+  }
+
+  if (ctx.role === 'super_admin' || ctx.role === 'designer' || (ctx.role === 'manager' && can('ideas:edit'))) {
+    tools.run_research = tool({
+      description: 'Propose researching one idea from Ideas & Research against the web. This does not start anything: it finds the idea and shows the user a card with a Run research button.',
+      inputSchema: z.object({ idea: z.string().min(1).max(200).describe('The idea id from list_ideas, or its title') }),
+      execute: async (a) => {
+        const res = await sb.from('ideas').select('id, title').eq('workspace_id', ws).is('archived_at', null).order('created_at', { ascending: false }).limit(300);
+        if (res.error) return fail(dbError(res.error));
+        const rows = (res.data || []) as unknown as Rec[];
+        const exact = rows.find((i) => str(i.id) === a.idea || lower(i.title) === lower(a.idea));
+        const matches = exact ? [exact] : rows.filter((i) => lower(i.title).includes(lower(a.idea)));
+        if (matches.length !== 1) return fail(matches.length ? 'More than one idea matches. Ask which one: ' + matches.slice(0, 5).map((i) => str(i.title)).join(', ') : 'No active idea matches "' + a.idea + '".');
+        return { proposal: { kind: 'research', title: str(matches[0].title), ideaId: str(matches[0].id) }, note: PROPOSAL_NOTE };
       },
     });
   }

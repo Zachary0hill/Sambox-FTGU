@@ -1,4 +1,6 @@
 'use client';
+import OperationsPanel from './OperationsPanel';
+import FocusDialog from './FocusDialog';
 import ManagerClients from './ManagerClients';
 import IdeaPlanning from './IdeaPlanning';
 import IdeaImport from './IdeaImport';
@@ -26,6 +28,9 @@ import SyncPicker from './SyncPicker';
 import Performance from './Performance';
 import Workload from './Workload';
 import AiUsage from './AiUsage';
+import IdeaRules from './IdeaRules';
+import IdeaConvert from './IdeaConvert';
+import IdeaResearch, { ScoreSliders } from './IdeaResearch';
 import BrandEditor from './BrandEditor';
 import Dropdown from './Dropdown';
 import SocialIcon, { TextLogo } from './SocialIcon';
@@ -50,7 +55,7 @@ export default function StudioView({ V }) {
       {V.wn.open ? (
         <>
           <button type="button" aria-label="Close dialog" onClick={V.wn.close} style={css("position: fixed; inset: 0; z-index: 40; border: 0; background: rgba(17,17,17,0.32); cursor: default")}></button>
-          <dialog open aria-modal="true" aria-labelledby="wn-title" onKeyDown={V.wn.onKey} style={css(V.ui.dialog + " width: 560px; max-height: calc(100vh - 64px); overflow-y: auto")}>
+          <FocusDialog open aria-modal="true" aria-labelledby="wn-title" onKeyDown={V.wn.onKey} style={css(V.ui.dialog + " width: 560px; max-height: calc(100vh - 64px); overflow-y: auto")}>
             <div style={css("display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 16px")}>
               <div>
                 <p style={css("margin: 0 0 6px; font-size: 12px; font-weight: 600; color: var(--muted-2); letter-spacing: 0.02em")}>What’s new · {V.wn.date}</p>
@@ -69,19 +74,19 @@ export default function StudioView({ V }) {
               <button type="button" onClick={V.wn.viewAll} style={css(V.ui.btnGhost)}>See all updates</button>
               <button type="button" autoFocus onClick={V.wn.close} style={css(V.ui.btnPrimary)}>Got it</button>
             </div>
-          </dialog>
+          </FocusDialog>
         </>
       ) : null}
       {/* app: New project dialog, built from the design's dialog, field and dropdown styles */}
       {V.np.open ? (
         <>
           <button type="button" aria-label="Close dialog" onClick={V.np.close} style={css("position: fixed; inset: 0; z-index: 40; border: 0; background: rgba(17,17,17,0.32); cursor: default")}></button>
-          <dialog open aria-modal="true" aria-labelledby="np-title" onScroll={V.np.onScroll} style={css(V.ui.dialog + V.np.dialog)}>
+          <FocusDialog open aria-modal="true" aria-labelledby="np-title" onScroll={V.np.onScroll} style={css(V.ui.dialog + V.np.dialog)}>
             <div style={css("display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 20px")}><div><h2 id="np-title" style={css("margin: 0; font-family: var(--font-title); font-size: var(--text-h4); font-weight: var(--weight-black); letter-spacing: -0.02em")}>New project</h2><p style={css("margin: 6px 0 0; font-size: var(--text-body-sm); color: var(--muted)")}>A template sets the content type, default team and due dates.</p></div><button type="button" className="fb-ni" aria-label="Close" onClick={V.np.close} style={css(V.ui.iconBtn)}><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M18 6 6 18M6 6l12 12"></path></svg></button></div>
             <div style={css("display: grid; grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr)); gap: 16px")}><div style={css("grid-column: 1 / -1; display: flex; flex-direction: column; gap: 6px")}><label htmlFor="np-name" style={css(V.fieldLabel)}>Title</label><input id="np-name" type="text" autoComplete="off" placeholder="What is the video?" value={V.np.title} onChange={V.np.onTitle} style={css(V.fieldInput)} /></div><div style={css("display: flex; flex-direction: column; gap: 6px")}><label htmlFor="np-job" style={css(V.fieldLabel)}>Job #</label><input id="np-job" type="text" autoComplete="off" placeholder="Next in sequence" value={V.np.job} onChange={V.np.onJob} style={css(V.fieldInput)} /></div><div style={css("display: flex; flex-direction: column; gap: 6px")}><label htmlFor="np-template" style={css(V.fieldLabel)}>Template</label><div style={css(V.dd.npTemplate.wrap)} onKeyDown={V.dd.npTemplate.onKey}><button type="button" id="np-template" aria-haspopup="listbox" aria-expanded={V.dd.npTemplate.exp} aria-label={V.dd.npTemplate.aria} onClick={V.dd.npTemplate.toggle} style={css(V.dd.npTemplate.btn)}><span style={css(V.dd.npTemplate.valueStyle)}>{V.dd.npTemplate.value}</span><svg aria-hidden="true" width="16" height="16" viewBox="0 0 16 16" style={css(V.dd.npTemplate.chev)}><path d="M4 6l4 4 4-4" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"></path></svg></button>{V.dd.npTemplate.open ? (<><button type="button" tabIndex="-1" aria-label="Close list" onClick={V.dd.npTemplate.close} style={css("position: fixed; inset: 0; z-index: 0; border: 0; background: transparent; cursor: default")}></button><div role="listbox" aria-label={V.dd.npTemplate.label} style={css(V.dd.npTemplate.pop)}>{(V.dd.npTemplate.items || []).map((o, i) => (<button key={i} type="button" role="option" className="mitem" aria-selected={o.sel} onClick={o.pick} style={css(o.style)}><span style={css(o.check)}><svg aria-hidden="true" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3.5 8.5l3 3 6-7"></path></svg></span><span style={css("flex: 1")}>{o.label}</span></button>))}</div></>) : null}</div></div><div style={css("display: flex; flex-direction: column; gap: 6px")}><label htmlFor="np-channel" style={css(V.fieldLabel)}>Channel</label><div style={css(V.dd.npChannel.wrap)} onKeyDown={V.dd.npChannel.onKey}><button type="button" id="np-channel" aria-haspopup="listbox" aria-expanded={V.dd.npChannel.exp} aria-label={V.dd.npChannel.aria} onClick={V.dd.npChannel.toggle} style={css(V.dd.npChannel.btn)}><span style={css(V.dd.npChannel.valueStyle)}>{V.dd.npChannel.value}</span><svg aria-hidden="true" width="16" height="16" viewBox="0 0 16 16" style={css(V.dd.npChannel.chev)}><path d="M4 6l4 4 4-4" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"></path></svg></button>{V.dd.npChannel.open ? (<><button type="button" tabIndex="-1" aria-label="Close list" onClick={V.dd.npChannel.close} style={css("position: fixed; inset: 0; z-index: 0; border: 0; background: transparent; cursor: default")}></button><div role="listbox" aria-label={V.dd.npChannel.label} style={css(V.dd.npChannel.pop)}>{(V.dd.npChannel.items || []).map((o, i) => (<button key={i} type="button" role="option" className="mitem" aria-selected={o.sel} onClick={o.pick} style={css(o.style)}><span style={css(o.check)}><svg aria-hidden="true" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3.5 8.5l3 3 6-7"></path></svg></span><span style={css("flex: 1")}>{o.label}</span></button>))}{/* app: quick add a channel from the New project dialog */}{V.dd.npChannel.empty ? <p style={css("margin: 0; padding: 8px 10px 4px; font-size: 13px; color: var(--muted)")}>No channels yet.</p> : null}{V.np.ch.canAdd ? (<div role="group" aria-label="Add channel" style={css("display: flex; flex-direction: column; gap: 6px; margin-top: 4px; padding: 8px 4px 2px; border-top: " + (V.dd.npChannel.empty ? "0" : "1px solid var(--line-4)"))}><div style={css("display: flex; gap: 6px")}><input type="text" autoComplete="off" aria-label="New channel name" placeholder="New channel name" value={V.np.ch.name} onChange={V.np.ch.onName} onKeyDown={V.np.ch.onKey} style={css("flex: 1; min-width: 0; min-height: 36px; box-sizing: border-box; padding: 0 10px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface-2); font-size: 13px; color: var(--ink)")} /><button type="button" onClick={V.np.ch.add} disabled={V.np.ch.busy || !V.np.ch.name.trim()} style={css("flex: none; display: inline-flex; align-items: center; gap: 4px; min-height: 36px; padding: 0 12px; border: 0; border-radius: 10px; background: var(--inv); color: var(--inv-ink); font-size: 13px; font-weight: 600; cursor: pointer; opacity: " + (V.np.ch.busy || !V.np.ch.name.trim() ? "0.5" : "1"))}><svg aria-hidden="true" width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M8 3v10M3 8h10"></path></svg>{V.np.ch.busy ? "Adding" : "Add channel"}</button></div>{V.np.ch.err ? <p role="alert" style={css("margin: 0; font-size: 12px; font-weight: 600; color: var(--red-ink)")}>{V.np.ch.err}</p> : null}</div>) : V.dd.npChannel.empty ? <p style={css("margin: 0; padding: 0 10px 8px; font-size: 13px; color: var(--muted)")}>Ask a Super Admin to add one.</p> : null}</div></>) : null}</div></div><div style={css("display: flex; flex-direction: column; gap: 6px")}><label htmlFor="np-type" style={css(V.fieldLabel)}>Content type</label><div style={css(V.dd.npType.wrap)} onKeyDown={V.dd.npType.onKey}><button type="button" id="np-type" aria-haspopup="listbox" aria-expanded={V.dd.npType.exp} aria-label={V.dd.npType.aria} onClick={V.dd.npType.toggle} style={css(V.dd.npType.btn)}><span style={css(V.dd.npType.valueStyle)}>{V.dd.npType.value}</span><svg aria-hidden="true" width="16" height="16" viewBox="0 0 16 16" style={css(V.dd.npType.chev)}><path d="M4 6l4 4 4-4" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"></path></svg></button>{V.dd.npType.open ? (<><button type="button" tabIndex="-1" aria-label="Close list" onClick={V.dd.npType.close} style={css("position: fixed; inset: 0; z-index: 0; border: 0; background: transparent; cursor: default")}></button><div role="listbox" aria-label={V.dd.npType.label} style={css(V.dd.npType.pop)}>{(V.dd.npType.items || []).map((o, i) => (<button key={i} type="button" role="option" className="mitem" aria-selected={o.sel} onClick={o.pick} style={css(o.style)}><span style={css(o.check)}><svg aria-hidden="true" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3.5 8.5l3 3 6-7"></path></svg></span><span style={css("flex: 1")}>{o.label}</span></button>))}</div></>) : null}</div></div><div style={css("display: flex; flex-direction: column; gap: 6px")}><label htmlFor="np-status" style={css(V.fieldLabel)}>Status</label><div style={css(V.dd.npStatus.wrap)} onKeyDown={V.dd.npStatus.onKey}><button type="button" id="np-status" aria-haspopup="listbox" aria-expanded={V.dd.npStatus.exp} aria-label={V.dd.npStatus.aria} onClick={V.dd.npStatus.toggle} style={css(V.dd.npStatus.btn)}><span style={css(V.dd.npStatus.valueStyle)}>{V.dd.npStatus.value}</span><svg aria-hidden="true" width="16" height="16" viewBox="0 0 16 16" style={css(V.dd.npStatus.chev)}><path d="M4 6l4 4 4-4" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"></path></svg></button>{V.dd.npStatus.open ? (<><button type="button" tabIndex="-1" aria-label="Close list" onClick={V.dd.npStatus.close} style={css("position: fixed; inset: 0; z-index: 0; border: 0; background: transparent; cursor: default")}></button><div role="listbox" aria-label={V.dd.npStatus.label} style={css(V.dd.npStatus.pop)}>{(V.dd.npStatus.items || []).map((o, i) => (<button key={i} type="button" role="option" className="mitem" aria-selected={o.sel} onClick={o.pick} style={css(o.style)}><span style={css(o.check)}><svg aria-hidden="true" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3.5 8.5l3 3 6-7"></path></svg></span><span style={css("flex: 1")}>{o.label}</span></button>))}</div></>) : null}</div></div><div style={css("display: flex; flex-direction: column; gap: 6px")}><label htmlFor="np-sponsor" style={css(V.fieldLabel)}>Sponsor</label><div style={css(V.dd.npSponsor.wrap)} onKeyDown={V.dd.npSponsor.onKey}><button type="button" id="np-sponsor" aria-haspopup="listbox" aria-expanded={V.dd.npSponsor.exp} aria-label={V.dd.npSponsor.aria} onClick={V.dd.npSponsor.toggle} style={css(V.dd.npSponsor.btn)}><span style={css(V.dd.npSponsor.valueStyle)}>{V.dd.npSponsor.value}</span><svg aria-hidden="true" width="16" height="16" viewBox="0 0 16 16" style={css(V.dd.npSponsor.chev)}><path d="M4 6l4 4 4-4" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"></path></svg></button>{V.dd.npSponsor.open ? (<><button type="button" tabIndex="-1" aria-label="Close list" onClick={V.dd.npSponsor.close} style={css("position: fixed; inset: 0; z-index: 0; border: 0; background: transparent; cursor: default")}></button><div role="listbox" aria-label={V.dd.npSponsor.label} style={css(V.dd.npSponsor.pop)}>{(V.dd.npSponsor.items || []).map((o, i) => (<button key={i} type="button" role="option" className="mitem" aria-selected={o.sel} onClick={o.pick} style={css(o.style)}><span style={css(o.check)}><svg aria-hidden="true" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3.5 8.5l3 3 6-7"></path></svg></span><span style={css("flex: 1")}>{o.label}</span></button>))}<InlineAdd a={V.dd.npSponsor.add} /></div></>) : null}</div></div><div style={css("display: flex; flex-direction: column; gap: 6px")}><label htmlFor="np-film" style={css(V.fieldLabel)}>Film date</label><DateField weekStart={V.weekStart} id="np-film" value={V.np.film} onChange={V.np.onFilm} /></div><div style={css("display: flex; flex-direction: column; gap: 6px")}><label htmlFor="np-pub" style={css(V.fieldLabel)}>Publishing date</label><DateField weekStart={V.weekStart} id="np-pub" value={V.np.pub} onChange={V.np.onPub} /></div></div>
             {V.np.hasErr ? <p role="alert" style={css("margin: 16px 0 0; padding: 10px 12px; border-radius: 10px; background: var(--red-soft); color: var(--red-ink); font-size: 13px; font-weight: 600")}>{V.np.err}</p> : null}
             <div style={css("display: flex; justify-content: flex-end; gap: 8px; margin-top: 24px")}><button type="button" className="fb-ni" onClick={V.np.close} style={css("min-height: 44px; padding: 0 18px; border: 0; border-radius: 14px; background: transparent; color: var(--ink-3); cursor: pointer")}>Cancel</button><button type="button" onClick={V.np.create} disabled={!!V.np.busy} style={css(V.ui.btnPrimary)}>{V.np.createLabel}</button></div>
-          </dialog>
+          </FocusDialog>
         </>
       ) : null}
       {" "}
@@ -190,31 +195,18 @@ export default function StudioView({ V }) {
         {" "}
         {/* app: <main> landmark around each page (QA a11y: landmark-one-main, region) */}
         <main style={css("flex: 1 1 0; min-width: 0; box-sizing: border-box")}>
-          <nav className="fb-mobile" aria-label="Main compact" style={css("display: none; gap: 4px; padding: 5px; margin: 16px 16px 0; background: var(--track); border-radius: 16px; overflow-x: auto")}>
-            {(V.navItems || []).map((n, n__i) => (
-              <Fragment key={n__i}>
-                <button type="button" aria-label={n.label} aria-current={n.current} onClick={n.pick} style={css(n.mstyle)}>
-                  <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-                    <path d={n.icon}></path>
-                    <path d={n.dots} strokeWidth="2.6"></path>
-                  </svg>
-                </button>
-              </Fragment>
-            ))}
-            {" "}
-            {(V.adminNav || []).map((n, n__i) => (
-              <Fragment key={n__i}>
-                <button type="button" aria-label={n.label} aria-current={n.current} onClick={n.pick} style={css(n.mstyle)}>
-                  <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-                    <path d={n.icon}></path>
-                  </svg>
-                </button>
-              </Fragment>
-            ))}
-            {/* Account stays reachable when the desktop sidebar is hidden on phones. */}
-            <button type="button" aria-label="Account settings" aria-current={V.acctCurrent} onClick={V.openSettings} style={css("flex: none; width: 44px; height: 44px; display: inline-flex; align-items: center; justify-content: center; border: 0; border-radius: 12px; cursor: pointer; " + (V.acctCurrent ? "background: var(--chip-2); color: var(--ink);" : "background: transparent; color: var(--ink-4);"))}>
-              <span aria-hidden="true" style={css("font-size: 13px; font-weight: 700")}>{V.acctInitial}</span>
-            </button>
+          <nav className="fb-mobile" aria-label="Main compact" style={{display:'none',padding:12,margin:'12px 16px 0',background:'var(--track)',borderRadius:16}}>
+            <label style={{display:'flex',alignItems:'center',gap:12,width:'100%',fontWeight:600}}>
+              Menu
+              <select aria-label="Go to section" value={(V.navItems || []).concat(V.adminNav || []).find(n=>n.current === 'page')?.label || (V.acctCurrent === 'page' ? 'Account' : '')}
+                onChange={e=>{const n=(V.navItems || []).concat(V.adminNav || []).find(n=>n.label===e.target.value); if(n) n.pick(); else if(e.target.value==='Account') V.openSettings();}}
+                style={{minWidth:0,flex:1,minHeight:44,border:'1px solid var(--line)',borderRadius:10,padding:'0 12px',background:'var(--surface)',color:'var(--ink)',fontSize:16}}>
+                <option value="" disabled>Choose a section</option>
+                <optgroup label="Studio">{(V.navItems||[]).map(n=><option key={n.label} value={n.label}>{n.label}</option>)}</optgroup>
+                {(V.adminNav||[]).length ? <optgroup label="Administration">{V.adminNav.map(n=><option key={n.label} value={n.label}>{n.label}</option>)}</optgroup> : null}
+                <option value="Account">Account</option>
+              </select>
+            </label>
           </nav>
           {" "}
           {V.managerClients ? <ManagerClients {...V.managerClients} /> : null}
@@ -417,7 +409,7 @@ export default function StudioView({ V }) {
                   <>
                     <button type="button" aria-label="Close dialog" onClick={V.closeAddUser} style={css("position: fixed; inset: 0; z-index: 40; border: 0; background: rgba(17,17,17,0.32); cursor: default")}></button>
                     {" "}
-                    <dialog open aria-modal="true" aria-labelledby="add-user-title" style={css("position: fixed; z-index: 41; top: 50%; left: 50%; transform: translate(-50%, -50%); margin: 0; width: 520px; max-width: calc(100vw - 32px); max-height: calc(100vh - 64px); overflow-y: auto; box-sizing: border-box; background: var(--surface); border: 1px solid var(--line-4); border-radius: 24px; box-shadow: 0 24px 80px rgba(0,0,0,0.20); padding: 24px; color: var(--ink); font-family: var(--font-main)")}>
+                    <FocusDialog open aria-modal="true" aria-labelledby="add-user-title" style={css("position: fixed; z-index: 41; top: 50%; left: 50%; transform: translate(-50%, -50%); margin: 0; width: 520px; max-width: calc(100vw - 32px); max-height: calc(100vh - 64px); overflow-y: auto; box-sizing: border-box; background: var(--surface); border: 1px solid var(--line-4); border-radius: 24px; box-shadow: 0 24px 80px rgba(0,0,0,0.20); padding: 24px; color: var(--ink); font-family: var(--font-main)")}>
                       <div style={css("display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 20px")}>
                         <div>
                           <h2 id="add-user-title" style={css("margin: 0; font-family: var(--font-title); font-size: var(--text-h4); font-weight: var(--weight-black); letter-spacing: -0.02em")}>Add user</h2>
@@ -505,7 +497,7 @@ export default function StudioView({ V }) {
                         {" "}
                         <button type="button" onClick={V.addMember} disabled={V.nuBusy} style={css("min-height: 44px; padding: 0 18px; border: 0; border-radius: 14px; background: var(--inv); color: var(--inv-ink); cursor: pointer")}>{V.nuBusy ? 'Sending…' : 'Send invite'}</button>
                       </div>
-                    </dialog>
+                    </FocusDialog>
                   </>
                 ) : null}
                 {" "}
@@ -842,7 +834,7 @@ export default function StudioView({ V }) {
                       <>
                         <button type="button" aria-label="Close dialog" onClick={V.adm.closeAcct} style={css("position: fixed; inset: 0; z-index: 40; border: 0; background: rgba(17,17,17,0.32); cursor: default")}></button>
                         {" "}
-                        <dialog open aria-modal="true" aria-labelledby="acct-modal-title" style={css(V.ui.dialog)}>
+                        <FocusDialog open aria-modal="true" aria-labelledby="acct-modal-title" style={css(V.ui.dialog)}>
                           <div style={css("display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 20px")}>
                             <div>
                               <h2 id="acct-modal-title" style={css("margin: 0; font-family: var(--font-title); font-size: var(--text-h4); font-weight: var(--weight-black); letter-spacing: -0.02em")}>Add account</h2>
@@ -916,7 +908,7 @@ export default function StudioView({ V }) {
                             {" "}
                             <button type="button" onClick={V.adm.addAcct} style={css(V.ui.btnPrimary)}>Add account</button>
                           </div>
-                        </dialog>
+                        </FocusDialog>
                       </>
                     ) : null}
                   </>
@@ -1833,6 +1825,7 @@ export default function StudioView({ V }) {
                                 <p style={css("margin: 0; font-size: 13px; color: var(--muted)")}>{V.adm.ws.integNote}</p>
                                 <button type="button" onClick={V.adm.ws.goAuto} style={css(V.ui.btnGhostStart)}>Use them in Automations</button>
                               </section>
+                              <OperationsPanel />
                               {(V.adm.ws.integGroups || []).map((igg) => (
                                 <section key={igg.id} aria-labelledby={igg.hid} style={css("display: flex; flex-direction: column; gap: 12px; min-width: 0")}>
                                   <div style={css("display: flex; flex-direction: column; gap: 4px")}>
@@ -2351,6 +2344,7 @@ export default function StudioView({ V }) {
                       </>
                     ) : null}
                     {" "}
+                    {V.pg.isIdeas && V.ids.rulesProps ? <IdeaRules {...V.ids.rulesProps} triggerStyle={css(V.ui.btnGhost)} /> : null}
                     {V.pg.hasGhost ? (
                       <>
                         <button type="button" onClick={V.pg.ghostPick} style={css(V.ui.btnGhost + (V.pg.ghostLogo ? ' display: inline-flex; align-items: center; gap: 8px;' : ''))}>{V.pg.ghostLogo ? <SocialIcon id={V.pg.ghostLogo} size={16} /> : null}{V.pg.ghost}</button>
@@ -2784,7 +2778,7 @@ export default function StudioView({ V }) {
                     {V.lib.cm ? (
                       <>
                         <button type="button" aria-label="Close dialog" onClick={V.lib.cm.close} style={css("position: fixed; inset: 0; z-index: 40; border: 0; background: rgba(17,17,17,0.45); cursor: default")}></button>
-                        <dialog open aria-modal="true" aria-labelledby="cm-h" onKeyDown={V.lib.cm.onKey} style={css("position: fixed; z-index: 41; top: 50%; left: 50%; transform: translate(-50%, -50%); margin: 0; width: 1120px; max-width: calc(100vw - 32px); max-height: calc(100vh - 48px); overflow-y: auto; box-sizing: border-box; padding: 0; background: var(--surface); border: 1px solid var(--line-4); border-radius: 28px; box-shadow: 0 24px 80px rgba(0,0,0,0.28); color: var(--ink); font-family: var(--font-main)")}>
+                        <FocusDialog open aria-modal="true" aria-labelledby="cm-h" onKeyDown={V.lib.cm.onKey} style={css("position: fixed; z-index: 41; top: 50%; left: 50%; transform: translate(-50%, -50%); margin: 0; width: 1120px; max-width: calc(100vw - 32px); max-height: calc(100vh - 48px); overflow-y: auto; box-sizing: border-box; padding: 0; background: var(--surface); border: 1px solid var(--line-4); border-radius: 28px; box-shadow: 0 24px 80px rgba(0,0,0,0.28); color: var(--ink); font-family: var(--font-main)")}>
                           <header style={css("display: flex; flex-wrap: wrap; align-items: flex-start; gap: 16px; padding: 28px clamp(16px, 3vw, 28px) 20px; border-bottom: 1px solid var(--line)")}>
                             <div style={css("flex: 1 1 300px; display: flex; flex-direction: column; gap: 6px; min-width: 0")}>
                               <h2 id="cm-h" style={css("margin: 0; font-family: var(--font-title); font-weight: 900; font-size: 24px; letter-spacing: -0.02em")}>{V.lib.cm.heading}</h2>
@@ -2914,7 +2908,7 @@ export default function StudioView({ V }) {
                             <button type="button" className="fb-ni" onClick={V.lib.cm.close} style={css("min-height: 44px; padding: 0 18px; border: 0; border-radius: 14px; background: transparent; font-size: 14px; font-weight: 500; color: var(--ink-3); cursor: pointer")}>Cancel</button>
                             <button type="button" onClick={V.lib.cm.save} disabled={V.lib.cm.busy} style={css(V.ui.btnPrimary + (V.lib.cm.busy ? " opacity: 0.6;" : ""))}>{V.lib.cm.saveLabel}</button>
                           </footer>
-                        </dialog>
+                        </FocusDialog>
                       </>
                     ) : null}
                     {/* app: Social view, Buffer channels and sent posts with their metrics */}
@@ -3338,7 +3332,7 @@ export default function StudioView({ V }) {
                     {V.br.nb.open ? (
                       <>
                         <button type="button" aria-label="Close dialog" onClick={V.br.nb.close} style={css("position: fixed; inset: 0; z-index: 40; border: 0; background: rgba(17,17,17,0.32); cursor: default")}></button>
-                        <dialog open aria-modal="true" aria-labelledby="br-new-title" style={css(V.ui.dialog)}>
+                        <FocusDialog open aria-modal="true" aria-labelledby="br-new-title" style={css(V.ui.dialog)}>
                           <div style={css("display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 20px")}>
                             <div>
                               <h2 id="br-new-title" style={css("margin: 0; font-family: var(--font-title); font-size: var(--text-h4); font-weight: var(--weight-black); letter-spacing: -0.02em")}>New brand</h2>
@@ -3373,7 +3367,7 @@ export default function StudioView({ V }) {
                             <button type="button" className="fb-ni" onClick={V.br.nb.close} style={css("min-height: 44px; padding: 0 18px; border: 0; border-radius: 14px; background: transparent; color: var(--ink-3); cursor: pointer")}>Cancel</button>
                             <button type="button" disabled={V.br.nb.busy} onClick={V.br.nb.create} style={css(V.ui.btnPrimary)}>{V.br.nb.busy ? "Creating…" : "Create brand"}</button>
                           </div>
-                        </dialog>
+                        </FocusDialog>
                       </>
                     ) : null}
                     {" "}
@@ -3384,7 +3378,15 @@ export default function StudioView({ V }) {
                 {" "}
                 {V.pg.isIdeas ? (
                   <>
-                    {V.ids.canCreate && <div style={{ display: 'flex', justifyContent: 'flex-end' }}><IdeaImport {...V.ids.importProps} /></div>}
+                    {V.ids.convert ? <IdeaConvert {...V.ids.convert} /> : null}
+                    <div role="group" aria-label="Pipeline" style={css("display: flex; flex-wrap: wrap; align-items: center; gap: 8px")}>
+                      {(V.ids.stats || []).map((c) => c.pick
+                        ? <button key={c.label} type="button" onClick={c.pick} style={css("display: inline-flex; align-items: baseline; gap: 6px; min-height: 36px; padding: 0 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); color: var(--ink); font: inherit; font-size: 13px; cursor: pointer")}><strong>{c.value}</strong><span style={css("color: var(--muted)")}>{c.label}</span></button>
+                        : <span key={c.label} style={css("display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 0 12px; border: 1px solid var(--line); border-radius: 10px; font-size: 13px")}><strong>{c.value}</strong><span style={css("color: var(--muted)")}>{c.label}</span></span>)}
+                      {V.ids.canOpenRules
+                        ? <button type="button" onClick={() => document.getElementById('idea-rules-open').click()} style={css("min-height: 36px; padding: 0 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); color: var(--muted); font: inherit; font-size: 13px; cursor: pointer")}>{V.ids.autoResearch}</button>
+                        : <span style={css("display: inline-flex; align-items: center; min-height: 36px; padding: 0 12px; border: 1px solid var(--line); border-radius: 10px; color: var(--muted); font-size: 13px")}>{V.ids.autoResearch}</span>}
+                    </div>
                     {/* app: research run strip (Super Admin), live through the research_runs realtime subscription */}
                     {V.ids.rs.hasPanel ? (
                       <section aria-label={V.ids.rs.strip.title} aria-live="polite" style={css("display: flex; flex-direction: column; gap: 12px; padding: 14px 16px; border: 1px solid var(--border); border-radius: 16px; background: var(--surface-2)")}>
@@ -3439,6 +3441,9 @@ export default function StudioView({ V }) {
                     {/* app: smart views, filters, sort and layout (docs/design/ideas-research/Main) */}
                     <div style={css("display: flex; flex-direction: column; gap: 14px")}>
                       <div style={css("display: flex; flex-wrap: wrap; align-items: center; gap: 8px")}>
+                      <div role="group" aria-label="Stages" style={css("display: flex; flex-wrap: wrap; align-items: center; gap: 8px")}>
+                        {(V.ids.tabs || []).map((v) => <button key={v.label} type="button" aria-pressed={v.pressed} onClick={v.pick} style={css(v.style)}>{v.label}<span style={css("color: var(--muted); font-variant-numeric: tabular-nums")}>{v.count}</span></button>)}
+                      </div>
                       <div role="group" aria-label="Smart views" className="fb-views" style={css("flex: 0 1 auto; min-width: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 8px")}>
                         {(V.ids.views || []).map((v, v__i) => (
                           <button key={v__i} type="button" aria-pressed={v.pressed} onClick={v.pick} style={css(v.style)}>
@@ -3483,6 +3488,11 @@ export default function StudioView({ V }) {
                         <DD d={V.dd.ideaType} id="idea-type" className="fb-ifilter" />
                         <DD d={V.dd.ideaFormat} id="idea-format" className="fb-ifilter" />
                         <DD d={V.dd.ideaPillar} id="idea-pillar" className="fb-ifilter" />
+                        <DD d={V.dd.ideaPlatform} id="idea-platform" className="fb-ifilter" />
+                        <DD d={V.dd.ideaOwner} id="idea-owner" className="fb-ifilter" />
+                        <DD d={V.dd.ideaScore} id="idea-score" className="fb-ifilter" />
+                        <DD d={V.dd.ideaRec} id="idea-rec" className="fb-ifilter" />
+                        <DD d={V.dd.ideaShow} id="idea-show" className="fb-ifilter" />
                         <span className="fb-ispacer" style={css("flex: 1 1 0; min-width: 0")}></span>
                         <DD d={V.dd.ideaSort} id="idea-sort" className="fb-ifilter" />
                         <div role="group" aria-label="Layout" style={css("display: inline-flex; padding: 3px; gap: 2px; border-radius: 14px; background: var(--chip)")}>
@@ -3511,7 +3521,8 @@ export default function StudioView({ V }) {
                     {V.ids.isGallery ? (
                       <div style={css("display: grid; grid-template-columns: repeat(auto-fill, minmax(min(300px, 100%), 1fr)); gap: 32px 24px")}>
                         {(V.ids.cards || []).map((ic2, ic2__i) => (
-                          <button key={ic2__i} type="button" className="fb-yt" onClick={ic2.open} aria-label={ic2.aria} style={css("display: flex; flex-direction: column; gap: 14px; min-width: 0; padding: 0; border: 0; background: transparent; text-align: left; color: inherit; cursor: pointer; letter-spacing: normal; line-height: 1.3; font-weight: 400")}>
+                          <div key={ic2__i} className="fb-ycard" style={css("position: relative; min-width: 0")}>
+                          <button type="button" className="fb-yt" onClick={ic2.open} aria-label={ic2.aria} style={css("display: flex; flex-direction: column; gap: 14px; min-width: 0; padding: 0; border: 0; background: transparent; text-align: left; color: inherit; cursor: pointer; letter-spacing: normal; line-height: 1.3; font-weight: 400")}>
                             <span className="fb-yt-thumb" style={css(ic2.thumbStyle)}>
                               <span style={css("position: absolute; top: 12px; left: 12px; right: 12px; display: flex; align-items: center; gap: 6px")}>
                                 <span style={css(ic2.priStyle)}>{ic2.pri}</span>
@@ -3530,9 +3541,11 @@ export default function StudioView({ V }) {
                                   {ic2.format ? <span>{ic2.format}</span> : null}
                                 </span>
                               </span>
-                              <span style={css(ic2.scoreStyle)} title="ICE score"><span style={css("position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)")}>ICE score </span>{ic2.score}</span>
+                              {ic2.rec ? <span style={css(ic2.recStyle)}>{ic2.rec}</span> : <span style={css(ic2.scoreStyle)} title="Score"><span style={css("position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)")}>Score </span>{ic2.score}</span>}
                             </span>
                           </button>
+                          <span className="fb-yt-acts">{ic2.acts.map((a) => <button key={a.label} type="button" onClick={a.pick}>{a.label}</button>)}</span>
+                          </div>
                         ))}
                       </div>
                     ) : null}
@@ -3594,8 +3607,8 @@ export default function StudioView({ V }) {
                         <table style={css("width: 100%; min-width: 860px; border-collapse: collapse; font-size: 14px; color: var(--ink)")}>
                           <thead>
                             <tr style={css("background: var(--surface-2); text-align: left")}>
-                              {['Idea', 'Brand', 'Type', 'Status', 'Format', 'ICE', 'Owner', 'Updated'].map((h) => (
-                                <th key={h} scope="col" style={css("padding: 12px 16px; font-size: 12px; font-weight: 600; color: var(--muted); border-bottom: 1px solid var(--line); white-space: nowrap")}>{h}</th>
+                              {(V.ids.listHeads || []).map((h) => (
+                                <th key={h.label} scope="col" aria-sort={h.on ? 'other' : undefined} style={css("padding: 12px 16px; font-size: 12px; font-weight: 600; color: var(--muted); border-bottom: 1px solid var(--line); white-space: nowrap")}><button type="button" onClick={h.sort} style={css("padding: 0; border: 0; background: none; color: " + (h.on ? "var(--ink)" : "inherit") + "; font: inherit; cursor: pointer")}>{h.label}</button></th>
                               ))}
                             </tr>
                           </thead>
@@ -3604,15 +3617,16 @@ export default function StudioView({ V }) {
                               <tr key={r__i} className="fb-row">
                                 <td style={css("padding: 10px 16px; border-bottom: 1px solid var(--line)")}>
                                   <button type="button" onClick={r.open} aria-label={r.aria} style={css("display: flex; align-items: center; gap: 12px; padding: 0; border: 0; background: transparent; text-align: left; letter-spacing: normal; color: var(--ink); cursor: pointer")}>
-                                    <span aria-hidden="true" style={css(r.miniThumb)}></span><span style={css("font-weight: 600; line-height: 1.35")}>{r.title}</span>
+                                    <span aria-hidden="true" style={css(r.miniThumb)}></span><span style={css("display: grid; gap: 2px")}><span style={css("font-weight: 600; line-height: 1.35")}>{r.title}</span>{r.hookLine ? <span style={css("font-size: 12px; color: var(--muted)")}>{r.hookLine}</span> : null}</span>
                                   </button>
                                 </td>
                                 <td style={css("padding: 10px 16px; border-bottom: 1px solid var(--line); color: var(--ink-3); white-space: nowrap")}>{r.brand}</td>
                                 <td style={css("padding: 10px 16px; border-bottom: 1px solid var(--line)")}><span style={css(r.typeStyle)}>{r.type}</span></td>
                                 <td style={css("padding: 10px 16px; border-bottom: 1px solid var(--line); white-space: nowrap")}><span style={css("display: inline-flex; align-items: center; gap: 6px")}><span aria-hidden="true" style={css(r.dot)}></span>{r.status}</span></td>
-                                <td style={css("padding: 10px 16px; border-bottom: 1px solid var(--line); color: var(--ink-3); white-space: nowrap")}>{r.format || '–'}</td>
-                                <td style={css("padding: 10px 16px; border-bottom: 1px solid var(--line)")}><span style={css(r.smallScoreStyle)}>{r.score}</span></td>
+                                                                <td style={css("padding: 10px 16px; border-bottom: 1px solid var(--line)")}><span style={css(r.smallScoreStyle)}>{r.score}</span></td>
+                                <td style={css("padding: 10px 16px; border-bottom: 1px solid var(--line); white-space: nowrap")}>{r.rec ? <span style={css(r.recStyle)}>{r.rec}</span> : '–'}</td>
                                 <td style={css("padding: 10px 16px; border-bottom: 1px solid var(--line); color: var(--ink-3); white-space: nowrap")}>{r.owner}</td>
+                                <td style={css("padding: 10px 16px; border-bottom: 1px solid var(--line); color: var(--ink-3)")}>{r.sources}</td>
                                 <td style={css("padding: 10px 16px; border-bottom: 1px solid var(--line); color: var(--muted); white-space: nowrap")}>{r.updated}</td>
                               </tr>
                             ))}
@@ -3638,7 +3652,7 @@ export default function StudioView({ V }) {
                     {V.ids.hasSel ? (
                       <>
                         <button type="button" aria-label="Close idea" onClick={V.ids.closeIdea} style={css("position: fixed; inset: 0; z-index: 40; border: 0; background: rgba(17,17,17,0.45); cursor: default")}></button>
-                        <dialog open aria-modal="true" aria-labelledby="idea-title" className="fb-dlg fb-idea" style={css("position: fixed; z-index: 41; top: 50%; left: 50%; transform: translate(-50%, -50%); margin: 0; width: min(1120px, calc(100vw - 48px)); height: min(880px, calc(100vh - 48px)); box-sizing: border-box; padding: 0; display: flex; flex-direction: column; overflow: hidden; background: var(--surface); border: 1px solid var(--line-4); border-radius: 24px; box-shadow: 0 24px 80px rgba(0,0,0,0.28); color: var(--ink); font-family: var(--font-main)")}>
+                        <FocusDialog open aria-modal="true" aria-labelledby="idea-title" className="fb-dlg fb-idea" style={css("position: fixed; z-index: 41; top: 50%; left: 50%; transform: translate(-50%, -50%); margin: 0; width: min(1120px, calc(100vw - 48px)); height: min(880px, calc(100vh - 48px)); box-sizing: border-box; padding: 0; display: flex; flex-direction: column; overflow: hidden; background: var(--surface); border: 1px solid var(--line-4); border-radius: 24px; box-shadow: 0 24px 80px rgba(0,0,0,0.28); color: var(--ink); font-family: var(--font-main)")}>
                           <button type="button" className="fb-ni fb-idea-x" aria-label="Close" onClick={V.ids.closeIdea} style={css("position: absolute; z-index: 3; top: 14px; right: 14px; width: 34px; height: 34px; display: inline-flex; align-items: center; justify-content: center; padding: 0; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); color: var(--ink); cursor: pointer")}>
                             <svg aria-hidden="true" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><path d="M4 4l8 8M12 4l-8 8"></path></svg>
                           </button>
@@ -3679,9 +3693,10 @@ export default function StudioView({ V }) {
                             <div className="fb-idea-pad" style={css("flex: none; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; padding: 8px 24px; background: var(--surface-2); border-bottom: 1px solid var(--line)")}>
                               <ol aria-label="Status" style={css("flex: 999 1 420px; min-width: 0; margin: 0; padding: 0; list-style: none; display: flex; flex-wrap: wrap; align-items: center; gap: 4px")}>
                                 {(V.ids.sel.steps || []).map((st, st__i) => (
-                                  <li key={st__i} aria-current={st.current} style={css(st.style)}><span aria-hidden="true" style={css(st.dotStyle)}>{st.num}</span><span style={css(st.labelStyle)}>{st.label}</span></li>
+                                  <li key={st__i} aria-current={st.current} style={css(st.style)}>{st.pick ? <button type="button" onClick={st.pick} aria-label={'Move to ' + st.label} style={css("display: flex; align-items: center; gap: 8px; width: 100%; min-width: 0; min-height: 36px; padding: 0; border: 0; background: none; color: inherit; font: inherit; cursor: pointer")}><span aria-hidden="true" style={css(st.dotStyle)}>{st.num}</span><span style={css(st.labelStyle)}>{st.label}</span></button> : <><span aria-hidden="true" style={css(st.dotStyle)}>{st.num}</span><span style={css(st.labelStyle)}>{st.label}</span></>}</li>
                                 ))}
                               </ol>
+                              {V.ids.sel.gateError ? <p role="alert" style={css("flex: 1 1 100%; margin: 0; font-size: 13px; font-weight: 600; color: var(--red-ink)")}>{V.ids.sel.gateError}</p> : null}
                               {V.ids.sel.hasCta || V.ids.sel.hasBack ? (
                                 <div style={css("flex: 1 1 auto; display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px")}>
                                   {V.ids.sel.hasBack ? <button type="button" className="fb-ni" onClick={V.ids.sel.back} style={css("min-height: 38px; padding: 0 14px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); font-size: 13px; font-weight: 600; color: var(--ink); cursor: pointer")}>{V.ids.sel.backLabel}</button> : null}
@@ -3863,6 +3878,7 @@ export default function StudioView({ V }) {
                                   })}
                                 </div>
                               ) : null}
+                              {V.ids.sel.isResearch ? <IdeaResearch {...V.ids.sel.research} /> : null}
                               {V.ids.sel.isHistory ? (
                                 <ol role="tabpanel" id="idp-history" aria-labelledby="idt-history" style={css("margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column")}>
                                   {(V.ids.sel.history || []).map((h, h__i) => (
@@ -3894,8 +3910,11 @@ export default function StudioView({ V }) {
                             </div>
                             <aside aria-label="Properties" className="fb-idea-rail fb-idea-pad" style={css("position: relative; min-width: 0; min-height: 0; overflow-x: hidden; overflow-y: auto; box-sizing: border-box; padding: 16px 20px 24px; display: flex; flex-direction: column; gap: 16px; background: var(--surface-2)")}>
                               <div style={css("display: flex; flex-direction: column; gap: 8px; padding: 14px; border-radius: 14px; background: var(--surface); border: 1px solid var(--border)")}>
-                                <div style={css("display: flex; align-items: center; justify-content: space-between")}><span style={css("font-size: 13px; font-weight: 600; color: var(--muted)")}>ICE score</span><span style={css(V.ids.sel.scoreTagStyle)}>{V.ids.sel.scoreTag}</span></div>
+                                <div style={css("display: flex; align-items: center; justify-content: space-between")}><span style={css("font-size: 13px; font-weight: 600; color: var(--muted)")}>{V.ids.sel.scoreHeading}</span><span style={css(V.ids.sel.scoreTagStyle)}>{V.ids.sel.scoreTag}</span></div>
                                 <span style={css("font-family: var(--font-title); font-weight: 900; font-size: 32px; line-height: 1; font-variant-numeric: tabular-nums")}>{V.ids.sel.score}</span>
+                                {V.ids.sel.scoreRows ? <ScoreSliders rows={V.ids.sel.scoreRows} canEdit={V.ids.sel.canScore} onCommit={V.ids.sel.onScore} /> : null}
+                                {V.ids.sel.scoreOverridden ? <span style={css("font-size: 12px; color: var(--muted)")}>Overridden by hand</span> : null}
+                                {V.ids.sel.clearScore ? <button type="button" onClick={V.ids.sel.clearScore} style={css("align-self: flex-start; padding: 0; border: 0; background: none; color: var(--muted); font: inherit; font-size: 13px; text-decoration: underline; cursor: pointer")}>Clear score</button> : null}
                                 {(V.ids.sel.iceBars || []).map((k) => (
                                   <div key={k.label} style={css("display: grid; grid-template-columns: 84px minmax(0, 1fr) 20px; align-items: center; gap: 10px; font-size: 13px")}>
                                     <span style={css("color: var(--ink-3)")}>{k.label}</span>
@@ -3912,15 +3931,15 @@ export default function StudioView({ V }) {
                                 <dt style={css("color: var(--muted)")}>Target window</dt><dd style={css("margin: 0; font-weight: 500; color: " + (V.ids.sel.windowSet ? "var(--ink)" : "var(--muted)"))}>{V.ids.sel.window}</dd>
                                 <dt style={css("color: var(--muted)")}>Sponsor</dt><dd style={css("margin: 0; font-weight: 500; color: " + (V.ids.sel.sponsorSet ? "var(--ink)" : "var(--muted)"))}>{V.ids.sel.sponsor}</dd>
                                 <dt style={css("color: var(--muted)")}>Source</dt><dd style={css("margin: 0; font-weight: 500")}>{V.ids.sel.source}</dd>
-                                <dt style={css("color: var(--muted)")}>Project</dt><dd style={css("margin: 0; font-weight: 500; overflow-wrap: anywhere; color: " + (V.ids.sel.projectSet ? "var(--ink)" : "var(--muted)"))}>{V.ids.sel.project}</dd>
+                                <dt style={css("color: var(--muted)")}>Converted to</dt><dd style={css("margin: 0; display: grid; gap: 4px; font-weight: 500; overflow-wrap: anywhere")}>{V.ids.sel.noConversions ? <span style={css("color: var(--muted)")}>Not promoted yet</span> : null}{V.ids.sel.conversions.map((c, c__i) => c.open ? <button key={c__i} type="button" onClick={c.open} style={css("padding: 0; border: 0; background: none; color: var(--ink); font: inherit; text-align: left; text-decoration: underline; cursor: pointer")}>{c.text}</button> : <span key={c__i}>{c.text}</span>)}{V.ids.sel.addConversion ? <button type="button" onClick={V.ids.sel.addConversion} style={css("justify-self: start; padding: 0; border: 0; background: none; color: var(--muted); font: inherit; text-decoration: underline; cursor: pointer")}>Add conversion</button> : null}</dd>
                               </dl>
                               <div style={css("display: flex; flex-direction: column; gap: 10px; padding-top: 16px; border-top: 1px solid var(--line)")}>
-                                <div style={css("display: flex; justify-content: space-between; align-items: baseline")}><span style={css("font-size: 14px; font-weight: 600")}>Ready to produce</span><span style={css("font-size: 13px; font-weight: 600; color: var(--ink-3); font-variant-numeric: tabular-nums")}>{V.ids.sel.readyLabel}</span></div>
+                                <div style={css("display: flex; justify-content: space-between; align-items: baseline")}><span style={css("font-size: 14px; font-weight: 600")}>Needed for Ready</span><span style={css("font-size: 13px; font-weight: 600; color: var(--ink-3); font-variant-numeric: tabular-nums")}>{V.ids.sel.readyLabel}</span></div>
                                 <CheckList items={V.ids.sel.ready} />
                               </div>
                             </aside>
                           </div>
-                        </dialog>
+                        </FocusDialog>
                       </>
                     ) : null}
                     {" "}
@@ -3928,7 +3947,7 @@ export default function StudioView({ V }) {
                     {V.ids.hasEdit ? (
                       <>
                         <button type="button" aria-label="Close without saving" onClick={V.ids.edit.requestClose} style={css("position: fixed; inset: 0; z-index: 40; border: 0; background: rgba(17,17,17,0.45); cursor: default")}></button>
-                        <dialog open aria-modal="true" aria-labelledby="ie-h" onKeyDown={V.ids.edit.onKey} style={css("position: fixed; z-index: 41; top: 50%; left: 50%; transform: translate(-50%, -50%); margin: 0; width: 1120px; max-width: calc(100vw - 32px); max-height: calc(100vh - 48px); overflow-y: auto; box-sizing: border-box; padding: 0; background: var(--surface); border: 1px solid var(--line-4); border-radius: 28px; box-shadow: 0 24px 80px rgba(0,0,0,0.28); color: var(--ink); font-family: var(--font-main)")}>
+                        <FocusDialog open aria-modal="true" aria-labelledby="ie-h" onKeyDown={V.ids.edit.onKey} style={css("position: fixed; z-index: 41; top: 50%; left: 50%; transform: translate(-50%, -50%); margin: 0; width: 1120px; max-width: calc(100vw - 32px); max-height: calc(100vh - 48px); overflow-y: auto; box-sizing: border-box; padding: 0; background: var(--surface); border: 1px solid var(--line-4); border-radius: 28px; box-shadow: 0 24px 80px rgba(0,0,0,0.28); color: var(--ink); font-family: var(--font-main)")}>
                           <div onDragOver={V.ids.edit.onDragOver} onDragLeave={V.ids.edit.onDragLeave} onDrop={V.ids.edit.onDrop} style={css(V.ids.edit.bannerStyle)}>
                             <button type="button" aria-label={V.ids.edit.focalLabel} onClick={V.ids.edit.setFocal} onKeyDown={V.ids.edit.onFocalKey} style={css("position: absolute; inset: 0; width: 100%; height: 100%; padding: 0; border: 0; background: transparent; cursor: inherit")}></button>
                             <span aria-hidden="true" style={css(V.ids.edit.focalStyle)}></span>
@@ -4094,7 +4113,7 @@ export default function StudioView({ V }) {
                             )}
                             <button type="button" onClick={V.ids.edit.save} aria-disabled={V.ids.edit.dirty ? 'false' : 'true'} style={css(V.ids.edit.saveStyle)}>{V.ids.edit.saveLabel}</button>
                           </footer>
-                        </dialog>
+                        </FocusDialog>
                       </>
                     ) : null}
                     {" "}
@@ -4102,12 +4121,13 @@ export default function StudioView({ V }) {
                     {V.ids.modal ? (
                       <>
                         <button type="button" aria-label="Close dialog" onClick={V.ids.ni.close} style={css("position: fixed; inset: 0; z-index: 40; border: 0; background: rgba(17,17,17,0.45); cursor: default")}></button>
-                        <dialog open aria-modal="true" aria-labelledby="ni-h" onKeyDown={V.ids.ni.onKey} style={css("position: fixed; z-index: 41; top: 50%; left: 50%; transform: translate(-50%, -50%); margin: 0; width: 1120px; max-width: calc(100vw - 32px); max-height: calc(100vh - 48px); overflow-y: auto; box-sizing: border-box; padding: 0; background: var(--surface); border: 1px solid var(--line-4); border-radius: 28px; box-shadow: 0 24px 80px rgba(0,0,0,0.28); color: var(--ink); font-family: var(--font-main)")}>
+                        <FocusDialog open aria-modal="true" aria-labelledby="ni-h" onKeyDown={V.ids.ni.onKey} style={css("position: fixed; z-index: 41; top: 50%; left: 50%; transform: translate(-50%, -50%); margin: 0; width: 1120px; max-width: calc(100vw - 32px); max-height: calc(100vh - 48px); overflow-y: auto; box-sizing: border-box; padding: 0; background: var(--surface); border: 1px solid var(--line-4); border-radius: 28px; box-shadow: 0 24px 80px rgba(0,0,0,0.28); color: var(--ink); font-family: var(--font-main)")}>
                           <header style={css("display: flex; flex-wrap: wrap; align-items: flex-start; gap: 16px; padding: 28px clamp(16px, 3vw, 28px) 20px; border-bottom: 1px solid var(--line)")}>
                             <div style={css("flex: 1 1 300px; display: flex; flex-direction: column; gap: 6px; min-width: 0")}>
-                              <h2 id="ni-h" style={css("margin: 0; font-family: var(--font-title); font-weight: 900; font-size: 24px; letter-spacing: -0.02em")}>New idea</h2>
-                              <p style={css("margin: 0; font-size: 14px; color: var(--muted)")}>Ideas start as Draft and belong to one brand. Capture fast, add the brief when you have it.</p>
+                              <h2 id="ni-h" style={css("margin: 0; font-family: var(--font-title); font-weight: 900; font-size: 24px; letter-spacing: -0.02em")}>Capture idea</h2>
+                              <p style={css("margin: 0; font-size: 14px; color: var(--muted)")}>Ideas start in Inbox and belong to one brand. Capture fast, add the brief when you have it.</p>
                             </div>
+                            {V.ids.canCreate ? <IdeaImport {...V.ids.importProps} /> : null}
                             <div role="group" aria-label="Form depth" style={css("display: inline-flex; padding: 3px; gap: 2px; border-radius: 14px; background: var(--chip)")}>
                               {(V.ids.ni.modes || []).map((m) => <button key={m.label} type="button" aria-pressed={m.pressed} onClick={m.pick} style={css(m.style)}>{m.label}</button>)}
                             </div>
@@ -4159,7 +4179,8 @@ export default function StudioView({ V }) {
                                 <div style={css("grid-column: 1 / -1; display: flex; flex-direction: column; gap: 6px")}>
                                   <IdeaPlanning {...V.ids.ni.planning} />
                                   <label htmlFor="ni-title" style={css(V.fieldLabel)}>Title</label>
-                                  <input id="ni-title" type="text" autoComplete="off" autoFocus placeholder="What is the idea?" value={V.ids.ni.title} onChange={V.ids.ni.onTitle} style={css(V.fieldInput + " font-size: 15px;")} />
+                                  <input id="ni-title" type="text" autoComplete="off" autoFocus placeholder="What is the idea? Or paste a link." value={V.ids.ni.title} onChange={V.ids.ni.onTitle} onPaste={V.ids.ni.onTitlePaste} style={css(V.fieldInput + " font-size: 15px;")} />
+                                  {V.ids.ni.hasLink ? <p style={css("margin: 6px 0 0; font-size: 13px; color: var(--muted)")}>First reference: {V.ids.ni.linkLabel} <button type="button" onClick={V.ids.ni.clearLink} style={css("padding: 0; border: 0; background: none; color: var(--ink); font: inherit; text-decoration: underline; cursor: pointer")}>Remove</button></p> : null}
                                 </div>
                                 <div style={css("display: flex; flex-direction: column; gap: 6px")}>
                                   <div style={css("display: flex; justify-content: space-between; align-items: baseline")}><label htmlFor="ni-hook" style={css(V.fieldLabel)}>Banner hook</label><span style={css("font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums")}>{V.ids.ni.hookCount}</span></div>
@@ -4289,7 +4310,7 @@ export default function StudioView({ V }) {
                             <button type="button" className="fb-ni" onClick={V.ids.ni.close} style={css("min-height: 44px; padding: 0 18px; border: 0; border-radius: 14px; background: transparent; font-size: 14px; font-weight: 500; color: var(--ink-3); cursor: pointer")}>Cancel</button>
                             <button type="button" onClick={V.ids.ni.create} disabled={V.ids.ni.busy} style={css(V.ui.btnPrimary + (V.ids.ni.busy ? " opacity: 0.6;" : ""))}>{V.ids.ni.createLabel}</button>
                           </footer>
-                        </dialog>
+                        </FocusDialog>
                       </>
                     ) : null}
                     {" "}
@@ -4298,7 +4319,7 @@ export default function StudioView({ V }) {
                       <>
                         <button type="button" aria-label="Close dialog" onClick={V.ids.rs.close} style={css("position: fixed; inset: 0; z-index: 40; border: 0; background: rgba(17,17,17,0.32); cursor: default")}></button>
                         {" "}
-                        <dialog open aria-modal="true" aria-labelledby="rs-title" style={css(V.ui.dialog + " width: 620px")}>
+                        <FocusDialog open aria-modal="true" aria-labelledby="rs-title" style={css(V.ui.dialog + " width: 620px")}>
                           <div style={css("display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 20px")}>
                             <div>
                               <h2 id="rs-title" style={css("margin: 0; font-family: var(--font-title); font-size: var(--text-h4); font-weight: var(--weight-black); letter-spacing: -0.02em")}>Research ideas</h2>
@@ -4431,7 +4452,7 @@ export default function StudioView({ V }) {
                               </section>
                             </>
                           ) : null}
-                        </dialog>
+                        </FocusDialog>
                       </>
                     ) : null}
                   </>
@@ -5624,7 +5645,7 @@ export default function StudioView({ V }) {
                   <>
                     <button type="button" aria-label="Close dialog" onClick={V.closeModal} style={css("position: fixed; inset: 0; z-index: 40; background: rgba(17,17,17,0.32); border: 0; cursor: default")}></button>
                     {" "}
-                    <dialog open aria-modal="true" aria-labelledby={V.modalTitleId} style={css("position: fixed; z-index: 41; top: 50%; left: 50%; transform: translate(-50%, -50%); margin: 0; width: 480px; max-width: calc(100vw - 32px); max-height: calc(100vh - 64px); overflow-y: auto; box-sizing: border-box; background: var(--surface); border: 1px solid var(--line-4); border-radius: 24px; box-shadow: 0 24px 80px rgba(0,0,0,0.20); padding: 24px; color: var(--ink); font-family: var(--font-main)")}>
+                    <FocusDialog open aria-modal="true" aria-labelledby={V.modalTitleId} style={css("position: fixed; z-index: 41; top: 50%; left: 50%; transform: translate(-50%, -50%); margin: 0; width: 480px; max-width: calc(100vw - 32px); max-height: calc(100vh - 64px); overflow-y: auto; box-sizing: border-box; background: var(--surface); border: 1px solid var(--line-4); border-radius: 24px; box-shadow: 0 24px 80px rgba(0,0,0,0.20); padding: 24px; color: var(--ink); font-family: var(--font-main)")}>
                       {V.isPersonModal ? (
                         <>
                           <div style={css("display: flex; flex-direction: column; gap: 16px")}>
@@ -5751,7 +5772,7 @@ export default function StudioView({ V }) {
                           </div>
                         </>
                       ) : null}
-                    </dialog>
+                    </FocusDialog>
                   </>
                 ) : null}
                 {" "}
@@ -5943,7 +5964,7 @@ function DD({ d, id, className }) {
   const list = d.open ? (
     <>
       <button type="button" tabIndex="-1" aria-label="Close list" onClick={d.close} style={css("position: fixed; inset: 0; z-index: " + (float ? '69' : '0') + "; border: 0; background: transparent; cursor: default")}></button>
-      <div role="listbox" aria-label={d.label} onKeyDown={float ? d.onKey : undefined} style={css(d.pop)}>
+      <div data-modal-portal="" role="listbox" aria-label={d.label} onKeyDown={float ? d.onKey : undefined} style={css(d.pop)}>
         {(d.items || []).map((o, i) => (
           <button key={i} type="button" role="option" className="mitem" aria-selected={o.sel} onClick={o.pick} style={css(o.style)}>
             <span style={css(o.check)}><svg aria-hidden="true" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3.5 8.5l3 3 6-7"></path></svg></span>

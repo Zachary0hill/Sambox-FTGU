@@ -1,5 +1,7 @@
+import { observedWorker } from '@/lib/operations/worker';
 import { NextResponse } from 'next/server';
 import { getMember, isCron, deny } from '@/lib/integrations/auth';
+import { cleanupDeletedFiles } from '@/lib/operations/cleanup';
 import { runAutomations } from '@/lib/automations/run';
 import { baseUrlFor } from '@/lib/email/invite';
 
@@ -16,7 +18,9 @@ export async function POST(request: Request) {
     workspaceId = m.ctx.workspace_id;
   }
   try {
-    return NextResponse.json(await runAutomations({ workspaceId, baseUrl: baseUrlFor(request) }));
+    const result = await observedWorker('automations', workspaceId, () => runAutomations({ workspaceId, baseUrl: baseUrlFor(request) }));
+    const cleaned = await cleanupDeletedFiles(workspaceId);
+    return NextResponse.json({ ...result, cleaned });
   } catch (err) {
     return NextResponse.json({ error: err instanceof Error ? err.message : String(err) }, { status: 500 });
   }

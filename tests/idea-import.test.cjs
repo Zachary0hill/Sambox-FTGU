@@ -109,7 +109,7 @@ test('one atomic batch saves drafts and a repeat upload leaves existing edits in
   assert.equal(db.calls.length, 1);
   assert.equal(db.calls[0].options.ignoreDuplicates, true);
   const first = [...db.records.values()][0];
-  assert.equal(first.status, 'draft'); assert.equal(first.author_id, 'me');
+  assert.equal(first.stage, 'inbox'); assert.equal(first.author_id, 'me');
   assert.match(first.id, /^[0-9a-f-]{14}8[0-9a-f]{3}-[89ab]/);
   first.title = 'Manual edit';
   assert.deepEqual(await saveIdeaImport({ ...input, userId: 'another-user' }), { created: 0, skipped: 2 });
@@ -185,4 +185,14 @@ test('uploaded files decode from UTF-8, UTF-16 and Windows-1252', () => {
   assert.equal(decodeImportFile(Buffer.concat([Buffer.from([0xEF, 0xBB, 0xBF]), Buffer.from(doc)])), doc);
   assert.equal(decodeImportFile(Buffer.from([0x43, 0x61, 0x66, 0xE9, 0x20, 0x93, 0x71, 0x94])), 'Café “q”');
   assert.equal(parseIdeaDocument(decodeImportFile(utf16), brands).ideas[0].title, 'Café “quotes”');
+});
+
+test('CSV rows and pasted lists import one idea each', () => {
+  const csv = parseIdeaDocument('title,notes,hook,link\n"Why, really",Some notes,BIG HOOK,https://example.com/a\nSecond,,,', [], 'list.csv');
+  assert.deepEqual(csv.ideas.map((i) => i.title), ['Why, really', 'Second']);
+  assert.match(csv.ideas[0].body, /Some notes/);
+  assert.deepEqual(csv.ideas[0].refs, ['https://example.com/a']);
+  const list = parseIdeaDocument('- First idea\n2. Second idea\nThird idea', [], '');
+  assert.deepEqual(list.ideas.map((i) => i.title), ['First idea', 'Second idea', 'Third idea']);
+  assert.throws(() => parseIdeaDocument('notes,hook\na,b', [], 'list.csv'), /“title” column/);
 });

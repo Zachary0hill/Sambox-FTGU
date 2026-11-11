@@ -1,5 +1,8 @@
 import 'server-only';
+import { createHash, randomUUID } from 'node:crypto';
 import { supabaseAdmin } from '@/lib/supabase/admin';
+import { normalizeIdeasRules } from '@/lib/ideas/rules-shared';
+import { refuseSpend, reserveSpend, priceOverrides, modelAllowance, modelUsageCost } from '@/lib/ai/spend';
 import { getIntegration, assistantProvider } from '@/lib/integrations/secrets';
 import { abortRun } from '@/lib/integrations/providers/apify';
 import { workspaceModels, withFallback, providerName } from '@/lib/ai/model';
@@ -7,7 +10,7 @@ import type { Member } from '@/lib/integrations/auth';
 import { LIMITS, SOURCES, defaultTopics, parseTopics, sourceById, type SourceId } from './catalog';
 import { dedupe, type Finding, type IdeaDraft } from './normalize';
 import { runSource, type Conns } from './sources';
-import { draftIdeas, type BrandBrief } from './draft';
+import { draftIdeas, draftPrompt, DRAFT_INSTRUCTIONS, DRAFT_OUTPUT_TOKENS, type BrandBrief } from './draft';
 import { coverNewIdeas } from '@/lib/ideas/cover';
 import { recordUsage } from '@/lib/ai/usage';
 
@@ -54,6 +57,10 @@ export async function createRun(m: Member, body: Record<string, unknown>) {
   const topics = parseTopics(typeof body.topics === 'string' && body.topics.trim() ? body.topics : defaultTopics(brand));
   if (!topics.length) return { error: 'Add a niche or a few seed topics.', status: 400 };
   const count = Math.max(1, Math.min(LIMITS.maxIdeas, Math.round(Number(body.count) || LIMITS.defaultIdeas)));
+
+  const { data: rulesRow } = await m.supabase.from('ideas_rules').select('rules').eq('workspace_id', ws).maybeSingle();
+  const refused = await refuseSpend(ws, { ...normalizeIdeasRules(rulesRow?.rules), run_cost_cap_usd: Infinity }, 0, 0);
+  if (refused) return { error: refused, status: 429 };
 
   await expireStale(ws);
   const { data: busy } = await m.supabase.from('research_runs').select('id').eq('workspace_id', ws).in('status', ['queued', 'running']).limit(1);
@@ -107,30 +114,37 @@ export async function cancelRun(ws: string, runId: string) {
 export async function executeRun(runId: string, m: Member) {
   const admin = supabaseAdmin();
   const t0 = Date.now();
+  const attemptId = randomUUID();
+  const gathered: Omit<Finding, 'id'>[] = [];
   const ws = m.ctx.workspace_id;
   let inputs: RunInputs = { brandId: '', topics: [], sources: [], count: 0 };
   const progress: Record<string, SourceState> = {};
   const actorRuns: string[] = [];
   let chain: Promise<unknown> = Promise.resolve();
   const save = (patch: Record<string, unknown> = {}) => {
-    chain = chain.then(() => admin.from('research_runs').update({ sources: progress, actor_run_ids: actorRuns, ...patch }).eq('id', runId)).catch(() => null);
+    const snapshot = { sources: structuredClone(progress), actor_run_ids: [...actorRuns], ...patch };
+    chain = chain.then(async () => {
+      const result = await admin.from('research_runs').update(snapshot).eq('id', runId).eq('workspace_id', ws).eq('status', 'running').eq('attempt_id', attemptId).select('id').maybeSingle();
+      if (result.error || !result.data) throw new Error('Research ownership changed or progress could not be saved.');
+    });
     return chain;
   };
   let cancelSeen = false, cancelAt = 0;
   const cancelled = async () => {
     if (cancelSeen || Date.now() - cancelAt < 4000) return cancelSeen;
     cancelAt = Date.now();
-    const { data } = await admin.from('research_runs').select('status').eq('id', runId).single();
-    cancelSeen = !!data && data.status === 'cancelled';
+    const { data } = await admin.from('research_runs').select('status,attempt_id').eq('id', runId).single();
+    cancelSeen = !data || data.status !== 'running' || data.attempt_id !== attemptId;
     return cancelSeen;
   };
   const fail = async (error: string) => {
-    await save();
-    if (!(await cancelled())) await admin.from('research_runs').update({ status: 'failed', error, finished_at: new Date().toISOString() }).eq('id', runId);
+    await chain.catch(() => {});
+    const result = await admin.from('research_runs').update({ status: 'failed', error, finished_at: new Date().toISOString() }).eq('id', runId).eq('workspace_id', ws).eq('status', 'running').eq('attempt_id', attemptId);
+    if (result.error) console.error('Research failure could not be saved', result.error.message);
   };
 
   try {
-    const { data: cur } = await admin.from('research_runs').select('inputs, sources, findings').eq('id', runId).single();
+    const { data: cur } = await admin.from('research_runs').update({ status: 'running', attempt_id: attemptId, started_at: new Date().toISOString() }).eq('id', runId).eq('workspace_id', ws).eq('status', 'queued').select('inputs, sources, findings, draft_payload').maybeSingle();
     if (!cur) return;
     inputs = cur.inputs as RunInputs;
     Object.assign(progress, cur.sources || {});
@@ -139,7 +153,11 @@ export async function executeRun(runId: string, m: Member) {
     await save({ status: 'running', started_at: new Date().toISOString() });
 
     const { conns } = await availability(ws);
+    const rulesRow = await admin.from('ideas_rules').select('rules').eq('workspace_id', ws).maybeSingle();
+    const caps = normalizeIdeasRules(rulesRow.data?.rules);
+    const prices = await priceOverrides(ws);
     const deadline = t0 + LIMITS.sourceSecs * 1000;
+    if (saved) gathered.push(...saved);
     const todo = inputs.sources.filter((s) => progress[s] && progress[s].state === 'queued');
     const results = await Promise.all(todo.map(async (id) => {
       const via = SOURCES.find((s) => s.id === id)!.via as keyof Conns;
@@ -147,15 +165,25 @@ export async function executeRun(runId: string, m: Member) {
       progress[id] = { state: 'running' };
       await save();
       try {
+        const configured = Number(conns[via]?.config.researchAllowanceUsd);
+        const allowance = via === 'apify' ? 0.5 : via === 'firecrawl' ? inputs.topics.length * 0.01 : via === 'virlo' ? inputs.topics.length * 0.03 : configured;
+        if (!Number.isFinite(allowance) || allowance <= 0) throw new Error('Set the estimated per-source research allowance in ' + via + ' integration settings first.');
+        const settle = await reserveSpend(ws, runId, caps, via, id, allowance);
+        let measured = 0;
         const drafts = await Promise.race([
           runSource(id, conns, {
             topics: inputs.topics, deadline, cancelled,
             onActorRun: async (rid) => { actorRuns.push(rid); await save(); },
+            onSpend: (_provider, _model, usd) => { measured += usd; },
           }),
           sleep(deadline - Date.now() + 20000).then(() => { throw new Error('Took too long and was stopped.'); }),
         ]);
+        const charged = via === 'apify' && measured > 0 ? measured : allowance;
+        await settle(charged);
+        await recordUsage({ workspaceId: ws, userId: m.ctx.user_id, feature: 'research', provider: via, model: id, costUsd: charged, runId });
         progress[id] = { state: (await cancelled()) ? 'cancelled' : 'done', count: drafts.length };
-        await save();
+        gathered.push(...drafts);
+        await save({ findings: dedupe(gathered, { max: LIMITS.maxFindings }) });
         return drafts;
       } catch (err) {
         progress[id] = { state: 'failed', error: msg(err) };
@@ -167,7 +195,7 @@ export async function executeRun(runId: string, m: Member) {
 
     const { data: brand } = await admin.from('brand_kits').select('name, voice_prompt, tone, dos, donts, sections').eq('id', inputs.brandId).single();
     const { data: prior } = await admin.from('ideas').select('title, refs').eq('brand_id', inputs.brandId).order('created_at', { ascending: false }).limit(200);
-    const findings = saved || dedupe(results.flat(), { usedUrls: (prior || []).flatMap((i) => i.refs || []), max: LIMITS.maxFindings });
+    const findings = dedupe([...(saved || []), ...results.flat()], { usedUrls: (prior || []).flatMap((i) => i.refs || []), max: LIMITS.maxFindings });
     await save({ finding_count: findings.length, findings: findings.length ? findings : null });
     if (!findings.length) {
       // Every source that ran failed: that is a failed run. Sources that ran and found nothing new is a finished run
@@ -182,11 +210,19 @@ export async function executeRun(runId: string, m: Member) {
     const models = await workspaceModels(ws);
     if (!models.length) return fail('No AI model is connected.');
     const left = LIMITS.runSecs * 1000 - (Date.now() - t0) - 15000;
-    const drafted = await withFallback(models, (wm) => draftIdeas(wm.model, {
+    const draftArgs = {
       brand: brief(brand), topics: inputs.topics, findings, count: inputs.count,
       existing: (prior || []).map((i) => i.title).slice(0, 80), timeoutMs: Math.max(30000, Math.min(left, 120000)),
-      onUsage: (usage) => recordUsage({ workspaceId: ws, userId: m.ctx.user_id, feature: 'research', provider: wm.provider, model: wm.modelId, usage }),
-    }));
+    };
+    const drafted = cur.draft_payload ? { result: cur.draft_payload as IdeaDraft[], used: models[0], skipped: [] } : await withFallback(models, async (wm) => {
+      cancelAt = 0; if (await cancelled()) throw new Error('Research was canceled or replaced.');
+      const settle = await reserveSpend(ws, runId, caps, wm.provider, wm.modelId, modelAllowance(wm.provider, wm.modelId, draftPrompt(draftArgs) + DRAFT_INSTRUCTIONS, DRAFT_OUTPUT_TOKENS, prices));
+      return draftIdeas(wm.model, { ...draftArgs, onUsage: async (usage) => {
+        const costUsd = modelUsageCost(wm.provider, wm.modelId, usage, prices);
+        await settle(costUsd);
+        await recordUsage({ workspaceId: ws, userId: m.ctx.user_id, feature: 'research', provider: wm.provider, model: wm.modelId, usage, costUsd, runId });
+      } });
+    });
     const ideas = drafted.result;
     const note = drafted.skipped.length
       ? 'Drafted with ' + providerName(drafted.used.provider) + ' because ' + drafted.skipped.map((x) => providerName(x.provider) + ' failed (' + x.error + ')').join(' and ') + '.'
@@ -194,11 +230,12 @@ export async function executeRun(runId: string, m: Member) {
     if (await cancelled()) return;
     if (!ideas.length) return fail('The model did not return ideas tied to the findings. Try again or add topics.');
 
-    const ids = await saveIdeas(m, runId, inputs.brandId, ideas, (brand && brand.name) || '');
-    await save({ status: 'done', idea_ids: ids, findings: null, note, finished_at: new Date().toISOString(), error: null });
+    await save({ draft_payload: ideas });
+    cancelAt = 0; if (await cancelled()) return;
+    const ids = await saveIdeas(m, runId, attemptId, inputs.brandId, ideas, note);
     // Every drafted idea gets a cover from the image model, in what is left of the run's time. The run is already
     // done above, so a slow or broke image provider never fails it.
-    await coverNewIdeas(ids, ws, m, Math.max(20000, LIMITS.runSecs * 1000 - (Date.now() - t0) - 5000));
+    await coverNewIdeas(ids, ws, m, Math.max(20000, LIMITS.runSecs * 1000 - (Date.now() - t0) - 5000), runId);
   } catch (err) {
     await fail(msg(err));
   }
@@ -213,35 +250,24 @@ function brief(b: Record<string, unknown> | null): BrandBrief {
   };
 }
 
-// Saves drafts as Research ideas in In Review (they exist to be judged, not edited first) on the member's session
+// Saves drafts as Research ideas in Inbox on the member's session
 // (ideas_insert: author is the caller, brand visible, not an editor) and logs them like the app does. Falls back to the secret-key client if the session expired mid-run.
-async function saveIdeas(m: Member, runId: string, brandId: string, ideas: IdeaDraft[], brandName: string): Promise<string[]> {
+async function saveIdeas(m: Member, runId: string, attemptId: string, brandId: string, ideas: IdeaDraft[], note: string | null): Promise<string[]> {
   const ws = m.ctx.workspace_id, uid = m.ctx.user_id;
-  const rows = ideas.map((i) => ({
-    workspace_id: ws, brand_id: brandId, type: 'research', status: 'in_review', title: i.title, hook: i.hook,
+  const { data: rulesRow } = await m.supabase.from('ideas_rules').select('rules').eq('workspace_id', ws).maybeSingle();
+  const cover = normalizeIdeasRules(rulesRow?.rules).cover;
+  const rows = ideas.map((i, index) => ({
+    id: stableIdeaId(runId, index),
+    cover_highlight: cover.highlight, hook_position: cover.hook_position,
+    workspace_id: ws, brand_id: brandId, type: 'research', stage: 'inbox', title: i.title, hook: i.hook,
     body: i.body, tags: i.tags, refs: i.refs, findings: i.findings, author_id: uid, source: 'research', research_run_id: runId,
   }));
-  const mine = await m.supabase.from('ideas').insert(rows).select('id, title');
-  if (!mine.error && mine.data) {
-    for (const r of mine.data) {
-      await m.supabase.rpc('log_activity', {
-        p_category: 'idea', p_action: 'added the idea from research', p_target_label: r.title,
-        p_project: null, p_idea: r.id, p_event: null, p_quote: null, p_external: false,
-      });
-    }
-    await m.supabase.rpc('log_activity', {
-      p_category: 'idea', p_action: 'ran research and added ' + mine.data.length + (mine.data.length === 1 ? ' idea for' : ' ideas for'),
-      p_target_label: brandName, p_project: null, p_idea: mine.data[0].id, p_event: 'idea', p_quote: null, p_external: false,
-    });
-    return mine.data.map((r) => r.id as string);
-  }
-  const admin = supabaseAdmin();
-  const res = await admin.from('ideas').insert(rows).select('id, title');
-  if (res.error || !res.data) throw new Error('Could not save ideas: ' + (res.error || mine.error)!.message);
-  const label = (m.ctx.profile && (String(m.ctx.profile.full_name || '').split(' ')[0] || m.ctx.profile.email)) || '';
-  await admin.from('activity_log').insert(res.data.map((r) => ({
-    workspace_id: ws, actor_id: uid, actor_label: label, category: 'idea', action: 'added the idea from research',
-    target_type: 'idea', target_id: r.id, target_label: r.title, idea_id: r.id, source: 'api',
-  })));
-  return res.data.map((r) => r.id as string);
+  const result = await supabaseAdmin().rpc('commit_research_ideas', { p_run: runId, p_attempt: attemptId, p_rows: rows, p_note: note });
+  if (result.error || !result.data) throw new Error('Could not save ideas: ' + (result.error?.message || 'No result.'));
+  return result.data as string[];
+}
+
+function stableIdeaId(runId: string, index: number) {
+  const h = createHash('sha256').update(runId + ':' + index).digest('hex');
+  return h.slice(0,8)+'-'+h.slice(8,12)+'-5'+h.slice(13,16)+'-a'+h.slice(17,20)+'-'+h.slice(20,32);
 }
