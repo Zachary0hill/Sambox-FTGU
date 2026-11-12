@@ -40,7 +40,7 @@ import { RichText, Thinking, Steps, MsgActions, ModelPicker, ModeToggle, GearBut
 export default function StudioView({ V }) {
   return (
     <div data-studio-root="" style={css(V.rootStyle)} onClickCapture={(e) => { const a = e.target.closest && e.target.closest('a[href="#"]'); if (a) e.preventDefault(); }}>
-      {/* app: Dev Notes floating dock for Super Admins (press N) */}
+      {/* app: Dev Notes floating dock for the team (press N, or Dev notes in the sidebar) */}
       {V.devNotes}
       {V.flowLayer}
       {/* app: record dialogs (templates, finance records, automations, two-step sign in) */}
@@ -185,6 +185,16 @@ export default function StudioView({ V }) {
             ) : null}
             {" "}
             <div style={css("margin-top: auto; padding: 12px; border-top: 1px solid var(--line)")}>
+              {/* app: Dev Notes opener for every team role (the dock also opens with N) */}
+              {V.devNotesOpen ? (
+                <button type="button" className="fb-ni" aria-label="Dev notes" title="Dev notes · press N" onClick={V.devNotesOpen} style={css(V.devNotesStyle + " margin-bottom: 4px;")}>
+                  <span aria-hidden="true" style={css("width: 28px; height: 28px; flex: none; display: inline-flex; align-items: center; justify-content: center; color: var(--muted-2)")}>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 17l6-6-6-6M12 19h8"></path></svg>
+                  </span>
+                  {" "}
+                  <span style={css(V.navLabel)}>Dev notes</span>
+                </button>
+              ) : null}
               <button type="button" className="fb-ni" aria-label="Account settings" aria-current={V.acctCurrent} onClick={V.openSettings} style={css(V.acctStyle)}>
                 <span aria-hidden="true" style={css("width: 28px; height: 28px; flex: none; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; background: var(--chip-2); color: var(--ink-2)")}>{V.acctInitial}</span>
                 {" "}
@@ -200,11 +210,12 @@ export default function StudioView({ V }) {
             <label style={{display:'flex',alignItems:'center',gap:12,width:'100%',fontWeight:600}}>
               Menu
               <select aria-label="Go to section" value={(V.navItems || []).concat(V.adminNav || []).find(n=>n.current === 'page')?.label || (V.acctCurrent === 'page' ? 'Account' : '')}
-                onChange={e=>{const n=(V.navItems || []).concat(V.adminNav || []).find(n=>n.label===e.target.value); if(n) n.pick(); else if(e.target.value==='Account') V.openSettings();}}
+                onChange={e=>{const n=(V.navItems || []).concat(V.adminNav || []).find(n=>n.label===e.target.value); if(n) n.pick(); else if(e.target.value==='Account') V.openSettings(); else if(e.target.value==='Dev notes' && V.devNotesOpen) V.devNotesOpen();}}
                 style={{minWidth:0,flex:1,minHeight:44,border:'1px solid var(--line)',borderRadius:10,padding:'0 12px',background:'var(--surface)',color:'var(--ink)',fontSize:16}}>
                 <option value="" disabled>Choose a section</option>
                 <optgroup label="Studio">{(V.navItems||[]).map(n=><option key={n.label} value={n.label}>{n.label}</option>)}</optgroup>
                 {(V.adminNav||[]).length ? <optgroup label="Administration">{V.adminNav.map(n=><option key={n.label} value={n.label}>{n.label}</option>)}</optgroup> : null}
+                {V.devNotesOpen ? <option value="Dev notes">Dev notes</option> : null}
                 <option value="Account">Account</option>
               </select>
             </label>

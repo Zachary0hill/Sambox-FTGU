@@ -6,7 +6,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import StudioView from './StudioView';
 import { startActivityTracking } from '@/lib/activity-tracking';
 import UploadStatus from './UploadStatus';
-import DevNotes from './DevNotes';
+import DevNotes, { openDevNotes } from './DevNotes';
+
+const DEV_NOTE_ROLES = ['admin', 'manager', 'editor', 'designer'];
 import MemberWelcome, { welcomeKind } from './MemberWelcome';
 import { FlowLayer, flowGuard } from './FlowBuilder';
 import { supabaseBrowser } from '@/lib/supabase/client';
@@ -301,8 +303,12 @@ export default function Studio({ initialPath, initialProject }) {
 
   const V = computeVals({ s, set, D, A, me, now: new Date() });
   hotkey.current = V.ids && V.ids.hotkey;
-  // Dev Notes dock (press N), Super Admins only. Rendered inside the board root so it picks up the theme tokens.
-  V.devNotes = me.uiRole === 'admin' ? <DevNotes sb={sb} me={me} workspaceId={ctx.workspace_id} /> : null;
+  // Dev Notes dock (press N, or Dev notes in the sidebar) for every team role. Super Admins share the whole backlog;
+  // managers, editors and designers see and manage only their own open notes (RLS: 20261112000100_dev_notes_team).
+  // Rendered inside the board root so it picks up the theme tokens.
+  const notesRole = DEV_NOTE_ROLES.includes(me.uiRole);
+  V.devNotes = notesRole ? <DevNotes sb={sb} me={me} workspaceId={ctx.workspace_id} admin={me.uiRole === 'admin'} /> : null;
+  V.devNotesOpen = notesRole ? openDevNotes : null;
   // Automations > New flow and the flow builder canvas (s.flowOpen: 'new' or a workflow id).
   V.flowLayer = me.uiRole === 'admin' && (s.flowOpen || s.flowReturn)
     ? <FlowLayer D={D} A={A} open={s.flowOpen} review={!!s.flowReview} back={s.flowReturn} set={set} /> : null;

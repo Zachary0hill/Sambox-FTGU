@@ -1,9 +1,11 @@
 'use client';
 import NextImage from 'next/image';
-// Dev Notes: the floating "press N anywhere" dock for Super Admins. A shared development backlog for the workspace:
-// jot down an idea, enhancement or bug while browsing and it is tagged with the page you were on. Drag the header to
-// move it (position is remembered), double-click the header to re-centre, arrow keys nudge when the grip is focused,
-// Esc closes. Ported from the ZZMEDIA and Parish dashboards; rows live in dev_notes behind RLS (Super Admins only).
+// Dev Notes: the floating "press N anywhere" dock (also opened from Dev notes in the sidebar). A development backlog
+// for the workspace: jot down an idea, enhancement or bug while browsing and it is tagged with the page you were on.
+// Super Admins share the whole list and are the only ones who resolve. Managers, editors and designers see only the
+// notes they wrote and can edit, re-categorise or delete one while it is open (RLS: 20261112000100_dev_notes_team).
+// Drag the header to move it (position is remembered), double-click the header to re-centre, arrow keys nudge when
+// the grip is focused, Esc closes. Ported from the ZZMEDIA and Parish dashboards.
 // Screenshots: paste, drop onto the card, or pick with the paperclip. Up to four per note; large images are downscaled
 // in the browser, stored in the private dev-note-shots bucket under <workspace>/<note>/ and shown through signed URLs.
 // Keep signed URLs and local blob previews direct with unoptimized images.
@@ -221,9 +223,18 @@ function useDrag(cardRef) {
   };
 }
 
+// Opens the dock from anywhere (the sidebar button), without prop drilling through the generated view.
+const OPEN_EVENT = 'ftgu:dev-notes-open';
+export const openDevNotes = () => { if (typeof window !== 'undefined') window.dispatchEvent(new Event(OPEN_EVENT)); };
+
 // ── Hotkey owner: bare "n" toggles the dock. Cmd/Ctrl/Alt+N stay with the browser, typing never triggers it. ──
-export default function DevNotes({ sb, me, workspaceId }) {
+export default function DevNotes({ sb, me, workspaceId, admin }) {
   const [open, setOpen] = useState(false);
+  useEffect(() => {
+    const onOpen = () => setOpen(true);
+    window.addEventListener(OPEN_EVENT, onOpen);
+    return () => window.removeEventListener(OPEN_EVENT, onOpen);
+  }, []);
   useEffect(() => {
     const onKey = (e) => {
       if (e.key.toLowerCase() !== 'n' || e.metaKey || e.ctrlKey || e.altKey || e.repeat) return;
@@ -237,7 +248,7 @@ export default function DevNotes({ sb, me, workspaceId }) {
     return () => document.removeEventListener('keydown', onKey);
   }, []);
   if (!open) return null;
-  return <DevNotesCard sb={sb} me={me} workspaceId={workspaceId} onClose={() => setOpen(false)} />;
+  return <DevNotesCard sb={sb} me={me} workspaceId={workspaceId} admin={!!admin} onClose={() => setOpen(false)} />;
 }
 
 // A saved note's text: keeps its line breaks, collapses past CLAMP_LINES with a Show more toggle. The toggle only
@@ -263,7 +274,9 @@ function NoteText({ text, resolved }) {
   );
 }
 
-function DevNotesCard({ sb, me, workspaceId, onClose }) {
+function DevNotesCard({ sb, me, workspaceId, admin, onClose }) {
+  // Super Admins can change any note; everyone else only their own open ones (RLS enforces the same).
+  const canEdit = (n) => admin || (!n.is_resolved && n.created_by === me.id);
   const [notes, setNotes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
@@ -472,6 +485,7 @@ function DevNotesCard({ sb, me, workspaceId, onClose }) {
   };
 
   const cycleCat = async (note) => {
+    if (!canEdit(note)) return;
     const nextCat = CAT_ORDER[(CAT_ORDER.indexOf(note.category) + 1) % CAT_ORDER.length];
     setNotes((c) => c.map((n) => (n.id === note.id ? { ...n, category: nextCat } : n)));
     const res = await sb.from('dev_notes').update({ category: nextCat }).eq('id', note.id);
@@ -586,7 +600,9 @@ function DevNotesCard({ sb, me, workspaceId, onClose }) {
               <div style={css('padding: 32px 16px; text-align: center;')}>
                 <span style={css('display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; border-radius: 14px; background: var(--chip); color: var(--muted); margin-bottom: 10px;')}>{P(I.terminal, 'width: 22px; height: 22px')}</span>
                 <p style={css('margin: 0; font-size: 13.5px; font-weight: 600;')}>No dev notes</p>
-                <p style={css('margin: 4px auto 0; max-width: 240px; font-size: 12px; line-height: 1.45; color: var(--muted);')}>Spot something to fix or improve? Jot it down above. It is tagged with the page you are on and shared with every Super Admin.</p>
+                <p style={css('margin: 4px auto 0; max-width: 240px; font-size: 12px; line-height: 1.45; color: var(--muted);')}>{admin
+                  ? 'Spot something to fix or improve? Jot it down above. It is tagged with the page you are on and shared with every Super Admin.'
+                  : 'Spot a bug or something to improve? Jot it down above, and paste or drop a screenshot. It is tagged with the page you are on. Only you and the Super Admins see your notes.'}</p>
               </div>
             ) : visible.map((n) => {
               const c = CATS[n.category] || CATS.idea;
@@ -595,12 +611,18 @@ function DevNotesCard({ sb, me, workspaceId, onClose }) {
                 <div key={n.id} className="fb-devnote" style={css('position: relative; flex: none; display: flex; align-items: stretch; overflow: hidden; border: 1px solid var(--line-3); border-radius: 12px; background: var(--surface-2); transition: opacity .3s ease;' + (fading.has(n.id) ? ' opacity: 0.4; pointer-events: none;' : ''))}>
                   <span aria-hidden="true" style={css('width: 3px; flex: none; background: ' + c.dot + ';')} />
                   <div style={css('flex: 1; min-width: 0; display: flex; align-items: flex-start; gap: 10px; padding: 9px 8px 9px 10px;')}>
-                    <button type="button" aria-label={n.is_resolved ? 'Reopen note' : 'Mark as resolved'} onClick={() => resolve(n)} style={css('flex: none; margin-top: 1px; padding: 0; border: 0; background: transparent; cursor: pointer; color: ' + (n.is_resolved ? 'var(--green-ink)' : 'var(--faint)') + ';')}>{P(n.is_resolved ? I.check : I.circle)}</button>
+                    {admin ? (
+                      <button type="button" aria-label={n.is_resolved ? 'Reopen note' : 'Mark as resolved'} onClick={() => resolve(n)} style={css('flex: none; margin-top: 1px; padding: 0; border: 0; background: transparent; cursor: pointer; color: ' + (n.is_resolved ? 'var(--green-ink)' : 'var(--faint)') + ';')}>{P(n.is_resolved ? I.check : I.circle)}</button>
+                    ) : (
+                      <span role="img" aria-label={n.is_resolved ? 'Resolved' : 'Open'} title={n.is_resolved ? 'Resolved by a Super Admin' : 'Open · a Super Admin resolves it'} style={css('flex: none; display: inline-flex; margin-top: 1px; color: ' + (n.is_resolved ? 'var(--green-ink)' : 'var(--faint)') + ';')}>{P(n.is_resolved ? I.check : I.circle)}</span>
+                    )}
                     <div style={css('flex: 1; min-width: 0;')}>
                       <div style={css('display: flex; align-items: flex-start; gap: 8px;')}>
-                        <button type="button" aria-label={c.label + ' category, click to change'} title={c.label + ' · click to change'} onClick={() => cycleCat(n)} style={css('flex: none; width: 8px; height: 8px; margin-top: 6px; padding: 0; border: 0; border-radius: 999px; cursor: pointer; background: ' + c.dot + ';')} />
+                        {canEdit(n) ? (
+                          <button type="button" aria-label={c.label + ' category, click to change'} title={c.label + ' · click to change'} onClick={() => cycleCat(n)} style={css('flex: none; width: 8px; height: 8px; margin-top: 6px; padding: 0; border: 0; border-radius: 999px; cursor: pointer; background: ' + c.dot + ';')} />
+                        ) : <span aria-hidden="true" style={css('flex: none; width: 8px; height: 8px; margin-top: 6px; border-radius: 999px; background: ' + c.dot + ';')} />}
                         <NoteText text={n.content} resolved={n.is_resolved} />
-                        <button type="button" className="fb-devnote-x" aria-label="Delete note" onClick={() => remove(n.id)} style={css('flex: none; padding: 2px; border: 0; background: transparent; cursor: pointer; color: var(--faint); opacity: 0;')}>{P(I.trash, 'width: 13px; height: 13px')}</button>
+                        {canEdit(n) ? <button type="button" className="fb-devnote-x" aria-label="Delete note" onClick={() => remove(n.id)} style={css('flex: none; padding: 2px; border: 0; background: transparent; cursor: pointer; color: var(--faint); opacity: 0;')}>{P(I.trash, 'width: 13px; height: 13px')}</button> : null}
                       </div>
                       {shotsOf(n).length ? (
                         <div style={css('display: flex; gap: 6px; margin: 6px 0 0 16px; overflow-x: auto;')}>
@@ -641,7 +663,7 @@ function DevNotesCard({ sb, me, workspaceId, onClose }) {
                 </span>
               ) : null}
               {urls[lbShot.path] ? <a href={urls[lbShot.path]} target="_blank" rel="noreferrer" style={css('color: #fff; opacity: .85; text-decoration: underline;')}>Open</a> : null}
-              {String(lbNote.id).startsWith('tmp-') ? null : <button type="button" onClick={() => removeShot(lbNote, lightbox.index)} style={css('min-height: 28px; padding: 0 10px; border: 0; border-radius: 8px; background: rgba(229,72,77,0.25); color: #fff; font-size: 11.5px; font-weight: 600; cursor: pointer;')}>Remove</button>}
+              {String(lbNote.id).startsWith('tmp-') || !canEdit(lbNote) ? null : <button type="button" onClick={() => removeShot(lbNote, lightbox.index)} style={css('min-height: 28px; padding: 0 10px; border: 0; border-radius: 8px; background: rgba(229,72,77,0.25); color: #fff; font-size: 11.5px; font-weight: 600; cursor: pointer;')}>Remove</button>}
               <button type="button" aria-label="Close screenshot" onClick={() => setLightbox(null)} style={css('display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border: 0; border-radius: 8px; background: rgba(255,255,255,0.12); color: #fff; cursor: pointer;')}>{P(I.close)}</button>
             </div>
           </div>
