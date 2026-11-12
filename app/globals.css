@@ -48,6 +48,10 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .fb-day:hover { background: var(--hover) }
 .fb-yt:hover .fb-yt-thumb { transform: translateY(-2px); box-shadow: 0 12px 28px rgba(0,0,0,0.16) }
 .fb-yt-thumb { transition: transform .18s ease, box-shadow .18s ease }
+.fb-yt-acts { position: absolute; top: 12px; right: 12px; display: flex; gap: 4px; opacity: 0; transition: opacity .12s ease }
+.fb-yt-acts button { min-height: 30px; padding: 0 10px; border: 0; border-radius: 8px; background: rgba(17,17,17,0.82); color: #FFFFFF; font: inherit; font-size: 12px; font-weight: 600; cursor: pointer }
+.fb-ycard:hover .fb-yt-acts, .fb-ycard:focus-within .fb-yt-acts { opacity: 1 }
+@media (hover: none) { .fb-yt-acts { display: none } }
 @media (prefers-reduced-motion: reduce) { .fb-yt-thumb { transition: none } }
 @keyframes fbIn { from { opacity: 0; transform: translateY(8px) } to { opacity: 1; transform: none } }
 .fb-float { animation: fbIn .4s ease both }
@@ -88,6 +92,19 @@ html[data-floating-drag] * { cursor: grabbing !important }
 /* Ideas & Research: board cards, list rows, reference cards, sliders and hidden file inputs. */
 .fb-bcard:hover { border-color: var(--border-strong) !important }
 .fb-row:hover { background: var(--surface-2) }
+/* Ideas selection: a checkbox on each gallery card (shown on hover, focus, or once anything is checked) and in each list row. */
+.fb-ysel { position: absolute; top: 12px; left: 12px; z-index: 2; width: 30px; height: 30px; display: inline-flex; align-items: center; justify-content: center; border-radius: 8px; background: rgba(255,255,255,0.94); box-shadow: 0 1px 4px rgba(0,0,0,0.25); cursor: pointer; opacity: 0; transition: opacity .12s ease }
+.fb-ysel input, .fb-lsel { width: 16px; height: 16px; margin: 0; accent-color: var(--ink); cursor: pointer }
+.fb-ycard .fb-ypri { transition: left .12s ease }
+.fb-ycard:hover .fb-ysel, .fb-ycard:focus-within .fb-ysel, .fb-selecting .fb-ysel { opacity: 1 }
+.fb-ycard:hover .fb-ypri, .fb-ycard:focus-within .fb-ypri, .fb-selecting .fb-ypri { left: 50px }
+.fb-ysel-on .fb-yt-thumb { outline: 3px solid var(--ink); outline-offset: 3px }
+@media (hover: none) { .fb-ysel { opacity: 1 } .fb-ycard .fb-ypri { left: 50px } }
+/* Ideas list cells that edit in place: borderless until hovered or open. */
+.fb-cell > button:hover { border-color: var(--border) !important }
+.fb-cell > button > svg { opacity: 0 }
+.fb-cell > button:hover > svg, .fb-cell > button:focus-visible > svg, .fb-cell > button[aria-expanded="true"] > svg { opacity: 1 }
+@media (hover: none) { .fb-cell > button > svg { opacity: 1 } }
 .fb-ref:hover { border-color: var(--border-strong) !important; background: var(--surface) !important }
 .fb-range { accent-color: var(--ink) }
 textarea:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px }

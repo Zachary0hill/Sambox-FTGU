@@ -19,6 +19,9 @@ create function storage.foldername(text) returns text[] language sql as $$ selec
 \ir ../supabase/migrations/20261020000600_directory.sql
 create table public.research_runs(id uuid primary key,workspace_id uuid,idea_ids uuid[]);
 \ir ../supabase/migrations/20261023000400_idea_brief.sql
+alter table public.ideas add column findings jsonb not null default '[]'::jsonb;
+\ir ../supabase/migrations/20261026000300_content_entries.sql
+\ir ../supabase/migrations/20261026000400_content_entry_banner.sql
 alter table public.accounts add column contact_name text not null default '';
 alter table public.workspace_settings add column ai_provider text;
 -- Only the schema needed by the handoff, avoiding unrelated provider/cron setup.
@@ -31,6 +34,8 @@ alter table public.project_checklist enable row level security;
 \ir ../supabase/migrations/20261106000200_manager_permissions.sql
 \ir ../supabase/migrations/20261106000300_idea_production_package.sql
 \ir ../supabase/migrations/20261106000400_grok_integration.sql
+\ir ../supabase/migrations/20261106000600_ai_usage.sql
+\ir ../supabase/migrations/20261106000700_idea_script.sql
 grant usage on schema public,auth,app to authenticated;
 grant select,insert,update,delete on all tables in schema public to authenticated;
 grant execute on all functions in schema auth to authenticated;

@@ -1,5 +1,7 @@
 import 'server-only';
 import { supabaseAdmin } from '@/lib/supabase/admin';
+import { normalizeIdeasRules } from '@/lib/ideas/rules-shared';
+import { refuseSpend } from '@/lib/ai/spend';
 import { getIntegration, assistantProvider } from '@/lib/integrations/secrets';
 import { abortRun } from '@/lib/integrations/providers/apify';
 import { workspaceModels, withFallback, providerName } from '@/lib/ai/model';
@@ -54,6 +56,10 @@ export async function createRun(m: Member, body: Record<string, unknown>) {
   const topics = parseTopics(typeof body.topics === 'string' && body.topics.trim() ? body.topics : defaultTopics(brand));
   if (!topics.length) return { error: 'Add a niche or a few seed topics.', status: 400 };
   const count = Math.max(1, Math.min(LIMITS.maxIdeas, Math.round(Number(body.count) || LIMITS.defaultIdeas)));
+
+  const { data: rulesRow } = await m.supabase.from('ideas_rules').select('rules').eq('workspace_id', ws).maybeSingle();
+  const refused = await refuseSpend(ws, { ...normalizeIdeasRules(rulesRow?.rules), run_cost_cap_usd: Infinity }, 0, 0);
+  if (refused) return { error: refused, status: 429 };
 
   await expireStale(ws);
   const { data: busy } = await m.supabase.from('research_runs').select('id').eq('workspace_id', ws).in('status', ['queued', 'running']).limit(1);
@@ -151,6 +157,7 @@ export async function executeRun(runId: string, m: Member) {
           runSource(id, conns, {
             topics: inputs.topics, deadline, cancelled,
             onActorRun: async (rid) => { actorRuns.push(rid); await save(); },
+            onSpend: (provider, model, usd) => recordUsage({ workspaceId: ws, userId: m.ctx.user_id, feature: 'research', provider, model, costUsd: usd, runId }),
           }),
           sleep(deadline - Date.now() + 20000).then(() => { throw new Error('Took too long and was stopped.'); }),
         ]);
@@ -213,12 +220,15 @@ function brief(b: Record<string, unknown> | null): BrandBrief {
   };
 }
 
-// Saves drafts as Research ideas in In Review (they exist to be judged, not edited first) on the member's session
+// Saves drafts as Research ideas in Inbox on the member's session
 // (ideas_insert: author is the caller, brand visible, not an editor) and logs them like the app does. Falls back to the secret-key client if the session expired mid-run.
 async function saveIdeas(m: Member, runId: string, brandId: string, ideas: IdeaDraft[], brandName: string): Promise<string[]> {
   const ws = m.ctx.workspace_id, uid = m.ctx.user_id;
+  const { data: rulesRow } = await m.supabase.from('ideas_rules').select('rules').eq('workspace_id', ws).maybeSingle();
+  const cover = normalizeIdeasRules(rulesRow?.rules).cover;
   const rows = ideas.map((i) => ({
-    workspace_id: ws, brand_id: brandId, type: 'research', status: 'in_review', title: i.title, hook: i.hook,
+    cover_highlight: cover.highlight, hook_position: cover.hook_position,
+    workspace_id: ws, brand_id: brandId, type: 'research', stage: 'inbox', title: i.title, hook: i.hook,
     body: i.body, tags: i.tags, refs: i.refs, findings: i.findings, author_id: uid, source: 'research', research_run_id: runId,
   }));
   const mine = await m.supabase.from('ideas').insert(rows).select('id, title');

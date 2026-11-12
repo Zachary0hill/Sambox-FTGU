@@ -5,7 +5,7 @@ import { supabaseAdmin } from '@/lib/supabase/admin';
 // Logs one AI model call to public.ai_usage for the AI usage page. Never throws and never blocks a reply: a missing
 // table (migration 20261106000600 not run yet) or a failed insert is only warned about.
 
-export type UsageFeature = 'assistant' | 'research' | 'cover' | 'script' | 'other';
+export type UsageFeature = 'assistant' | 'research' | 'cover' | 'script' | 'competitor' | 'other';
 
 export type UsageEntry = {
   workspaceId: string;
@@ -16,6 +16,9 @@ export type UsageEntry = {
   usage?: Partial<LanguageModelUsage> | null;
   images?: number;
   ok?: boolean;
+  // A cost known at write time, such as a web search, and the run it belongs to.
+  costUsd?: number;
+  runId?: string;
 };
 
 const n = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) && v > 0 ? Math.round(v) : 0);
@@ -40,6 +43,8 @@ export function usageRow(e: UsageEntry) {
     reasoning_tokens: n(u.outputTokenDetails?.reasoningTokens),
     images: n(e.images),
     ok: e.ok !== false,
+    ...(e.costUsd != null ? { cost_usd: e.costUsd } : {}),
+    ...(e.runId ? { run_id: e.runId } : {}),
   };
 }
 

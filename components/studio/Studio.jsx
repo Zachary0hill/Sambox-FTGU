@@ -32,7 +32,7 @@ const initialUi = (c, data, path, project) => {
   const prefs = (c.profile && c.profile.prefs) || {};
   const settings = data.settings || {};
   return {
-    role: UI_ROLE[c.role], nav: navFromPath(path || '/'), openJob: project || '', dTab: project && new URLSearchParams(window.location.search).get('tab') === 'comments' ? 'comments' : 'overview',
+    role: UI_ROLE[c.role], nav: navFromPath(path || '/'), openJob: project || '', ideaOpen: new URLSearchParams(window.location.search).get('idea') || '', dTab: project && new URLSearchParams(window.location.search).get('tab') === 'comments' ? 'comments' : 'overview',
     panel: prefs.panel === undefined ? true : !!prefs.panel, theme: prefs.theme || settings.default_theme || 'light',
     density: prefs.density || 'Comfortable', view: prefs.view || settings.default_view || 'table',
     person: 'All', ftype: {}, fchannel: {}, fstatus: {}, sort: 'default', hidden: {}, groupBy: 'stage', closed: {},
@@ -126,18 +126,18 @@ export default function Studio({ initialPath, initialProject }) {
   useEffect(() => {
     if (!s) return;
     const path = NAV_PATH[s.nav] || '/projects';
-    const url = path + (s.openJob ? '?project=' + encodeURIComponent(s.openJob) : s.nav === 'auto' && s.flowOpen && s.flowOpen !== 'new' ? '?flow=' + encodeURIComponent(s.flowOpen) : '');
+    const url = path + (s.openJob ? '?project=' + encodeURIComponent(s.openJob) : s.nav === 'ideas' && s.ideaOpen ? '?idea=' + encodeURIComponent(s.ideaOpen) : s.nav === 'auto' && s.flowOpen && s.flowOpen !== 'new' ? '?flow=' + encodeURIComponent(s.flowOpen) : '');
     if (window.location.pathname + window.location.search === url) return;
     // Opening or closing the flow builder replaces the entry, so Back leaves the page instead of toggling the builder.
     const flowOnly = window.location.pathname === path && !s.openJob && !new URLSearchParams(window.location.search).get('project');
     window.history[flowOnly ? 'replaceState' : 'pushState']({ nav: s.nav, openJob: s.openJob }, '', url);
-  }, [s && s.nav, s && s.openJob, s && s.flowOpen]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [s && s.nav, s && s.openJob, s && s.flowOpen, s && s.ideaOpen]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
     const onPop = () => {
       // Unsaved flow builder changes: stay put and ask first (components/studio/FlowBuilder.jsx).
       if (flowGuard.dirty && flowGuard.ask) { window.history.pushState(null, '', flowGuard.url); flowGuard.ask(); return; }
       const p = new URLSearchParams(window.location.search).get('project') || '';
-      set({ nav: navFromPath(window.location.pathname), openJob: p, flowOpen: new URLSearchParams(window.location.search).get('flow') || '' });
+      set({ nav: navFromPath(window.location.pathname), openJob: p, flowOpen: new URLSearchParams(window.location.search).get('flow') || '', ideaOpen: new URLSearchParams(window.location.search).get('idea') || '' });
     };
     window.addEventListener('popstate', onPop);
     return () => window.removeEventListener('popstate', onPop);
@@ -160,7 +160,7 @@ export default function Studio({ initialPath, initialProject }) {
     const bump = () => { clearTimeout(t); t = setTimeout(() => reload(), 350); };
     const ch = sb.channel('board-' + rtWs);
     ['projects', 'project_edits', 'project_thumbnails', 'sponsorships', 'comments', 'project_assets', 'distribution_tasks', 'inbox_items', 'research_runs',
-      'ideas', 'idea_comments', 'project_checklist', 'project_last_edit', 'automation_runs', 'project_publish', 'buffer_publications', 'content_entries'].forEach((table) =>
+      'ideas', 'ideas_rules', 'idea_comments', 'project_checklist', 'project_last_edit', 'automation_runs', 'project_publish', 'buffer_publications', 'content_entries'].forEach((table) =>
       ch.on('postgres_changes', { event: '*', schema: 'public', table }, bump));
     ch.on('postgres_changes', { event: '*', schema: 'public', table: 'invite_deliveries', filter: 'workspace_id=eq.' + rtWs }, bump);
     ch.on('postgres_changes', { event: '*', schema: 'public', table: 'notifications', filter: 'user_id=eq.' + rtUser }, bump);

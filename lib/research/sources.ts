@@ -22,6 +22,7 @@ export type SourceCtx = {
   topics: string[];
   deadline: number;
   onActorRun: (runId: string) => void | Promise<void>;
+  onSpend?: (provider: string, model: string, usd: number) => void | Promise<void>;
   cancelled: () => Promise<boolean>;
 };
 export type Conns = { apify: Connection | null; browserbase: Connection | null; firecrawl: Connection | null; vidiq: Connection | null; virlo: Connection | null };
@@ -33,9 +34,10 @@ const REDDIT_MIN_ITEMS = 10;
 const redditItems = (topics: string[]) => Math.max(REDDIT_MIN_ITEMS, per * topics.length);
 
 async function apify(conn: Connection, actor: string, input: unknown, lim: ApifyLimits, ctx: SourceCtx) {
-  const { items } = await runActor<Record<string, unknown>>(conn.secret.apiToken, actor, input, lim, {
+  const { run, items } = await runActor<Record<string, unknown>>(conn.secret.apiToken, actor, input, lim, {
     deadline: ctx.deadline, onStart: ctx.onActorRun, cancelled: ctx.cancelled,
   });
+  if (run.usageTotalUsd && ctx.onSpend) await ctx.onSpend('apify', actor, run.usageTotalUsd);
   return items;
 }
 
@@ -139,6 +141,8 @@ const RUNNERS: Record<SourceId, (c: Conns, ctx: SourceCtx) => Promise<Draft[]>> 
         failed = (got[0] as PromiseRejectedResult).reason;
         continue;
       }
+      // Virlo bills $0.01 for each platform searched.
+      if (ctx.onSpend) await ctx.onSpend('virlo', 'search', ok.length * 0.01);
       out.push(...fromVirlo(ok.flat(), topic).sort((a, b) => (b.views || 0) - (a.views || 0)).slice(0, per));
     }
     if (!out.length && failed) throw failed;

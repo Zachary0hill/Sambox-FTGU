@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
 import { NextResponse } from 'next/server';
-import { getMember, deny } from '@/lib/integrations/auth';
+import { getMember, deny, type Member } from '@/lib/integrations/auth';
 import { supabaseAdmin } from '@/lib/supabase/admin';
 
 export async function POST(request: Request) {
@@ -8,6 +8,7 @@ export async function POST(request: Request) {
   if (!m) return deny('Sign in to approve ideas.', 401);
   const body = await request.json().catch(() => null);
   if (!body || !/^[0-9a-f-]{36}$/i.test(body.ideaId || '')) return deny('Choose an idea.', 400);
+  if (body.kind && body.kind !== 'project') return convertOther(m, body.ideaId, body.kind);
   const { data: project, error } = await m.supabase.rpc('approve_idea_project', { p_idea: body.ideaId });
   if (error) return deny(error.message, error.code === '42501' ? 403 : 400);
   // The RPC has authorized and atomically linked this exact project. Copy only
@@ -38,5 +39,29 @@ export async function POST(request: Request) {
     // A retry uses the same project and cover path. Do not misreport a committed
     // project as a failed approval or make another project on the next click.
     return NextResponse.json({ project, warning: 'Project created, but the thumbnail concept could not copy. Use Retry asset transfer on the idea.' });
+  }
+}
+
+// Task and Social post targets. The RPC authorizes and creates the item; a social post then gets a copy of the cover.
+async function convertOther(m: Member, ideaId: string, kind: string) {
+  const { data, error } = await m.supabase.rpc('convert_idea', { p_idea: ideaId, p_kind: kind });
+  if (error) return deny(error.message, error.code === '42501' ? 403 : 400);
+  const source: string | null = data.coverPath;
+  if (kind !== 'social' || !source) return NextResponse.json(data);
+  try {
+    if (!source.startsWith(data.workspaceId + '/' + ideaId + '/')) throw new Error('Invalid cover path');
+    const ext = source.split('.').pop()?.toLowerCase();
+    if (!ext || !/^(png|jpg|jpeg|webp|gif|avif)$/.test(ext)) throw new Error('Unsupported cover');
+    const original = await m.supabase.storage.from('idea-covers').download(source);
+    if (original.error || !original.data) throw original.error || new Error('Cover unavailable');
+    const admin = supabaseAdmin();
+    const path = data.workspaceId + '/' + data.id + '/idea-cover.' + ext;
+    const upload = await admin.storage.from('content-covers').upload(path, original.data, { contentType: original.data.type, upsert: false });
+    if (upload.error) throw upload.error;
+    const saved = await admin.from('content_entries').update({ cover_path: path, cover_mode: data.hasHook ? 'both' : 'image' }).eq('id', data.id);
+    if (saved.error) throw saved.error;
+    return NextResponse.json(data);
+  } catch {
+    return NextResponse.json({ ...data, warning: 'Added to Content, but the cover could not copy. Add it from the Content card.' });
   }
 }

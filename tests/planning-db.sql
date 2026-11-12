@@ -38,6 +38,7 @@ select pg_temp.assert((select channel_id='00000000-0000-0000-0000-000000000021' 
 select pg_temp.assert((select brief like '%Title A%' and brief like '%Split screen concept%' and brief like '%Full script%' from public.projects),'full production brief carried');
 select pg_temp.assert((select idea_package->>'brand'='Right client' from public.projects),'brand snapshot');
 select pg_temp.assert((select status='in_production' and project_id is not null from public.ideas where id='00000000-0000-0000-0000-000000000041'),'idea linked in production');
+select pg_temp.assert((select stage='approved' and approved_at is not null and approved_by is not null and jsonb_array_length(converted)=1 and converted->0->>'kind'='project' from public.ideas where id='00000000-0000-0000-0000-000000000041'),'approval lands on Approved and records the project');
 update public.projects set title='Manager updated';
 select pg_temp.assert((select title='Manager updated' from public.projects),'manager edits projects');
 insert into public.project_edits(project_id,editor_id,edit_status) select id,'00000000-0000-0000-0000-000000000013','assigned' from public.projects;
