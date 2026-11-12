@@ -206,7 +206,22 @@ textarea:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px }
   .fb-idea-sp { display: none }
   .fb-idea-x { position: fixed !important }
   .fb-idea-pad { padding-left: 16px !important; padding-right: 16px !important }
+  /* Phone: the panel fills the screen, so the controls get their own row above the cover. */
+  .fb-idea-hd { padding-top: 60px !important }
+  .fb-idea-top { padding-right: 0 !important }
+  .fb-idea-expand { display: none !important }
 }
+/* Idea side panel slides in from the right. */
+@keyframes fb-panel-in { from { transform: translateX(24px); opacity: 0 } to { transform: none; opacity: 1 } }
+.fb-idea-panel { animation: fb-panel-in .18s ease-out; container-type: inline-size }
+/* A narrow panel stacks the properties rail under the content and scrolls them together; the header stays put. */
+@container (max-width: 780px) {
+  .fb-idea-body { display: flex !important; flex-direction: column; overflow-x: hidden !important; overflow-y: auto !important }
+  .fb-idea-main, .fb-idea-pane, .fb-idea-rail { flex: none !important; min-height: auto !important; overflow: visible !important }
+  .fb-idea-main { border-right: 0 !important }
+  .fb-idea-rail { border-top: 1px solid var(--line) }
+}
+@media (prefers-reduced-motion: reduce) { .fb-idea-panel { animation: none } }
 /* Project modal (docs/design/project-card/CardDetail.dc.html): property rows, brief and status button hovers; phone layout. */
 .fb-prop:hover { background: var(--hover) !important }
 .fb-brief:hover { border-color: var(--border-2) !important; background: var(--surface-2) !important }

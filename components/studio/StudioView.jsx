@@ -8,7 +8,7 @@ import NextImage from 'next/image';
 // Generated from the design canvas (YouTube Studio Unified Board, Main.dc.html) by a markup converter.
 // Hand edits are marked with "app:" comments.
 // User and external media stays unoptimized to preserve signed URLs, referrers, and cover fallbacks.
-import { Fragment, useEffect } from 'react';
+import { Fragment, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { css } from '@/lib/studio/css';
 import DateField from './DateField';
@@ -3494,6 +3494,7 @@ export default function StudioView({ V }) {
                         <DD d={V.dd.ideaRec} id="idea-rec" className="fb-ifilter" />
                         <DD d={V.dd.ideaShow} id="idea-show" className="fb-ifilter" />
                         <span className="fb-ispacer" style={css("flex: 1 1 0; min-width: 0")}></span>
+                        {V.ids.canGroup ? <DD d={V.dd.ideaGroup} id="idea-group" className="fb-ifilter" /> : null}
                         {/* app: Fields picks what cards show, or the list's columns (Monday's Customize view) */}
                         <span style={css("position: relative")}>
                           <button type="button" className="fb-ni" aria-expanded={V.ids.fields.exp} aria-haspopup="dialog" onClick={V.ids.fields.toggle} style={css("display: inline-flex; align-items: center; gap: 8px; min-height: 40px; padding: 0 12px; border: 1px solid " + (V.ids.fields.open ? "var(--ink)" : "var(--border)") + "; border-radius: 12px; background: var(--surface); font-size: 14px; font-weight: 500; color: var(--ink); cursor: pointer")}>
@@ -3640,30 +3641,11 @@ export default function StudioView({ V }) {
                               ))}
                             </tr>
                           </thead>
-                          <tbody>
-                            {(V.ids.cards || []).map((r) => (
-                              <tr key={r.id} data-idea-id={r.id} className="fb-row" style={css(r.selected ? "background: var(--hover)" : "")}>
-                                <td style={css("width: 1px; padding: 10px 0 10px 16px; border-bottom: 1px solid var(--line)")}>
-                                  <input type="checkbox" className="fb-lsel" checked={r.selected} onChange={r.toggleSel} aria-label={r.selLabel} />
-                                </td>
-                                <td style={css("padding: 10px 16px; border-bottom: 1px solid var(--line)")}>
-                                  <button type="button" onClick={r.open} aria-label={r.aria} style={css("display: flex; align-items: center; gap: 12px; padding: 0; border: 0; background: transparent; text-align: left; letter-spacing: normal; color: var(--ink); cursor: pointer")}>
-                                    <span aria-hidden="true" style={css(r.miniThumb)}></span><span style={css("display: grid; gap: 2px")}><span style={css("font-weight: 600; line-height: 1.35")}>{r.title}</span>{r.hookLine ? <span style={css("font-size: 12px; color: var(--muted)")}>{r.hookLine}</span> : null}</span>
-                                  </button>
-                                </td>
-                                {r.f.brand ? <td style={css("padding: 10px 16px; border-bottom: 1px solid var(--line); color: var(--ink-3); white-space: nowrap")}>{r.brand}</td> : null}
-                                {r.f.type ? <td style={css("padding: 6px 10px; border-bottom: 1px solid var(--line); white-space: nowrap")}>{r.canCell ? <span style={css("display: inline-flex; align-items: center; gap: 2px")}><span aria-hidden="true" style={css(r.typeDot)}></span><DD d={V.dd[r.cellType]} className="fb-cell" /></span> : <span style={css(r.typeStyle)}>{r.type}</span>}</td> : null}
-                                {r.f.stage ? <td style={css("padding: 6px 10px; border-bottom: 1px solid var(--line); white-space: nowrap")}><span style={css("display: inline-flex; align-items: center; gap: 2px")}><span aria-hidden="true" style={css(r.dot)}></span>{r.canStage ? <DD d={V.dd[r.cellStage]} className="fb-cell" /> : <span style={css("padding: 0 8px")}>{r.status}</span>}</span></td> : null}
-                                {r.f.priority ? <td style={css("padding: 10px 16px; border-bottom: 1px solid var(--line)")}><span style={css(r.priStyle)}>{r.pri}</span></td> : null}
-                                {r.f.score ? <td style={css("padding: 10px 16px; border-bottom: 1px solid var(--line)")}><span style={css(r.smallScoreStyle)}>{r.score}</span></td> : null}
-                                {r.f.rec ? <td style={css("padding: 10px 16px; border-bottom: 1px solid var(--line); white-space: nowrap")}>{r.rec ? <span style={css(r.recStyle)}>{r.rec}</span> : '–'}</td> : null}
-                                {r.f.owner ? <td style={css("padding: 6px 10px; border-bottom: 1px solid var(--line); color: var(--ink-3); white-space: nowrap")}>{r.canCell ? <DD d={V.dd[r.cellOwner]} className="fb-cell" /> : <span style={css("padding: 0 8px")}>{r.owner}</span>}</td> : null}
-                                {r.f.sources ? <td style={css("padding: 10px 16px; border-bottom: 1px solid var(--line); color: var(--ink-3)")}>{r.sources}</td> : null}
-                                {r.f.comments ? <td style={css("padding: 10px 16px; border-bottom: 1px solid var(--line); color: var(--ink-3)")}>{r.nComments}</td> : null}
-                                {r.f.updated ? <td style={css("padding: 10px 16px; border-bottom: 1px solid var(--line); color: var(--muted); white-space: nowrap")}>{r.updated}</td> : null}
-                              </tr>
-                            ))}
-                          </tbody>
+                          {V.ids.groups ? V.ids.groups.map((g) => <IdeaGroup key={g.key} g={g} dd={V.dd} colSpan={V.ids.colSpan} f={V.ids.f} />) : (
+                            <tbody>
+                              {(V.ids.cards || []).map((r) => <IdeaRow key={r.id} r={r} dd={V.dd} />)}
+                            </tbody>
+                          )}
                         </table>
                       </div>
                     ) : null}
@@ -3699,11 +3681,28 @@ export default function StudioView({ V }) {
                     {/* app: idea detail (docs/design/ideas-research/IdeaDetail) */}
                     {V.ids.hasSel ? (
                       <>
-                        <button type="button" aria-label="Close idea" onClick={V.ids.closeIdea} style={css("position: fixed; inset: 0; z-index: 40; border: 0; background: rgba(17,17,17,0.45); cursor: default")}></button>
-                        <FocusDialog open aria-modal="true" aria-labelledby="idea-title" className="fb-dlg fb-idea" style={css("position: fixed; z-index: 41; top: 50%; left: 50%; transform: translate(-50%, -50%); margin: 0; width: min(1120px, calc(100vw - 48px)); height: min(880px, calc(100vh - 48px)); box-sizing: border-box; padding: 0; display: flex; flex-direction: column; overflow: hidden; background: var(--surface); border: 1px solid var(--line-4); border-radius: 24px; box-shadow: 0 24px 80px rgba(0,0,0,0.28); color: var(--ink); font-family: var(--font-main)")}>
-                          <button type="button" className="fb-ni fb-idea-x" aria-label="Close" onClick={V.ids.closeIdea} style={css("position: absolute; z-index: 3; top: 14px; right: 14px; width: 34px; height: 34px; display: inline-flex; align-items: center; justify-content: center; padding: 0; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); color: var(--ink); cursor: pointer")}>
-                            <svg aria-hidden="true" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><path d="M4 4l8 8M12 4l-8 8"></path></svg>
-                          </button>
+                        {/* app: the idea opens as a side panel beside the page (Monday's item panel); Expand gives the full modal view. */}
+                        {V.ids.sel.full ? <button type="button" aria-label="Close idea" onClick={V.ids.closeIdea} style={css("position: fixed; inset: 0; z-index: 40; border: 0; background: rgba(17,17,17,0.45); cursor: default")}></button> : null}
+                        <IdeaShell full={V.ids.sel.full} aria-labelledby="idea-title" className={"fb-dlg fb-idea" + (V.ids.sel.full ? "" : " fb-idea-panel")} style={css(V.ids.sel.full
+                          ? "position: fixed; z-index: 41; top: 50%; left: 50%; transform: translate(-50%, -50%); margin: 0; width: min(1120px, calc(100vw - 48px)); height: min(880px, calc(100vh - 48px)); box-sizing: border-box; padding: 0; display: flex; flex-direction: column; overflow: hidden; background: var(--surface); border: 1px solid var(--line-4); border-radius: 24px; box-shadow: 0 24px 80px rgba(0,0,0,0.28); color: var(--ink); font-family: var(--font-main)"
+                          : "position: fixed; z-index: 41; top: 0; right: 0; bottom: 0; margin: 0; width: min(900px, max(620px, 64vw), 100vw); height: 100vh; height: 100dvh; box-sizing: border-box; padding: 0; display: flex; flex-direction: column; overflow: hidden; background: var(--surface); border: 0; border-left: 1px solid var(--line-4); box-shadow: -16px 0 48px rgba(0,0,0,0.16); color: var(--ink); font-family: var(--font-main); outline: none")}>
+                          <div className="fb-idea-x" style={css("position: absolute; z-index: 3; top: 14px; right: 14px; display: flex; align-items: center; gap: 6px")}>
+                            {V.ids.sel.pos ? <span style={css("margin-right: 2px; font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap")}>{V.ids.sel.pos}</span> : null}
+                            <button type="button" className="fb-ni" aria-label="Previous idea" title="Previous idea (K)" disabled={!V.ids.sel.prev} onClick={V.ids.sel.prev || undefined} style={css("width: 34px; height: 34px; display: inline-flex; align-items: center; justify-content: center; padding: 0; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); color: var(--ink); cursor: pointer;" + (V.ids.sel.prev ? "" : " opacity: 0.4; cursor: default;"))}>
+                              <svg aria-hidden="true" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M4 10l4-4 4 4"></path></svg>
+                            </button>
+                            <button type="button" className="fb-ni" aria-label="Next idea" title="Next idea (J)" disabled={!V.ids.sel.next} onClick={V.ids.sel.next || undefined} style={css("width: 34px; height: 34px; display: inline-flex; align-items: center; justify-content: center; padding: 0; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); color: var(--ink); cursor: pointer;" + (V.ids.sel.next ? "" : " opacity: 0.4; cursor: default;"))}>
+                              <svg aria-hidden="true" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M4 6l4 4 4-4"></path></svg>
+                            </button>
+                            <button type="button" className="fb-ni fb-idea-expand" aria-label={V.ids.sel.fullLabel} title={V.ids.sel.fullLabel} onClick={V.ids.sel.toggleFull} style={css("width: 34px; height: 34px; display: inline-flex; align-items: center; justify-content: center; padding: 0; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); color: var(--ink); cursor: pointer")}>
+                              {V.ids.sel.full
+                                ? <svg aria-hidden="true" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"></rect><path d="M14 4v16"></path></svg>
+                                : <svg aria-hidden="true" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"></path></svg>}
+                            </button>
+                            <button type="button" className="fb-ni" aria-label="Close" title="Close (Esc)" onClick={V.ids.closeIdea} style={css("width: 34px; height: 34px; display: inline-flex; align-items: center; justify-content: center; padding: 0; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); color: var(--ink); cursor: pointer")}>
+                              <svg aria-hidden="true" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><path d="M4 4l8 8M12 4l-8 8"></path></svg>
+                            </button>
+                          </div>
                           <header className="fb-idea-hd" style={css("flex: none; display: flex; gap: 20px; padding: 14px 24px; border-bottom: 1px solid var(--line)")}>
                             <div className="fb-idea-cover" style={css(V.ids.sel.bannerStyle)}>
                               <Hook b={V.ids.sel} />
@@ -3719,7 +3718,7 @@ export default function StudioView({ V }) {
                               ) : null}
                             </div>
                             <div style={css("flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px")}>
-                              <div style={css("display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding-right: 44px")}>
+                              <div className="fb-idea-top" style={css("display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding-right: 210px")}>
                                 <span aria-hidden="true" style={css(V.ids.sel.brandTile)}>{V.ids.sel.brandInitials}</span>
                                 <span style={css("font-size: 14px; font-weight: 600; margin-right: 4px")}>{V.ids.sel.brand}</span>
                                 <span style={css(V.ids.sel.typeStyle)}>{V.ids.sel.type}</span>
@@ -3928,11 +3927,26 @@ export default function StudioView({ V }) {
                               ) : null}
                               {V.ids.sel.isResearch ? <IdeaResearch {...V.ids.sel.research} /> : null}
                               {V.ids.sel.isHistory ? (
-                                <ol role="tabpanel" id="idp-history" aria-labelledby="idt-history" style={css("margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column")}>
-                                  {(V.ids.sel.history || []).map((h, h__i) => (
-                                    <li key={h__i} style={css("display: flex; justify-content: space-between; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--line); font-size: 14px")}><span><strong style={css("font-weight: 600")}>{h.who}</strong> {h.text}</span><span style={css("flex: none; font-size: 12px; color: var(--muted)")}>{h.time}</span></li>
-                                  ))}
-                                </ol>
+                                <div role="tabpanel" id="idp-history" aria-labelledby="idt-history" style={css("display: flex; flex-direction: column; gap: 12px")}>
+                                  {/* app: history filters by kind of change and by person (Monday's activity log filter) */}
+                                  <div style={css("display: flex; flex-wrap: wrap; align-items: center; gap: 6px")}>
+                                    <div role="group" aria-label="Filter history" style={css("display: flex; flex-wrap: wrap; gap: 6px")}>
+                                      {V.ids.sel.histChips.map((hc) => <button key={hc.key} type="button" aria-pressed={hc.pressed} onClick={hc.pick} style={css(hc.style)}>{hc.label}<span style={css("color: var(--muted); font-variant-numeric: tabular-nums")}>{hc.count}</span></button>)}
+                                    </div>
+                                    <DD d={V.dd.ideaHistWho} id="idea-hist-who" />
+                                  </div>
+                                  {V.ids.sel.histEmpty ? (
+                                    <p style={css("margin: 0; padding: 16px 0; font-size: 14px; color: var(--muted)")}>
+                                      Nothing matches these filters.{" "}
+                                      {V.ids.sel.histFiltered ? <button type="button" onClick={V.ids.sel.clearHist} style={css("padding: 0; border: 0; background: transparent; font: inherit; font-weight: 600; color: var(--ink); text-decoration: underline; cursor: pointer")}>Show all</button> : null}
+                                    </p>
+                                  ) : null}
+                                  <ol style={css("margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column")}>
+                                    {(V.ids.sel.histShown || []).map((h, h__i) => (
+                                      <li key={h__i} style={css("display: flex; justify-content: space-between; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--line); font-size: 14px")}><span><strong style={css("font-weight: 600")}>{h.who}</strong> {h.text}</span><span style={css("flex: none; font-size: 12px; color: var(--muted)")}>{h.time}</span></li>
+                                    ))}
+                                  </ol>
+                                </div>
                               ) : null}
                               <section aria-labelledby="idea-disc" style={css("display: flex; flex-direction: column; gap: 14px; padding-top: 20px; border-top: 1px solid var(--line)")}>
                                 <h3 id="idea-disc" style={css("margin: 0; font-family: var(--font-title); font-weight: 900; font-size: 17px")}>Discussion</h3>
@@ -3987,7 +4001,7 @@ export default function StudioView({ V }) {
                               </div>
                             </aside>
                           </div>
-                        </FocusDialog>
+                        </IdeaShell>
                       </>
                     ) : null}
                     {" "}
@@ -6036,6 +6050,88 @@ function DD({ d, id, className }) {
       </button>
       {floated}
     </div>
+  );
+}
+
+// The idea detail container. Full view is the modal dialog (background inert, focus trapped). The side panel is a
+// non-modal region beside the page, so other cards stay clickable and open in the same panel.
+function IdeaShell({ full, children, ...p }) {
+  const ref = useRef(null);
+  useEffect(() => { if (!full && ref.current) ref.current.focus({ preventScroll: true }); }, [full]);
+  if (full) return <FocusDialog open aria-modal="true" {...p}>{children}</FocusDialog>;
+  return <section ref={ref} role="dialog" aria-modal="false" tabIndex={-1} {...p}>{children}</section>;
+}
+
+// One idea in the Ideas list. edge paints the group's color down the left side when the list is grouped.
+function IdeaRow({ r, dd, edge }) {
+  return (
+    <tr data-idea-id={r.id} className="fb-row" style={css(r.selected || r.isOpen ? "background: var(--hover)" : "")}>
+      <td style={css("width: 1px; padding: 10px 0 10px 16px; border-bottom: 1px solid var(--line);" + (edge ? " " + edge : ""))}>
+        <input type="checkbox" className="fb-lsel" checked={r.selected} onChange={r.toggleSel} aria-label={r.selLabel} />
+      </td>
+      <td style={css("padding: 10px 16px; border-bottom: 1px solid var(--line)")}>
+        <button type="button" onClick={r.open} aria-label={r.aria} style={css("display: flex; align-items: center; gap: 12px; padding: 0; border: 0; background: transparent; text-align: left; letter-spacing: normal; color: var(--ink); cursor: pointer")}>
+          <span aria-hidden="true" style={css(r.miniThumb)}></span><span style={css("display: grid; gap: 2px")}><span style={css("font-weight: 600; line-height: 1.35")}>{r.title}</span>{r.hookLine ? <span style={css("font-size: 12px; color: var(--muted)")}>{r.hookLine}</span> : null}</span>
+        </button>
+      </td>
+      {r.f.brand ? <td style={css("padding: 10px 16px; border-bottom: 1px solid var(--line); color: var(--ink-3); white-space: nowrap")}>{r.brand}</td> : null}
+      {r.f.type ? <td style={css("padding: 6px 10px; border-bottom: 1px solid var(--line); white-space: nowrap")}>{r.canCell ? <span style={css("display: inline-flex; align-items: center; gap: 2px")}><span aria-hidden="true" style={css(r.typeDot)}></span><DD d={dd[r.cellType]} className="fb-cell" /></span> : <span style={css(r.typeStyle)}>{r.type}</span>}</td> : null}
+      {r.f.stage ? <td style={css("padding: 6px 10px; border-bottom: 1px solid var(--line); white-space: nowrap")}><span style={css("display: inline-flex; align-items: center; gap: 2px")}><span aria-hidden="true" style={css(r.dot)}></span>{r.canStage ? <DD d={dd[r.cellStage]} className="fb-cell" /> : <span style={css("padding: 0 8px")}>{r.status}</span>}</span></td> : null}
+      {r.f.priority ? <td style={css("padding: 10px 16px; border-bottom: 1px solid var(--line)")}><span style={css(r.priStyle)}>{r.pri}</span></td> : null}
+      {r.f.score ? <td style={css("padding: 10px 16px; border-bottom: 1px solid var(--line)")}><span style={css(r.smallScoreStyle)}>{r.score}</span></td> : null}
+      {r.f.rec ? <td style={css("padding: 10px 16px; border-bottom: 1px solid var(--line); white-space: nowrap")}>{r.rec ? <span style={css(r.recStyle)}>{r.rec}</span> : '–'}</td> : null}
+      {r.f.owner ? <td style={css("padding: 6px 10px; border-bottom: 1px solid var(--line); color: var(--ink-3); white-space: nowrap")}>{r.canCell ? <DD d={dd[r.cellOwner]} className="fb-cell" /> : <span style={css("padding: 0 8px")}>{r.owner}</span>}</td> : null}
+      {r.f.sources ? <td style={css("padding: 10px 16px; border-bottom: 1px solid var(--line); color: var(--ink-3)")}>{r.sources}</td> : null}
+      {r.f.comments ? <td style={css("padding: 10px 16px; border-bottom: 1px solid var(--line); color: var(--ink-3)")}>{r.nComments}</td> : null}
+      {r.f.updated ? <td style={css("padding: 10px 16px; border-bottom: 1px solid var(--line); color: var(--muted); white-space: nowrap")}>{r.updated}</td> : null}
+    </tr>
+  );
+}
+
+// A group in the grouped Ideas list: a header that collapses it and checks every idea in it, its rows, and a summary
+// row under the columns it can sum (stage mix, average score, sources, comments).
+function IdeaGroup({ g, dd, colSpan, f }) {
+  const cell = "padding: 10px 16px; border-bottom: 1px solid var(--line); font-size: 12px; color: var(--muted); white-space: nowrap;";
+  return (
+    <tbody>
+      <tr>
+        <th scope="rowgroup" colSpan={colSpan} style={css("padding: 18px 16px 8px; border-bottom: 1px solid var(--line); text-align: left; background: var(--surface)")}>
+          <span style={css("display: flex; align-items: center; gap: 10px")}>
+            <input type="checkbox" className="fb-lsel" checked={g.allSel} ref={(el) => { if (el) el.indeterminate = g.someSel; }} onChange={g.toggleSel} aria-label={g.selLabel} />
+            <button type="button" aria-expanded={g.collapsed ? 'false' : 'true'} aria-label={g.toggleLabel} onClick={g.toggle} style={css("display: inline-flex; align-items: center; gap: 10px; padding: 4px 6px; border: 0; border-radius: 8px; background: transparent; color: var(--ink); font: inherit; font-size: 15px; font-weight: 700; letter-spacing: normal; cursor: pointer")}>
+              <svg aria-hidden="true" width="14" height="14" viewBox="0 0 16 16" style={css("flex: none; color: var(--muted); transition: transform .15s ease; transform: rotate(" + (g.collapsed ? "-90" : "0") + "deg)")}><path d="M4 6l4 4 4-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"></path></svg>
+              <span aria-hidden="true" style={css(g.bar)}></span>
+              {g.label}
+              <span style={css("font-size: 13px; font-weight: 500; color: var(--muted); font-variant-numeric: tabular-nums")}>{g.count}</span>
+            </button>
+            {g.collapsed && g.pursue ? <span style={css("font-size: 12px; color: var(--muted)")}>{g.pursue}</span> : null}
+          </span>
+        </th>
+      </tr>
+      {g.collapsed ? null : (g.rows || []).map((r) => <IdeaRow key={r.id} r={r} dd={dd} edge={g.edge} />)}
+      {g.collapsed ? null : (
+        <tr aria-label={'Summary for ' + g.label}>
+          <td style={css(cell)}></td>
+          <td style={css(cell)}>{g.count} {g.count === '1' ? 'idea' : 'ideas'}</td>
+          {f.brand ? <td style={css(cell)}></td> : null}
+          {f.type ? <td style={css(cell)}></td> : null}
+          {f.stage ? (
+            <td style={css(cell)}>
+              <span role="img" aria-label={'Stages: ' + g.stageMixLabel} title={g.stageMixLabel} style={css("display: flex; width: 120px; height: 10px; gap: 2px; border-radius: 3px; overflow: hidden")}>
+                {g.stageMix.map((m) => <span key={m.key} style={css(m.style)}></span>)}
+              </span>
+            </td>
+          ) : null}
+          {f.priority ? <td style={css(cell)}></td> : null}
+          {f.score ? <td style={css(cell)}><span title="Average score" style={css(g.avgStyle)}>{g.avgScore}</span> <span style={css("font-size: 11px")}>avg</span></td> : null}
+          {f.rec ? <td style={css(cell)}>{g.pursue}</td> : null}
+          {f.owner ? <td style={css(cell)}></td> : null}
+          {f.sources ? <td style={css(cell)}>{g.sources}</td> : null}
+          {f.comments ? <td style={css(cell)}>{g.comments}</td> : null}
+          {f.updated ? <td style={css(cell)}></td> : null}
+        </tr>
+      )}
+    </tbody>
   );
 }
 
