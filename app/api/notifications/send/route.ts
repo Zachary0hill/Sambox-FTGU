@@ -1,3 +1,4 @@
+import { observedWorker } from '@/lib/operations/worker';
 import { NextResponse } from 'next/server';
 import { getMember, isCron, deny } from '@/lib/integrations/auth';
 import { sendQueuedEmails } from '@/lib/email/notifications';
@@ -16,7 +17,7 @@ export async function POST(request: Request) {
     workspaceId = m.ctx.workspace_id;
   }
   try {
-    return NextResponse.json(await sendQueuedEmails({ workspaceId, baseUrl: baseUrlFor(request) }));
+    return NextResponse.json(await observedWorker('notifications', workspaceId, () => sendQueuedEmails({ workspaceId, baseUrl: baseUrlFor(request) })));
   } catch (err) {
     return NextResponse.json({ error: err instanceof Error ? err.message : String(err) }, { status: 500 });
   }

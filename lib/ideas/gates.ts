@@ -2,14 +2,14 @@
 // app.idea_gate_missing in the database is what enforces it, and uses the same labels.
 import { GATED_STAGES, REQUIRED_FIELDS, type IdeasRules } from './rules-shared';
 
-type GateIdea = { body?: string[]; refs?: string[]; findings?: unknown[]; coverPath?: string; ice?: (number | null)[]; research?: { score: { total: number } | null } | null };
+type GateIdea = { body?: string[]; refs?: string[]; findings?: unknown[]; coverPath?: string; ice?: (number | null)[]; research?: { sources?: unknown[]; score: { total: number } | null } | null };
 type GateRules = Pick<IdeasRules, 'required_fields_by_stage' | 'recommendation'>;
 
 const ORDER = ['Inbox', 'Research', 'Ready', 'Approved'];
 
 const passes: Record<string, (i: GateIdea, r: GateRules) => boolean> = {
   notes: (i) => (i.body || []).some((p) => String(p).trim() !== ''),
-  source: (i) => (i.refs || []).length > 0 || (i.findings || []).length > 0,
+  source: (i) => (i.refs || []).length > 0 || (i.findings || []).length > 0 || (i.research?.sources || []).length > 0,
   cover: (i) => !!i.coverPath,
   score: (i, r) => {
     if (i.research?.score) return i.research.score.total >= r.recommendation.pursue;

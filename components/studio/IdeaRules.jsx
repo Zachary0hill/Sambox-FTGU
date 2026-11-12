@@ -131,7 +131,7 @@ export default function IdeaRules({ rules, onSave, triggerStyle }) {
             </label>
             <label style={label}>Daily limit (USD)
               <input type="number" min="0.01" step="0.01" value={form.daily_cost_cap_usd} onChange={set('daily_cost_cap_usd')} style={field} />
-              <span style={help}>Costs are estimates. Runs stop starting once today reaches this amount.</span>
+              <span style={help}>Conservative estimates are reserved before each source, model fallback and cover. Unknown prices must be set in AI usage. Unconfirmed calls remain counted. Daily budget resets at midnight UTC; provider billing may differ.</span>
             </label>
             <div>
               <label style={check}><input type="checkbox" checked={form.auto_research} onChange={flip('auto_research')} />Research new ideas automatically</label>

@@ -1,4 +1,8 @@
 import 'server-only';
+import { randomUUID } from 'node:crypto';
+import { priceOverrides, reserveSpend } from '@/lib/ai/spend';
+import { priceFor } from '@/lib/ai/pricing';
+import { normalizeIdeasRules } from '@/lib/ideas/rules-shared';
 import { generateImage } from 'ai';
 import { createOpenAI } from '@ai-sdk/openai';
 import { createGoogle } from '@ai-sdk/google';
@@ -65,24 +69,31 @@ const noSuchModel = (err: unknown) => {
 
 // OpenAI first, then Gemini: the next model or provider is tried when one is missing for this key, out of credits,
 // rejects its key or is down (the same rule as text models). Bad prompts and safety refusals are not retried.
-async function imageFromModel(ws: string, text: string, userId?: string | null): Promise<Img> {
+async function imageFromModel(ws: string, text: string, userId?: string | null, runId: string = randomUUID()): Promise<Img> {
   const [openai, gemini] = await Promise.all([getIntegration(ws, 'openai').catch(() => null), getIntegration(ws, 'gemini').catch(() => null)]);
   if (!openai && !gemini) throw new CoverError('Connect OpenAI or Gemini in Integrations to generate covers. Claude does not make images.', 409);
-  const tries: { label: string; run: () => Promise<Img> }[] = [];
-  if (openai) for (const id of OPENAI_IMAGE) tries.push({ label: 'OpenAI ' + id, run: async () => {
-    const r = await generateImage({ model: createOpenAI({ apiKey: openai.secret.apiKey }).image(id), prompt: text, size: '1536x1024', providerOptions: { openai: { quality: 'medium' } } });
+  const prices = await priceOverrides(ws);
+  const rules = await supabaseAdmin().from('ideas_rules').select('rules').eq('workspace_id', ws).maybeSingle();
+  const caps = normalizeIdeasRules(rules.data?.rules);
+  const tries: { label: string; provider: string; model: string; run: () => Promise<Img> }[] = [];
+  if (openai) for (const id of OPENAI_IMAGE) tries.push({ label: 'OpenAI ' + id, provider: 'openai', model: id, run: async () => {
+    const r = await generateImage({ model: createOpenAI({ apiKey: openai.secret.apiKey }).image(id), prompt: text, maxRetries: 0, size: '1536x1024', providerOptions: { openai: { quality: 'medium' } } });
     return { bytes: r.image.uint8Array, type: r.image.mediaType || 'image/png', model: 'OpenAI ' + id, provider: 'openai', modelId: id };
   } });
-  if (gemini) for (const id of GEMINI_IMAGE) tries.push({ label: 'Gemini ' + id, run: async () => {
-    const r = await generateImage({ model: createGoogle({ apiKey: gemini.secret.apiKey }).image(id), prompt: text, aspectRatio: '16:9' });
+  if (gemini) for (const id of GEMINI_IMAGE) tries.push({ label: 'Gemini ' + id, provider: 'gemini', model: id, run: async () => {
+    const r = await generateImage({ model: createGoogle({ apiKey: gemini.secret.apiKey }).image(id), prompt: text, maxRetries: 0, aspectRatio: '16:9' });
     return { bytes: r.image.uint8Array, type: r.image.mediaType || 'image/png', model: 'Gemini ' + id, provider: 'gemini', modelId: id };
   } });
   const failed: string[] = [];
   for (const t of tries) {
     try {
+      const price = priceFor(t.provider, t.model, prices).price?.image;
+      if (price == null) { failed.push('Set the per-image price for ' + t.label + ' in AI usage.'); continue; }
+      const settle = await reserveSpend(ws, runId, caps, t.provider, t.model, price);
       const img = await t.run();
+      await settle(price);
       // Images are priced per picture on the AI usage page, so only the count is logged.
-      await recordUsage({ workspaceId: ws, userId, feature: 'cover', provider: img.provider || 'other', model: img.modelId || img.model, images: 1 });
+      await recordUsage({ workspaceId: ws, userId, feature: 'cover', provider: img.provider || 'other', model: img.modelId || img.model, images: 1, costUsd: price, runId });
       return img;
     } catch (err) {
       failed.push(t.label + ': ' + cleanError(err));
@@ -112,7 +123,7 @@ async function imageFromUrl(raw: string): Promise<Img> {
 
 export type CoverRequest = { ideaId: string; ws: string; mode: 'generate' | 'url'; style?: string; prompt?: string; url?: string;
   // Only set a cover when the idea has none yet (new ideas and research drafts).
-  onlyIfMissing?: boolean;
+  onlyIfMissing?: boolean; budgetRunId?: string;
   // The member whose session saves the idea row (RLS decides). Without one, the secret-key client saves it.
   member?: Member | null; actorId?: string; actorLabel?: string };
 export type CoverResult = { path: string; url: string; coverMode: string; model: string; skipped?: boolean };
@@ -129,7 +140,7 @@ export async function makeIdeaCover(q: CoverRequest): Promise<CoverResult> {
   if (q.mode === 'url') img = await imageFromUrl(String(q.url || ''));
   else {
     const { data: brand } = await reader.from('brand_kits').select('name, color, tone').eq('id', i.brand_id).maybeSingle();
-    img = await imageFromModel(q.ws, prompt(i, brand as Brand, String(q.style || 'photo'), String(q.prompt || '').slice(0, 400)), q.member ? q.member.ctx.user_id : q.actorId);
+    img = await imageFromModel(q.ws, prompt(i, brand as Brand, String(q.style || 'photo'), String(q.prompt || '').slice(0, 400)), q.member ? q.member.ctx.user_id : q.actorId, q.budgetRunId);
   }
 
   const path = q.ws + '/' + i.id + '/cover-' + (q.mode === 'url' ? 'ref' : 'ai') + '-' + Date.now() + '.' + (EXT[img.type] || 'png');
@@ -160,7 +171,7 @@ export async function makeIdeaCover(q: CoverRequest): Promise<CoverResult> {
 
 // Covers for several new ideas at once (research drafts), a few at a time and inside a time budget. Failures are
 // logged and skipped: the ideas are already saved and a member can generate later.
-export async function coverNewIdeas(ids: string[], ws: string, m: Member, budgetMs: number) {
+export async function coverNewIdeas(ids: string[], ws: string, m: Member, budgetMs: number, budgetRunId: string = randomUUID()) {
   if (!ids.length || !(await imageModelConnected(ws))) return;
   const label = (m.ctx.profile && (String(m.ctx.profile.full_name || '').split(' ')[0] || m.ctx.profile.email)) || '';
   const started = Date.now();
@@ -168,7 +179,7 @@ export async function coverNewIdeas(ids: string[], ws: string, m: Member, budget
   const worker = async () => {
     for (let id = queue.shift(); id; id = queue.shift()) {
       if (Date.now() - started > budgetMs) return;
-      try { await makeIdeaCover({ ideaId: id, ws, mode: 'generate', onlyIfMissing: true, actorId: m.ctx.user_id, actorLabel: label }); }
+      try { await makeIdeaCover({ ideaId: id, ws, mode: 'generate', onlyIfMissing: true, budgetRunId, actorId: m.ctx.user_id, actorLabel: label }); }
       catch (err) { console.warn('idea cover', id, cleanError(err)); if (err instanceof CoverError && err.status === 409) return; }
     }
   };

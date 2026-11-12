@@ -21,7 +21,7 @@ export const REQUIRED_FIELDS = [
 export const CONVERT_TARGETS = [
   { key: 'project', label: 'Project', help: 'A production project with the brief and cover copied in.' },
   { key: 'task', label: 'Task', help: "A task for the idea's owner." },
-  { key: 'social', label: 'Social post', help: 'A scheduled card on the Content page with the notes and cover.' },
+  { key: 'social', label: 'Content draft', help: 'An unscheduled draft on the Content page with the notes and cover. Review it before publishing.' },
 ] as const;
 
 const LIST_ITEM_MAX = 60;

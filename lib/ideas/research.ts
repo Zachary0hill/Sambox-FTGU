@@ -8,7 +8,7 @@ import { firecrawlSearch } from '@/lib/integrations/providers/firecrawl';
 import { supabaseAdmin } from '@/lib/supabase/admin';
 import { workspaceModels, withFallback } from '@/lib/ai/model';
 import { recordUsage } from '@/lib/ai/usage';
-import { modelCostUsd, priceOverrides, refuseSpend } from '@/lib/ai/spend';
+import { modelUsageCost, modelAllowance, priceOverrides, refuseSpend, reserveSpend } from '@/lib/ai/spend';
 import { normalizeIdeasRules, type IdeasRules } from './rules-shared';
 import { RESEARCH_INSTRUCTIONS, fillBrief, isActiveRun, parseResearchOutput, parseRun, pickSources, researchPrompt, searchQueryFromBrief, type IdeaRun } from './research-shared';
 
@@ -54,7 +54,10 @@ export async function queueIdeaResearch(m: Member, ideaId: string): Promise<{ ru
   const refused = await refuseSpend(idea.workspace_id, rules, SEARCH_USD, 0);
   if (refused) return { error: refused, status: 429 };
   const run: IdeaRun = { id: randomUUID(), state: 'queued', queued_at: new Date().toISOString(), by: m.ctx.user_id };
-  const { error } = await supabaseAdmin().from('ideas').update({ run }).eq('id', ideaId);
+  let admission = supabaseAdmin().from('ideas').update({ run }).eq('id', ideaId);
+  admission = idea.run == null ? admission.is('run', null) : admission.eq('run', JSON.stringify(idea.run));
+  const { data: admitted, error } = await admission.select('id').maybeSingle();
+  if (!error && !admitted) return { error: 'Another research request changed this idea. Refresh and try again.', status: 409 };
   if (error) return { error: 'The run could not be queued.', status: 500 };
   return { runId: run.id! };
 }
@@ -72,18 +75,22 @@ export async function cancelIdeaResearch(m: Member, ideaId: string): Promise<{ e
 // Writes the run's end state only if it is still the run on the idea, so a stale worker can never overwrite a newer one.
 async function finishRun(ideaId: string, run: IdeaRun, patch: Partial<IdeaRun>, extra: Record<string, unknown> = {}) {
   const next = { ...run, ...patch, finished_at: new Date().toISOString() };
-  return supabaseAdmin().from('ideas').update({ run: next, ...extra }).eq('id', ideaId).filter('run->>id', 'eq', run.id!).filter('run->>state', 'in', '(queued,running)').select('id').maybeSingle();
+  const result = await supabaseAdmin().from('ideas').update({ run: next, ...extra }).eq('id', ideaId).filter('run->>id', 'eq', run.id!).filter('run->>state', 'in', '(queued,running)').select('id').maybeSingle();
+  if (result.error) throw new Error('Research result could not be saved.');
+  return result;
 }
 
 // The whole run for one idea. Safe to call twice: only the caller that claims the queued run does any work.
 export async function processIdeaResearch(ideaId: string, runId: string): Promise<void> {
   const admin = supabaseAdmin();
-  const { data: row } = await admin.from('ideas').select('run').eq('id', ideaId).maybeSingle();
+  const { data: row, error: readError } = await admin.from('ideas').select('run').eq('id', ideaId).maybeSingle();
+  if (readError) throw new Error('Research queue could not load.');
   const queued = row && parseRun(row.run);
   if (!queued || queued.id !== runId || queued.state !== 'queued') return;
   const running: IdeaRun = { ...queued, state: 'running', started_at: new Date().toISOString() };
-  const { data: idea } = await admin.from('ideas').update({ run: running }).eq('id', ideaId).filter('run->>id', 'eq', runId).filter('run->>state', 'eq', 'queued')
+  const { data: idea, error: claimError } = await admin.from('ideas').update({ run: running }).eq('id', ideaId).filter('run->>id', 'eq', runId).filter('run->>state', 'eq', 'queued')
     .select('id, workspace_id, brand_id, title, idea_type, body, refs, stage').maybeSingle();
+  if (claimError) throw new Error('Research run could not be claimed.');
   if (!idea) return;
 
   const ws: string = idea.workspace_id;
@@ -101,20 +108,22 @@ export async function processIdeaResearch(ideaId: string, runId: string): Promis
     const query = searchQueryFromBrief(brief);
     const refusedSearch = await refuseSpend(ws, rules, SEARCH_USD, spent);
     if (refusedSearch) throw new Error(refusedSearch);
+    const settleSearch = await reserveSpend(ws, runId, rules, 'firecrawl', 'search', SEARCH_USD);
     const hits = await firecrawlSearch(firecrawl.secret.apiKey, query, { limit: rules.max_sources });
+    await settleSearch(SEARCH_USD);
     spent += SEARCH_USD;
     await recordUsage({ workspaceId: ws, userId, feature: 'research', provider: 'firecrawl', model: 'search', costUsd: SEARCH_USD, runId });
 
     const sources = pickSources((idea.refs || []).filter((r: string) => /^https?:\/\//i.test(r)), hits, rules.max_sources);
     const prompt = researchPrompt({ brief, sources, criteria: rules.scoring, voice: brand?.voice_prompt || '' });
     const prices = await priceOverrides(ws);
-    const estimate = modelCostUsd(models[0].provider, models[0].modelId, { input: Math.ceil((prompt.length + RESEARCH_INSTRUCTIONS.length) / 4), output: ANSWER_TOKENS }, prices);
-    const refusedModel = await refuseSpend(ws, rules, estimate, spent);
-    if (refusedModel) throw new Error(refusedModel);
-
     const drafted = await withFallback(models, async (wm) => {
-      const res = await generateText({ model: wm.model, instructions: RESEARCH_INSTRUCTIONS, prompt, output: Output.object({ schema }), maxRetries: 2, timeout: 120000 });
-      const costUsd = modelCostUsd(wm.provider, wm.modelId, { input: res.totalUsage.inputTokens || 0, output: res.totalUsage.outputTokens || 0 }, prices);
+      const active = await admin.from('ideas').select('id').eq('id', ideaId).filter('run->>id', 'eq', runId).filter('run->>state', 'eq', 'running').maybeSingle();
+      if (active.error || !active.data) throw new Error('Research was canceled or replaced.');
+      const settle = await reserveSpend(ws, runId, rules, wm.provider, wm.modelId, modelAllowance(wm.provider, wm.modelId, prompt + RESEARCH_INSTRUCTIONS, ANSWER_TOKENS, prices));
+      const res = await generateText({ model: wm.model, instructions: RESEARCH_INSTRUCTIONS, prompt, output: Output.object({ schema }), maxRetries: 0, maxOutputTokens: ANSWER_TOKENS, timeout: 120000 });
+      const costUsd = modelUsageCost(wm.provider, wm.modelId, res.totalUsage, prices);
+      await settle(costUsd);
       await recordUsage({ workspaceId: ws, userId, feature: 'research', provider: wm.provider, model: wm.modelId, usage: res.totalUsage, costUsd, runId });
       return { output: res.output, costUsd };
     });
@@ -140,7 +149,8 @@ export async function processIdeaResearch(ideaId: string, runId: string): Promis
 export async function researchTick(): Promise<{ processed: number; expired: number }> {
   const admin = supabaseAdmin();
   const now = Date.now();
-  const { data: live } = await admin.from('ideas').select('id, run').filter('run->>state', 'in', '(queued,running)').limit(50);
+  const { data: live, error: liveError } = await admin.from('ideas').select('id, run').filter('run->>state', 'in', '(queued,running)').limit(50);
+  if (liveError) throw new Error('Research queue could not load.');
   let expired = 0;
   const retry: { id: string; runId: string }[] = [];
   for (const row of live || []) {
@@ -154,13 +164,15 @@ export async function researchTick(): Promise<{ processed: number; expired: numb
     }
   }
 
-  const { data: auto } = await admin.from('ideas_rules').select('workspace_id, rules').filter('rules->>auto_research', 'eq', 'true');
+  const { data: auto, error: autoError } = await admin.from('ideas_rules').select('workspace_id, rules').filter('rules->>auto_research', 'eq', 'true');
+  if (autoError) throw new Error('Research rules could not load.');
   for (const row of auto || []) {
     if (retry.length >= TICK_LIMIT) break;
     const rules = normalizeIdeasRules(row.rules);
     if (!rules.auto_research_since) continue;
-    const { data: fresh } = await admin.from('ideas').select('id').eq('workspace_id', row.workspace_id).is('run', null).is('archived_at', null).eq('stage', 'inbox')
+    const { data: fresh, error: freshError } = await admin.from('ideas').select('id').eq('workspace_id', row.workspace_id).is('run', null).is('archived_at', null).eq('stage', 'inbox')
       .gte('created_at', rules.auto_research_since).order('created_at').limit(TICK_LIMIT - retry.length);
+    if (freshError) throw new Error('Research candidates could not load.');
     for (const idea of fresh || []) {
       if (await refuseSpend(row.workspace_id, rules, SEARCH_USD, 0)) break;
       const run: IdeaRun = { id: randomUUID(), state: 'queued', queued_at: new Date().toISOString(), by: 'auto' };
