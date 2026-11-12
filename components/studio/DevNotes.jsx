@@ -497,9 +497,11 @@ function DevNotesCard({ sb, me, workspaceId, admin, onClose }) {
     const paths = shotsOf(prev.find((n) => n.id === id) || {}).map((a) => a.path);
     setNotes((c) => c.filter((n) => n.id !== id));
     setLightbox((lb) => (lb && lb.noteId === id ? null : lb));
+    // Files first: an author's storage permission checks that the (open) note still exists, so removing the row
+    // first would leave the screenshots orphaned in the bucket. Super Admins could go either way.
+    if (paths.length) await sb.storage.from(SHOTS_BUCKET).remove(paths).catch(() => {});
     const res = await sb.from('dev_notes').delete().eq('id', id);
     if (res.error) { flash('Could not delete that note'); setNotes(prev); return; }
-    if (paths.length) sb.storage.from(SHOTS_BUCKET).remove(paths).catch(() => {});
   };
 
   const visible = useMemo(() => notes.filter((n) => showDone || !n.is_resolved), [notes, showDone]);
