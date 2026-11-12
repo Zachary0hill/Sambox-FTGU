@@ -6,7 +6,7 @@ import { getIntegration } from '@/lib/integrations/secrets';
 import { postSlackAlert } from '@/lib/integrations/providers/slack';
 import { postN8n } from '@/lib/integrations/providers/n8n';
 import { publishProjectToBuffer, PublishSetupError } from '@/lib/integrations/buffer-publish';
-import { actionById, actionsOf, triggerOf, triggerText } from './catalog';
+import { actionById, actionsOf, scopeOf, triggerOf, triggerText } from './catalog';
 import { isGraph, graphOf, fillTokens, delayText, FIELDS, type Node, type Crit } from './graph';
 
 // The automation runner. Database triggers queue automation_runs rows when a live workflow's trigger fires; each tick
@@ -23,9 +23,12 @@ import { isGraph, graphOf, fillTokens, delayText, FIELDS, type Node, type Crit }
 // whose criteria match the project (remembered in output.paths, so a resumed run keeps its path), a delay parks the
 // run as retry with output.waiting until it is due, and a task adds a To-Do. output.done then lists node ids.
 // Processes and ideas never run.
+//
+// Idea workflows (catalog scope 'idea') run on runs with idea_id: their actions read the idea (title, stage, owner,
+// score) instead of a project, and their tokens are idea.*. They are simple workflows, never flow-builder graphs.
 
 type Run = {
-  id: string; automation_id: string; workspace_id: string; project_id: string | null; trigger_key: string | null; status: string;
+  id: string; automation_id: string; workspace_id: string; project_id: string | null; idea_id?: string | null; trigger_key: string | null; status: string;
   payload: Record<string, unknown> | null; output: Output | null; attempts: number; is_test: boolean;
 };
 // waitClaims: claims spent resuming from delays since the last manual retry; tries leave them out.
@@ -37,6 +40,9 @@ type Project = {
   id: string; workspace_id: string; title: string; job_code: string; status_id: string; publish_date: string | null; archived_at: string | null;
   channel_id: string | null; content_type_id: string | null;
 };
+type Idea = { id: string; workspace_id: string; title: string; stage: string; owner_id: string | null; author_id: string | null; archived_at: string | null; research: { score?: { total?: number } | null } | null };
+const STAGE_LABEL: Record<string, string> = { inbox: 'Inbox', research: 'Research', ready: 'Ready', approved: 'Approved' };
+const NEXT_STAGE: Record<string, string> = { inbox: 'research', research: 'ready' };
 // What splits check and tokens fill: the project's people, sponsor and channel.
 type Facts = {
   channel: string; sponsorId: string | null; sponsor: string; approval: string; editorId: string | null; editor: string; editStatus: string;
@@ -59,6 +65,10 @@ export async function runAutomations(opts: { workspaceId: string | null; baseUrl
   const sched = await admin.rpc('queue_scheduled_automations', { p_ws: opts.workspaceId });
   if (sched.error) throw new Error(sched.error.message);
   out.scheduled = Number(sched.data) || 0;
+  // Idea reminders (idea_stale). A database without the idea automations migration has no such function: skip, don't fail the tick.
+  const ideaSched = await admin.rpc('queue_scheduled_idea_automations', { p_ws: opts.workspaceId });
+  if (ideaSched.error && ideaSched.error.code !== 'PGRST202') throw new Error(ideaSched.error.message);
+  out.scheduled += Number(ideaSched.data) || 0;
 
   const claim = await admin.rpc('claim_automation_runs', { p_ws: opts.workspaceId, p_limit: opts.limit ?? 25 });
   if (claim.error) throw new Error(claim.error.message);
@@ -76,14 +86,18 @@ export async function runAutomations(opts: { workspaceId: string | null; baseUrl
 // flow: the builder's unsaved graph, so testing never has to save (and change) a live automation first.
 export async function testAutomation(workspaceId: string, automationId: string, baseUrl: string, flow?: unknown) {
   const admin = supabaseAdmin();
-  const p = await admin.from('projects').select('id').eq('workspace_id', workspaceId).is('archived_at', null)
-    .order('created_at', { ascending: false }).limit(1).maybeSingle();
   const a = await admin.from('automations').select('*').eq('id', automationId).eq('workspace_id', workspaceId).maybeSingle();
   if (a.error || !a.data) throw new Error('That workflow was not found.');
   const draft = isGraph(flow) ? graphOf({ flow }) : null;
   const t = draft ? { key: draft.trigger.key, value: draft.trigger.value } : triggerOf(a.data.trigger as Record<string, string>);
+  // Idea workflows test on the most recently changed live idea; project workflows on the newest project.
+  const onIdea = scopeOf(t.key) === 'idea';
+  const sample = onIdea
+    ? await admin.from('ideas').select('id').eq('workspace_id', workspaceId).is('archived_at', null).order('updated_at', { ascending: false }).limit(1).maybeSingle()
+    : await admin.from('projects').select('id').eq('workspace_id', workspaceId).is('archived_at', null).order('created_at', { ascending: false }).limit(1).maybeSingle();
   const ins = await admin.from('automation_runs').insert({
-    automation_id: automationId, workspace_id: workspaceId, project_id: p.data ? p.data.id : null, trigger_key: t.key,
+    automation_id: automationId, workspace_id: workspaceId, project_id: !onIdea && sample.data ? sample.data.id : null,
+    ...(onIdea ? { idea_id: sample.data ? sample.data.id : null } : {}), trigger_key: t.key,
     status: 'running', is_test: true, attempts: 1, payload: { value: t.value, sample: true },
   }).select('*').single();
   if (ins.error) throw new SafeRetry(ins.error.message);
@@ -120,13 +134,17 @@ async function executeRun(r: Run, baseUrl: string, draft?: ReturnType<typeof gra
   const graph = draft || (isGraph(a.flow) ? graphOf(a) : null);
   if (graph && graph.kind !== 'automation') { await finish('skipped', { error: 'Processes and ideas do not run.' }); return 'skipped'; }
 
+  const idea = r.idea_id ? ((await admin.from('ideas').select('id, workspace_id, title, stage, owner_id, author_id, archived_at, research').eq('id', r.idea_id).maybeSingle()).data as Idea | null) : null;
   const p = r.project_id ? ((await admin.from('projects').select('id, workspace_id, title, job_code, status_id, publish_date, archived_at, channel_id, content_type_id').eq('id', r.project_id).maybeSingle()).data as Project | null) : null;
   const statuses = ((await admin.from('project_statuses').select('id, label, sort').eq('workspace_id', r.workspace_id).order('sort')).data || []) as { id: string; label: string; sort: number }[];
   const statusName = (id: string | null | undefined) => (statuses.find((x) => x.id === id) || { label: '' }).label;
   const trig = graph && r.is_test ? { key: graph.trigger.key, value: graph.trigger.value } : triggerOf(a.trigger);
   const why = triggerText(trig.key, trig.value);
-  const link = p ? baseUrl.replace(/\/+$/, '') + '/projects?project=' + encodeURIComponent(p.job_code) : baseUrl.replace(/\/+$/, '') + '/projects';
-  const subject = p ? p.title + ' (' + p.job_code + ')' : 'no project';
+  const base = baseUrl.replace(/\/+$/, '');
+  const onIdea = scopeOf(trig.key) === 'idea';
+  const link = idea ? base + '/ideas?idea=' + encodeURIComponent(idea.id) : onIdea ? base + '/ideas' : p ? base + '/projects?project=' + encodeURIComponent(p.job_code) : base + '/projects';
+  const subject = idea ? '"' + idea.title + '"' : onIdea ? 'no idea' : p ? p.title + ' (' + p.job_code + ')' : 'no project';
+  const score = idea && idea.research && idea.research.score && idea.research.score.total != null ? String(Math.round(Number(idea.research.score.total))) : '';
   // Splits and tokens read the project's people, sponsor and channel; older workflows use neither.
   const facts = p && graph ? await factsOf(p) : null;
   const tokens: Record<string, string> = {
@@ -134,8 +152,9 @@ async function executeRun(r: Run, baseUrl: string, draft?: ReturnType<typeof gra
     'project.channel': facts ? facts.channel : '', 'project.publish_date': p && p.publish_date ? p.publish_date : '', 'project.link': link,
     'project.sponsor': facts ? facts.sponsor : '', 'project.editor': facts ? facts.editor : '', 'project.designer': facts ? facts.designer : '',
     trigger: why, 'flow.name': a.name, 'workspace.name': workspace,
+    'idea.title': idea ? idea.title : '', 'idea.stage': idea ? STAGE_LABEL[idea.stage] || idea.stage : '', 'idea.score': score, 'idea.link': idea ? link : '',
   };
-  const ctx: Ctx = { r, a, p, statuses, statusName, why, link, subject, workspace, test: r.is_test, tokens };
+  const ctx: Ctx = { r, a, p, idea, onIdea, statuses, statusName, why, link, base, subject, workspace, test: r.is_test, tokens };
 
   const prev = r.output || {};
   const prior = prev.done || [];
@@ -223,7 +242,8 @@ async function executeRun(r: Run, baseUrl: string, draft?: ReturnType<typeof gra
   if (graph) await walkSteps(graph.steps);
   else for (const act of actionsOf(a.actions)) if (!(await step(act.key, act.key, () => perform(act.key, act.message, ctx)))) break;
   const waitClaims = prev.waitClaims || 0;
-  const output: Output & Record<string, unknown> = { done, steps, waited, waitClaims, paths, trigger: why, project: p ? { id: p.id, job: p.job_code, title: p.title } : null };
+  const output: Output & Record<string, unknown> = { done, steps, waited, waitClaims, paths, trigger: why, project: p ? { id: p.id, job: p.job_code, title: p.title } : null,
+    ...(onIdea ? { idea: idea ? { id: idea.id, title: idea.title } : null } : {}) };
 
   // A delay: park the run until it is due. The claim counts it as a try, so tries below leave delays out.
   if (waitMs && !failure) {
@@ -249,8 +269,8 @@ async function executeRun(r: Run, baseUrl: string, draft?: ReturnType<typeof gra
 }
 
 type Ctx = {
-  r: Run; a: Automation; p: Project | null; statuses: { id: string; label: string; sort: number }[]; statusName: (id: string | null | undefined) => string;
-  why: string; link: string; subject: string; workspace: string; test: boolean; tokens: Record<string, string>;
+  r: Run; a: Automation; p: Project | null; idea: Idea | null; onIdea: boolean; statuses: { id: string; label: string; sort: number }[]; statusName: (id: string | null | undefined) => string;
+  why: string; link: string; base: string; subject: string; workspace: string; test: boolean; tokens: Record<string, string>;
 };
 
 async function factsOf(p: Project): Promise<Facts> {
@@ -322,10 +342,11 @@ async function admins(ws: string) {
 }
 
 async function logAutomation(ctx: Ctx, action: string) {
-  const res = await supabaseAdmin().from('activity_log').insert({
-    workspace_id: ctx.r.workspace_id, actor_label: 'Automation', category: 'project', action, target_type: ctx.p ? 'project' : 'automation',
-    target_id: ctx.p ? ctx.p.id : ctx.a.id, target_label: ctx.p ? ctx.p.title : ctx.a.name, project_id: ctx.p ? ctx.p.id : null, source: 'automation',
-  });
+  const row: Record<string, string | null> = ctx.idea
+    ? { workspace_id: ctx.r.workspace_id, actor_label: 'Automation', category: 'idea', action, target_type: 'idea', target_id: ctx.idea.id, target_label: ctx.idea.title, idea_id: ctx.idea.id, source: 'automation' }
+    : { workspace_id: ctx.r.workspace_id, actor_label: 'Automation', category: 'project', action, target_type: ctx.p ? 'project' : 'automation',
+      target_id: ctx.p ? ctx.p.id : ctx.a.id, target_label: ctx.p ? ctx.p.title : ctx.a.name, project_id: ctx.p ? ctx.p.id : null, source: 'automation' };
+  const res = await supabaseAdmin().from('activity_log').insert(row);
   if (res.error) console.warn('activity_log', res.error.message);
 }
 
@@ -337,7 +358,7 @@ async function perform(key: string, message: string, ctx: Ctx): Promise<string> 
   const note = fillTokens(message || '', ctx.tokens).trim();
 
   if (key === 'slack_admin') {
-    const text = '*' + a.name + '*: ' + ctx.why + (p ? ' on ' + ctx.subject : '') + (note ? '\n' + note : '') + '\n' + ctx.link;
+    const text = '*' + a.name + '*: ' + ctx.why + (p || ctx.idea ? ' on ' + ctx.subject : '') + (note ? '\n' + note : '') + '\n' + ctx.link;
     if (ctx.test) {
       const conn = await getIntegration(ctx.r.workspace_id, 'slack').catch(() => null);
       return conn ? 'Would post to Slack: ' + text.split('\n')[0] : 'Would post to Slack, but Slack is not connected yet.';
@@ -392,7 +413,7 @@ async function perform(key: string, message: string, ctx: Ctx): Promise<string> 
   if (key === 'todo_admin') {
     const people = await admins(ctx.r.workspace_id);
     if (!people.length) throw new Permanent('There is no active Super Admin.');
-    const text = (note || a.name) + (p ? ': ' + p.title + ' (' + p.job_code + ')' : '');
+    const text = (note || a.name) + (p ? ': ' + p.title + ' (' + p.job_code + ')' : ctx.idea ? ': ' + ctx.idea.title : '');
     if (ctx.test) return 'Would add the To-Do "' + text + '" for ' + people.length + ' Super Admin' + (people.length === 1 ? '' : 's') + '.';
     const ins = await admin.from('tasks').insert(people.map((x) => ({ workspace_id: ctx.r.workspace_id, owner_id: x.id, text, priority: 'high', project_id: p ? p.id : null })));
     if (ins.error) throw new SafeRetry(ins.error.message);
@@ -405,6 +426,7 @@ async function perform(key: string, message: string, ctx: Ctx): Promise<string> 
       type: ctx.test ? 'test' : 'automation', at: new Date().toISOString(),
       automation: { id: a.id, name: a.name }, trigger: { key: ctx.r.trigger_key, text: ctx.why, ...(ctx.r.payload || {}) },
       project: p ? { id: p.id, job: p.job_code, title: p.title, status: ctx.statusName(p.status_id), publish_date: p.publish_date, link: ctx.link } : null,
+      ...(ctx.onIdea ? { idea: ctx.idea ? { id: ctx.idea.id, title: ctx.idea.title, stage: ctx.idea.stage, score: ctx.tokens['idea.score'] || null, link: ctx.link } : null } : {}),
       run: ctx.r.id,
     };
     if (!conn) {
@@ -429,6 +451,68 @@ async function perform(key: string, message: string, ctx: Ctx): Promise<string> 
     if (!ctx.test) await logAutomation(ctx, 'published to Buffer');
     return res.detail;
   }
+  if (key.startsWith('idea_')) return performIdea(key, note, ctx);
+  throw new Permanent('Unknown action ' + key + '.');
+}
+
+// Actions on the run's idea.
+async function performIdea(key: string, note: string, ctx: Ctx): Promise<string> {
+  const admin = supabaseAdmin();
+  const i = ctx.idea;
+  if (!i) throw new Permanent('This run has no idea' + (ctx.onIdea ? ' (it was deleted).' : '; idea actions only fit idea triggers.'));
+  if (i.archived_at && !ctx.test) throw new Permanent(ctx.subject + ' is archived.');
+  const stage = STAGE_LABEL[i.stage] || i.stage;
+
+  if (key === 'idea_research') {
+    if (ctx.test) return 'Would queue research on ' + ctx.subject + '.';
+    const { queueIdeaResearchFor } = await import('@/lib/ideas/research');
+    const out = await queueIdeaResearchFor(i.id, 'automation');
+    if ('runId' in out) { await logAutomation(ctx, 'queued research on'); return 'Queued research on ' + ctx.subject + '. It starts within a couple of minutes.'; }
+    if (out.skipped) return out.error + ' Nothing new was queued.';
+    throw new Permanent(out.error);
+  }
+
+  if (key === 'idea_stage_next') {
+    const next = NEXT_STAGE[i.stage];
+    if (!next) throw new Permanent(i.stage === 'ready' ? ctx.subject + ' is Ready. Approving it needs a person to choose what it becomes.' : ctx.subject + ' is already ' + stage + '.');
+    if (ctx.test) return 'Would move ' + ctx.subject + ' from ' + stage + ' to ' + STAGE_LABEL[next] + '.';
+    // The stage gate (app.gate_idea_stage) checks the move for every writer, the service key included.
+    const up = await admin.from('ideas').update({ stage: next }).eq('id', i.id).eq('stage', i.stage).select('id').maybeSingle();
+    if (up.error) { if (up.error.code === '23514') throw new Permanent(up.error.message); throw new SafeRetry(up.error.message); }
+    if (!up.data) throw new Permanent(ctx.subject + ' changed stage before the automation could move it.');
+    await logAutomation(ctx, 'moved Stage to ' + STAGE_LABEL[next] + ' on');
+    return 'Moved ' + ctx.subject + ' from ' + stage + ' to ' + STAGE_LABEL[next] + '.';
+  }
+
+  const uid = i.owner_id || i.author_id;
+  if (!uid) throw new Permanent(ctx.subject + ' has no owner.');
+  const m = await admin.from('workspace_members').select('user_id').eq('workspace_id', ctx.r.workspace_id).eq('user_id', uid).eq('status', 'active').maybeSingle();
+  if (!m.data) throw new Permanent('The owner of ' + ctx.subject + ' is no longer an active member.');
+  const prof = (await admin.from('profiles').select('full_name, email').eq('id', uid).maybeSingle()).data as { full_name: string; email: string } | null;
+  const who = prof ? prof.full_name || prof.email : 'the owner';
+
+  if (key === 'idea_todo_owner') {
+    const text = ((note || ctx.a.name) + ': ' + i.title).slice(0, 500);
+    if (ctx.test) return 'Would add the To-Do "' + text + '" for ' + who + '.';
+    const ins = await admin.from('tasks').insert({ workspace_id: ctx.r.workspace_id, owner_id: uid, text, priority: 'med', project_id: null });
+    if (ins.error) throw new SafeRetry(ins.error.message);
+    return 'Added the To-Do "' + text + '" for ' + who + '.';
+  }
+
+  if (key === 'idea_email_owner') {
+    if (!prof || !prof.email) throw new Permanent('The owner of ' + ctx.subject + ' has no email address.');
+    if (ctx.test) return 'Would email ' + prof.email + ' about ' + ctx.subject + '.';
+    const tpl = buildMessageEmail({
+      workspace: ctx.workspace, tone: { label: 'Automation', bg: '#2F5BD3' }, subject: ctx.a.name + ': ' + i.title,
+      heading: ctx.a.name, lead: ctx.why + ': ' + i.title + '.', note: note || undefined,
+      cards: [{ title: i.title, rows: [['Stage', stage]].concat(ctx.tokens['idea.score'] ? [['Score', ctx.tokens['idea.score'] + ' of 100']] : []) as [string, string][] }],
+      cta: { label: 'Open the idea', url: ctx.link },
+      fine: 'A ' + ctx.workspace + ' automation sent this email because you own this idea.',
+    });
+    const res = await sendEmail({ to: prof.email, subject: tpl.subject, html: tpl.html, text: tpl.text });
+    if (!res.sent) throw new Error('Email to ' + prof.email + ' did not send: ' + res.error);
+    return 'Emailed ' + prof.email + ' (Resend ' + res.id + ').';
+  }
   throw new Permanent('Unknown action ' + key + '.');
 }
 
@@ -439,7 +523,7 @@ async function alertFailure(ctx: Ctx, error: string) {
   const text = 'automation "' + ctx.a.name + '" failed on';
   if (people.length) {
     const ins = await admin.from('notifications').insert(people.map((x) => ({
-      workspace_id: ctx.r.workspace_id, user_id: x.id, event: 'automation', actor_label: 'Automation', text, target_label: ctx.p ? ctx.p.title : ctx.a.name, quote: error, project_id: ctx.p ? ctx.p.id : null,
+      workspace_id: ctx.r.workspace_id, user_id: x.id, event: 'automation', actor_label: 'Automation', text, target_label: ctx.p ? ctx.p.title : ctx.idea ? ctx.idea.title : ctx.a.name, quote: error, project_id: ctx.p ? ctx.p.id : null,
     })));
     if (ins.error) console.warn('notifications', ins.error.message);
   }
@@ -448,7 +532,7 @@ async function alertFailure(ctx: Ctx, error: string) {
     const tpl = buildMessageEmail({
       workspace: ctx.workspace, tone: { label: 'Automation failed', bg: '#C42B2F' }, subject: 'Automation failed: ' + ctx.a.name,
       heading: 'An automation failed', lead: '"' + ctx.a.name + '" (' + ctx.why + ') could not finish' + (ctx.p ? ' on ' + ctx.subject : '') + '.',
-      note: error, cta: { label: 'Open Automations', url: ctx.link.replace(/\/projects.*$/, '/admin/automations') },
+      note: error, cta: { label: 'Open Automations', url: ctx.base + '/admin/automations' },
       fine: 'You get this email because Alert on failures is on in Automations > Settings.',
     });
     const res = await sendEmail({ to: x.email, subject: tpl.subject, html: tpl.html, text: tpl.text });

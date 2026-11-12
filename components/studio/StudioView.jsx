@@ -29,6 +29,7 @@ import Performance from './Performance';
 import Workload from './Workload';
 import AiUsage from './AiUsage';
 import IdeaRules from './IdeaRules';
+import IdeaAutomations from './IdeaAutomations';
 import IdeaConvert from './IdeaConvert';
 import IdeaResearch, { ScoreSliders } from './IdeaResearch';
 import BrandEditor from './BrandEditor';
@@ -2344,6 +2345,7 @@ export default function StudioView({ V }) {
                       </>
                     ) : null}
                     {" "}
+                    {V.pg.isIdeas && V.ids.autoProps ? <IdeaAutomations {...V.ids.autoProps} triggerStyle={css(V.ui.btnGhost)} /> : null}
                     {V.pg.isIdeas && V.ids.rulesProps ? <IdeaRules {...V.ids.rulesProps} triggerStyle={css(V.ui.btnGhost)} /> : null}
                     {V.pg.hasGhost ? (
                       <>

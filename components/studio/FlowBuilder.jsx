@@ -11,7 +11,7 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
 import { css } from '@/lib/studio/css';
-import { TRIGGERS, ACTIONS, actionById, triggerById, triggerText } from '@/lib/automations/catalog';
+import { ACTIONS, actionById, triggerById, triggerText, projectTriggers, fits } from '@/lib/automations/catalog';
 import {
   KINDS, TAG_TYPES, FIELDS, OPS, TOKENS, ACTION_GROUPS, emptyGraph, graphOf, compile, issuesOf, newId, walk, stepCount, delayText, plural,
 } from '@/lib/automations/graph';
@@ -690,7 +690,8 @@ export default function FlowBuilder({ D, A, row, onClose, goConnect, review }) {
     return (
       <div style={css('display: flex; flex-direction: column; gap: 10px;')}>
         <p style={css(S.muted)}>Work enters the flow when this happens.</p>
-        {TRIGGERS.map((tr) => {
+        {/* Flows run on projects; idea triggers live in simple workflows (Ideas > Automate). */}
+        {projectTriggers().map((tr) => {
           const on = g.trigger.key === tr.key;
           return (
             <button key={tr.key} type="button" aria-pressed={on} onClick={() => edit((x) => { x.trigger.key = tr.key; x.trigger.value = tr.values === 'statuses' ? ((D.statuses || [])[0] || {}).label || '' : tr.values ? tr.values[0][0] : ''; })}
@@ -714,7 +715,7 @@ export default function FlowBuilder({ D, A, row, onClose, goConnect, review }) {
       <div style={css('display: flex; flex-direction: column; gap: 16px;')}>
         {n.type === 'action' ? (
           <>
-            <Pick id="fb-act" label="Action" value={n.key} onChange={(v) => editNode(n.id, { key: v })} options={ACTIONS.map((a) => [a.key, a.label])} />
+            <Pick id="fb-act" label="Action" value={n.key} onChange={(v) => editNode(n.id, { key: v })} options={ACTIONS.filter((a) => fits(a, 'project')).map((a) => [a.key, a.label])} />
             {def && def.needs ? (
               <div style={css('display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-radius: 12px; background: ' + (connected[def.needs] ? 'var(--green-soft)' : 'var(--amber-soft)') + '; color: ' + (connected[def.needs] ? 'var(--green-ink)' : 'var(--amber-ink)') + '; font-size: 13px; font-weight: 600;')}>
                 <span style={css('flex: 1;')}>{connected[def.needs] ? def.app + ' is connected.' : def.app + ' is not connected yet.'}</span>

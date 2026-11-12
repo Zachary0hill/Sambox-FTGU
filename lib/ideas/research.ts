@@ -62,6 +62,26 @@ export async function queueIdeaResearch(m: Member, ideaId: string): Promise<{ ru
   return { runId: run.id! };
 }
 
+// An automation queues research without a member. The workspace's spend limit still applies, and the research tick
+// starts the run within a minute or two. skipped: nothing new was queued because a run is already going.
+export async function queueIdeaResearchFor(ideaId: string, by: string): Promise<{ runId: string } | { error: string; skipped?: boolean }> {
+  const admin = supabaseAdmin();
+  const { data: idea, error: readError } = await admin.from('ideas').select('id, workspace_id, run, archived_at').eq('id', ideaId).maybeSingle();
+  if (readError) throw new Error('The idea could not be read.');
+  if (!idea) return { error: 'The idea was deleted.' };
+  if (idea.archived_at) return { error: 'The idea is archived.' };
+  if (isActiveRun(parseRun(idea.run))) return { error: 'Research is already running on this idea.', skipped: true };
+  const refused = await refuseSpend(idea.workspace_id, await rulesFor(idea.workspace_id), SEARCH_USD, 0);
+  if (refused) return { error: refused };
+  const run: IdeaRun = { id: randomUUID(), state: 'queued', queued_at: new Date().toISOString(), by };
+  let admission = admin.from('ideas').update({ run }).eq('id', ideaId);
+  admission = idea.run == null ? admission.is('run', null) : admission.eq('run', JSON.stringify(idea.run));
+  const { data: admitted, error } = await admission.select('id').maybeSingle();
+  if (error) throw new Error('The run could not be queued.');
+  if (!admitted) return { error: 'Another research request changed this idea.', skipped: true };
+  return { runId: run.id! };
+}
+
 export async function cancelIdeaResearch(m: Member, ideaId: string): Promise<{ error: string; status: number } | null> {
   const { data: idea } = await m.supabase.from('ideas').select('author_id, workspace_id, run').eq('id', ideaId).maybeSingle();
   if (!idea) return { error: 'Idea not available.', status: 404 };
