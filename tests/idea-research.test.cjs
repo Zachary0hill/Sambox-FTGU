@@ -112,6 +112,16 @@ test('a research run does not move an idea past Research', async () => {
   assert.equal(idea.stage, 'ready');
 });
 
+test('automated research records usage without treating its system actor as a user UUID', async () => {
+  for (const by of ['auto', 'automation']) {
+    const { idea, calls, mod } = harness({ idea: { run: { id: 'r1', state: 'queued', by } } });
+    await mod.processIdeaResearch('i', 'r1');
+    assert.equal(idea.run.state, 'done');
+    assert.equal(calls.usage.length, 2);
+    assert.ok(calls.usage.every((entry) => entry.userId === null));
+  }
+});
+
 test('a run that is not the one queued does nothing', async () => {
   const { idea, calls, mod } = harness();
   await mod.processIdeaResearch('i', 'old-run');

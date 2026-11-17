@@ -16,7 +16,7 @@ import { recordUsage } from '@/lib/ai/usage';
 
 export type SourceState = { state: 'queued' | 'running' | 'done' | 'failed' | 'skipped' | 'cancelled'; count?: number; error?: string };
 export type RunInputs = { brandId: string; topics: string[]; sources: SourceId[]; count: number };
-type Row = { id: string; workspace_id: string; status: string; created_by: string | null; actor_run_ids: string[] };
+type Row = { id: string; workspace_id: string; status: string; created_by: string | null; actor_run_ids: string[]; attempt_id: string | null };
 
 const msg = (err: unknown) => (err instanceof Error ? err.message : String(err)).slice(0, 400);
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -99,12 +99,25 @@ export async function startRedraft(m: Member, runId: string) {
 // Cancels a run: marks it cancelled and aborts any Apify actor runs it started.
 export async function cancelRun(ws: string, runId: string) {
   const admin = supabaseAdmin();
-  const { data: row } = await admin.from('research_runs').select('id, workspace_id, status, created_by, actor_run_ids').eq('id', runId).eq('workspace_id', ws).maybeSingle<Row>();
+  const { data: row, error: readError } = await admin.from('research_runs').select('id, workspace_id, status, created_by, actor_run_ids, attempt_id').eq('id', runId).eq('workspace_id', ws).maybeSingle<Row>();
+  if (readError) throw new Error('The research run could not be loaded.');
   if (!row) return false;
   if (row.status === 'queued' || row.status === 'running') {
-    await admin.from('research_runs').update({ status: 'cancelled', error: 'Cancelled.', finished_at: new Date().toISOString() }).eq('id', runId);
-    const apify = row.actor_run_ids.length ? await getIntegration(ws, 'apify') : null;
-    if (apify) await Promise.all(row.actor_run_ids.map((id) => abortRun(apify.secret.apiToken, id)));
+    // A completed run or a newer retry must not be overwritten by a stale cancel.
+    let update = admin.from('research_runs').update({ status: 'cancelled', error: 'Cancelled.', finished_at: new Date().toISOString() })
+      .eq('id', runId).eq('workspace_id', ws).eq('status', row.status);
+    update = row.attempt_id ? update.eq('attempt_id', row.attempt_id) : update.is('attempt_id', null);
+    const { data: cancelled, error } = await update.select('actor_run_ids').maybeSingle();
+    if (error) throw new Error('The research run could not be cancelled.');
+    if (!cancelled) {
+      const current = await admin.from('research_runs').select('status').eq('id', runId).eq('workspace_id', ws).maybeSingle();
+      if (current.error) throw new Error('The research cancellation could not be confirmed.');
+      if (current.data && ['queued', 'running'].includes(current.data.status)) throw new Error('The research run changed while cancelling. Refresh and try again.');
+      return true;
+    }
+    const actors = cancelled.actor_run_ids || [];
+    const apify = actors.length ? await getIntegration(ws, 'apify') : null;
+    if (apify) await Promise.all(actors.map((id: string) => abortRun(apify.secret.apiToken, id)));
   }
   return true;
 }

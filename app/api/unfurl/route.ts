@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getMember, deny } from '@/lib/integrations/auth';
+import { fetchPublicResource } from '@/lib/http/public-resource';
 
 // Link previews for reference URLs on ideas: title, site, author and a thumbnail. Video sites answer through their
 // oEmbed endpoints (no keys); everything else comes from the page's Open Graph tags. Previews are public metadata,
@@ -23,29 +24,16 @@ function cleanUrl(raw: unknown): URL | null {
   } catch { return null; }
 }
 
-async function get(url: string, accept: string, maxBytes: number): Promise<{ status: number; type: string; text: string } | null> {
-  const ctrl = new AbortController();
-  const t = setTimeout(() => ctrl.abort(), 7000);
+async function get(url: string, accept: string, maxBytes: number): Promise<{ status: number; type: string; text: string; url: string } | null> {
   try {
-    const res = await fetch(url, { headers: { 'user-agent': UA, accept, 'accept-language': 'en' }, redirect: 'follow', signal: ctrl.signal });
-    const type = res.headers.get('content-type') || '';
-    const reader = res.body?.getReader();
-    if (!reader) return { status: res.status, type, text: '' };
-    const chunks: Uint8Array[] = [];
-    let size = 0;
-    for (;;) {
-      const { done, value } = await reader.read();
-      if (done || !value) break;
-      chunks.push(value); size += value.length;
-      if (size >= maxBytes) { reader.cancel().catch(() => {}); break; }
-    }
-    return { status: res.status, type, text: new TextDecoder('utf-8', { fatal: false }).decode(Buffer.concat(chunks)) };
-  } catch { return null; } finally { clearTimeout(t); }
+    const res = await fetchPublicResource(url, { maxBytes, headers: { 'user-agent': UA, accept, 'accept-language': 'en' } });
+    return { status: res.status, type: res.type, text: res.body.toString('utf8'), url: res.url };
+  } catch { return null; }
 }
 
 const ENT: Record<string, string> = { amp: '&', lt: '<', gt: '>', quot: '"', '#39': "'", '#x27': "'", apos: "'", nbsp: ' ' };
 const decode = (s: string) => s.replace(/&(amp|lt|gt|quot|#39|#x27|apos|nbsp);/g, (_, k: string) => ENT[k] || _)
-  .replace(/&#(\d+);/g, (_, n) => String.fromCodePoint(Number(n))).replace(/\s+/g, ' ').trim();
+  .replace(/&#(\d+);/g, (_, n) => Number(n) <= 0x10ffff ? String.fromCodePoint(Number(n)) : '\uFFFD').replace(/\s+/g, ' ').trim();
 
 // First <meta> whose property or name is one of `keys`, in page order of the keys given.
 function meta(html: string, keys: string[]): string {
@@ -60,7 +48,7 @@ function meta(html: string, keys: string[]): string {
   return '';
 }
 
-const absolute = (src: string, base: string) => { try { return src ? new URL(src, base).href : ''; } catch { return ''; } };
+const absolute = (src: string, base: string) => { try { return src ? cleanUrl(new URL(src, base).href)?.href || '' : ''; } catch { return ''; } };
 
 async function oembed(endpoint: string, u: URL, site: string): Promise<Preview | null> {
   const r = await get(endpoint + encodeURIComponent(u.href), 'application/json', 64 * 1024);
@@ -68,7 +56,7 @@ async function oembed(endpoint: string, u: URL, site: string): Promise<Preview |
   try {
     const j = JSON.parse(r.text) as Record<string, unknown>;
     const s = (k: string) => (typeof j[k] === 'string' ? (j[k] as string).trim() : '');
-    return { url: u.href, kind: 'video', site, title: s('title'), description: '', image: s('thumbnail_url'), author: s('author_name') };
+    return { url: u.href, kind: 'video', site, title: s('title'), description: '', image: absolute(s('thumbnail_url'), u.href), author: s('author_name') };
   } catch { return null; }
 }
 
@@ -83,7 +71,7 @@ async function unfurl(u: URL): Promise<Preview | null> {
   if (!r || r.status >= 400 || !/html/i.test(r.type)) return null;
   const html = r.text;
   const title = meta(html, ['og:title', 'twitter:title']) || decode((html.match(/<title[^>]*>([^<]*)<\/title>/i) || [, ''])[1] || '');
-  const image = absolute(meta(html, ['og:image:secure_url', 'og:image', 'twitter:image', 'twitter:image:src']), u.href);
+  const image = absolute(meta(html, ['og:image:secure_url', 'og:image', 'twitter:image', 'twitter:image:src']), r.url);
   const type = meta(html, ['og:type']).toLowerCase();
   const video = /^video/.test(type) || !!meta(html, ['og:video', 'og:video:url', 'twitter:player']);
   return {

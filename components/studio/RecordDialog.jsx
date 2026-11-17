@@ -4,6 +4,7 @@
 // lib/studio/vals-records.js; this file only lays it out in the house dialog style.
 import { Fragment, useEffect, useRef } from 'react';
 import { css } from '@/lib/studio/css';
+import { useDialogFocus } from './FocusDialog';
 
 const LABEL = 'margin: 0; font-size: 13px; font-weight: 600; color: var(--ink-2);';
 const INPUT = 'width: 100%; min-height: 44px; box-sizing: border-box; padding: 0 14px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface-2); font-family: inherit; font-size: 14px; color: var(--ink);';
@@ -103,18 +104,22 @@ function FieldRow({ f, d }) {
 
 export default function RecordDialog({ d }) {
   const box = useRef(null);
+  useDialogFocus(box);
   useEffect(() => {
     const el = box.current && box.current.querySelector('input, select, textarea');
     if (el) el.focus();
   }, [d.id]);
   const onKey = (e) => {
     if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); d.close(); }
-    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); d.save(); }
+    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+      e.preventDefault(); e.stopPropagation();
+      if (!d.busy && d.save) d.save();
+    }
   };
   return (
     <>
       <button type="button" aria-label="Close dialog" onClick={d.close} style={css('position: fixed; inset: 0; z-index: 40; border: 0; background: rgba(17,17,17,0.32); cursor: default')}></button>
-      <dialog open aria-modal="true" aria-labelledby={'rec-' + d.id + '-title'} onKeyDown={onKey} ref={box}
+      <dialog open data-focus-dialog="" tabIndex={-1} aria-modal="true" aria-labelledby={'rec-' + d.id + '-title'} onKeyDown={onKey} ref={box}
         style={css('position: fixed; z-index: 41; top: 50%; left: 50%; transform: translate(-50%, -50%); margin: 0; width: ' + (d.width || 560) + 'px; max-width: calc(100vw - 32px); max-height: calc(100vh - 64px); overflow-y: auto; box-sizing: border-box; background: var(--surface); border: 1px solid var(--line-4); border-radius: 24px; box-shadow: 0 24px 80px rgba(0,0,0,0.20); padding: 24px; color: var(--ink); font-family: var(--font-main);')}>
         <div style={css('display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 20px')}>
           <div>

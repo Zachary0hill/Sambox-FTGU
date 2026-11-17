@@ -117,6 +117,7 @@ async function executeRun(r: Run, baseUrl: string, draft?: ReturnType<typeof gra
     admin.from('workspace_settings').select('workspace_id, automation, timezone').eq('workspace_id', r.workspace_id).maybeSingle(),
     admin.from('workspaces').select('name').eq('id', r.workspace_id).maybeSingle(),
   ]);
+  if (aRes.error || sRes.error || wRes.error) throw new Error('Automation settings could not be loaded.');
   const a = aRes.data as Automation | null;
   const st = (sRes.data as Settings | null) || { workspace_id: r.workspace_id, automation: {}, timezone: 'America/Chicago' };
   const auto = st.automation || {};
@@ -397,15 +398,19 @@ async function perform(key: string, message: string, ctx: Ctx): Promise<string> 
     const next = i >= 0 ? ctx.statuses[i + 1] : null;
     if (!next) throw new Permanent(ctx.subject + ' is already on the last status.');
     // The service key skips the database guards, so the runner checks the same workflow rules itself.
-    const s = (await admin.from('workspace_settings').select('require_sponsor_approval, lock_after_live').eq('workspace_id', p.workspace_id).maybeSingle()).data as { require_sponsor_approval: boolean; lock_after_live: boolean } | null;
+    const settings = await admin.from('workspace_settings').select('require_sponsor_approval, lock_after_live').eq('workspace_id', p.workspace_id).maybeSingle();
+    if (settings.error || !settings.data) throw new SafeRetry('Workflow rules could not be loaded.');
+    const s = settings.data as { require_sponsor_approval: boolean; lock_after_live: boolean };
     if (s && s.lock_after_live && ctx.statusName(p.status_id) === 'Live') throw new Permanent('Live projects are locked.');
     if (s && s.require_sponsor_approval && (next.label === 'Scheduled' || next.label === 'Live')) {
       const sp = await admin.from('sponsorships').select('id').eq('project_id', p.id).neq('approval_status', 'approved');
+      if (sp.error) throw new SafeRetry('Sponsor approval could not be checked.');
       if ((sp.data || []).length) throw new Permanent('Sponsor approval is required before ' + ctx.subject + ' can move to ' + next.label + '.');
     }
     if (ctx.test) return 'Would move ' + ctx.subject + ' from ' + ctx.statusName(p.status_id) + ' to ' + next.label + '.';
-    const up = await admin.from('projects').update({ status_id: next.id }).eq('id', p.id).eq('status_id', p.status_id);
+    const up = await admin.from('projects').update({ status_id: next.id }).eq('id', p.id).eq('status_id', p.status_id).select('id').maybeSingle();
     if (up.error) throw new SafeRetry(up.error.message);
+    if (!up.data) throw new Permanent(ctx.subject + ' changed status before the automation could move it.');
     await logAutomation(ctx, 'moved Status to ' + next.label + ' on');
     return 'Moved Status from ' + ctx.statusName(p.status_id) + ' to ' + next.label + '.';
   }
