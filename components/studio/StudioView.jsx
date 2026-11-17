@@ -43,6 +43,7 @@ export default function StudioView({ V }) {
       {/* app: Dev Notes floating dock for the team (press N, or Dev notes in the sidebar) */}
       {V.devNotes}
       {V.flowLayer}
+      {V.bannerLayer}
       {/* app: record dialogs (templates, finance records, automations, two-step sign in) */}
       {V.rec ? <RecordDialog d={V.rec} /> : null}
       {/* app: toast for save confirmations and database errors */}

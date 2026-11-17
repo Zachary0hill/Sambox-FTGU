@@ -7,6 +7,7 @@ import StudioView from './StudioView';
 import { startActivityTracking } from '@/lib/activity-tracking';
 import UploadStatus from './UploadStatus';
 import DevNotes, { openDevNotes } from './DevNotes';
+import NotificationBanners from './NotificationBanners';
 
 const DEV_NOTE_ROLES = ['admin', 'manager', 'editor', 'designer'];
 import MemberWelcome, { welcomeKind } from './MemberWelcome';
@@ -231,8 +232,10 @@ export default function Studio({ initialPath, initialProject }) {
     return () => clearInterval(t);
   }, [rsActive, reload]);
 
-  // Desktop push (Settings > My notifications): a system notification for each new notification while the board is
-  // open, when the browser allowed it and quiet hours are not on. Notifications from before this visit stay silent.
+  // New notifications while the board is open (Settings > My notifications). Notifications from before this visit stay
+  // silent. Pop-up banners: an in-app banner for each one, unless the Inbox list is already on screen. Desktop push: a
+  // system notification when the browser allowed it and quiet hours are not on; with banners on it is kept for when the
+  // tab is in the background, so the same notification does not show twice.
   const pushSeen = useRef(null);
   useEffect(() => {
     if (!D || !ctx) return;
@@ -242,7 +245,11 @@ export default function Studio({ initialPath, initialProject }) {
     list.forEach((n) => pushSeen.current.add(n.id));
     const myN = ((meRef.current && meRef.current.prefs) || {}).myN || {};
     const h = new Date().getHours();
-    if (!fresh.length || !myN.push || (myN.quiet && (h >= 19 || h < 8)) || typeof Notification === 'undefined' || Notification.permission !== 'granted') return;
+    if (!fresh.length) return;
+    const banner = myN.banner !== false;
+    if (banner) setS((p) => (!p || (p.nav === 'alerts' && (p.naTab || 'notif') === 'notif') ? p : { ...p, banners: fresh.map((n) => n.id).concat(p.banners || []).slice(0, 20) }));
+    if (banner && document.visibilityState === 'visible' && document.hasFocus()) return;
+    if (!myN.push || (myN.quiet && (h >= 19 || h < 8)) || typeof Notification === 'undefined' || Notification.permission !== 'granted') return;
     fresh.slice(0, 3).forEach((n) => {
       try {
         const note = new Notification([n.actor_label, n.text].filter(Boolean).join(' '), { body: n.target_label + (n.quote ? '\n' + n.quote : ''), tag: n.id, icon: '/icon.png' });
@@ -309,6 +316,7 @@ export default function Studio({ initialPath, initialProject }) {
   const notesRole = DEV_NOTE_ROLES.includes(me.uiRole);
   V.devNotes = notesRole ? <DevNotes sb={sb} me={me} workspaceId={ctx.workspace_id} admin={me.uiRole === 'admin'} /> : null;
   V.devNotesOpen = notesRole ? openDevNotes : null;
+  V.bannerLayer = <NotificationBanners items={V.inbox.banners} onMore={V.inbox.bannersMore} />;
   // Automations > New flow and the flow builder canvas (s.flowOpen: 'new' or a workflow id).
   V.flowLayer = me.uiRole === 'admin' && (s.flowOpen || s.flowReturn)
     ? <FlowLayer D={D} A={A} open={s.flowOpen} review={!!s.flowReview} back={s.flowReturn} set={set} /> : null;

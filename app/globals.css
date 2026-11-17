@@ -61,6 +61,12 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 /* ---------- App additions ---------- */
 @keyframes fbToast { from { opacity: 0; transform: translate(-50%, 8px) } to { opacity: 1; transform: translate(-50%, 0) } }
 .fb-toast { animation: fbToast .2s ease both }
+/* Live notification banners (components/studio/NotificationBanners.jsx): slide in from the right; full width on a phone. */
+@keyframes fbBanner { from { opacity: 0; transform: translateX(16px) } to { opacity: 1; transform: none } }
+.fb-banner { animation: fbBanner .24s ease both }
+.fb-banner > button:hover { background: var(--chip) !important }
+@media (prefers-reduced-motion: reduce) { .fb-banner { animation: none } }
+@media (max-width: 640px) { .fb-banners { left: 12px !important; right: 12px !important; width: auto !important; max-width: none !important } .fb-banner-x { width: 44px !important; height: 44px !important } }
 /* A just-added board column slides in, then its tint fades out. */
 @keyframes fbColIn { from { opacity: 0; transform: translateY(-6px) } to { opacity: 1; transform: none } }
 @keyframes fbColTint { 0%, 35% { box-shadow: inset 0 0 0 999px color-mix(in srgb, var(--link, #16FFDE) 22%, transparent), inset 0 -2px 0 var(--link, #16FFDE) } 100% { box-shadow: inset 0 0 0 999px transparent, inset 0 -2px 0 transparent } }
