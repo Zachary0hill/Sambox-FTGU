@@ -61,6 +61,7 @@ export async function POST(request: Request) {
   if (prof.data) {
     const u = await admin.auth.admin.getUserById(prof.data.id);
     if (u.error) return NextResponse.json({ error: u.error.message }, { status: 400 });
+    if (u.data.user.email?.trim().toLowerCase() !== email) return NextResponse.json({ error: 'Account identity could not be verified. Ask whoever invited you for a new link.' }, { status: 409 });
     if (u.data.user.email_confirmed_at) return NextResponse.json({ error: 'This email already has an account. Sign in with it instead.' }, { status: 409 });
     const up = await admin.auth.admin.updateUserById(prof.data.id, { password, email_confirm: true, user_metadata: meta });
     if (up.error) return NextResponse.json({ error: up.error.message }, { status: 400 });

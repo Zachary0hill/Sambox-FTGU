@@ -1,3 +1,10 @@
 allowBuilds:
   sharp: false
   unrs-resolver: false
+
+# Keep ESLint's transitive matcher on the published glob-amplification fix.
+minimumReleaseAgeExclude:
+  - minimatch@11.0.9
+
+overrides:
+  'minimatch@>=7.0.0 <11.0.1': 11.0.9

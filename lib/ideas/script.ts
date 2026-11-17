@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { workspaceModels, withFallback, providerName, type WorkspaceModel } from '@/lib/ai/model';
 import { recordUsage } from '@/lib/ai/usage';
 import type { Member } from '@/lib/integrations/auth';
+import { mayEditIdea } from './permissions';
 
 // An AI-drafted script for an idea, written by the workspace's text model from the idea's title, hook, angle,
 // description and references plus the brand's voice. Returns beats for the member to review on the Script tab;
@@ -36,9 +37,10 @@ const cleanError = (err: unknown) => String((err as { message?: string })?.messa
 export async function generateScript(a: { ideaId: string; member: Member; notes: string; length: ScriptLength | ''; current: Beat[]; timeoutMs?: number }): Promise<{ beats: Beat[]; model: string; provider: string }> {
   const m = a.member;
   const ws = m.ctx.workspace_id;
-  const { data: idea, error } = await m.supabase.from('ideas').select('id, workspace_id, brand_id, title, hook, audience, promise, body, format, platforms, refs, findings, title_options, pillar').eq('id', a.ideaId).maybeSingle();
+  const { data: idea, error } = await m.supabase.from('ideas').select('id, author_id, workspace_id, brand_id, title, hook, audience, promise, body, format, platforms, refs, findings, title_options, pillar').eq('id', a.ideaId).eq('workspace_id', ws).maybeSingle();
   if (error) throw new ScriptError(error.message, 400);
   if (!idea) throw new ScriptError('That idea was not found.', 404);
+  if (!mayEditIdea(m, idea.author_id)) throw new ScriptError('You cannot draft scripts for this idea.', 403);
   const i = idea as IdeaRow;
   const { data: brand } = await m.supabase.from('brand_kits').select('name, voice_prompt, tone, dos, donts, sections').eq('id', i.brand_id).maybeSingle();
   const models = await workspaceModels(ws).catch(() => [] as WorkspaceModel[]);

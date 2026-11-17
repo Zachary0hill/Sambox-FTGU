@@ -33,7 +33,11 @@ export async function DELETE(_request: Request, ctx: RouteContext<'/api/research
   const { id } = await ctx.params;
   const m = await getMember();
   if (!isSuperAdmin(m)) return deny('Only a Super Admin can cancel research.');
-  const ok = await cancelRun(m.ctx.workspace_id, id);
-  if (!ok) return deny('No such run.', 404);
-  return NextResponse.json({ ok: true });
+  try {
+    const ok = await cancelRun(m.ctx.workspace_id, id);
+    if (!ok) return deny('No such run.', 404);
+    return NextResponse.json({ ok: true });
+  } catch (error) {
+    return deny(error instanceof Error ? error.message : 'The research run could not be cancelled.', 500);
+  }
 }

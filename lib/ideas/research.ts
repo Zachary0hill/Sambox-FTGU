@@ -114,7 +114,7 @@ export async function processIdeaResearch(ideaId: string, runId: string): Promis
   if (!idea) return;
 
   const ws: string = idea.workspace_id;
-  const userId = queued.by && queued.by !== 'auto' ? queued.by : null;
+  const userId = queued.by && queued.by !== 'auto' && queued.by !== 'automation' ? queued.by : null;
   let spent = 0;
   try {
     const rules = await rulesFor(ws);
