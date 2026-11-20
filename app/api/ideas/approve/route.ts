@@ -38,7 +38,7 @@ export async function POST(request: Request) {
   } catch {
     // A retry uses the same project and cover path. Do not misreport a committed
     // project as a failed approval or make another project on the next click.
-    return NextResponse.json({ project, warning: 'Project created, but the thumbnail concept could not copy. Use Retry asset transfer on the idea.' });
+    return NextResponse.json({ project, warning: 'The project is linked. Use Retry asset transfer to copy the cover.' });
   }
 }
 

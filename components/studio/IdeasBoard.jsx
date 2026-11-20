@@ -197,9 +197,11 @@ function SortRows({ s }) {
     <>
       <MenuLabel>Sort by</MenuLabel>
       {s.rows.map((r) => <MenuRow key={r.key} checked={r.on} aria-pressed={r.on} label={r.label} onClick={r.pick} />)}
-      <div style={css('padding: 8px 10px 6px')}>
-        <Segmented label="Order" options={s.dirs} value={s.dir} onChange={s.pickDir} size="sm" />
-      </div>
+      {s.dirs.length ? (
+        <div style={css('padding: 8px 10px 6px')}>
+          <Segmented label="Order" options={s.dirs} value={s.dir} onChange={s.pickDir} size="sm" />
+        </div>
+      ) : null}
     </>
   );
 }
@@ -238,6 +240,7 @@ function LayoutSwitch({ layouts, labels }) {
 export function IdeasToolbar({ t }) {
   const ref = useRef(null);
   const rowRef = useRef(null);
+  const searchRef = useRef(null);
   const level = useLevel(ref, rowRef);
   const m = t.menu;
   const [sheet, setSheet] = useState(false);
@@ -273,10 +276,17 @@ export function IdeasToolbar({ t }) {
         ) : null}
         <div className="ir-search" style={css('position: relative; flex: 1 1 160px; min-width: 120px; display: flex; align-items: center')}>
           <Icon d={IC.search} style="position: absolute; left: 11px; color: var(--muted); pointer-events: none" />
-          <label htmlFor="idea-search" style={css(SR)}>Search ideas by title or hook</label>
-          <input id="idea-search" type="search" autoComplete="off" placeholder="Search ideas" value={t.search.value} onChange={t.search.onChange}
+          <label htmlFor="idea-search" style={css(SR)}>Search ideas</label>
+          <span id="idea-search-help" style={css(SR)}>Search by keyword or use # to search tags.</span>
+          <input ref={searchRef} id="idea-search" type="search" autoComplete="off" placeholder="Search ideas or #tags" aria-describedby="idea-search-help" value={t.search.value} onChange={t.search.onChange}
             style={css('width: 100%; height: 36px; box-sizing: border-box; padding: 0 30px 0 34px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); font-size: 13px; color: var(--ink)')} />
-          <kbd className="ir-kbd" aria-hidden="true" style={css('position: absolute; right: 8px; height: 20px; min-width: 20px; box-sizing: border-box; padding: 0 5px; align-items: center; justify-content: center; border: 1px solid var(--border); border-radius: 5px; font: inherit; font-size: 11px; color: var(--muted)')}>/</kbd>
+          {t.search.value ? (
+            <button type="button" className="ir-opt" aria-label="Clear search" onClick={() => { t.search.clear(); searchRef.current?.focus(); }}
+              style={css('position: absolute; right: 2px; display: grid; place-items: center; width: 30px; height: 30px; padding: 0; border: 0; border-radius: 6px; background: transparent; color: var(--muted); cursor: pointer')}>
+              <Icon d={IC.x} size={14} />
+            </button>
+          ) : <kbd className="ir-kbd" aria-hidden="true" style={css('position: absolute; right: 8px; height: 20px; min-width: 20px; box-sizing: border-box; padding: 0 5px; align-items: center; justify-content: center; border: 1px solid var(--border); border-radius: 5px; font: inherit; font-size: 11px; color: var(--muted)')}>/</kbd>}
+          <span role="status" style={css(SR)}>{t.search.resultText}</span>
         </div>
         <Anchor open={m === 'filters'}>
           <button type="button" aria-haspopup="dialog" aria-expanded={m === 'filters'} aria-label={f.label} onClick={() => t.toggle('filters')} style={css(CTRL + (f.count ? ' border-color: var(--link);' : ''))}>
@@ -291,7 +301,7 @@ export function IdeasToolbar({ t }) {
           <>
             <Anchor open={m === 'sort'}>
               <button type="button" aria-haspopup="dialog" aria-expanded={m === 'sort'} aria-label={so.label} onClick={() => t.toggle('sort')} style={css(CTRL)}>
-                <span style={css('font-weight: 500; color: var(--muted)')}>Sort:</span>{so.field}<Icon d={so.down ? I.down : I.up} size={14} />
+                <span style={css('font-weight: 500; color: var(--muted)')}>Sort:</span>{so.field}{so.dirs.length ? <Icon d={so.down ? I.down : I.up} size={14} /> : null}
               </button>
               {m === 'sort' ? <Popover label="Sort" onClose={t.close} align="right" width={240}><SortRows s={so} /></Popover> : null}
             </Anchor>
@@ -567,19 +577,66 @@ export function IdeasBoard({ b }) {
 
 // ---------- Idea detail dialog ----------
 
-const BOX = 'display: flex; flex-direction: column; gap: 6px; padding: 14px 16px; box-sizing: border-box; border-width: 1px; border-style: solid; border-color: var(--border); border-radius: 12px; background: var(--surface);';
-const DBTN = 'display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 40px; padding: 0 16px; box-sizing: border-box; border-radius: 10px; font-size: 14px; font-weight: 700; letter-spacing: normal; white-space: nowrap; cursor: pointer;';
-const ICONB = 'width: 36px; height: 36px; flex: none; padding: 0; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); color: var(--ink); display: inline-flex; align-items: center; justify-content: center; cursor: pointer;';
+// One shell for the details view and the editor: same place, same size, so switching between them moves nothing.
+export const IDEA_SCRIM = 'position: fixed; inset: 0; z-index: 40; border: 0; padding: 0; background: rgba(0,0,0,0.74); cursor: default;';
+export const IDEA_DLG = 'position: fixed; z-index: 41; top: 40px; left: 50%; transform: translateX(-50%); margin: 0; width: min(1120px, calc(100vw - 48px)); height: min(920px, calc(100dvh - 80px)); max-height: calc(100dvh - 80px); box-sizing: border-box; padding: 0; display: grid; grid-template-columns: minmax(0, 1fr) minmax(300px, 300px); grid-template-rows: minmax(0, 1fr); overflow: hidden; border: 1px solid var(--line-4); border-radius: 18px; background: var(--surface-2); color: var(--ink); font-family: var(--font-main); box-shadow: 0 30px 80px rgba(0,0,0,0.5);';
+export const IDEA_MAIN = 'min-width: 0; min-height: 0; display: flex; flex-direction: column;';
+export const IDEA_TOP = 'flex: none; display: flex; align-items: center; gap: 8px; min-height: 60px; padding: 10px 12px 10px 24px; box-sizing: border-box; border-bottom: 1px solid var(--line);';
+export const IDEA_SCROLL = 'flex: 1 1 auto; min-height: 0; overflow-y: auto;';
+export const IDEA_FOOT = 'flex: none; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 12px 16px 12px 24px; border-top: 1px solid var(--line); background: var(--panel);';
+export const IDEA_SIDE = 'min-width: 0; min-height: 0; overflow-y: auto; box-sizing: border-box; padding: 20px; display: flex; flex-direction: column; gap: 22px; border-left: 1px solid var(--line); background: var(--panel);';
+export const IDEA_CRUMB = 'flex: 1; min-width: 0; margin: 0; display: flex; align-items: center; gap: 6px; font-size: 13px; overflow: hidden; white-space: nowrap;';
+export const IDEA_LABEL = LABEL;
+// Pills that sit on a banner image.
+export const IDEA_PILL = 'position: relative; display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 12px; box-sizing: border-box; border: 0; border-radius: 8px; background: rgba(10,11,13,0.78); color: #F4F4F5; font-size: 13px; font-weight: 600; letter-spacing: normal; white-space: nowrap; cursor: pointer;';
+const UPLOAD = 'M8 10.5V2.5M5 5.5l3-3 3 3M2.5 10.5v2a1 1 0 0 0 1 1h9a1 1 0 0 0 1-1v-2';
+const hasFiles = (e) => !!(e.dataTransfer && Array.from(e.dataTransfer.types || []).indexOf('Files') >= 0);
+
+export const IDEA_BOX = 'display: flex; flex-direction: column; gap: 6px; padding: 14px 16px; box-sizing: border-box; border-width: 1px; border-style: solid; border-color: var(--border); border-radius: 12px; background: var(--surface);';
+const BOX = IDEA_BOX;
+export const IDEA_BTN = 'display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 40px; padding: 0 16px; box-sizing: border-box; border-radius: 10px; font-size: 14px; font-weight: 700; letter-spacing: normal; white-space: nowrap; cursor: pointer;';
+const DBTN = IDEA_BTN;
+export const IDEA_ICONB = 'width: 36px; height: 36px; flex: none; padding: 0; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); color: var(--ink); display: inline-flex; align-items: center; justify-content: center; cursor: pointer;';
+
+const ICONB = IDEA_ICONB;
+const TITLE = 'font-family: var(--font-title); font-weight: 900; font-size: 22px; line-height: 1.25; letter-spacing: -0.02em;';
+
+// A textarea that grows with its text, so a long title edits in place with no scrollbar.
+function AutoText({ fd, label, style }) {
+  const ref = useRef(null);
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el) return undefined;
+    const fit = () => { el.style.height = '0px'; el.style.height = el.scrollHeight + 2 + 'px'; };
+    fit();
+    const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(fit) : null;
+    if (ro && el.parentElement) ro.observe(el.parentElement);
+    return () => { if (ro) ro.disconnect(); };
+  }, [fd.value]);
+  return (
+    <textarea ref={ref} id={fd.id} rows={1} aria-label={label} title="Click to edit" className="ir-inline" value={fd.value} placeholder={fd.placeholder} maxLength={fd.max}
+      onChange={fd.onChange} onBlur={fd.onBlur} onKeyDown={(e) => { if (e.key === 'Enter' && !e.nativeEvent.isComposing) { e.preventDefault(); e.currentTarget.blur(); } }}
+      style={css('display: block; width: calc(100% + 16px); margin: -5px -8px; padding: 4px 7px; box-sizing: border-box; border: 1px solid transparent; border-radius: 8px; background: transparent; color: var(--ink); resize: none; overflow: hidden; ' + style)} />
+  );
+}
+
+function Hook({ b }) {
+  if (!b || !b.showHook) return null;
+  return <span style={css(b.hookStyle)}>{b.hiStyle ? <span style={css(b.hiStyle)}>{b.hookHi}</span> : b.hookHi}{b.hookRest ? ' ' + b.hookRest : ''}</span>;
+}
 
 function InlineField({ fd, amber }) {
   const warn = amber && fd.empty;
   return (
     <div className="ir-field" style={css(BOX + (warn ? ' border-color: color-mix(in srgb, var(--amber-ink) 55%, transparent);' : ''))}>
-      <label htmlFor={fd.id} style={css(LABEL)}>{fd.label}</label>
+      <span style={css('display: flex; justify-content: space-between; align-items: baseline; gap: 8px')}>
+        <label htmlFor={fd.id} style={css(LABEL)}>{fd.label}</label>
+        {fd.canEdit && fd.count ? <span className="ir-count" style={css('font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums')}>{fd.count}</span> : null}
+      </span>
       {fd.canEdit ? (fd.multi
         ? <textarea id={fd.id} rows={4} value={fd.value} placeholder={fd.placeholder} onChange={fd.onChange} onBlur={fd.onBlur}
             style={css('width: 100%; min-height: 72px; box-sizing: border-box; padding: 0; border: 0; background: transparent; font-size: 15px; line-height: 1.55; color: var(--ink); resize: vertical; outline: none')} />
-        : <input id={fd.id} type="text" autoComplete="off" value={fd.value} placeholder={fd.placeholder} onChange={fd.onChange} onBlur={fd.onBlur}
+        : <input id={fd.id} type="text" autoComplete="off" value={fd.value} placeholder={fd.placeholder} maxLength={fd.max} onChange={fd.onChange} onBlur={fd.onBlur}
             onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur(); }}
             style={css('width: 100%; box-sizing: border-box; padding: 0; border: 0; background: transparent; font-size: 15px; font-weight: 600; color: var(--ink); outline: none')} />)
         : <p id={fd.id} style={css('margin: 0; font-size: 15px; line-height: 1.55; white-space: pre-line; color: ' + (fd.empty ? 'var(--muted)' : 'var(--ink)'))}>{fd.empty ? fd.placeholder : fd.value}</p>}
@@ -602,8 +659,17 @@ function Checklist({ items }) {
   );
 }
 
-export function IdeaDialog({ d, onClose, panel }) {
+export function IdeaDialog({ d, onClose, panel, pick }) {
   const closeRef = useRef(null);
+  const scrollRef = useRef(null);
+  const [drag, setDrag] = useState(false);
+  // An image dragged anywhere over the dialog lands on the banner.
+  const dropProps = d.dropCover ? {
+    onDragEnter: (e) => { if (!hasFiles(e)) return; e.preventDefault(); if (!drag) { setDrag(true); if (scrollRef.current) scrollRef.current.scrollTop = 0; } },
+    onDragOver: (e) => { if (hasFiles(e)) e.preventDefault(); },
+    onDragLeave: (e) => { if (!e.currentTarget.contains(e.relatedTarget)) setDrag(false); },
+    onDrop: (e) => { if (!hasFiles(e)) return; e.preventDefault(); setDrag(false); d.dropCover(e.dataTransfer.files[0]); }
+  } : {};
   // FocusDialog focuses the first control; the design starts on Close. Child effects run first, so this wins.
   useEffect(() => { if (closeRef.current) closeRef.current.focus({ preventScroll: true }); }, []);
   const doneN = d.ready.filter((r) => r.on).length;
@@ -611,20 +677,20 @@ export function IdeaDialog({ d, onClose, panel }) {
   const postKey = (e) => { if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) { e.preventDefault(); d.post(); } };
   return (
     <>
-      <button type="button" aria-label="Close idea details" onClick={onClose} className="ir-scrim" style={css('position: fixed; inset: 0; z-index: 40; border: 0; padding: 0; background: rgba(0,0,0,0.74); cursor: default')}></button>
-      <FocusDialog open aria-modal="true" aria-labelledby="idea-title" className="ir-dlg"
-        style={css('position: fixed; z-index: 41; top: 40px; left: 50%; transform: translateX(-50%); margin: 0; width: min(1120px, calc(100vw - 48px)); max-height: calc(100dvh - 80px); box-sizing: border-box; padding: 0; display: grid; grid-template-columns: minmax(0, 1fr) minmax(300px, 300px); overflow: hidden; border: 1px solid var(--line-4); border-radius: 18px; background: var(--surface-2); color: var(--ink); box-shadow: 0 30px 80px rgba(0,0,0,0.5)')}>
-        <div className="ir-dlg-main" style={css('min-width: 0; min-height: 0; display: flex; flex-direction: column')}>
-          <div className="ir-dlg-top" style={css('flex: none; display: flex; align-items: center; gap: 8px; min-height: 60px; padding: 10px 12px 10px 24px; box-sizing: border-box; border-bottom: 1px solid var(--line)')}>
+      <button type="button" aria-label="Close idea details" onClick={onClose} className="ir-scrim" style={css(IDEA_SCRIM)}></button>
+      <FocusDialog open aria-modal="true" aria-labelledby="idea-title" className="ir-dlg" {...dropProps}
+        style={css(IDEA_DLG)}>
+        <div className="ir-dlg-main" style={css(IDEA_MAIN)}>
+          <div className="ir-dlg-top" style={css(IDEA_TOP)}>
             <span aria-hidden="true" style={css(dotS(d.laneColor))}></span>
-            <p style={css('flex: 1; min-width: 0; margin: 0; display: flex; align-items: center; gap: 6px; font-size: 13px; overflow: hidden; white-space: nowrap')}>
+            <p style={css(IDEA_CRUMB)}>
               <span className="ir-crumb" style={css('display: inline-flex; align-items: center; gap: 6px; color: var(--muted)')}>Ideas &amp; Research<Icon d={IC.chevR} size={12} /></span>
               <strong style={css('font-weight: 700; color: var(--ink); overflow: hidden; text-overflow: ellipsis')}>{d.laneLabel}</strong>
             </p>
             {d.pos ? <span className="ir-pos" style={css('font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap')}>{d.pos}</span> : null}
             <button type="button" className="fb-ni" aria-label="Previous idea" title="Previous idea (K)" disabled={!d.prev} onClick={d.prev || undefined} style={css(ICONB + (d.prev ? '' : ' opacity: 0.4; cursor: default;'))}><Icon d={I.chevL} /></button>
             <button type="button" className="fb-ni" aria-label="Next idea" title="Next idea (J)" disabled={!d.next} onClick={d.next || undefined} style={css(ICONB + (d.next ? '' : ' opacity: 0.4; cursor: default;'))}><Icon d={IC.chevR} /></button>
-            {d.canEditIdea ? <button type="button" className="fb-ni" aria-label="Edit idea" title="Edit idea" onClick={d.edit} style={css(ICONB)}><Icon d={I.pencil} /></button> : null}
+            {d.canEditIdea ? <button type="button" className="fb-ni" aria-label="Edit all fields" title="Edit all fields" onClick={d.edit} style={css(ICONB)}><Icon d={I.pencil} /></button> : null}
             {(d.actions || []).filter((a) => a.label !== 'Edit').length ? (
               <span className="ir-anchor" style={css('position: relative; display: inline-flex;' + (d.menuOpen ? ' z-index: 30;' : ''))}>
                 <button type="button" className="fb-ni" aria-label="More idea actions" aria-haspopup="menu" aria-expanded={d.menuOpen} onClick={d.toggleMenu} style={css(ICONB)}><Icon d={IC.more} sw={2.4} /></button>
@@ -639,19 +705,33 @@ export function IdeaDialog({ d, onClose, panel }) {
             ) : null}
             <button ref={closeRef} type="button" className="fb-ni" aria-label="Close idea details" title="Close (Esc)" onClick={onClose} style={css(ICONB)}><Icon d={IC.x} /></button>
           </div>
-          <div className="ir-dlg-scroll" style={css('flex: 1 1 auto; min-height: 0; overflow-y: auto')}>
-            {d.cover ? (
-              <div style={css('position: relative; aspect-ratio: 3 / 1; ' + d.cover)}>
-                {d.replaceCover ? (
-                  <div style={css('position: absolute; right: 12px; bottom: 12px; display: flex; gap: 8px')}>
-                    <button type="button" onClick={d.replaceCover} style={css('height: 32px; padding: 0 12px; border: 0; border-radius: 8px; background: rgba(10,11,13,0.78); color: #F4F4F5; font-size: 13px; font-weight: 600; cursor: pointer')}>Replace cover</button>
-                  </div>
-                ) : null}
-              </div>
-            ) : null}
+          <div ref={scrollRef} className="ir-dlg-scroll" style={css(IDEA_SCROLL)}>
+            <div className="ir-banner" style={css(d.cover ? 'position: relative; aspect-ratio: 3 / 1; ' + d.cover : d.dlgBanner.style)}>
+              {d.cover ? null : <Hook b={d.dlgBanner} />}
+              {d.coverBusy ? <span role="status" style={css('position: absolute; left: 12px; top: 12px; display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 10px; border-radius: 8px; background: rgba(10,11,13,0.78); color: #F4F4F5; font-size: 12px; font-weight: 600')}><span aria-hidden="true" className="ir-pulse" style={css(dotS('currentColor', 6))}></span>Uploading cover</span> : null}
+              {d.dropCover ? (
+                <div className="ir-banner-ctl" style={css('position: absolute; right: 12px; ' + (d.ctlTop ? 'top' : 'bottom') + ': 12px; display: flex; gap: 8px; text-shadow: none')}>
+                  <label className="fb-filelabel" title="Or drop an image anywhere on this card" style={css(IDEA_PILL)}>
+                    <Icon d={UPLOAD} size={13} />{d.cover ? 'Replace cover' : 'Add cover'}
+                    <input type="file" accept="image/*" aria-label={d.cover ? 'Replace cover image' : 'Add cover image'} onChange={(e) => { const f = e.target.files && e.target.files[0]; e.target.value = ''; if (f) d.dropCover(f); }} style={css('position: absolute; width: 1px; height: 1px; opacity: 0')} />
+                  </label>
+                  <button type="button" onClick={d.editBanner} title="Focal point, hook style and AI covers" style={css(IDEA_PILL)}><Icon d={I.sliders} size={13} />Adjust</button>
+                </div>
+              ) : null}
+              {drag ? (
+                <div aria-hidden="true" style={css('position: absolute; inset: 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; border: 2px dashed #FFFFFF; border-radius: 12px; background: rgba(10,11,13,0.66); color: #FFFFFF; font-size: 15px; font-weight: 700; text-shadow: none; pointer-events: none')}>
+                  <Icon d={UPLOAD} size={24} />{d.cover ? 'Drop to replace the cover' : 'Drop to add a cover'}
+                </div>
+              ) : null}
+            </div>
             <div style={css('display: flex; flex-direction: column; gap: 12px; padding: 20px 24px 0')}>
               {d.kicker ? <p style={css('margin: 0; font-size: 13px; font-weight: 600; color: var(--muted)')}>{d.kicker}</p> : null}
-              <h2 id="idea-title" style={css('margin: 0; font-family: var(--font-title); font-weight: 900; font-size: 22px; line-height: 1.25; letter-spacing: -0.02em; text-wrap: balance')}>{d.title}</h2>
+              {d.titleField.canEdit ? (
+                <>
+                  <h2 id="idea-title" style={css(SR)}>{d.title}</h2>
+                  <AutoText fd={d.titleField} label="Idea title" style={TITLE} />
+                </>
+              ) : <h2 id="idea-title" style={css('margin: 0; ' + TITLE + ' text-wrap: balance')}>{d.title}</h2>}
               <div style={css('display: flex; flex-wrap: wrap; gap: 6px')}>
                 <span style={css('display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 10px; border-radius: 8px; background: ' + (d.ai ? 'var(--violet-soft); color: var(--violet-ink)' : 'var(--surface); color: var(--ink-2)') + '; font-size: 13px; font-weight: 600')}><Icon d={d.ai ? I.spark : I.pencil} size={13} />{d.originLabel}</span>
                 {d.run ? <span style={css('display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 10px; border-radius: 8px; font-size: 13px; font-weight: 600; ' + d.run.style)}>{d.run.key === 'running' ? <span aria-hidden="true" className="ir-pulse" style={css(dotS('currentColor', 6))}></span> : null}{d.run.label}</span> : null}
@@ -683,10 +763,7 @@ export function IdeaDialog({ d, onClose, panel }) {
                     <InlineField fd={d.inline[0]} amber />
                     <InlineField fd={d.inline[1]} />
                   </div>
-                  <div style={css(BOX)}>
-                    <span style={css(LABEL)}>Hook</span>
-                    <p style={css('margin: 0; font-size: 15px; font-weight: 600; color: ' + (d.hookSet ? 'var(--ink)' : 'var(--muted)'))}>{d.hook}</p>
-                  </div>
+                  <InlineField fd={d.hookField} />
                   <InlineField fd={d.concept} />
                   {(d.tags || []).length ? <div style={css('display: flex; flex-wrap: wrap; gap: 6px')}>{d.tags.map((t) => <span key={t} style={css('display: inline-flex; align-items: center; height: 26px; padding: 0 10px; border-radius: 999px; background: var(--chip); font-size: 12px; color: var(--ink-3)')}>{t}</span>)}</div> : null}
                   {d.hasNote ? <p style={css('margin: 0; font-size: 13px; color: var(--muted)')}>{d.note}</p> : null}
@@ -717,7 +794,7 @@ export function IdeaDialog({ d, onClose, panel }) {
               {!d.isOverview && !d.isComments ? panel : null}
             </div>
           </div>
-          <footer className="ir-dlg-foot" style={css('flex: none; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 12px 16px 12px 24px; border-top: 1px solid var(--line); background: var(--panel)')}>
+          <footer className="ir-dlg-foot" style={css(IDEA_FOOT)}>
             {d.foot.map((b) => (
               <button key={b.label} type="button" onClick={b.pick} disabled={b.disabled} aria-describedby={b.primary && b.hint ? 'idea-foot-hint' : undefined}
                 style={css(DBTN + (b.primary ? 'border: 0; background: var(--inv); color: var(--inv-ink);' : 'border: 1px solid var(--border); background: var(--surface); color: var(--ink);') + (b.disabled ? ' opacity: 0.45; cursor: default;' : ''))}>{b.label}</button>
@@ -728,7 +805,7 @@ export function IdeaDialog({ d, onClose, panel }) {
             {d.gate ? <p role="alert" style={css('flex: 1 1 100%; margin: 0; font-size: 13px; font-weight: 600; color: var(--red-ink)')}>{d.gate}</p> : null}
           </footer>
         </div>
-        <aside aria-label="Idea summary" className="ir-dlg-side" style={css('min-width: 0; min-height: 0; overflow-y: auto; box-sizing: border-box; padding: 20px; display: flex; flex-direction: column; gap: 22px; border-left: 1px solid var(--line); background: var(--panel)')}>
+        <aside aria-label="Idea summary" className="ir-dlg-side" style={css(IDEA_SIDE)}>
           <section aria-labelledby="idea-next" style={css('display: flex; flex-direction: column; gap: 10px; padding: 14px; border: 1px solid var(--line-4); border-radius: 12px; background: var(--surface-2)')}>
             <h3 id="idea-next" style={css(LABEL)}>Next step</h3>
             <p style={css('margin: 0; font-size: 14px; line-height: 1.5; color: var(--ink-2)')}>{d.nextText}</p>
@@ -773,13 +850,27 @@ export function IdeaDialog({ d, onClose, panel }) {
             <h3 id="idea-details" style={css(LABEL + ' margin-bottom: 6px;')}>Details</h3>
             <dl style={css('margin: 0')}>
               {d.details.map((r) => (
-                <div key={r.label} style={css('display: flex; justify-content: space-between; gap: 12px; padding: 9px 0; border-bottom: 1px solid var(--line); font-size: 13px')}>
-                  <dt style={css('color: var(--ink-3)')}>{r.label}</dt>
-                  <dd style={css('margin: 0; min-width: 0; text-align: right; overflow-wrap: anywhere; font-weight: ' + (r.set ? 700 : 500) + '; color: ' + (r.set ? 'var(--ink)' : 'var(--muted)'))}>{r.value}</dd>
+                <div key={r.label} style={css('display: flex; justify-content: space-between; align-items: center; gap: 12px; min-height: 36px; border-bottom: 1px solid var(--line); font-size: 13px')}>
+                  <dt style={css('flex: none; color: var(--ink-3)')}>{r.label}</dt>
+                  {r.pick === 'platforms' ? (
+                    <dd className="ir-anchor" style={css('flex: 1; margin: 0; min-width: 0; position: relative; display: flex; justify-content: flex-end;' + (d.platOpen ? ' z-index: 30;' : ''))}>
+                      <button type="button" className="ir-rowbtn" aria-haspopup="menu" aria-expanded={d.platOpen} aria-label={'Platforms: ' + r.value} onClick={d.togglePlat}
+                        style={css('max-width: 100%; min-height: 32px; margin-right: -6px; padding: 4px 6px 4px 8px; border: 0; border-radius: 8px; background: transparent; font-size: 13px; text-align: right; overflow-wrap: anywhere; cursor: pointer; font-weight: ' + (r.set ? 700 : 500) + '; color: ' + (r.set ? 'var(--ink)' : 'var(--muted)'))}>{r.value}</button>
+                      {d.platOpen ? (
+                        <Popover label="Platforms" role="menu" onClose={d.closePlat} align="right" width={220}>
+                          {d.platOpts.map((o) => <MenuRow key={o.label} role="menuitemcheckbox" aria-checked={o.on} checked={o.on} label={o.label} onClick={o.pick} />)}
+                        </Popover>
+                      ) : null}
+                    </dd>
+                  ) : r.pick && pick && pick[r.pick] ? (
+                    <dd className="ir-dd" style={css('flex: 1; margin: 0; min-width: 0')}>{pick[r.pick]}</dd>
+                  ) : (
+                    <dd style={css('margin: 0; min-width: 0; padding: 8px 0; text-align: right; overflow-wrap: anywhere; font-weight: ' + (r.set ? 700 : 500) + '; color: ' + (r.set ? 'var(--ink)' : 'var(--muted)'))}>{r.value}</dd>
+                  )}
                 </div>
               ))}
               <div style={css('display: flex; justify-content: space-between; gap: 12px; padding: 9px 0; font-size: 13px')}>
-                <dt style={css('color: var(--ink-3)')}>Converted to</dt>
+                <dt style={css('flex: none; color: var(--ink-3)')}>Converted to</dt>
                 <dd style={css('margin: 0; min-width: 0; display: grid; gap: 4px; justify-items: end; text-align: right; overflow-wrap: anywhere')}>
                   {d.noConversions ? <span style={css('color: var(--muted)')}>Not yet</span> : d.conversions.map((x) => x.open
                     ? <button key={x.text} type="button" onClick={x.open} style={css('padding: 0; border: 0; background: none; font-size: 13px; font-weight: 700; color: var(--link); text-align: right; cursor: pointer')}>{x.text}</button>

@@ -351,28 +351,41 @@ function Overview({ V }) {
           )}
         </Section>
       ) : null}
-      {/* app: the script lives on the idea this project came from; the card previews it and opens the idea's Script tab */}
       {dr.script && dr.script.show ? (
-        <Section icon="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9zM14 3v6h6M8 13h8M8 17h5" title="Script" action={<button type="button" onClick={dr.script.open} style={css(LINK_ACT)}>{dr.script.openLabel}</button>}>
-          <button type="button" className="fb-ni" onClick={dr.script.open} aria-label={dr.script.openLabel + ' on the Ideas page'} title="Opens the Script tab of the idea" style={css(CARD + ' width: 100%; display: flex; flex-direction: column; gap: 10px; text-align: left; font-family: inherit; letter-spacing: normal; color: var(--ink); cursor: pointer;')}>
-            <span style={css('display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 6px 12px')}>
-              <span style={css('font-size: 13.5px; font-weight: 700; color: var(--ink)')}>{dr.script.summary}</span>
-              <span style={css('font-size: 12px; color: var(--muted); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap')}>{dr.script.from}</span>
-            </span>
-            {dr.script.empty ? (
-              <span style={css('font-size: 13px; line-height: 1.5; color: var(--muted)')}>Nothing written yet. Open the idea to write it beat by beat or draft it with AI.</span>
-            ) : (
-              <span style={css('display: flex; flex-direction: column')}>
-                {(dr.script.beats || []).map((b, i) => (
-                  <span key={i} style={css('display: grid; grid-template-columns: 52px minmax(0, 1fr); gap: 10px; padding: 7px 0; border-top: 1px solid var(--line)')}>
-                    <span style={css('font-size: 12px; font-weight: 600; color: var(--muted); font-variant-numeric: tabular-nums')}>{b.time}</span>
-                    <span style={css('min-width: 0; font-size: 13px; line-height: 1.45; color: var(--ink-2); overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical')}><span style={css('font-weight: 700; color: var(--ink)')}>{b.label}</span>{b.text ? ' · ' + b.text : ''}</span>
-                  </span>
-                ))}
-                {dr.script.more ? <span style={css('padding-top: 7px; border-top: 1px solid var(--line); font-size: 12px; font-weight: 600; color: var(--muted)')}>{dr.script.more}</span> : null}
+        <Section icon="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9zM14 3v6h6M8 13h8M8 17h5" title="Script" action={dr.script.open ? <button type="button" onClick={dr.script.open} style={css(LINK_ACT)}>{dr.script.openLabel}</button> : null}>
+          {dr.script.open ? (
+            <button type="button" className="fb-ni" onClick={dr.script.open} aria-label={dr.script.openLabel + ' on the Ideas page'} title="Opens the Script tab of the idea" style={css(CARD + ' width: 100%; display: flex; flex-direction: column; gap: 10px; text-align: left; font-family: inherit; letter-spacing: normal; color: var(--ink); cursor: pointer;')}>
+              <span style={css('display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 6px 12px')}>
+                <span style={css('font-size: 13.5px; font-weight: 700; color: var(--ink)')}>{dr.script.summary}</span>
+                <span style={css('font-size: 12px; color: var(--muted); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap')}>{dr.script.from}</span>
               </span>
-            )}
-          </button>
+              {dr.script.empty ? (
+                <span style={css('font-size: 13px; line-height: 1.5; color: var(--muted)')}>Nothing written yet. Open the idea to write it beat by beat or draft it with AI.</span>
+              ) : (
+                <span style={css('display: flex; flex-direction: column')}>
+                  {(dr.script.beats || []).map((b, i) => (
+                    <span key={i} style={css('display: grid; grid-template-columns: 52px minmax(0, 1fr); gap: 10px; padding: 7px 0; border-top: 1px solid var(--line)')}>
+                      <span style={css('font-size: 12px; font-weight: 600; color: var(--muted); font-variant-numeric: tabular-nums')}>{b.time}</span>
+                      <span style={css('min-width: 0; font-size: 13px; line-height: 1.45; color: var(--ink-2); overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical')}><span style={css('font-weight: 700; color: var(--ink)')}>{b.label}</span>{b.text ? ' · ' + b.text : ''}</span>
+                    </span>
+                  ))}
+                  {dr.script.more ? <span style={css('padding-top: 7px; border-top: 1px solid var(--line); font-size: 12px; font-weight: 600; color: var(--muted)')}>{dr.script.more}</span> : null}
+                </span>
+              )}
+            </button>
+          ) : (
+            <details style={css(CARD + ' color: var(--ink);')}>
+              <summary style={{ cursor: 'pointer' }}>{dr.script.from} · {dr.script.summary}</summary>
+              <ol style={{ paddingInlineStart: 24 }}>
+                {dr.script.snapshotBeats.map((beat, index) => (
+                  <li key={index} style={{ marginBlock: 12, overflowWrap: 'anywhere' }}>
+                    <strong>{[beat.time, beat.label].filter(Boolean).join(' ')}</strong>
+                    <div style={{ whiteSpace: 'pre-wrap' }}>{beat.text}</div>
+                  </li>
+                ))}
+              </ol>
+            </details>
+          )}
         </Section>
       ) : null}
       {dr.deliverables.show ? (

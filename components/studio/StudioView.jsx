@@ -32,7 +32,12 @@ import IdeaRules from './IdeaRules';
 import IdeaAutomations from './IdeaAutomations';
 import IdeaConvert from './IdeaConvert';
 import IdeaResearch from './IdeaResearch';
-import { IdeasToolbar, CoverNotice, IdeasBoard, IdeaDialog } from './IdeasBoard';
+import { IdeasToolbar, CoverNotice, IdeasBoard, IdeaDialog, IDEA_SCRIM, IDEA_DLG, IDEA_MAIN, IDEA_TOP, IDEA_SCROLL, IDEA_FOOT, IDEA_SIDE, IDEA_CRUMB, IDEA_LABEL, IDEA_PILL, IDEA_BTN, IDEA_ICONB } from './IdeasBoard';
+
+// Edit idea form: fields sit on the dialog the way the details view's boxes do.
+const IE_GROUP = 'display: flex; flex-direction: column; gap: 6px;';
+const IE_INPUT = 'width: 100%; min-height: 44px; box-sizing: border-box; padding: 0 14px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); font-family: inherit; font-size: 14px; color: var(--ink);';
+const IE_SIDE_LABEL = 'margin: 0; font-size: 13px; color: var(--ink-3);';
 import BrandEditor from './BrandEditor';
 import Dropdown from './Dropdown';
 import SocialIcon, { TextLogo } from './SocialIcon';
@@ -3212,6 +3217,9 @@ export default function StudioView({ V }) {
                     {/* app: browsing toolbar and cover notice (handoff/ideas-research-handoff-2026-11-19 § IdeasToolbar, CoverNotice) */}
                     <div style={css("display: flex; flex-direction: column; gap: 12px")}>
                       <IdeasToolbar t={V.ids.tb} />
+                      {V.ids.isBoard && V.ids.tb.search.noMatches ? (
+                        <p style={css("margin: 0; font-size: 13px; color: var(--muted)")}>No ideas match this search. Try fewer keywords or adjust your filters.</p>
+                      ) : null}
                       {V.ids.coverNotice ? <CoverNotice c={V.ids.coverNotice} /> : null}
                     </div>
                     {" "}
@@ -3282,8 +3290,8 @@ export default function StudioView({ V }) {
                     ) : null}
                     {V.ids.isEmpty ? (
                       <div style={css("display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 64px 16px; border: 1px dashed var(--border-2); border-radius: 20px; text-align: center")}>
-                        <p style={css("margin: 0; font-size: 16px; font-weight: 600; color: var(--ink)")}>Nothing in this view</p>
-                        <p style={css("margin: 0; font-size: 14px; color: var(--muted)")}>Clear the search and filters, or pick another view.</p>
+                        <p style={css("margin: 0; font-size: 16px; font-weight: 600; color: var(--ink)")}>{V.ids.tb.search.noMatches ? 'No ideas match this search' : 'Nothing in this view'}</p>
+                        <p style={css("margin: 0; font-size: 14px; color: var(--muted)")}>{V.ids.tb.search.noMatches ? 'Try fewer keywords or adjust your filters.' : 'Clear the search and filters, or pick another view.'}</p>
                         <button type="button" className="fb-ni" onClick={V.ids.reset} style={css(V.ui.btnGhost)}>Show all active</button>
                       </div>
                     ) : null}
@@ -3312,7 +3320,9 @@ export default function StudioView({ V }) {
                     {/* app: idea detail dialog over the board (handoff/ideas-research-handoff-2026-11-19, MainCompact). Script, References,
                         Research and History keep their panels here; Overview, Comments, the summary and actions live in IdeaDialog. */}
                     {V.ids.hasSel ? (
-                      <IdeaDialog key="idea-dialog" d={V.ids.sel} onClose={V.ids.closeIdea} panel={(
+                      <IdeaDialog key="idea-dialog" d={V.ids.sel} onClose={V.ids.closeIdea}
+                        pick={{ idOwner: <DD d={V.dd.idOwner} />, idPri: <DD d={V.dd.idPri} />, idFormat: <DD d={V.dd.idFormat} />, idEffort: <DD d={V.dd.idEffort} />, idWindow: <DD d={V.dd.idWindow} />, idSponsor: <DD d={V.dd.idSponsor} /> }}
+                        panel={(
                         <>
                               {V.ids.sel.isScript ? (
                                 <div role="tabpanel" id="idp-script" aria-labelledby="idt-script" style={css("display: flex; flex-direction: column; gap: 14px")}>
@@ -3479,173 +3489,180 @@ export default function StudioView({ V }) {
                     {/* app: edit idea (docs/design/ideas-research/IdeaEdit) */}
                     {V.ids.hasEdit ? (
                       <>
-                        <button type="button" aria-label="Close without saving" onClick={V.ids.edit.requestClose} style={css("position: fixed; inset: 0; z-index: 40; border: 0; background: rgba(17,17,17,0.45); cursor: default")}></button>
-                        <FocusDialog open aria-modal="true" aria-labelledby="ie-h" onKeyDown={V.ids.edit.onKey} style={css("position: fixed; z-index: 41; top: 50%; left: 50%; transform: translate(-50%, -50%); margin: 0; width: 1120px; max-width: calc(100vw - 32px); max-height: calc(100vh - 48px); overflow-y: auto; box-sizing: border-box; padding: 0; background: var(--surface); border: 1px solid var(--line-4); border-radius: 28px; box-shadow: 0 24px 80px rgba(0,0,0,0.28); color: var(--ink); font-family: var(--font-main)")}>
-                          <div onDragOver={V.ids.edit.onDragOver} onDragLeave={V.ids.edit.onDragLeave} onDrop={V.ids.edit.onDrop} style={css(V.ids.edit.bannerStyle)}>
-                            <button type="button" aria-label={V.ids.edit.focalLabel} onClick={V.ids.edit.setFocal} onKeyDown={V.ids.edit.onFocalKey} style={css("position: absolute; inset: 0; width: 100%; height: 100%; padding: 0; border: 0; background: transparent; cursor: inherit")}></button>
-                            <span aria-hidden="true" style={css(V.ids.edit.focalStyle)}></span>
-                            <Hook b={V.ids.edit} />
-                            {V.ids.edit.drag ? (
-                              <div aria-hidden="true" style={css("position: absolute; inset: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; border: 2px dashed #FFFFFF; border-radius: 18px; background: rgba(17,17,17,0.55); color: #FFFFFF; font-size: 16px; font-weight: 600; pointer-events: none")}>
-                                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 16V4M7 9l5-5 5 5M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"></path></svg>Drop to replace the cover
+                        {/* Same shell as IdeaDialog (IDEA_DLG), so opening the editor moves and resizes nothing. */}
+                        <button type="button" aria-label="Close without saving" onClick={V.ids.edit.closeAll} className="ir-scrim" style={css(IDEA_SCRIM)}></button>
+                        <FocusDialog open aria-modal="true" aria-labelledby="ie-h" className="ir-dlg" onKeyDown={V.ids.edit.onKey} style={css(IDEA_DLG)}>
+                          <div className="ir-dlg-main" style={css(IDEA_MAIN)}>
+                            <div className="ir-dlg-top" style={css(IDEA_TOP)}>
+                              <button type="button" className="fb-ni" aria-label="Back to details" title="Back to details (Esc)" onClick={V.ids.edit.requestClose} style={css(IDEA_ICONB + " margin-left: -12px;")}><svg aria-hidden="true" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M10 4L6 8l4 4"></path></svg></button>
+                              <span aria-hidden="true" style={css("width: 8px; height: 8px; flex: none; border-radius: 999px; background: " + V.ids.edit.laneColor)}></span>
+                              <p style={css(IDEA_CRUMB)}>
+                                <span className="ir-crumb" style={css("display: inline-flex; align-items: center; gap: 6px; color: var(--muted)")}>Ideas &amp; Research<svg aria-hidden="true" width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M6 4l4 4-4 4"></path></svg></span>
+                                <strong style={css("font-weight: 700; color: var(--ink); overflow: hidden; text-overflow: ellipsis")}>{V.ids.edit.laneLabel}</strong>
+                              </p>
+                              <h2 id="ie-h" style={css("flex: none; margin: 0; display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 10px; border-radius: 8px; background: var(--surface); font-size: 13px; font-weight: 600; color: var(--ink-2)")}><svg aria-hidden="true" width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M10.5 2.5l3 3-7.5 7.5H3v-3z"></path></svg>Editing</h2>
+                              <button type="button" className="fb-ni" aria-label="Close without saving" title="Close" onClick={V.ids.edit.closeAll} style={css(IDEA_ICONB)}><svg aria-hidden="true" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><path d="M4 4l8 8M12 4l-8 8"></path></svg></button>
+                            </div>
+                            <div className="ir-dlg-scroll" style={css(IDEA_SCROLL)}>
+                              <div onDragOver={V.ids.edit.onDragOver} onDragLeave={V.ids.edit.onDragLeave} onDrop={V.ids.edit.onDrop} style={css(V.ids.edit.bannerStyle)}>
+                                <button type="button" aria-label={V.ids.edit.focalLabel} onClick={V.ids.edit.setFocal} onKeyDown={V.ids.edit.onFocalKey} style={css("position: absolute; inset: 0; width: 100%; height: 100%; padding: 0; border: 0; background: transparent; cursor: inherit")}></button>
+                                <span aria-hidden="true" style={css(V.ids.edit.focalStyle)}></span>
+                                <Hook b={V.ids.edit} />
+                                {V.ids.edit.drag ? (
+                                  <div aria-hidden="true" style={css("position: absolute; inset: 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; border: 2px dashed #FFFFFF; border-radius: 12px; background: rgba(10,11,13,0.66); color: #FFFFFF; font-size: 15px; font-weight: 700; text-shadow: none; pointer-events: none")}>
+                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 16V4M7 9l5-5 5 5M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"></path></svg>{V.ids.edit.hasImg ? 'Drop to replace the cover' : 'Drop to add a cover'}
+                                  </div>
+                                ) : null}
+                                <span style={css("position: absolute; top: 12px; left: 12px; display: inline-flex; align-items: center; min-height: 28px; padding: 2px 10px; box-sizing: border-box; border-radius: 8px; background: rgba(10,11,13,0.78); color: #F4F4F5; font-size: 12px; font-weight: 600; text-shadow: none; pointer-events: none")}>{V.ids.edit.hint}</span>
+                                <div style={css("position: absolute; right: 12px; bottom: 12px; display: flex; gap: 8px; text-shadow: none")}>
+                                  <label htmlFor="ie-file" className="fb-filelabel" style={css(IDEA_PILL)}>
+                                    <svg aria-hidden="true" width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M8 10.5V2.5M5 5.5l3-3 3 3M2.5 10.5v2a1 1 0 0 0 1 1h9a1 1 0 0 0 1-1v-2"></path></svg>{V.ids.edit.hasImg ? 'Replace cover' : 'Add cover'}
+                                    <input id="ie-file" type="file" accept="image/*" onChange={V.ids.edit.onFile} style={css("position: absolute; width: 1px; height: 1px; opacity: 0")} />
+                                  </label>
+                                  {V.ids.edit.hasImg ? <button type="button" onClick={V.ids.edit.removeImg} style={css(IDEA_PILL + " color: #FFB4AB;")}>Remove</button> : null}
+                                </div>
                               </div>
-                            ) : null}
-                            <div style={css("position: absolute; top: 16px; left: 16px; right: 16px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; pointer-events: none")}>
-                              <span style={css("display: inline-flex; align-items: center; min-height: 32px; padding: 4px 12px; box-sizing: border-box; border-radius: 10px; background: rgba(17,17,17,0.7); color: #FFFFFF; font-size: 12px; font-weight: 600")}>{V.ids.edit.hint}</span>
-                              <span style={css("flex: 1")}></span>
-                              <button type="button" aria-label="Close without saving" onClick={V.ids.edit.requestClose} style={css("pointer-events: auto; width: 44px; height: 44px; display: inline-flex; align-items: center; justify-content: center; padding: 0; border: 0; border-radius: 12px; background: #FFFFFF; color: #111111; cursor: pointer")}>
-                                <svg aria-hidden="true" width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><path d="M4 4l8 8M12 4l-8 8"></path></svg>
-                              </button>
-                            </div>
-                          </div>
-                          <div role="toolbar" aria-label="Banner" style={css("display: flex; flex-wrap: wrap; align-items: center; gap: 12px 24px; padding: 14px clamp(16px, 4vw, 32px); border-bottom: 1px solid var(--line); background: var(--surface-2)")}>
-                            <div style={css("display: flex; align-items: center; gap: 8px")}>
-                              <label htmlFor="ie-file" className="fb-ni fb-filelabel" style={css("position: relative; display: inline-flex; align-items: center; gap: 8px; min-height: 40px; padding: 0 14px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); font-size: 13px; font-weight: 600; cursor: pointer")}>
-                                <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 16V4M7 9l5-5 5 5M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"></path></svg>{V.ids.edit.hasImg ? 'Replace image' : 'Add image'}
-                                <input id="ie-file" type="file" accept="image/*" onChange={V.ids.edit.onFile} style={css("position: absolute; width: 1px; height: 1px; opacity: 0")} />
-                              </label>
-                              {V.ids.edit.hasImg ? <button type="button" className="fb-ni" onClick={V.ids.edit.removeImg} style={css("min-height: 40px; padding: 0 12px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); font-size: 13px; font-weight: 600; color: var(--red-ink); cursor: pointer")}>Remove</button> : null}
-                              <button type="button" className="fb-ni" aria-pressed={V.ids.edit.aiPressed} aria-controls="ie-ai" onClick={V.ids.edit.toggleAi} style={css("display: inline-flex; align-items: center; gap: 8px; min-height: 40px; padding: 0 14px; border: 1px solid " + (V.ids.edit.aiOpen ? 'var(--ink)' : 'var(--border)') + "; border-radius: 12px; background: " + (V.ids.edit.aiOpen ? 'var(--inv)' : 'var(--surface)') + "; color: " + (V.ids.edit.aiOpen ? 'var(--inv-ink)' : 'var(--ink)') + "; font-size: 13px; font-weight: 600; cursor: pointer")}>
-                                <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"></path><path d="M19 16l.8 2.2L22 19l-2.2.8L19 22l-.8-2.2L16 19l2.2-.8z"></path></svg>Generate with AI
-                              </button>
-                            </div>
-                            <div style={css("display: flex; align-items: center; gap: 8px")}>
-                              <span id="ie-cv" style={css("font-size: 13px; color: var(--muted)")}>Style</span>
-                              <div role="group" aria-labelledby="ie-cv" style={css("display: inline-flex; padding: 3px; gap: 2px; border-radius: 12px; background: var(--chip)")}>
-                                {(V.ids.edit.covers || []).map((x) => <button key={x.label} type="button" aria-pressed={x.pressed} onClick={x.pick} style={css(x.style)}>{x.label}</button>)}
-                              </div>
-                            </div>
-                            <div style={css("display: flex; align-items: center; gap: 8px")}>
-                              <span id="ie-hl" style={css("font-size: 13px; color: var(--muted)")}>Highlight</span>
-                              <div role="group" aria-labelledby="ie-hl" style={css("display: flex; gap: 6px")}>
-                                {(V.ids.edit.highlights || []).map((h) => <button key={h.label} type="button" aria-pressed={h.pressed} aria-label={h.label} title={h.label} onClick={h.pick} style={css(h.style)}></button>)}
-                              </div>
-                            </div>
-                            <div style={css("display: flex; align-items: center; gap: 8px")}>
-                              <span id="ie-pos" style={css("font-size: 13px; color: var(--muted)")}>Hook position</span>
-                              <div role="group" aria-labelledby="ie-pos" style={css("display: inline-flex; padding: 3px; gap: 2px; border-radius: 12px; background: var(--chip)")}>
-                                {(V.ids.edit.positions || []).map((x) => <button key={x.label} type="button" aria-pressed={x.pressed} onClick={x.pick} style={css(x.style)}>{x.label}</button>)}
-                              </div>
-                            </div>
-                          </div>
-                          {V.ids.edit.aiOpen ? (
-                            <section id="ie-ai" aria-labelledby="ie-ai-h" style={css("display: flex; flex-direction: column; gap: 12px; padding: 16px clamp(16px, 4vw, 32px); border-bottom: 1px solid var(--line); background: var(--surface-2)")}>
-                              <div style={css("display: flex; flex-wrap: wrap; align-items: center; gap: 12px 24px")}>
-                                <span id="ie-ai-h" style={css("font-size: 13px; font-weight: 700")}>AI cover</span>
+                              <div role="toolbar" aria-label="Banner" style={css("display: flex; flex-wrap: wrap; align-items: center; gap: 10px 20px; padding: 12px 24px; border-bottom: 1px solid var(--line)")}>
                                 <div style={css("display: flex; align-items: center; gap: 8px")}>
-                                  <span id="ie-ai-st" style={css("font-size: 13px; color: var(--muted)")}>Style</span>
-                                  <div role="group" aria-labelledby="ie-ai-st" style={css("display: inline-flex; padding: 3px; gap: 2px; border-radius: 12px; background: var(--chip)")}>
-                                    {(V.ids.edit.aiStyles || []).map((x) => <button key={x.label} type="button" aria-pressed={x.pressed} onClick={x.pick} style={css(x.style)}>{x.label}</button>)}
+                                  <span id="ie-cv" style={css(IDEA_LABEL)}>Style</span>
+                                  <div role="group" aria-labelledby="ie-cv" className="ir-seg" style={css("display: inline-flex; padding: 3px; gap: 2px; border-radius: 10px; background: var(--chip)")}>
+                                    {(V.ids.edit.covers || []).map((x) => <button key={x.label} type="button" aria-pressed={x.pressed} onClick={x.pick} style={css(x.style)}>{x.label}</button>)}
                                   </div>
                                 </div>
-                              </div>
-                              <div style={css("display: flex; flex-wrap: wrap; align-items: center; gap: 8px")}>
-                                <label htmlFor="ie-ai-p" style={css("position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)")}>Extra direction for the image</label>
-                                <input id="ie-ai-p" type="text" autoComplete="off" maxLength="400" placeholder="Optional direction, like “a gym bag on a locker-room bench, moody lighting”" value={V.ids.edit.aiPrompt} onChange={V.ids.edit.onAiPrompt} disabled={V.ids.edit.aiBusy} style={css("flex: 1 1 320px; min-width: 0; box-sizing: border-box; min-height: 40px; padding: 0 14px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); font-family: inherit; font-size: 14px; color: var(--ink)")} />
-                                <button type="button" onClick={V.ids.edit.generate} disabled={V.ids.edit.aiBusy || !V.ids.edit.aiOn} aria-busy={V.ids.edit.aiBusy ? 'true' : 'false'} style={css(V.ids.edit.aiStyle)}>{V.ids.edit.aiLabel}</button>
-                              </div>
-                              <span role="status" style={css("font-size: 12px; color: var(--muted)")}>{V.ids.edit.aiSetup || V.ids.edit.aiHint}</span>
-                              {V.ids.edit.hasAiErr ? <p role="alert" style={css("margin: 0; padding: 10px 12px; border-radius: 10px; background: var(--red-bg, #FDECEC); font-size: 13px; line-height: 1.45; color: var(--red-ink); overflow-wrap: anywhere")}>{V.ids.edit.aiErr}</p> : null}
-                            </section>
-                          ) : null}
-                          <div style={css("display: flex; flex-wrap: wrap; align-items: stretch")}>
-                            <div style={css("flex: 999 1 520px; min-width: 0; box-sizing: border-box; padding: 24px clamp(16px, 4vw, 32px) 32px; display: flex; flex-direction: column; gap: 20px; border-right: 1px solid var(--line)")}>
-                              <div style={css("display: flex; flex-wrap: wrap; align-items: center; gap: 8px")}>
-                                <span aria-hidden="true" style={css(V.ids.edit.brandTile)}>{V.ids.edit.brandInitials}</span>
-                                <span style={css("font-size: 14px; font-weight: 600")}>{V.ids.edit.brand}</span>
-                                <span style={css(V.ids.edit.statusStyle)}>{V.ids.edit.status}</span>
-                                <h2 id="ie-h" style={css("margin: 0 0 0 auto; font-size: 13px; font-weight: 600; color: var(--muted)")}>Edit idea</h2>
-                              </div>
-                              <div style={css("display: flex; flex-direction: column; gap: 6px")}>
-                                <IdeaPlanning {...V.ids.edit.planning} />
-                                <label htmlFor="ie-title" style={css(V.fieldLabel)}>Title</label>
-                                <input id="ie-title" className="fb-field" type="text" autoComplete="off" value={V.ids.edit.title} onChange={V.ids.edit.onTitle} style={css("min-height: 52px; box-sizing: border-box; padding: 0 14px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface-2); font-family: var(--font-title); font-weight: 900; font-size: 22px; letter-spacing: -0.02em; color: var(--ink)")} />
-                              </div>
-                              <div style={css("display: grid; grid-template-columns: repeat(auto-fit, minmax(min(200px, 100%), 1fr)); gap: 16px")}>
-                                <div style={css("display: flex; flex-direction: column; gap: 6px")}>
-                                  <div style={css("display: flex; justify-content: space-between; align-items: baseline")}><label htmlFor="ie-hook" style={css(V.fieldLabel)}>Banner hook</label><span style={css("font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums")}>{V.ids.edit.hookCount}</span></div>
-                                  <input id="ie-hook" type="text" maxLength="24" autoComplete="off" placeholder={V.ids.edit.hookPlaceholder} value={V.ids.edit.hook} onChange={V.ids.edit.onHook} style={css(V.fieldInput)} />
+                                <div style={css("display: flex; align-items: center; gap: 8px")}>
+                                  <span id="ie-pos" style={css(IDEA_LABEL)}>Hook</span>
+                                  <div role="group" aria-labelledby="ie-pos" className="ir-seg" style={css("display: inline-flex; padding: 3px; gap: 2px; border-radius: 10px; background: var(--chip)")}>
+                                    {(V.ids.edit.positions || []).map((x) => <button key={x.label} type="button" aria-pressed={x.pressed} onClick={x.pick} style={css(x.style)}>{x.label}</button>)}
+                                  </div>
                                 </div>
-                                <div style={css("display: flex; flex-direction: column; gap: 6px")}><label htmlFor="ie-type" style={css(V.fieldLabel)}>Type</label><DD d={V.dd.ieType} id="ie-type" /></div>
-                                <div style={css("display: flex; flex-direction: column; gap: 6px")}><label htmlFor="ie-pillar" style={css(V.fieldLabel)}>Content pillar</label><DD d={V.dd.iePillar} id="ie-pillar" /></div>
-                                <div style={css("display: flex; flex-direction: column; gap: 6px")}>
-                                  <label htmlFor="ie-aud" style={css(V.fieldLabel)}>Who it is for</label>
-                                  <input id="ie-aud" type="text" autoComplete="off" placeholder="First-time merch sellers" value={V.ids.edit.audience} onChange={V.ids.edit.onAudience} style={css(V.fieldInput)} />
+                                <div style={css("display: flex; align-items: center; gap: 8px")}>
+                                  <span id="ie-hl" style={css(IDEA_LABEL)}>Highlight</span>
+                                  <div role="group" aria-labelledby="ie-hl" className="ir-swatches" style={css("display: flex; gap: 6px")}>
+                                    {(V.ids.edit.highlights || []).map((h) => <button key={h.label} type="button" aria-pressed={h.pressed} aria-label={h.label} title={h.label} onClick={h.pick} style={css(h.style)}></button>)}
+                                  </div>
                                 </div>
-                                <div style={css("grid-column: 1 / -1; display: flex; flex-direction: column; gap: 6px")}>
-                                  <label htmlFor="ie-promise" style={css(V.fieldLabel)}>The viewer walks away with</label>
-                                  <input id="ie-promise" type="text" autoComplete="off" placeholder="One clear takeaway or payoff" value={V.ids.edit.promise} onChange={V.ids.edit.onPromise} style={css(V.fieldInput)} />
+                                <span style={css("flex: 1")}></span>
+                                <button type="button" className="fb-ni" aria-pressed={V.ids.edit.aiPressed} aria-controls="ie-ai" onClick={V.ids.edit.toggleAi} style={css("display: inline-flex; align-items: center; gap: 6px; height: 36px; padding: 0 12px; box-sizing: border-box; border: 1px solid " + (V.ids.edit.aiOpen ? 'var(--ink)' : 'var(--border)') + "; border-radius: 8px; background: " + (V.ids.edit.aiOpen ? 'var(--inv)' : 'var(--surface)') + "; color: " + (V.ids.edit.aiOpen ? 'var(--inv-ink)' : 'var(--ink)') + "; font-size: 13px; font-weight: 600; white-space: nowrap; cursor: pointer")}>
+                                  <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"></path><path d="M19 16l.8 2.2L22 19l-2.2.8L19 22l-.8-2.2L16 19l2.2-.8z"></path></svg>Generate with AI
+                                </button>
+                              </div>
+                              {V.ids.edit.aiOpen ? (
+                                <section id="ie-ai" aria-labelledby="ie-ai-h" style={css("display: flex; flex-direction: column; gap: 12px; padding: 16px 24px; border-bottom: 1px solid var(--line); background: var(--panel)")}>
+                                  <div style={css("display: flex; flex-wrap: wrap; align-items: center; gap: 10px 20px")}>
+                                    <span id="ie-ai-h" style={css(IDEA_LABEL)}>AI cover</span>
+                                    <div role="group" aria-label="AI cover style" className="ir-seg" style={css("display: inline-flex; padding: 3px; gap: 2px; border-radius: 10px; background: var(--chip)")}>
+                                      {(V.ids.edit.aiStyles || []).map((x) => <button key={x.label} type="button" aria-pressed={x.pressed} onClick={x.pick} style={css(x.style)}>{x.label}</button>)}
+                                    </div>
+                                  </div>
+                                  <div style={css("display: flex; flex-wrap: wrap; align-items: center; gap: 8px")}>
+                                    <label htmlFor="ie-ai-p" style={css("position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)")}>Extra direction for the image</label>
+                                    <input id="ie-ai-p" type="text" autoComplete="off" maxLength="400" placeholder="Optional direction, like “a gym bag on a locker-room bench, moody lighting”" value={V.ids.edit.aiPrompt} onChange={V.ids.edit.onAiPrompt} disabled={V.ids.edit.aiBusy} style={css(IE_INPUT + " flex: 1 1 320px; width: auto; min-height: 40px;")} />
+                                    <button type="button" onClick={V.ids.edit.generate} disabled={V.ids.edit.aiBusy || !V.ids.edit.aiOn} aria-busy={V.ids.edit.aiBusy ? 'true' : 'false'} style={css(IDEA_BTN + "border: 0; background: var(--inv); color: var(--inv-ink);" + (V.ids.edit.aiBusy || !V.ids.edit.aiOn ? " opacity: 0.6; cursor: default;" : ""))}>{V.ids.edit.aiLabel}</button>
+                                  </div>
+                                  <span role="status" style={css("font-size: 12px; color: var(--muted)")}>{V.ids.edit.aiSetup || V.ids.edit.aiHint}</span>
+                                  {V.ids.edit.hasAiErr ? <p role="alert" style={css("margin: 0; padding: 10px 12px; border-radius: 10px; background: var(--red-soft); font-size: 13px; line-height: 1.45; color: var(--red-ink); overflow-wrap: anywhere")}>{V.ids.edit.aiErr}</p> : null}
+                                </section>
+                              ) : null}
+                              <div style={css("display: flex; flex-direction: column; gap: 16px; padding: 20px 24px 24px")}>
+                                <div style={css(IE_GROUP)}>
+                                  <label htmlFor="ie-title" style={css(IDEA_LABEL)}>Title</label>
+                                  <input id="ie-title" className="fb-field" type="text" autoComplete="off" value={V.ids.edit.title} onChange={V.ids.edit.onTitle} style={css(IE_INPUT + " min-height: 52px; font-family: var(--font-title); font-weight: 900; font-size: 22px; letter-spacing: -0.02em;")} />
+                                </div>
+                                <div className="ir-two" style={css("display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px")}>
+                                  <div style={css(IE_GROUP)}>
+                                    <label htmlFor="ie-aud" style={css(IDEA_LABEL)}>Who it is for</label>
+                                    <input id="ie-aud" type="text" autoComplete="off" placeholder="Name the audience" value={V.ids.edit.audience} onChange={V.ids.edit.onAudience} style={css(IE_INPUT)} />
+                                  </div>
+                                  <div style={css(IE_GROUP)}>
+                                    <label htmlFor="ie-promise" style={css(IDEA_LABEL)}>Viewer walks away with</label>
+                                    <input id="ie-promise" type="text" autoComplete="off" placeholder="Add the takeaway" value={V.ids.edit.promise} onChange={V.ids.edit.onPromise} style={css(IE_INPUT)} />
+                                  </div>
+                                </div>
+                                <div style={css("display: grid; grid-template-columns: repeat(auto-fit, minmax(min(200px, 100%), 1fr)); gap: 12px")}>
+                                  <div style={css(IE_GROUP)}>
+                                    <div style={css("display: flex; justify-content: space-between; align-items: baseline")}><label htmlFor="ie-hook" style={css(IDEA_LABEL)}>Hook</label><span style={css("font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums")}>{V.ids.edit.hookCount}</span></div>
+                                    <input id="ie-hook" type="text" maxLength="24" autoComplete="off" placeholder={V.ids.edit.hookPlaceholder} value={V.ids.edit.hook} onChange={V.ids.edit.onHook} style={css(IE_INPUT)} />
+                                  </div>
+                                  <div style={css(IE_GROUP)}><label htmlFor="ie-type" style={css(IDEA_LABEL)}>Type</label><DD d={V.dd.ieType} id="ie-type" /></div>
+                                  <div style={css(IE_GROUP)}><label htmlFor="ie-pillar" style={css(IDEA_LABEL)}>Content pillar</label><DD d={V.dd.iePillar} id="ie-pillar" /></div>
+                                </div>
+                                <div style={css(IE_GROUP)}>
+                                  <label htmlFor="ie-body" style={css(IDEA_LABEL)}>Concept</label>
+                                  <textarea id="ie-body" rows="7" aria-describedby="ie-body-h" value={V.ids.edit.body} onChange={V.ids.edit.onBody} style={css(V.ids.textarea + " border-radius: 12px; background: var(--surface); font-size: 15px; line-height: 1.55;")} />
+                                  <span id="ie-body-h" style={css("font-size: 12px; color: var(--muted)")}>Blank lines split paragraphs. The script itself lives on the Script tab.</span>
+                                </div>
+                                <div style={css(IE_GROUP)}>
+                                  <span id="ie-tags-l" style={css(IDEA_LABEL)}>Tags</span>
+                                  <div role="group" aria-labelledby="ie-tags-l" style={css("display: flex; flex-wrap: wrap; align-items: center; gap: 6px; min-height: 44px; box-sizing: border-box; padding: 5px 8px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface)")}>
+                                    {(V.ids.edit.tags || []).map((t) => (
+                                      <span key={t.label} style={css("display: inline-flex; align-items: center; gap: 2px; height: 28px; padding: 0 2px 0 10px; box-sizing: border-box; border-radius: 999px; background: var(--chip); font-size: 12px; color: var(--ink-2)")}>{t.label}
+                                        <button type="button" aria-label={t.removeLabel} onClick={t.remove} style={css("width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center; padding: 0; border: 0; border-radius: 999px; background: transparent; color: var(--muted); cursor: pointer")}><svg aria-hidden="true" width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M4 4l8 8M12 4l-8 8"></path></svg></button>
+                                      </span>
+                                    ))}
+                                    <label htmlFor="ie-tag-new" style={css("position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)")}>Add a tag</label>
+                                    <input id="ie-tag-new" type="text" autoComplete="off" placeholder="Add tag, press Enter" value={V.ids.edit.tagDraft} onChange={V.ids.edit.onTagDraft} onKeyDown={V.ids.edit.onTagKey} style={css("flex: 1 1 140px; min-width: 0; min-height: 32px; padding: 0 6px; border: 0; background: transparent; font-size: 14px; color: var(--ink)")} />
+                                  </div>
+                                </div>
+                                <RefList refs={V.ids.edit.refs} add={V.ids.edit.addRef} legend={IDEA_LABEL + " padding: 0; margin: 0 0 6px;"} bg="var(--surface)" />
+                                <div style={css("display: flex; flex-direction: column; gap: 12px; padding-top: 16px; border-top: 1px solid var(--line)")}>
+                                  <IdeaPlanning {...V.ids.edit.planning} labelStyle={css(IDEA_LABEL)} fieldBg="var(--surface)" />
                                 </div>
                               </div>
-                              <div style={css("display: flex; flex-direction: column; gap: 6px")}>
-                                <label htmlFor="ie-body" style={css(V.fieldLabel)}>Content</label>
-                                <textarea id="ie-body" rows="7" aria-describedby="ie-body-h" value={V.ids.edit.body} onChange={V.ids.edit.onBody} style={css(V.ids.textarea + " font-size: 15px; line-height: 1.55;")} />
-                                <span id="ie-body-h" style={css("font-size: 12px; color: var(--muted)")}>Blank lines split paragraphs. The script itself lives on the Script tab, where it can be written by hand or drafted with AI.</span>
-                              </div>
-                              <div style={css("display: flex; flex-direction: column; gap: 8px")}>
-                                <span id="ie-tags-l" style={css(V.fieldLabel)}>Tags</span>
-                                <div role="group" aria-labelledby="ie-tags-l" style={css("display: flex; flex-wrap: wrap; align-items: center; gap: 8px; min-height: 52px; box-sizing: border-box; padding: 6px 8px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface-2)")}>
-                                  {(V.ids.edit.tags || []).map((t) => (
-                                    <span key={t.label} style={css("display: inline-flex; align-items: center; gap: 4px; min-height: 32px; padding: 0 4px 0 12px; box-sizing: border-box; border-radius: 999px; background: var(--surface); border: 1px solid var(--border); font-size: 13px")}>{t.label}
-                                      <button type="button" aria-label={t.removeLabel} onClick={t.remove} style={css("width: 26px; height: 26px; display: inline-flex; align-items: center; justify-content: center; padding: 0; border: 0; border-radius: 999px; background: transparent; color: var(--muted); cursor: pointer")}><svg aria-hidden="true" width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M4 4l8 8M12 4l-8 8"></path></svg></button>
-                                    </span>
-                                  ))}
-                                  <label htmlFor="ie-tag-new" style={css("position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)")}>Add a tag</label>
-                                  <input id="ie-tag-new" type="text" autoComplete="off" placeholder="Add tag, press Enter" value={V.ids.edit.tagDraft} onChange={V.ids.edit.onTagDraft} onKeyDown={V.ids.edit.onTagKey} style={css("flex: 1 1 140px; min-width: 0; min-height: 36px; padding: 0 6px; border: 0; background: transparent; font-size: 14px; color: var(--ink)")} />
-                                </div>
-                              </div>
-                              <RefList refs={V.ids.edit.refs} add={V.ids.edit.addRef} />
                             </div>
-                            <aside aria-label="Properties" style={css("flex: 1 1 300px; min-width: 0; box-sizing: border-box; padding: 24px clamp(16px, 3vw, 28px) 32px; display: flex; flex-direction: column; gap: 18px; background: var(--surface-2)")}>
-                              <div style={css("display: flex; flex-direction: column; gap: 14px; padding: 16px; border-radius: 18px; background: var(--surface); border: 1px solid var(--border)")}>
-                                <div style={css("display: flex; align-items: center; justify-content: space-between; gap: 8px")}><span style={css("font-size: 13px; font-weight: 600; color: var(--muted)")}>ICE score</span><span style={css("font-family: var(--font-title); font-weight: 900; font-size: 28px; line-height: 1; font-variant-numeric: tabular-nums")}>{V.ids.edit.iceScore}</span></div>
-                                {(V.ids.edit.ice || []).map((k) => (
-                                  <div key={k.id} style={css("display: grid; grid-template-columns: 84px minmax(0, 1fr) 22px; align-items: center; gap: 10px")}>
-                                    <label htmlFor={k.id} style={css("font-size: 13px; color: var(--ink-3)")}>{k.label}</label>
-                                    <input id={k.id} className="fb-range" type="range" min="1" max="10" step="1" value={k.value} onChange={k.onChange} style={css("width: 100%")} />
-                                    <span style={css("font-size: 13px; font-weight: 700; text-align: right; font-variant-numeric: tabular-nums")}>{k.value}</span>
-                                  </div>
-                                ))}
-                                {V.ids.edit.iceSet ? <button type="button" className="fb-ni" onClick={V.ids.edit.clearIce} style={css("align-self: flex-start; min-height: 32px; padding: 0 10px; border: 0; border-radius: 8px; background: transparent; font-size: 12px; font-weight: 600; color: var(--muted); cursor: pointer")}>Clear score</button> : <p style={css("margin: 0; font-size: 12px; color: var(--muted)")}>Not scored yet. Move a slider to score.</p>}
-                              </div>
-                              <div style={css("display: flex; flex-direction: column; gap: 6px")}><label htmlFor="ie-owner" style={css(V.fieldLabel)}>Owner</label><DD d={V.dd.ieOwner} id="ie-owner" /></div>
-                              <div style={css("display: flex; flex-direction: column; gap: 8px")}>
-                                <span id="ie-pri-l" style={css(V.fieldLabel)}>Priority</span>
-                                <div role="group" aria-labelledby="ie-pri-l" style={css("display: flex; padding: 3px; gap: 2px; border-radius: 12px; background: var(--chip)")}>
+                            <footer className="ir-dlg-foot" style={css(IDEA_FOOT)}>
+                              {V.ids.edit.confirmClose ? (
+                                <>
+                                  <button type="button" onClick={V.ids.edit.save} style={css(IDEA_BTN + "border: 0; background: var(--inv); color: var(--inv-ink);")}>{V.ids.edit.saveLabel}</button>
+                                  <button type="button" onClick={V.ids.edit.discard} style={css(IDEA_BTN + "border: 0; background: var(--red-soft); color: var(--red-ink);")}>Discard changes</button>
+                                  <button type="button" className="fb-ni" onClick={V.ids.edit.keepEditing} style={css(IDEA_BTN + "border: 0; background: transparent; color: var(--ink);")}>Keep editing</button>
+                                </>
+                              ) : (
+                                <>
+                                  <button type="button" onClick={V.ids.edit.save} aria-disabled={V.ids.edit.canSave ? 'false' : 'true'} title="Save (⌘S saves and keeps editing)" style={css(IDEA_BTN + "border: 0; background: var(--inv); color: var(--inv-ink);" + (V.ids.edit.canSave ? "" : " opacity: 0.45;"))}>{V.ids.edit.saveLabel}</button>
+                                  <button type="button" onClick={V.ids.edit.requestClose} style={css(IDEA_BTN + "border: 1px solid var(--border); background: var(--surface); color: var(--ink);")}>{V.ids.edit.dirty ? 'Discard' : 'Back to details'}</button>
+                                </>
+                              )}
+                              <span style={css("flex: 1")}></span>
+                              {V.ids.edit.hasErr ? <span role="alert" style={css("font-size: 13px; font-weight: 600; color: var(--red-ink)")}>{V.ids.edit.err}</span> : null}
+                              <span role="status" style={css("display: inline-flex; align-items: center; gap: 8px; font-size: 13px; color: var(--ink-3)")}><span aria-hidden="true" style={css(V.ids.edit.dirtyDot)}></span>{V.ids.edit.dirtyLabel}</span>
+                              <kbd className="ir-pos" style={css("padding: 2px 6px; border: 1px solid var(--border-3); border-radius: 6px; background: var(--surface); font-family: var(--font-main); font-size: 12px; color: var(--muted)")}>⌘ S</kbd>
+                            </footer>
+                          </div>
+                          <aside aria-label="Properties" className="ir-dlg-side" style={css(IDEA_SIDE)}>
+                            <section aria-labelledby="ie-score" style={css("display: flex; flex-direction: column; gap: 12px; padding: 14px; border: 1px solid var(--line-4); border-radius: 12px; background: var(--surface-2)")}>
+                              <div style={css("display: flex; align-items: center; justify-content: space-between; gap: 8px")}><h3 id="ie-score" style={css(IDEA_LABEL)}>ICE score</h3><span style={css("font-family: var(--font-title); font-weight: 900; font-size: 26px; line-height: 1; font-variant-numeric: tabular-nums")}>{V.ids.edit.iceScore}</span></div>
+                              {(V.ids.edit.ice || []).map((k) => (
+                                <div key={k.id} style={css("display: grid; grid-template-columns: 84px minmax(0, 1fr) 20px; align-items: center; gap: 10px")}>
+                                  <label htmlFor={k.id} style={css("font-size: 13px; color: var(--ink-3)")}>{k.label}</label>
+                                  <input id={k.id} className="fb-range" type="range" min="1" max="10" step="1" value={k.value} onChange={k.onChange} style={css("width: 100%")} />
+                                  <span style={css("font-size: 13px; font-weight: 700; text-align: right; font-variant-numeric: tabular-nums")}>{k.value}</span>
+                                </div>
+                              ))}
+                              {V.ids.edit.iceSet ? <button type="button" onClick={V.ids.edit.clearIce} style={css("align-self: flex-start; padding: 0; border: 0; background: none; color: var(--muted); font-size: 13px; text-decoration: underline; cursor: pointer")}>Clear score</button> : <p style={css("margin: 0; font-size: 13px; line-height: 1.5; color: var(--ink-3)")}>Not scored yet. Move a slider to score.</p>}
+                            </section>
+                            <section aria-labelledby="ie-details" style={css("display: flex; flex-direction: column; gap: 14px")}>
+                              <h3 id="ie-details" style={css(IDEA_LABEL)}>Details</h3>
+                              <div style={css(IE_GROUP)}><label htmlFor="ie-owner" style={css(IE_SIDE_LABEL)}>Owner</label><DD d={V.dd.ieOwner} id="ie-owner" /></div>
+                              <div style={css(IE_GROUP)}>
+                                <span id="ie-pri-l" style={css(IE_SIDE_LABEL)}>Priority</span>
+                                <div role="group" aria-labelledby="ie-pri-l" className="ir-seg" style={css("display: flex; padding: 3px; gap: 2px; border-radius: 10px; background: var(--chip)")}>
                                   {(V.ids.edit.pris || []).map((p) => <button key={p.label} type="button" aria-pressed={p.pressed} onClick={p.pick} style={css(p.style)}>{p.label}</button>)}
                                 </div>
                               </div>
-                              <div style={css("display: flex; flex-direction: column; gap: 6px")}><label htmlFor="ie-fmt" style={css(V.fieldLabel)}>Format</label><DD d={V.dd.ieFormat} id="ie-fmt" /></div>
-                              <div style={css("display: flex; flex-direction: column; gap: 8px")}>
-                                <span id="ie-pl-l" style={css(V.fieldLabel)}>Platforms</span>
+                              <div style={css(IE_GROUP)}><label htmlFor="ie-fmt" style={css(IE_SIDE_LABEL)}>Format</label><DD d={V.dd.ieFormat} id="ie-fmt" /></div>
+                              <div style={css(IE_GROUP)}>
+                                <span id="ie-pl-l" style={css(IE_SIDE_LABEL)}>Platforms</span>
                                 <div role="group" aria-labelledby="ie-pl-l" style={css("display: flex; flex-wrap: wrap; gap: 6px")}>
                                   {(V.ids.edit.platforms || []).map((p) => <button key={p.label} type="button" aria-pressed={p.pressed} onClick={p.pick} style={css(p.style)}>{p.on ? <svg aria-hidden="true" width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M3.5 8.5l3 3 6-7"></path></svg> : null}<SocialIcon id={p.label} size={14} />{p.label}</button>)}
                                 </div>
                               </div>
                               <div style={css("display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px")}>
-                                <div style={css("display: flex; flex-direction: column; gap: 6px; min-width: 0")}><label htmlFor="ie-eff" style={css(V.fieldLabel)}>Effort</label><DD d={V.dd.ieEffort} id="ie-eff" /></div>
-                                <div style={css("display: flex; flex-direction: column; gap: 6px; min-width: 0")}><label htmlFor="ie-win" style={css(V.fieldLabel)}>Window</label><DD d={V.dd.ieWindow} id="ie-win" /></div>
+                                <div style={css(IE_GROUP + " min-width: 0;")}><label htmlFor="ie-eff" style={css(IE_SIDE_LABEL)}>Effort</label><DD d={V.dd.ieEffort} id="ie-eff" /></div>
+                                <div style={css(IE_GROUP + " min-width: 0;")}><label htmlFor="ie-win" style={css(IE_SIDE_LABEL)}>Window</label><DD d={V.dd.ieWindow} id="ie-win" /></div>
                               </div>
-                              <div style={css("display: flex; flex-direction: column; gap: 6px")}><label htmlFor="ie-sp" style={css(V.fieldLabel)}>Sponsor fit</label><DD d={V.dd.ieSponsor} id="ie-sp" /></div>
-                            </aside>
-                          </div>
-                          <footer style={css("position: sticky; bottom: 0; z-index: 3; display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding: 14px clamp(16px, 4vw, 32px); border-top: 1px solid var(--line); background: var(--surface)")}>
-                            <span role="status" style={css("display: inline-flex; align-items: center; gap: 8px; font-size: 14px; color: var(--ink-3)")}><span aria-hidden="true" style={css(V.ids.edit.dirtyDot)}></span>{V.ids.edit.dirtyLabel}</span>
-                            {V.ids.edit.hasErr ? <span role="alert" style={css("font-size: 13px; font-weight: 600; color: var(--red-ink)")}>{V.ids.edit.err}</span> : null}
-                            <span style={css("flex: 1")}></span>
-                            {V.ids.edit.confirmClose ? (
-                              <>
-                                <button type="button" className="fb-ni" onClick={V.ids.edit.keepEditing} style={css("min-height: 44px; padding: 0 18px; border: 0; border-radius: 14px; background: transparent; font-size: 14px; font-weight: 500; color: var(--ink-3); cursor: pointer")}>Keep editing</button>
-                                <button type="button" onClick={V.ids.edit.discard} style={css("min-height: 44px; padding: 0 18px; border: 0; border-radius: 14px; background: var(--red-soft); font-size: 14px; font-weight: 600; color: var(--red-ink); cursor: pointer")}>Discard changes</button>
-                              </>
-                            ) : (
-                              <>
-                                <span style={css("font-size: 12px; color: var(--muted)")}><kbd style={css("padding: 2px 6px; border: 1px solid var(--border-3); border-radius: 6px; background: var(--surface); font-family: var(--font-main); font-size: 12px")}>⌘ S</kbd> saves · <kbd style={css("padding: 2px 6px; border: 1px solid var(--border-3); border-radius: 6px; background: var(--surface); font-family: var(--font-main); font-size: 12px")}>Esc</kbd> closes</span>
-                                <button type="button" className="fb-ni" onClick={V.ids.edit.dirty ? V.ids.edit.requestClose : V.ids.edit.discard} style={css("min-height: 44px; padding: 0 18px; border: 0; border-radius: 14px; background: transparent; font-size: 14px; font-weight: 500; color: var(--ink-3); cursor: pointer")}>{V.ids.edit.dirty ? 'Discard' : 'Close'}</button>
-                              </>
-                            )}
-                            <button type="button" onClick={V.ids.edit.save} aria-disabled={V.ids.edit.dirty ? 'false' : 'true'} style={css(V.ids.edit.saveStyle)}>{V.ids.edit.saveLabel}</button>
-                          </footer>
+                              <div style={css(IE_GROUP)}><label htmlFor="ie-sp" style={css(IE_SIDE_LABEL)}>Sponsor fit</label><DD d={V.dd.ieSponsor} id="ie-sp" /></div>
+                            </section>
+                          </aside>
                         </FocusDialog>
                       </>
                     ) : null}
@@ -5619,7 +5636,7 @@ function CheckList({ items, gap }) {
   );
 }
 
-function RefList({ refs, add, legend }) {
+function RefList({ refs, add, legend, bg }) {
   return (
     <fieldset style={css("margin: 0; padding: 0; border: 0; min-width: 0; display: flex; flex-direction: column; gap: 10px")}>
       <legend style={css(legend || "padding: 0; margin: 0 0 8px; font-size: 13px; font-weight: 600; color: var(--ink-2)")}>References</legend>
@@ -5627,7 +5644,7 @@ function RefList({ refs, add, legend }) {
         <div key={r.id} style={css("display: flex; gap: 8px; align-items: center")}>
           <span aria-hidden="true" style={css("width: 44px; height: 44px; flex: none; border-radius: 12px; background: var(--chip); display: flex; align-items: center; justify-content: center; color: var(--ink-3)")}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"></path></svg></span>
           <label htmlFor={r.id} style={css("position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)")}>{r.label}</label>
-          <input id={r.id} type="text" inputMode="url" autoComplete="off" placeholder="Paste a video, article or post link" value={r.value} onChange={r.onChange} style={css("flex: 1; min-width: 0; min-height: 44px; box-sizing: border-box; padding: 0 14px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface-2); font-size: 14px; color: var(--ink)")} />
+          <input id={r.id} type="text" inputMode="url" autoComplete="off" placeholder="Paste a video, article or post link" value={r.value} onChange={r.onChange} style={css("flex: 1; min-width: 0; min-height: 44px; box-sizing: border-box; padding: 0 14px; border: 1px solid var(--border); border-radius: 12px; background: " + (bg || "var(--surface-2)") + "; font-size: 14px; color: var(--ink)")} />
           <button type="button" className="fb-ni" aria-label={r.removeLabel} onClick={r.remove} style={css("width: 44px; height: 44px; flex: none; padding: 0; border: 0; border-radius: 12px; background: transparent; color: var(--muted); cursor: pointer; display: inline-flex; align-items: center; justify-content: center")}><svg aria-hidden="true" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><path d="M4 4l8 8M12 4l-8 8"></path></svg></button>
         </div>
       ))}

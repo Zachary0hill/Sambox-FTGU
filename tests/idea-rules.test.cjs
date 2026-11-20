@@ -156,6 +156,47 @@ test('sort offers Newest and Stale first, and cards carry the recommendation', (
   assert.equal(card.sources, '1');
 });
 
+const searchableIdeas = [
+  { id: 'phrase', title: 'How we engrave café tumblers', status: 'Inbox' },
+  { id: 'tag', title: 'A personalization walkthrough', tags: ['#engrave', '#cafe-tumblers'], status: 'Inbox' },
+  { id: 'split', title: 'A café walkthrough', promise: 'Engrave gifts in minutes', body: ['Use tumblers'], status: 'Inbox' },
+  { id: 'research', title: 'Gifting inspiration', research: { ...scoredResearch(82), sources: [{ title: 'Engrave café tumblers', snippet: 'Popular designs' }] }, status: 'Inbox' },
+  { id: 'wrong', title: 'Engrave pocket knives', status: 'Inbox' },
+  { id: 'parked', title: 'Engrave café tumblers', status: 'Inbox', parkedAt: '2026-11-18' },
+];
+
+test('search ranks phrase and tag matches across all layouts and still applies view filters', () => {
+  const iq = 'engrave cafe tumblers';
+  const order = ['phrase', 'tag', 'split', 'research'];
+  for (const iLayout of ['board', 'gallery', 'list']) {
+    const ids = browse({ iq, iLayout }, searchableIdeas);
+    assert.equal(ids.tb.sort.field, 'Relevance');
+    assert.equal(ids.tb.search.resultText, '4 matching ideas');
+    const cards = iLayout === 'board' ? ids.board.lanes[0].cards : ids.cards;
+    assert.deepEqual(cards.map((c) => c.id), order);
+  }
+  assert.deepEqual(browse({ iq, iF: { score: ['high'] } }, searchableIdeas).cards.map((c) => c.id), ['research']);
+  assert.deepEqual(browse({ iq, iView: 'parked' }, searchableIdeas).cards.map((c) => c.id), ['parked']);
+  assert.equal(browse({ iq, iStage: 'Approved' }, searchableIdeas).tb.search.noMatches, true);
+});
+
+test('search supports explicit tags, prefixes and typos alongside the normal sort controls', () => {
+  const idsFor = (state) => browse(state, searchableIdeas).cards.map((c) => c.id);
+  assert.deepEqual(idsFor({ iq: 'ENGR #Café-Tumblers' }), ['tag']);
+  assert.deepEqual(idsFor({ iq: 'tumblres engrav' }), ['phrase', 'tag', 'split', 'research']);
+  assert.deepEqual(idsFor({ iq: '#cafe-tumblers nonexistent' }), []);
+  const sort = { iSort: 'score', iSearchSort: { field: 'title', dir: 'asc' } };
+  assert.deepEqual(idsFor({ ...sort, iq: 'engrave cafe tumblers' }), ['split', 'tag', 'research', 'phrase']);
+  assert.equal(idsFor({ ...sort, iq: '  ... ' })[0], 'research');
+});
+
+test('keywords can match alternate titles, platform metadata and compact tags', () => {
+  const idea = { id: 'a', title: 'The production walkthrough', titleOptions: ['From blank to branded'], platforms: ['YouTube'], tags: ['#behindthescenes'], status: 'Inbox' };
+  for (const iq of ['youtube branded', 'behind the scenes', '#behind-the-scenes', 'scenes']) {
+    assert.deepEqual(browse({ iq }, [idea]).cards.map((c) => c.id), ['a']);
+  }
+});
+
 test('card actions offer research and ask before archiving', () => {
   const card = browse({ iSort: 'col:title' }, sample).cards[0];
   assert.deepEqual(card.acts.map((a) => a.label), ['Open', 'Run research', 'Archive']);

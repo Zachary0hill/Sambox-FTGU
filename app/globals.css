@@ -286,6 +286,7 @@ textarea:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px }
 .ir-card-open, .ir-card-open:hover { border-color: var(--link) !important }
 .ir-title:focus-visible, .ir-opt:focus-visible, .ir-cbtn:focus-visible, .ir-move:focus-visible { outline: 2px solid var(--link); outline-offset: 2px }
 #idea-search:focus, #iff-save:focus { outline: none; border-color: var(--link) !important }
+#idea-search::-webkit-search-cancel-button { display: none }
 .ir-kbd { display: none }
 @media (min-width: 1600px) { .ir-kbd { display: inline-flex } }
 /* Move arrow: hidden (and its width collapsed) until the card is hovered or holds focus; always there on touch. */
@@ -314,6 +315,21 @@ textarea:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px }
   .ir-tb button, .ir-tb input, .ir-anchor [data-row] { min-height: 44px !important }
 }
 @media (pointer: coarse) { .ir-card button { min-height: 44px } .ir-card .ir-move { min-width: 44px } }
+/* Idea dialog, details and editor: click-to-edit title, in-place Details pickers, banner controls. */
+.ir-inline:hover { border-color: var(--border) !important }
+.ir-inline:focus { border-color: var(--border-strong) !important; background: var(--surface) !important; outline: none }
+.ir-field:focus-within { border-color: var(--border-strong) !important }
+.ir-field:not(:focus-within) .ir-count { visibility: hidden }
+.ir-dd { display: flex; justify-content: flex-end; align-items: center }
+.ir-dd > div { min-width: 0; max-width: 100%; margin-right: -6px }
+.ir-dd > div > button { max-width: 100%; min-height: 32px !important; padding: 0 4px 0 8px !important; gap: 4px !important; border-radius: 8px !important; font-size: 13px !important; font-weight: 700 !important }
+.ir-dd > div > button > span { text-align: right !important }
+.ir-dd > div > button > svg { opacity: 0.4 }
+.ir-dd > div > button:hover, .ir-dd > div > button[aria-expanded="true"], .ir-rowbtn:hover, .ir-rowbtn[aria-expanded="true"] { background: var(--hover) !important }
+.ir-dd > div > button:hover > svg, .ir-dd > div > button[aria-expanded="true"] > svg { opacity: 1 }
+.ir-banner-ctl > *:hover, .ir-banner-ctl > *:focus-within { background: rgba(10,11,13,0.94) !important }
+.ir-seg > button { min-height: 30px !important; padding: 0 10px !important; border-radius: 8px !important }
+.ir-swatches > button { width: 26px !important; height: 26px !important; flex: none }
 /* Idea dialog: full screen under 640px, fields single column, footer actions as a sticky bottom bar. */
 @media (max-width: 639px) {
   .ir-dlg { top: 0 !important; left: 0 !important; transform: none !important; width: 100vw !important; height: 100dvh !important; max-height: none !important; border: 0 !important; border-radius: 0 !important; display: flex !important; flex-direction: column; overflow-y: auto !important }

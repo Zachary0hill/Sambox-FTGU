@@ -11,7 +11,7 @@ const idea = (id, status, extra) => ({
   highlight: '#FFE14D', hookPos: 'bottom', comments: [], hist: [], ...extra,
 });
 
-function ideas(open, layout) {
+function ideas(open, layout, setup = () => {}) {
   const f = fixture('admin');
   const writes = [];
   f.A = new Proxy({ ideaHistory: () => [], loadPreviews: () => {}, updateIdea: (i, p, text) => { writes.push({ id: i.id, p, text }); return Promise.resolve(true); } }, { get: (t, k) => t[k] || (() => {}) });
@@ -19,6 +19,7 @@ function ideas(open, layout) {
   f.D.rows = [{ id: 'proj', job: 'IDEA-1', title: 'Project' }];
   f.D.ideas = [idea('in', 'Inbox'), idea('re', 'Research'), idea('rd', 'Ready'), idea('ap', 'Approved'), idea('li', 'Approved', { projectId: 'proj' }), idea('ar', 'Archived')];
   Object.assign(f.s, { nav: 'ideas', iLayout: layout || 'board', ideaOpen: open || '' });
+  setup(f);
   const { computeVals } = loader()('lib/studio/vals.js');
   const view = computeVals(f);
   const ids = view.ids;
@@ -56,9 +57,33 @@ test('Request changes moves back one stage, not to the start', () => {
   assert.equal(research.writes[0].p.status, 'Inbox');
 });
 
+test('Approve hands off to In Production and opens the project only from the confirmation', async () => {
+  const calls = [];
+  let state, notice;
+  const { detail } = ideas('rd', 'board', (f) => {
+    f.D.ideas.find((i) => i.id === 'rd').body = ['Ready to film'];
+    state = f.s;
+    f.set = (patch) => Object.assign(state, typeof patch === 'function' ? patch(state) : patch);
+    f.A.approveIdea = async (i) => {
+      calls.push(i.id);
+      return { project: { created: true, job: 'IDEA-1', canOpen: true } };
+    };
+    f.A.toast = (message, action) => { notice = { message, action }; };
+  });
+  await detail.foot[0].pick();
+  assert.deepEqual(calls, ['rd']);
+  assert.equal(state.nav, 'ideas');
+  assert.equal(state.ideaOpen, '');
+  assert.match(notice.message, /approved and added to In Production/);
+  assert.equal(notice.action.label, 'Open project');
+  notice.action.run();
+  assert.equal(state.nav, 'projects');
+  assert.equal(state.openJob, 'IDEA-1');
+});
+
 function actions(update) {
   const { makeActions } = loader()('lib/studio/actions.js');
-  const sb = { from: () => ({ update: (db) => { update(db); return { eq: async () => ({ error: null }) }; }, insert: async () => ({ error: null }) }), storage: { from: () => ({}) }, auth: {} };
+  const sb = { from: () => ({ update: (db) => ({ eq: async () => { await update(db); return { error: null }; } }), insert: async () => ({ error: null }) }), storage: { from: () => ({}) }, auth: {} };
   const D = { ideas: [], ws: { id: 'ws' } };
   return makeActions({ sb, getD: () => D, setD: () => {}, getMe: () => ({ id: 'user', name: 'Tester', perms: new Set() }), toast: () => {}, reload: async () => {}, reloadPortal: async () => {}, switchAccount: () => {} });
 }
@@ -71,4 +96,30 @@ test('archiving writes only the flag, so the idea keeps its stage', async () => 
 test('a stage move clears the flag and writes the database stage', async () => {
   let db; await actions((v) => { db = v; }).updateIdea({ id: 'x', title: 'x' }, { status: 'Ready' }, '');
   assert.deepEqual(db, { archived_at: null, stage: 'ready' });
+});
+
+test('approval waits for a pending sponsor edit before taking a project snapshot', async () => {
+  const originalFetch = global.fetch;
+  let finishSave, requested = false;
+  const saving = new Promise((resolve) => { finishSave = resolve; });
+  const A = actions(async (patch) => {
+    assert.equal(patch.sponsor_id, 'sponsor-kit');
+    await saving;
+  });
+  try {
+    global.fetch = async () => {
+      requested = true;
+      return Response.json({ project: { job: 'IDEA-1' } });
+    };
+    const ready = { id: 'x', title: 'Test', status: 'Ready' };
+    const write = A.updateIdea(ready, { sponsorId: 'sponsor-kit' });
+    const approve = A.approveIdea(ready);
+    await new Promise(setImmediate);
+    assert.equal(requested, false);
+    finishSave();
+    assert.equal(await write, true);
+    assert.equal((await approve).project.job, 'IDEA-1');
+  } finally {
+    global.fetch = originalFetch;
+  }
 });
