@@ -3236,7 +3236,7 @@ export default function StudioView({ V }) {
                                 {ic2.fromResearch ? <span style={css("display: inline-flex; align-items: center; gap: 5px; height: 24px; padding: 0 8px; border-radius: 7px; background: rgba(255,255,255,0.92); color: #111111; font-size: 11px; font-weight: 700")}><svg aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round"><circle cx="11" cy="11" r="7"></circle><path d="M21 21l-4.3-4.3"></path></svg>Research</span> : null}
                               </span>
                               <Hook b={ic2} />
-                              <span style={css("position: absolute; right: 12px; bottom: 12px; display: inline-flex; align-items: center; height: 26px; padding: 0 10px; border-radius: 8px; background: rgba(17,17,17,0.76); color: #FFFFFF; font-family: var(--font-main); font-size: 12px; font-weight: 600; white-space: nowrap")}>{ic2.badge}</span>
+                              <span style={css("position: absolute; right: 12px; top: 12px; display: inline-flex; align-items: center; height: 26px; padding: 0 10px; border-radius: 8px; background: rgba(17,17,17,0.76); color: #FFFFFF; font-family: var(--font-main); font-size: 12px; font-weight: 600; white-space: nowrap")}>{ic2.badge}</span>
                             </span>
                             <span style={css("display: flex; align-items: flex-start; gap: 12px")}>
                               <span aria-hidden="true" style={css(ic2.avatarStyle)}>{ic2.initials}</span>
@@ -3640,7 +3640,7 @@ export default function StudioView({ V }) {
                               </>
                             ) : (
                               <>
-                                <span style={css("font-size: 12px; color: var(--muted)")}><kbd style={css("padding: 2px 6px; border: 1px solid var(--border-3); border-radius: 6px; background: var(--surface); font-family: var(--font-main); font-size: 12px")}>⌘ S</kbd> to save</span>
+                                <span style={css("font-size: 12px; color: var(--muted)")}><kbd style={css("padding: 2px 6px; border: 1px solid var(--border-3); border-radius: 6px; background: var(--surface); font-family: var(--font-main); font-size: 12px")}>⌘ S</kbd> saves · <kbd style={css("padding: 2px 6px; border: 1px solid var(--border-3); border-radius: 6px; background: var(--surface); font-family: var(--font-main); font-size: 12px")}>Esc</kbd> closes</span>
                                 <button type="button" className="fb-ni" onClick={V.ids.edit.dirty ? V.ids.edit.requestClose : V.ids.edit.discard} style={css("min-height: 44px; padding: 0 18px; border: 0; border-radius: 14px; background: transparent; font-size: 14px; font-weight: 500; color: var(--ink-3); cursor: pointer")}>{V.ids.edit.dirty ? 'Discard' : 'Close'}</button>
                               </>
                             )}
@@ -3815,7 +3815,7 @@ export default function StudioView({ V }) {
                               <div style={css("display: flex; flex-direction: column; gap: 14px")}>
                                 <div style={css(V.ids.ni.thumbStyle)}>
                                   <Hook b={V.ids.ni} />
-                                  <span style={css("position: absolute; right: 12px; bottom: 12px; display: inline-flex; align-items: center; height: 26px; padding: 0 10px; border-radius: 8px; background: rgba(17,17,17,0.76); color: #FFFFFF; font-family: var(--font-main); font-size: 12px; font-weight: 600")}>{V.ids.ni.type}  ·  0 comments</span>
+                                  <span style={css("position: absolute; right: 12px; top: 12px; display: inline-flex; align-items: center; height: 26px; padding: 0 10px; border-radius: 8px; background: rgba(17,17,17,0.76); color: #FFFFFF; font-family: var(--font-main); font-size: 12px; font-weight: 600")}>{V.ids.ni.type}  ·  0 comments</span>
                                   <span style={css(V.ids.ni.priStyle)}>{V.ids.ni.pri}</span>
                                 </div>
                                 <div style={css("display: flex; align-items: flex-start; gap: 12px")}>

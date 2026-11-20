@@ -38,8 +38,9 @@ type Img = { bytes: Uint8Array; type: string; model: string; provider?: string; 
 
 function prompt(i: IdeaRow, brand: Brand, style: string, extra: string) {
   return [
-    'A 16:9 YouTube thumbnail background image for a video titled "' + i.title + '".',
-    i.hook ? 'The headline that will be placed over it says "' + i.hook + '", so leave a calm area for text.' : 'Leave a calm area for a headline to be placed over it.',
+    // Covers show as a 3:1 banner strip cut from the middle of the picture, so the composition has to live there.
+    'A wide banner background image for a video titled "' + i.title + '". It is shown cropped to a 3:1 strip across the middle, so keep the subject and every important detail inside the middle third of the height; the top and bottom will be cut off.',
+    i.hook ? 'The headline that will be placed over the lower part of the strip says "' + i.hook + '", so leave a calm area there for text.' : 'Leave a calm area in the lower part of the strip for a headline to be placed over it.',
     i.audience ? 'Audience: ' + i.audience + '.' : '',
     i.promise ? 'What the viewer gets: ' + i.promise + '.' : '',
     (i.body || []).slice(0, 2).join(' ').slice(0, 300),

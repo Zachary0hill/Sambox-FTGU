@@ -641,7 +641,7 @@ export function IdeaDialog({ d, onClose, panel }) {
           </div>
           <div className="ir-dlg-scroll" style={css('flex: 1 1 auto; min-height: 0; overflow-y: auto')}>
             {d.cover ? (
-              <div style={css('position: relative; aspect-ratio: 3 / 1; max-height: 240px; ' + d.cover)}>
+              <div style={css('position: relative; aspect-ratio: 3 / 1; ' + d.cover)}>
                 {d.replaceCover ? (
                   <div style={css('position: absolute; right: 12px; bottom: 12px; display: flex; gap: 8px')}>
                     <button type="button" onClick={d.replaceCover} style={css('height: 32px; padding: 0 12px; border: 0; border-radius: 8px; background: rgba(10,11,13,0.78); color: #F4F4F5; font-size: 13px; font-weight: 600; cursor: pointer')}>Replace cover</button>
