@@ -1,45 +1,33 @@
 'use client';
-// Flow builder: Automations > New flow, or Edit on a workflow card. A full-screen canvas in the spirit of Klaviyo's
-// flow editor: a trigger card, then steps joined by + connectors (click for a menu, or drag a step in from the Actions
-// panel), splits that branch into paths, and End. Selecting a card opens its details in the left panel.
+// Workflow builder: Automations > New flow, or a workflow card. A full-screen canvas (handoff Santos-Builder): the top
+// bar, the step library on the left, the flow in one column with a + between cards, and the inspector on the right.
+// A branch is one card with its paths as lanes; the steps inside a path are edited from the branch's inspector.
 //
 // The same canvas maps processes and ideas: kind 'process' or 'idea' never runs, so it can hold manual tasks and notes
 // alongside the actions it would take. Every card, and the flow itself, can be tagged with dashboard data (projects,
 // ideas, clients, people, statuses, channels, brands) and connector data (connectors, YouTube videos, Buffer channels).
-// Messages take data tokens ({{project.title}}) that the runner fills in. The graph model and runner rules are in
-// lib/automations/graph.ts; saving goes through A.saveFlow (lib/studio/actions.js).
+// Messages take data tokens ({{project.title}}) that the runner fills in; on screen a token is always a named chip
+// (workflow/RichField.jsx). The graph model and runner rules are in lib/automations/graph.ts; saving goes through
+// A.saveFlow (lib/studio/actions.js). Drafts save on their own; a live automation waits for Save.
 /* eslint-disable react-hooks/exhaustive-deps */
 import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
 import { css } from '@/lib/studio/css';
-import { ACTIONS, actionById, triggerById, triggerText, projectTriggers, fits } from '@/lib/automations/catalog';
-import {
-  KINDS, TAG_TYPES, FIELDS, OPS, TOKENS, ACTION_GROUPS, emptyGraph, graphOf, compile, issuesOf, newId, walk, stepCount, delayText, plural,
-} from '@/lib/automations/graph';
+import { ACTIONS, actionById, triggerById, triggerText, projectTriggers, fits, scopeOf } from '@/lib/automations/catalog';
+import { KINDS, TAG_TYPES, FIELDS, OPS, TOKENS, emptyGraph, graphOf, issuesOf, newId, walk, stepCount, plural, cannotRunYet } from '@/lib/automations/graph';
+import { T, KIND, R, H, SHADOW, FONT, WF_CSS } from '@/lib/workflow/theme';
+import { AGENT, AGENT_SHORT, STATUS, STEP_COPY, NODE_COPY, TRIGGER_COPY, VAR_LABEL } from '@/lib/workflow/copy';
+import { stepOf, fieldOf } from '@/lib/workflow/graph';
+import { Svg, ICON, KindTile, Seg, btn, inputStyle, labelStyle, srOnly, useModal } from './workflow/ui';
+import RichField, { RICH_CSS } from './workflow/RichField';
+import StepFinder from './workflow/StepFinder';
+import SettingsModal from './workflow/SettingsModal';
+import TriggerModal from './workflow/TriggerModal';
+import ConditionModal from './workflow/ConditionModal';
+import TestDrawer, { rowState } from './workflow/TestDrawer';
+import ReviewModal from './workflow/ReviewModal';
 
 // Unsaved changes in the open builder. Studio.jsx checks it on browser Back and asks instead of closing the builder.
 export const flowGuard = { dirty: false, url: '', ask: null };
-
-// Modal layers: everything outside the layer is inert while it is open (no tabbing into the page underneath), focus
-// moves in on open and goes back where it was on close.
-function useModal(ref, focusSel) {
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return undefined;
-    const before = document.activeElement;
-    const off = [];
-    for (let n = el; n.parentElement && n !== document.body; n = n.parentElement) {
-      for (const sib of n.parentElement.children) {
-        if (sib !== n && !sib.hasAttribute('inert') && sib.tagName !== 'SCRIPT' && sib.tagName !== 'STYLE') { sib.setAttribute('inert', ''); off.push(sib); }
-      }
-    }
-    const first = (focusSel && el.querySelector(focusSel)) || el.querySelector('button, input, select, textarea');
-    if (first && !el.contains(document.activeElement)) first.focus({ preventScroll: true });
-    return () => {
-      off.forEach((x) => x.removeAttribute('inert'));
-      if (before && typeof before.focus === 'function' && document.contains(before)) before.focus({ preventScroll: true });
-    };
-  }, []);
-}
 
 // ---------- Icons ----------
 const IC = {
@@ -69,18 +57,15 @@ const Ico = ({ d, size = 16, sw = 1.8, style }) => (
   <svg aria-hidden="true" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round" style={css(style)}><path d={d} /></svg>
 );
 
-const ACTION_IC = { slack_admin: IC.chat, email_editor: IC.mail, email_designer: IC.mail, status_next: IC.next, todo_admin: IC.todo, webhook_n8n: IC.link, buffer_publish: IC.send };
-const ACTION_TONE = { slack_admin: 'blue', email_editor: 'blue', email_designer: 'blue', status_next: 'coral', todo_admin: 'coral', webhook_n8n: 'violet', buffer_publish: 'violet' };
 const STEP_DEF = {
   delay: { label: 'Time delay', icon: IC.clock, tone: 'gray', desc: 'Wait before the next step' },
   split: { label: 'Split', icon: IC.split, tone: 'gray', desc: 'Send work down different paths' },
   task: { label: 'Task', icon: IC.task, tone: 'green', desc: 'A To-Do for someone on the team' },
   note: { label: 'Note', icon: IC.note, tone: 'amber', desc: 'An idea or a sticky note; never runs' },
-};
-const TRIGGER_DESC = {
-  status: ['Move work forward', 'Alert people when a project reaches a stage'], edit_status: ['Track the edit', 'React when an edit is in review or needs changes'],
-  thumb_status: ['Track the thumbnail', 'React when a thumbnail moves along'], approval: ['Sponsor decisions', 'Follow up when a sponsor approves or asks for changes'],
-  mention_admin: ['Mentions', 'When a comment asks a Super Admin for help'], publish_soon: ['Publishing countdown', 'Remind people before a video goes out'],
+  // Step types from workflow templates (lib/workflow/copy.js).
+  data: { label: 'Board data', icon: IC.data, tone: 'blue', desc: 'Reads the project from the board' },
+  ai: { label: 'Assistant', icon: IC.note, tone: 'violet', desc: 'Studio Assistant writes or summarizes' },
+  approval: { label: 'Approval', icon: IC.task, tone: 'gray', desc: 'Pauses until a Super Admin approves' },
 };
 const toneBg = (t) => (t === 'gray' ? 'var(--chip-2)' : 'var(--' + t + '-soft)');
 const toneInk = (t) => (t === 'gray' ? 'var(--ink-3)' : 'var(--' + t + '-ink)');
@@ -92,17 +77,14 @@ const S = {
   ghost: 'border: 1px solid var(--border-2); background: var(--surface); color: var(--ink);',
   primary: 'border: 1px solid var(--inv); background: var(--inv); color: var(--inv-ink);',
   icon: 'display: inline-flex; align-items: center; justify-content: center; width: 38px; height: 38px; flex: none; padding: 0; border: 0; border-radius: 10px; background: transparent; color: var(--ink-3); cursor: pointer;',
-  label: 'font-size: 13px; font-weight: 600; color: var(--ink-2);',
-  input: 'width: 100%; min-height: 40px; box-sizing: border-box; padding: 0 12px; border: 1px solid var(--border-2); border-radius: 10px; background: var(--surface); color: var(--ink); font-size: 14px; font-family: inherit;',
+  label: labelStyle,
+  input: inputStyle,
   area: 'width: 100%; min-height: 96px; box-sizing: border-box; padding: 10px 12px; border: 1px solid var(--border-2); border-radius: 10px; background: var(--surface); color: var(--ink); font-size: 14px; line-height: 1.5; font-family: inherit; resize: vertical;',
   muted: 'margin: 0; font-size: 13px; line-height: 1.5; color: var(--muted);',
   pop: 'position: absolute; z-index: 30; min-width: 240px; max-height: 360px; overflow-y: auto; padding: 6px; box-sizing: border-box; background: var(--surface); border: 1px solid var(--line-4); border-radius: 14px; box-shadow: 0 16px 48px rgba(0,0,0,0.16);',
   item: 'display: flex; align-items: center; gap: 10px; width: 100%; min-height: 38px; padding: 0 10px; box-sizing: border-box; border: 0; border-radius: 9px; background: transparent; color: var(--ink); font-size: 14px; text-align: left; cursor: pointer; font-family: inherit;',
   head: 'margin: 0; padding: 8px 10px 4px; font-size: 12px; font-weight: 600; color: var(--muted-2);',
-  card: 'position: relative; width: 300px; max-width: calc(100vw - 48px); box-sizing: border-box; border-radius: 16px; background: var(--surface); text-align: left; cursor: pointer; font-family: inherit; color: var(--ink);',
 };
-const cardRing = (on, warn) => 'border: ' + (on ? '2px solid ' + RING : '1px solid var(--line-4)') + '; padding: ' + (on ? '13px 15px' : '14px 16px') + '; box-shadow: ' + (on ? '0 0 0 4px rgba(47,91,211,0.12)' : '0 1px 2px rgba(0,0,0,0.04), 0 8px 24px rgba(0,0,0,0.05)') + ';' + (warn && !on ? ' border-color: var(--amber-ink);' : '');
-const tile = (tone, size = 32) => 'width: ' + size + 'px; height: ' + size + 'px; flex: none; border-radius: 10px; display: inline-flex; align-items: center; justify-content: center; background: ' + toneBg(tone) + '; color: ' + toneInk(tone) + ';';
 
 // ---------- Tags: dashboard and connector data ----------
 export function tagSources(D) {
@@ -212,45 +194,6 @@ function Pick({ id, label, value, onChange, options, placeholder }) {
   );
 }
 
-// Message box with an Insert data menu for runner tokens.
-function MessageField({ id, label, value, onChange, placeholder, rows = 4 }) {
-  const ref = useRef(null);
-  const [open, setOpen] = useState(false);
-  const insert = (k) => {
-    const el = ref.current;
-    const tok = '{{' + k + '}}';
-    const v = value || '';
-    const at = el && typeof el.selectionStart === 'number' ? el.selectionStart : v.length;
-    onChange(v.slice(0, at) + tok + v.slice(at));
-    setOpen(false);
-    requestAnimationFrame(() => { if (el) { el.focus(); el.setSelectionRange(at + tok.length, at + tok.length); } });
-  };
-  return (
-    <div style={css('position: relative; display: flex; flex-direction: column; gap: 6px;')} onKeyDown={(e) => { if (e.key === 'Escape' && open) { e.stopPropagation(); setOpen(false); } }}>
-      <div style={css('display: flex; align-items: center; gap: 8px;')}>
-        <label htmlFor={id} style={css(S.label + ' flex: 1;')}>{label}</label>
-        <button type="button" aria-haspopup="menu" aria-expanded={open} onClick={() => setOpen(!open)} style={css('display: inline-flex; align-items: center; gap: 4px; height: 28px; padding: 0 8px; border: 0; border-radius: 8px; background: var(--chip); color: var(--ink-2); font-size: 12px; font-weight: 600; cursor: pointer; font-family: inherit;')}>
-          <Ico d={IC.data} size={13} /> Insert data
-        </button>
-      </div>
-      <textarea id={id} ref={ref} rows={rows} value={value || ''} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} style={css(S.area)} />
-      {open ? (
-        <>
-          <button type="button" tabIndex={-1} aria-label="Close data menu" onClick={() => setOpen(false)} style={css('position: fixed; inset: 0; z-index: 29; border: 0; background: transparent; cursor: default;')} />
-          <div role="menu" aria-label="Insert data" style={css(S.pop + ' top: 34px; right: 0;')}>
-            {TOKENS.map((t) => (
-              <button key={t[0]} type="button" role="menuitem" className="mitem" onClick={() => insert(t[0])} style={css(S.item)}>
-                <span style={css('flex: 1;')}>{t[1]}</span>
-                <code style={css('font-size: 11px; color: var(--muted-2);')}>{'{{' + t[0] + '}}'}</code>
-              </button>
-            ))}
-          </div>
-        </>
-      ) : null}
-    </div>
-  );
-}
-
 // ---------- Graph edits (immutable: clone, change, return) ----------
 const clone = (g) => JSON.parse(JSON.stringify(g));
 // The list a path id names (null: the top level), and the node and list for a node id.
@@ -281,34 +224,36 @@ function makeNode(spec) {
   if (spec.type === 'delay') return { ...base, type: 'delay', amount: 1, unit: 'days' };
   if (spec.type === 'task') return { ...base, type: 'task', title: '', owner: '', note: '' };
   if (spec.type === 'note') return { ...base, type: 'note', title: '', note: '' };
+  if (spec.type === 'data') return { ...base, type: 'data', key: spec.key || 'get_project', title: spec.title || '' };
+  if (spec.type === 'approval') return { ...base, type: 'approval', title: 'Approval', note: '', timeoutHours: 24 };
+  // A branch: work takes Yes when its rule matches, No otherwise, then the main line carries on below.
   return { ...base, type: 'split', name: '', paths: [
-    { id: newId('p'), name: 'Path #1', when: [], steps: [] },
-    { id: newId('p'), name: 'Everyone else', when: [], steps: [] },
+    { id: newId('p'), name: 'Yes', when: [], steps: [] },
+    { id: newId('p'), name: 'No', when: [], steps: [] },
   ] };
 }
-// Inserting a split moves the steps after it into its first path, so nothing hangs below a branch.
-function insertAt(g, pathId, index, spec) {
-  const next = clone(g);
-  const list = listOf(next, pathId);
-  if (!list) return { g, id: null };
-  const node = makeNode(spec);
-  if (node.type === 'split') node.paths[0].steps = list.splice(index);
-  list.splice(index, 0, node);
-  return { g: next, id: node.id };
-}
-// Where a click in the Actions panel adds a step: after the selected card, else at the end (inside the last path when
-// the flow ends in a split).
-function defaultSpot(g, selId) {
-  const at = selId ? locate(g, selId) : null;
-  if (at && at.node && at.node.type !== 'split') return { pathId: at.pathId, index: at.index + 1 };
-  if (at && at.path) return { pathId: at.path.id, index: at.path.steps.length };
-  let list = g.steps, pathId = null;
-  for (;;) {
-    const last = list[list.length - 1];
-    if (!last || last.type !== 'split') return { pathId, index: list.length };
-    const p = last.paths[last.paths.length - 1];
-    list = p.steps; pathId = p.id;
+// The card on the main line that holds a nested step or path ('' when the id is on the main line itself).
+function ownerOf(g, id) {
+  for (const n of g.steps) {
+    if (n.id === id) return '';
+    if (n.type !== 'split') continue;
+    let hit = false;
+    const look = (s) => (s.paths || []).forEach((p) => { if (p.id === id) hit = true; p.steps.forEach((c) => { if (c.id === id) hit = true; if (c.type === 'split') look(c); }); });
+    look(n);
+    if (hit) return n.id;
   }
+  return '';
+}
+// The branch a path belongs to.
+function splitOf(g, pathId) {
+  const at = locate(g, pathId);
+  return at && at.split ? at.split.id : '';
+}
+// A copy of a step with fresh ids all the way down.
+function reId(n) {
+  n.id = newId();
+  if (n.type === 'split') (n.paths || []).forEach((p) => { p.id = newId('p'); p.steps.forEach(reId); });
+  return n;
 }
 
 // ---------- Create flow dialog ----------
@@ -365,53 +310,92 @@ export function CreateFlowDialog({ D, A, onCreated, onClose }) {
 }
 
 // ---------- The builder ----------
-export default function FlowBuilder({ D, A, row, onClose, goConnect, review }) {
+const GROUP = { trigger: 'Trigger', data: 'Board', action: 'Action', logic: 'Logic', ai: AGENT_SHORT, human: 'Team' };
+const KIND_ORDER = ['trigger', 'data', 'action', 'logic', 'ai', 'human'];
+const lower = (x) => String(x || '').replace(/^./, (c) => c.toLowerCase());
+const stamp = () => new Date().toISOString();
+const cardStyle = (on) => 'width: 380px; max-width: calc(100vw - 48px); text-align: left; font-family: inherit; background: ' + T.surface + '; border: ' + (on ? '1.5px solid ' + T.ring : '1px solid ' + T.chipLine) + '; border-radius: ' + R.card + 'px; box-shadow: ' + (on ? '0 0 0 3px rgba(47,91,234,.14)' : SHADOW.card) + '; color: ' + T.ink + '; padding: ' + (on ? '13.5px 15.5px' : '14px 16px') + '; display: flex; flex-direction: column; gap: 10px; cursor: pointer;';
+const pillStyle = (fg, bg) => 'flex: none; display: flex; align-items: center; gap: 4px; background: ' + bg + '; color: ' + fg + '; border-radius: 999px; padding: 4px 9px; font-size: 12px; font-weight: 600; white-space: nowrap;';
+const tagStyle = 'background: ' + T.ground2 + '; border: 1px solid ' + T.line + '; border-radius: 999px; padding: 3px 9px; font-size: 12px; font-weight: 500; color: ' + T.ink3 + ';';
+const wire = <span aria-hidden="true" style={css('width: 1.5px; height: 16px; flex: none; background: ' + T.wire + ';')} />;
+
+function TopBtn({ cls, icon, label, onClick, off }) {
+  return <button type="button" className={'wf-h fbx-btn ' + cls} aria-label={label} title={label} disabled={off} onClick={onClick} style={css(btn('ghost') + (off ? ' opacity: .55;' : ''))}><Svg d={icon} size={16} /><span className="fbx-lbl">{label}</span></button>;
+}
+
+export default function FlowBuilder({ D, A, row, onClose, goConnect, goHub, review }) {
   const [g, setG] = useState(() => graphOf(row));
   const [name, setName] = useState(row.name);
   const [category, setCategory] = useState(row.category || 'custom');
-  const [dirty, setDirty] = useState(false);
-  const [sel, setSel] = useState(() => (graphOf(row).kind === 'automation' && !graphOf(row).trigger.key ? 'trigger' : ''));
-  const [menu, setMenu] = useState(''); // the + connector whose menu is open: pathId|index
-  const [side, setSide] = useState(''); // right panel: alerts | test
+  // Edits made and edits saved, as counters: the flow is unsaved while they differ.
+  const [ver, setVer] = useState(0);
+  const [savedVer, setSavedVer] = useState(0);
+  const dirty = ver !== savedVer;
+  const [sel, pickSel] = useState(() => (graphOf(row).kind === 'automation' && !graphOf(row).trigger.key ? 'trigger' : ''));
+  const [finder, setFinder] = useState(null); // the + that opened the step finder: { pathId, index, afterTitle, afterKind }
+  const [left, setLeft] = useState('steps'); // left panel tab: steps | overview
+  const [lq, setLq] = useState('');
   const [zoom, setZoom] = useState(1);
   const [busy, setBusy] = useState('');
   // review (turn on) | update (save a live automation) | leave | delete:<split id> | delpath:<path id>
   const [confirm, setConfirm] = useState(review ? 'review' : '');
-  const [testRun, setTestRun] = useState(null);
-  const [dropAt, setDropAt] = useState('');
-  // The Actions panel starts hidden on narrow screens, where it would cover the canvas.
-  const [palette, setPalette] = useState(() => typeof window === 'undefined' || window.innerWidth > 860);
+  // The test run in the drawer: { phase: 'wait' | 'play' | 'done', rows, shown, stop, error, token } (workflow/TestDrawer.jsx).
+  const [test, setTest] = useState(null);
+  const [ack, setAck] = useState(false); // Review: "I have checked what this sends" for steps that send outside
+  const [focusField, setFocusField] = useState('');
+  const [peek, setPeek] = useState(false);
+  const [ins, setIns] = useState(null); // a data chip to put in the focused message field: { token, n }
+  const setSel = (id) => { pickSel(id); setFocusField(''); setPeek(false); setIns(null); };
+  const [toast, setToast] = useState('');
+  const [autoFail, setAutoFail] = useState(false);
+  // The open dialog, kept in the URL (?panel=settings | trigger | condition&step=<branch id>).
+  const [panel, setPanel] = useState(() => {
+    const q = typeof window === 'undefined' ? null : new URLSearchParams(window.location.search);
+    const nm = q ? q.get('panel') : '';
+    return nm === 'settings' || nm === 'trigger' ? { name: nm } : nm === 'condition' && q.get('step') ? { name: nm, step: q.get('step') } : null;
+  });
   const canvas = useRef(null);
   const content = useRef(null);
   const pan = useRef(null);
   const root = useRef(null);
-  useModal(root, 'button[aria-label="Back to automations"]');
+  const toastTimer = useRef(null);
+  useModal(root, 'button[data-back]');
 
   const sources = useMemo(() => tagSources(D).list, [D]);
   const connected = useMemo(() => Object.fromEntries((D.integrations || []).map((x) => [x.provider, x.status === 'connected'])), [D.integrations]);
   const issues = useMemo(() => issuesOf(g, connected), [g, connected]);
-  const warnIds = useMemo(() => new Set(issues.filter((x) => x.level === 'warn').map((x) => x.id)), [issues]);
+  const warns = issues.filter((x) => x.level === 'warn');
   const paused = !!((D.settings || {}).automation || {}).paused;
   const runs = g.kind === 'automation';
-  const status = !runs ? KINDS.find((k) => k[0] === g.kind)[1] : row.is_draft ? 'Draft' : row.enabled ? (paused ? 'Paused' : 'Live') : 'Off';
-  const statusTone = status === 'Live' ? 'green' : status === 'Draft' || status === 'Off' ? 'gray' : status === 'Paused' ? 'amber' : g.kind === 'idea' ? 'amber' : 'violet';
+  const live = runs && row.enabled && !row.is_draft;
+  const status = !runs ? '' : row.is_draft ? 'draft' : row.enabled ? 'live' : 'off';
+  const scope = scopeOf(g.trigger.key);
 
-  const edit = (fn) => { setG((prev) => { const next = clone(prev); fn(next); return next; }); setDirty(true); };
+  const say = (text) => { setToast(text); clearTimeout(toastTimer.current); toastTimer.current = setTimeout(() => setToast(''), 4000); };
+  useEffect(() => () => clearTimeout(toastTimer.current), []);
+
+  // Any edit clears the last test result (handoff Rule 4) and marks the flow unsaved.
+  const touch = () => { setVer((v) => v + 1); setAutoFail(false); };
+  const edit = (fn) => { setG((prev) => { const next = clone(prev); fn(next); if (next.lastTest) next.lastTest = null; return next; }); setTest(null); touch(); };
   const editNode = (id, patch) => edit((x) => { const at = locate(x, id); if (at && at.node) Object.assign(at.node, patch); });
   const add = (pathId, index, spec) => {
-    const r = insertAt(g, pathId, index, spec);
-    if (!r.id) return;
-    setG(r.g); setDirty(true); setSel(r.id); setMenu('');
+    const node = makeNode(spec);
+    edit((x) => { const list = listOf(x, pathId); if (list) list.splice(Math.min(index, list.length), 0, node); });
+    setSel(node.id); setFinder(null);
   };
-  const addDefault = (spec) => { const at = defaultSpot(g, sel); add(at.pathId, at.index, spec); };
+  const pickTrigger = (tr) => {
+    edit((x) => { x.trigger.key = tr.key; x.trigger.value = tr.values === 'statuses' ? ((D.statuses || [])[0] || {}).label || '' : tr.values ? tr.values[0][0] : ''; });
+    setSel('trigger');
+  };
   const remove = (id) => {
-    edit((x) => { const at = locate(x, id); if (at && at.node) at.list.splice(at.index, 1); });
-    setSel(''); setConfirm('');
+    const at = locate(g, id);
+    edit((x) => { const a2 = locate(x, id); if (a2 && a2.node) a2.list.splice(a2.index, 1); });
+    setSel(at && at.pathId ? splitOf(g, at.pathId) : ''); setConfirm('');
   };
   const duplicate = (id) => {
     const at = locate(g, id);
-    if (!at || !at.node || at.node.type === 'split') return;
-    const copy = { ...clone(at.node), id: newId() };
+    if (!at || !at.node) return;
+    const copy = reId(clone(at.node));
     edit((x) => { const a2 = locate(x, id); a2.list.splice(a2.index + 1, 0, copy); });
     setSel(copy.id);
   };
@@ -419,28 +403,103 @@ export default function FlowBuilder({ D, A, row, onClose, goConnect, review }) {
     const at = locate(x, id);
     if (!at || !at.node) return;
     const j = at.index + dir;
-    if (j < 0 || j >= at.list.length || at.list[j].type === 'split' || at.node.type === 'split') return;
+    if (j < 0 || j >= at.list.length) return;
     const [n] = at.list.splice(at.index, 1);
     at.list.splice(j, 0, n);
   });
 
-  const save = async (mode) => {
+  // quiet: the autosave of a draft, with no Activity Log entry.
+  // over: a graph or name a dialog has just produced, saved before the state update lands.
+  const save = async (mode, quiet, over) => {
     if (busy) return null;
+    const v = ver;
     setBusy(mode === 'live' ? 'live' : 'save');
-    const saved = await A.saveFlow(row, g, { name: name.trim() || row.name, category, status: mode });
+    const saved = await A.saveFlow(row, (over && over.graph) || g, { name: ((over && over.name) || name).trim() || row.name, category, status: mode, quiet: !!quiet });
     setBusy('');
-    if (saved) setDirty(false);
+    if (saved) setSavedVer(v);
+    if (!saved && quiet) setAutoFail(true);
     return saved;
   };
-  const live = runs && row.enabled && !row.is_draft;
-  const dialog = confirm === 'review' || confirm === 'update' || confirm === 'leave' ? confirm : '';
-  // Tests the graph on screen, saved or not, so testing never changes a live automation.
-  const runTest = async () => {
-    setBusy('test'); setSide('test'); setTestRun(null);
-    try { setTestRun(await A.testAutomation(row.id, g)); } catch (err) { setTestRun({ error: err.message || String(err), output: {} }); }
-    setBusy('');
+  // Drafts, turned-off flows and maps save on their own a moment after the last edit. A live automation waits for
+  // Save, which asks first: saving it changes what the next runs do.
+  useEffect(() => {
+    if (!dirty || live || busy || confirm || autoFail || panel) return undefined;
+    const t = setTimeout(() => { save(undefined, true); }, 1500);
+    return () => clearTimeout(t);
+  }, [g, name, category, dirty, live, busy, confirm, autoFail, panel]);
+
+  // A dialog's Save: the change lands in the builder and, unless the workflow is live, is saved straight away. A
+  // live workflow keeps it as an unsaved change until Save in the top bar, which asks first.
+  const commit = async (fn, nm) => {
+    const next = clone(g);
+    fn(next);
+    setG(next);
+    if (nm) setName(nm);
+    if (live) { touch(); return true; }
+    return !!(await save(undefined, false, { graph: next, name: nm }));
   };
+  const saveSettings = (x) => commit((n2) => { n2.owner = x.owner; n2.description = x.description; n2.settings = x.settings; }, x.name);
+  const saveTrigger = (x) => { setTest(null); return commit((n2) => { Object.assign(n2.trigger, x); n2.lastTest = null; }); };
+  const saveBranch = (node) => { setTest(null); return commit((n2) => { const a2 = locate(n2, node.id); if (a2 && a2.node) a2.list[a2.index] = node; n2.lastTest = null; }); };
+  useEffect(() => {
+    const u = new URL(window.location.href);
+    ['panel', 'step'].forEach((k) => u.searchParams.delete(k));
+    if (panel) { u.searchParams.set('panel', panel.name); if (panel.step) u.searchParams.set('step', panel.step); }
+    if (u.search !== window.location.search) window.history.replaceState(window.history.state, '', u.pathname + u.search);
+  }, [panel]);
+
+  const dialog = confirm === 'update' || confirm === 'leave' ? confirm : '';
+  // Test run: the runner describes every step on the newest project and sends nothing (the graph on screen, saved or
+  // not, so testing never changes a live automation). The drawer then plays the result card by card and stops at the
+  // first broken step: one that needs setup, or one the runner could not do. `plan` is the cards in order with what is
+  // in the way of each (testPlan below).
+  const runTest = async (plan) => {
+    if (busy) return;
+    const at = g, token = at; // the graph being tested marks this run: an edit replaces it, and a late result is dropped
+    setConfirm(''); setBusy('test');
+    setTest({ token, phase: 'wait', shown: 0, stop: plan.length, error: '', rows: plan.map((c) => ({ id: c.id, n: c.n, title: c.title, out: '', final: '' })) });
+    let run = null, error = '';
+    try { run = await A.testAutomation(row.id, g); } catch (err) { error = err.message || String(err); }
+    setBusy('');
+    const out = (run && run.output) || {};
+    const done = {};
+    (out.steps || []).forEach((x) => { const k = x.id === 'trigger' ? 'trigger' : ownerOf(at, x.id) || x.id; (done[k] = done[k] || []).push(x); });
+    let stop = plan.length, failed = false;
+    const rows = plan.map((c, i) => {
+      if (failed) return { id: c.id, n: c.n, title: c.title, out: '', final: '' };
+      const got = done[c.id] || [];
+      const bad = got.find((x) => !x.ok);
+      const fix = c.fix || (bad ? bad.detail : '');
+      if (fix) { failed = true; stop = i + 1; return { id: c.id, n: c.n, title: c.title, out: fix, final: 'fail' }; }
+      const said = got.map((x) => x.detail).join(' ');
+      return { id: c.id, n: c.n, title: c.title, final: 'ok', out: said || (c.id === 'trigger' ? (out.project ? 'On ' + out.project.job + ' · ' + out.project.title : out.idea ? 'On ' + out.idea.title : 'No project to test on yet') : 'Ready') };
+    });
+    if (!run && !failed) error = error || 'The test could not run.';
+    else if (run && run.error && !failed) error = run.error;
+    const ok = !failed && !error;
+    setTest((cur) => (cur && cur.token === token ? { token, phase: 'play', shown: 0, stop, error, rows } : cur));
+    // A passing test is remembered with the flow (Review needs one); any edit clears it. A live flow keeps it in the
+    // builder only, so testing never marks it unsaved.
+    setG((prev) => (prev === at ? { ...prev, lastTest: { ok, at: stamp() } } : prev));
+    if (!live) setVer((v) => v + 1);
+  };
+  // Plays the result: one card at a time.
+  useEffect(() => {
+    if (!test || test.phase !== 'play') return undefined;
+    const t = setTimeout(() => setTest((x) => (x && x.phase === 'play' ? { ...x, shown: x.shown + 1, phase: x.shown + 1 >= x.stop ? 'done' : 'play' } : x)), 380);
+    return () => clearTimeout(t);
+  }, [test]);
   const leave = () => { if (dirty) setConfirm('leave'); else onClose(); };
+  // Leaving for Run history or Connectors: a draft saves first; a live flow with changes asks.
+  const exitTo = async (go) => {
+    if (dirty && live) { setConfirm('leave'); return; }
+    if (dirty && !(await save(undefined, true))) return;
+    go();
+  };
+  const setStatus = (next) => {
+    if (next === status || busy) return;
+    if (next === 'live') { if (ready) turnOn(); else setConfirm('review'); } else save(next).then((ok) => { if (ok) say(name + (next === 'off' ? ' is off' : ' is a draft')); });
+  };
 
   useEffect(() => {
     flowGuard.dirty = dirty;
@@ -448,142 +507,25 @@ export default function FlowBuilder({ D, A, row, onClose, goConnect, review }) {
     if (!flowGuard.url) flowGuard.url = window.location.pathname + window.location.search;
   }, [dirty]);
   useEffect(() => () => { flowGuard.dirty = false; flowGuard.ask = null; flowGuard.url = ''; }, []);
-
   useEffect(() => {
     const onKey = (e) => {
-      if (e.key !== 'Escape') return;
+      if (e.key !== 'Escape' || finder || panel) return;
       if (confirm) { setConfirm(''); return; }
-      if (menu) { setMenu(''); return; }
-      if (e.target instanceof Element && e.target.closest('input, textarea, select')) return;
-      if (side) { setSide(''); return; }
+      if (e.target instanceof Element && e.target.closest('input, textarea, select, [contenteditable]')) return;
+      if (test && test.phase === 'done') { setTest(null); return; }
       if (sel) { setSel(''); return; }
       leave();
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [confirm, menu, side, sel, dirty]);
-  // Start centred on the trigger: a wide split makes the canvas scroll sideways.
-  useEffect(() => {
-    const el = canvas.current;
-    if (el) el.scrollLeft = (el.scrollWidth - el.clientWidth) / 2;
-  }, []);
+  }, [confirm, finder, panel, test, sel, dirty]);
   useEffect(() => {
     const before = (e) => { if (dirty) { e.preventDefault(); e.returnValue = ''; } };
     window.addEventListener('beforeunload', before);
     return () => window.removeEventListener('beforeunload', before);
   }, [dirty]);
 
-  // Numbered titles in reading order: Email #1, Email #2, Split #1.
-  const titles = useMemo(() => {
-    const n = {}, out = {};
-    walk(g.steps, (x) => {
-      const base = x.type === 'action' ? ((actionById(x.key) || {}).app || 'Action') : STEP_DEF[x.type].label;
-      n[base] = (n[base] || 0) + 1;
-      out[x.id] = x.type === 'split' && x.name ? x.name : (x.type === 'task' || x.type === 'note') && x.title ? x.title : base + ' #' + n[base];
-    });
-    return out;
-  }, [g]);
-
-  const statusName = (v) => v;
-  const trigText = runs
-    ? (g.trigger.key ? 'When ' + triggerText(g.trigger.key, g.trigger.value, statusName).replace(/^./, (c) => c.toLowerCase()) : 'Select a trigger')
-    : (g.trigger.text || (g.kind === 'process' ? 'Describe how this process starts' : 'What sparks this idea?'));
-
-  // ---------- Canvas pieces ----------
-  // Canvas pieces are plain functions, not components: a component declared in render remounts on every change,
-  // which would swap out a drop target in the middle of a drag.
-  const plusAt = (pathId, index) => {
-    const key = (pathId || 'root') + '|' + index;
-    const open = menu === key;
-    const hot = dropAt === key;
-    const items = [
-      ...ACTION_GROUPS.map((grp) => ({ head: grp.label, list: grp.keys.map((k) => ({ spec: { type: 'action', key: k }, label: actionById(k).label, icon: ACTION_IC[k], tone: ACTION_TONE[k], off: actionById(k).needs && !connected[actionById(k).needs] })) })),
-      { head: 'Logic', list: ['delay', 'split'].map((t) => ({ spec: { type: t }, label: STEP_DEF[t].label, icon: STEP_DEF[t].icon, tone: STEP_DEF[t].tone })) },
-      { head: 'Planning', list: ['task', 'note'].map((t) => ({ spec: { type: t }, label: STEP_DEF[t].label, icon: STEP_DEF[t].icon, tone: STEP_DEF[t].tone })) },
-    ];
-    if (!runs) items.unshift(items.pop());
-    return (
-      <div key={'plus-' + key} style={css('position: relative; display: flex; flex-direction: column; align-items: center;')}
-        onDragOver={(e) => { if (e.dataTransfer.types.includes('text/x-flow-step')) { e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; if (dropAt !== key) setDropAt(key); } }}
-        onDragLeave={() => { if (dropAt === key) setDropAt(''); }}
-        onDrop={(e) => { e.preventDefault(); setDropAt(''); try { add(pathId, index, JSON.parse(e.dataTransfer.getData('text/x-flow-step'))); } catch { /* not a step */ } }}>
-        <span style={css('width: 2px; height: 18px; background: var(--border-2);')} />
-        <button type="button" aria-label={open ? 'Close step menu' : 'Add a step here'} aria-haspopup="menu" aria-expanded={open} onClick={() => setMenu(open ? '' : key)}
-          style={css('width: ' + (hot ? 48 : 40) + 'px; height: ' + (hot ? 48 : 40) + 'px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; transition: width 120ms, height 120ms; ' + (hot ? 'border: 2px dashed ' + RING + '; background: rgba(47,91,211,0.08); color: ' + RING + ';' : 'border: 1px solid var(--line-4); background: var(--surface); color: var(--ink-2); box-shadow: 0 1px 2px rgba(0,0,0,0.06);'))}>
-          <Ico d={open ? IC.close : IC.plus} size={18} />
-        </button>
-        <span style={css('width: 2px; height: 18px; background: var(--border-2);')} />
-        {open ? (
-          <div role="menu" aria-label="Add a step" style={css(S.pop + ' top: 64px; left: calc(50% + 4px); width: 280px;')}>
-            {items.map((grp) => (
-              <Fragment key={grp.head}>
-                <p style={css(S.head)}>{grp.head}</p>
-                {grp.list.map((it) => (
-                  <button key={it.label} type="button" role="menuitem" className="mitem" onClick={() => add(pathId, index, it.spec)} style={css(S.item)}>
-                    <span style={css(tile(it.tone, 26))}><Ico d={it.icon} size={14} /></span>
-                    <span style={css('flex: 1;')}>{it.label}</span>
-                    {it.off ? <span title="Not connected" style={css('width: 7px; height: 7px; border-radius: 99px; background: var(--amber-ink);')} /> : null}
-                  </button>
-                ))}
-              </Fragment>
-            ))}
-          </div>
-        ) : null}
-      </div>
-    );
-  };
-  const endPill = () => <span key="end" style={css('padding: 4px 12px; border-radius: 999px; background: var(--chip); color: var(--ink-3); font-size: 13px; font-weight: 500;')}>End</span>;
-
-  const nodeCard = (n) => {
-    const on = sel === n.id;
-    const def = n.type === 'action' ? actionById(n.key) : null;
-    const tone = n.type === 'action' ? ACTION_TONE[n.key] || 'blue' : STEP_DEF[n.type].tone;
-    const icon = n.type === 'action' ? ACTION_IC[n.key] || IC.bolt : STEP_DEF[n.type].icon;
-    const owner = n.type === 'task' && n.owner ? (D.members || []).find((m) => m.user_id === n.owner) : null;
-    const sub = n.type === 'action' ? (n.message ? n.message : def ? def.label : 'Choose an action')
-      : n.type === 'delay' ? delayText(n)
-      : n.type === 'task' ? (owner ? 'For ' + ((owner.person && (owner.person.full_name || owner.person.name)) || 'a teammate') : runs ? 'For Super Admins' : 'Unassigned') + (n.note ? ' · ' + n.note : '')
-      : n.type === 'note' ? n.note || 'Write the idea down'
-      : (n.paths || []).length + ' paths';
-    const needs = def && def.needs;
-    return (
-      <button type="button" onClick={(e) => { e.stopPropagation(); setSel(n.id); setMenu(''); }} aria-pressed={on} aria-label={titles[n.id] + ': ' + sub}
-        style={css(S.card + cardRing(on, warnIds.has(n.id)) + (n.type === 'note' ? ' background: var(--amber-soft);' : ''))}>
-        <span style={css('display: flex; align-items: center; gap: 10px;')}>
-          <span style={css(tile(tone))}><Ico d={icon} /></span>
-          <span style={css('flex: 1; min-width: 0; font-size: 15px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;')}>{titles[n.id]}</span>
-          {warnIds.has(n.id) ? <span title="Needs attention" style={css('color: var(--amber-ink); display: inline-flex;')}><Ico d={IC.warn} /></span> : null}
-        </span>
-        {n.type !== 'split' ? <span style={css('display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin-top: 10px; font-size: 14px; line-height: 1.45; color: var(--ink-3);')}>{sub}</span> : null}
-        {(n.tags && n.tags.length) || needs ? (
-          <span style={css('display: flex; align-items: center; gap: 6px; margin-top: 12px;')}>
-            <TagChips tags={n.tags} small />
-            <span style={css('flex: 1;')} />
-            {needs ? <span style={css('display: inline-flex; align-items: center; gap: 5px; height: 24px; padding: 0 8px; border-radius: 8px; border: 1px solid var(--line-4); font-size: 12px; color: var(--ink-3);')}><span style={css('width: 7px; height: 7px; border-radius: 99px; background: ' + (connected[needs] ? '#2BA24C' : 'var(--amber-ink)') + ';')} />{connected[needs] ? def.app : 'Not connected'}</span> : null}
-          </span>
-        ) : null}
-      </button>
-    );
-  };
-
-  const pathHead = (p, i, last) => {
-    const on = sel === p.id;
-    const crit = p.when.map((c) => critText(c)).join(' and ');
-    return (
-      <button type="button" onClick={(e) => { e.stopPropagation(); setSel(p.id); setMenu(''); }} aria-pressed={on} aria-label={p.name + (last ? '' : crit ? ': ' + crit : ': no criteria yet')}
-        style={css(S.card + ' width: 260px;' + cardRing(on, warnIds.has(p.id)))}>
-        <span style={css('display: flex; align-items: center; gap: 10px;')}>
-          <span style={css('width: 22px; height: 22px; flex: none; border-radius: 999px; background: var(--chip); display: inline-flex; align-items: center; justify-content: center; font-size: 12px; color: var(--ink-3);')}>{i + 1}</span>
-          <span style={css('flex: 1; min-width: 0; font-size: 15px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;')}>{p.name}</span>
-        </span>
-        {!last ? (
-          crit ? <span style={css('display: block; margin-top: 10px; font-size: 13px; line-height: 1.45; color: var(--ink-3);')}>{crit}</span>
-            : <span style={css('display: flex; align-items: center; justify-content: center; margin-top: 12px; height: 40px; border: 1px dashed var(--border-strong); border-radius: 10px; font-size: 14px; color: var(--ink-3);')}>Add path criteria</span>
-        ) : <span style={css('display: block; margin-top: 8px; font-size: 13px; color: var(--muted);')}>Anything the paths before did not take</span>}
-      </button>
-    );
-  };
-
+  // ---------- What each card shows ----------
   const optionsFor = (source) => {
     if (source === 'status') return (D.statuses || []).map((x) => [x.label, x.label]);
     if (source === 'channel') return (D.channels || []).map((x) => [x.id, x.name]);
@@ -594,293 +536,404 @@ export default function FlowBuilder({ D, A, row, onClose, goConnect, review }) {
     if (source === 'edit_status') return [['assigned', 'Assigned'], ['editing', 'Editing'], ['in_review', 'In Review'], ['needs_revision', 'Needs Revision'], ['approved', 'Approved']];
     return [];
   };
-  function critText(c) {
+  const critText = (c) => {
     const f = FIELDS.find((x) => x.key === c.field);
     if (!f) return '';
     const v = c.op === 'set' || c.op === 'empty' ? '' : ' ' + ((optionsFor(f.source).find((o) => o[0] === c.value) || [c.value, c.value || '…'])[1]);
     return f.label + ' ' + OPS[c.op] + v;
-  }
-
-  const column = (list, pathId) => {
-    const last = list[list.length - 1];
-    return (
-      <div style={css('display: flex; flex-direction: column; align-items: center;')}>
-        {list.map((n, i) => (
-          <Fragment key={n.id}>
-            {plusAt(pathId, i)}
-            {n.type === 'split' ? splitBlock(n) : nodeCard(n)}
-          </Fragment>
-        ))}
-        {!last || last.type !== 'split' ? (<>{plusAt(pathId, list.length)}{endPill()}</>) : null}
-      </div>
-    );
   };
-  const splitBlock = (n) => (
-    <div style={css('display: flex; flex-direction: column; align-items: center;')}>
-      {nodeCard(n)}
-      <span style={css('width: 2px; height: 24px; background: var(--border-2);')} />
-      <div style={css('display: flex; align-items: flex-start;')}>
-        {n.paths.map((p, i) => {
-          const first = i === 0, lastP = i === n.paths.length - 1;
-          return (
-            <div key={p.id} style={css('display: flex; flex-direction: column; align-items: center; padding: 0 20px;')}>
-              <div style={css('align-self: stretch; display: flex; height: 2px; margin: 0 -20px;')}>
-                <span style={css('flex: 1; background: ' + (first ? 'transparent' : 'var(--border-2)') + ';')} />
-                <span style={css('flex: 1; background: ' + (lastP ? 'transparent' : 'var(--border-2)') + ';')} />
-              </div>
-              <span style={css('width: 2px; height: 16px; background: var(--border-2);')} />
-              <span style={css('padding: 3px 12px; border-radius: 999px; background: ' + RING + '; color: #FFFFFF; font-size: 12px; font-weight: 600;')}>{lastP ? 'Otherwise' : first ? 'Check first' : 'Then check'}</span>
-              <span style={css('width: 2px; height: 12px; background: var(--border-2);')} />
-              {pathHead(p, i, lastP)}
-              {column(p.steps, p.id)}
-            </div>
-          );
-        })}
+  const personName = (id) => { const m = (D.members || []).find((x) => x.user_id === id); return m ? (m.person && (m.person.full_name || m.person.name)) || 'a teammate' : ''; };
+  // The card an issue belongs to: its own on the main line, or the branch that holds it.
+  const cardOf = (id) => (id === 'trigger' || id === 'end' ? id : ownerOf(g, id) || id);
+  const fixCards = new Set(warns.map((x) => cardOf(x.id)));
+  // Each card's state in the test run on screen: 'wait' | 'run' | 'ok' | 'fail', or nothing when no test is showing.
+  const tested = {};
+  if (test) test.rows.forEach((r, i) => { tested[r.id] = rowState(test, i); });
+
+  const viewOf = (n, i) => {
+    const v = stepOf(n);
+    const paths = n.paths || [];
+    return {
+      id: n.id, kind: v.kind, title: v.title, eyebrow: (i === null ? '' : 'Step ' + (i + 1) + ' · ') + v.kindLabel,
+      detail: n.type === 'delay' ? 'Waits, then carries on with the next step'
+        : n.type === 'split' ? (paths[0] && paths[0].when.length ? paths[0].when.map(critText).join(paths[0].match === 'any' ? ' or ' : ' and ') + ((paths[0].or || []).length ? ', or ' + plural(paths[0].or.length, 'other group') : '') : 'Add a rule to decide which path work takes')
+          : n.type === 'task' ? (n.owner ? 'For ' + personName(n.owner) : runs ? 'For Super Admins' : 'Unassigned') + (n.note ? ' · ' + fieldOf('', n.note).value : '')
+            : n.type === 'action' && !n.key ? 'Choose what this step does' : v.desc,
+      lanes: n.type === 'split' ? paths.map((p, pi) => ({ label: paths.length === 2 ? (pi === 0 ? 'If yes' : 'If no') : p.name, yes: pi === 0, text: p.steps.length ? stepOf(p.steps[0]).title + (p.steps.length > 1 ? ' +' + (p.steps.length - 1) + ' more' : '') : 'Continue' })) : null,
+      app: v.app, needConn: runs && !!v.needs && !connected[v.needs], outward: v.outward, issue: fixCards.has(n.id), test: tested[n.id],
+    };
+  };
+  const trig = {
+    id: 'trigger', kind: 'trigger', eyebrow: runs ? 'Trigger' : g.kind === 'process' ? 'Start' : 'Spark',
+    title: runs ? (g.trigger.key ? (TRIGGER_COPY[g.trigger.key] || [triggerText(g.trigger.key, '')])[0] : 'Pick a trigger') : g.kind === 'process' ? 'How it starts' : 'The spark',
+    detail: runs ? (g.trigger.key ? (g.trigger.key === 'schedule' ? triggerText('schedule', g.trigger.value) : 'When ' + lower(triggerText(g.trigger.key, g.trigger.value))) + (g.trigger.filters || []).map((c) => ' and ' + lower(critText(c))).join('') : 'Choose what starts this workflow from the Steps list') : g.trigger.text || (g.kind === 'process' ? 'Describe how this process starts' : 'What sparks this idea?'),
+    app: runs ? (g.trigger.key === 'schedule' ? 'Schedule' : g.trigger.key === 'webhook' ? 'Webhook' : 'Board') : KINDS.find((k) => k[0] === g.kind)[1], issue: fixCards.has('trigger'), lanes: null, test: tested.trigger,
+  };
+  const cards = [trig].concat(g.steps.map((n, i) => viewOf(n, i)));
+
+  const stepCard = (c) => (
+    <button type="button" className="wf-card" onClick={(e) => { e.stopPropagation(); setSel(c.id); }} aria-pressed={sel === c.id} aria-label={'Select ' + c.title} style={css(cardStyle(sel === c.id))}>
+      <span style={css('display: flex; align-items: center; gap: 12px; width: 100%;')}>
+        <KindTile kind={c.kind} size={38} />
+        <span style={css('display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0;')}>
+          <span style={css('font-size: 12px; font-weight: 600; color: ' + KIND[c.kind].ink + ';')}>{c.eyebrow}</span>
+          <span style={css('font-weight: 700; font-size: 16px; line-height: 1.3; overflow-wrap: anywhere;')}>{c.title}</span>
+        </span>
+        {c.test === 'run' ? <span className="wf-pulse" style={css(pillStyle(T.varInk, T.varBg))}>Running</span>
+          : c.test === 'fail' ? <span style={css(pillStyle(T.error, T.errorBg))}>Failed</span>
+            : c.test === 'ok' ? <span style={css(pillStyle(T.live, T.liveBg))}>Passed</span>
+              : c.test === 'wait' ? <span style={css(pillStyle(T.sub, T.count))}>Waiting</span>
+                : c.issue ? <span style={css(pillStyle(T.warnInk, T.warnBg))}><Svg d={ICON.warn} size={12} sw={2.2} />Needs setup</span> : null}
+      </span>
+      {c.detail ? <span style={css('font-size: 14px; color: ' + T.sub + '; line-height: 1.45; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;')}>{c.detail}</span> : null}
+      {c.lanes ? (
+        <span style={css('display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; width: 100%;')}>
+          {c.lanes.map((l, i) => (
+            <span key={i} style={css('border-radius: 10px; background: ' + (l.yes ? T.liveBg : T.ground2) + '; padding: 8px 10px; display: flex; flex-direction: column; gap: 2px; min-width: 0;')}>
+              <span style={css('font-size: 12px; font-weight: 700; color: ' + (l.yes ? T.live : T.sub) + '; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;')}>{l.label}</span>
+              <span style={css('font-size: 13px; color: ' + T.ink2 + '; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;')}>{l.text}</span>
+            </span>
+          ))}
+        </span>
+      ) : null}
+      <span style={css('display: flex; gap: 6px; flex-wrap: wrap;')}>
+        {c.app ? <span style={css(tagStyle)}>{c.app}</span> : null}
+        {c.needConn ? <span style={css(tagStyle + ' display: flex; align-items: center; gap: 5px; background: ' + T.surface + '; color: ' + T.warnInk + ';')}><span aria-hidden="true" style={css('width: 6px; height: 6px; border-radius: 999px; background: ' + T.warn + ';')} />Not connected</span> : null}
+        {c.outward ? <span style={css('background: ' + T.accent + '; color: ' + T.accentInk + '; border-radius: 999px; padding: 3px 9px; font-size: 12px; font-weight: 600;')}>Sends outside</span> : null}
+      </span>
+    </button>
+  );
+
+  // ---------- Step library (left panel) ----------
+  const lib = [];
+  if (runs) projectTriggers().forEach((tr) => lib.push({ id: 't:' + tr.key, kind: 'trigger', title: (TRIGGER_COPY[tr.key] || [tr.label])[0], desc: (TRIGGER_COPY[tr.key] || ['', ''])[1], app: 'Board', trigger: tr }));
+  if (scope === 'project') lib.push({ id: 'data:get_project', kind: 'data', title: NODE_COPY.data.title, desc: NODE_COPY.data.desc, app: 'Board', spec: { type: 'data', key: 'get_project', title: NODE_COPY.data.title } });
+  ACTIONS.filter((a) => fits(a, scope)).forEach((a) => {
+    const c = STEP_COPY[a.key] || { kind: 'action', title: a.label, desc: '' };
+    lib.push({ id: a.key, kind: c.kind, title: c.title, desc: c.desc, app: a.app, spec: { type: 'action', key: a.key }, off: runs && !!a.needs && !connected[a.needs] });
+  });
+  lib.push({ id: 'split', kind: 'logic', title: NODE_COPY.split.title, desc: 'Split into yes and no paths', app: 'Logic', spec: { type: 'split' } });
+  lib.push({ id: 'delay', kind: 'logic', title: 'Wait', desc: 'Wait minutes, hours or days', app: 'Logic', spec: { type: 'delay' } });
+  if (runs) lib.push({ id: 'approval', kind: 'human', title: NODE_COPY.approval.title, desc: NODE_COPY.approval.desc, app: 'Team', spec: { type: 'approval' } });
+  lib.push({ id: 'task', kind: 'human', title: 'Task', desc: NODE_COPY.task.desc, app: 'Team', spec: { type: 'task' } });
+  if (!runs) lib.push({ id: 'note', kind: 'human', title: 'Note', desc: 'An idea or a sticky note; never runs', app: 'Team', spec: { type: 'note' } });
+  const lql = lq.trim().toLowerCase();
+  const libShown = lib.filter((it) => !lql || (it.title + ' ' + it.desc + ' ' + it.app + ' ' + GROUP[it.kind]).toLowerCase().includes(lql));
+
+  const libItem = (it) => (
+    <button key={it.id} type="button" className="wf-li" aria-label={it.trigger ? 'Use trigger ' + it.title : 'Add ' + it.title + ' at the end'} aria-pressed={it.trigger ? g.trigger.key === it.trigger.key : undefined}
+      onClick={() => (it.trigger ? pickTrigger(it.trigger) : add(null, g.steps.length, it.spec))}
+      style={css('text-align: left; display: flex; gap: 10px; align-items: flex-start; padding: 10px; border-radius: 12px; background: ' + T.surface + '; border: 1px solid ' + (it.trigger && g.trigger.key === it.trigger.key ? T.ring : T.line) + '; color: ' + T.ink + ';')}>
+      <KindTile kind={it.kind} size={30} />
+      <span style={css('display: flex; flex-direction: column; gap: 2px; min-width: 0;')}>
+        <span style={css('font-weight: 600; font-size: 14px;')}>{it.title}</span>
+        <span style={css('font-size: 13px; color: ' + T.muted + '; line-height: 1.4;')}>{it.desc}</span>
+        {it.off ? <span style={css('font-size: 12px; font-weight: 600; color: ' + T.warnInk + ';')}>{it.app} is not connected</span> : null}
+      </span>
+    </button>
+  );
+  const fact = (k, v, color) => (
+    <div key={k} style={css('border: 1px solid ' + T.line + '; border-radius: 12px; padding: 12px;')}>
+      <div style={css('font-size: 12px; font-weight: 500; color: ' + T.muted + ';')}>{k}</div>
+      <div style={css('font-family: ' + FONT.display + '; font-weight: 900; font-size: 20px; margin-top: 4px; color: ' + (color || T.ink) + ';')}>{v}</div>
+    </div>
+  );
+  const lastTest = g.lastTest ? (g.lastTest.ok ? 'Passed' : 'Failed') : 'Not run';
+  const overview = () => (
+    <div className="wf-sc" style={css('flex: 1; overflow: auto; padding: 4px 16px 16px; display: flex; flex-direction: column; gap: 14px;')}>
+      <label htmlFor="fb-desc" style={css(labelStyle)}>What it does</label>
+      <textarea id="fb-desc" rows={3} value={g.description || ''} onChange={(e) => edit((x) => { x.description = e.target.value; })} placeholder="One or two lines for the team"
+        style={css('margin-top: -8px; border-radius: 12px; background: ' + T.ground2 + '; border: 1px solid ' + T.border + '; color: ' + T.ink + '; padding: 12px; font-family: inherit; font-size: 14px; line-height: 1.5; resize: vertical;')} />
+      <div style={css('display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px;')}>
+        {fact('Steps', stepCount(g))}
+        {fact('To fix', warns.length, warns.length ? T.warnInk : T.ink)}
+        {runs ? fact('Runs', row.run_count || 0) : null}
+        {runs ? fact('Last test', lastTest, lastTest === 'Failed' ? T.error : lastTest === 'Passed' ? T.live : T.ink) : null}
+      </div>
+      <Pick id="fb-kind" label="Type" value={g.kind} onChange={(v) => edit((x) => { x.kind = v; if (v !== 'automation' && !x.trigger.key) x.trigger.key = 'manual'; if (v === 'automation' && x.trigger.key === 'manual') x.trigger.key = ''; })} options={KINDS.map((k) => [k[0], k[1]])} />
+      <Pick id="fb-cat" label="Section" value={category} onChange={(v) => { setCategory(v); touch(); }} options={[['production', 'Production'], ['sponsor', 'Sponsors & clients'], ['publishing', 'Publishing & distribution'], ['custom', 'Custom']]} />
+      <TagSelect id="fb-ftags" value={g.tags} onChange={(v) => edit((x) => { x.tags = v; })} sources={sources} />
+      <div style={css('background: ' + T.ground2 + '; border-radius: 12px; padding: 12px; font-size: 13px; line-height: 1.55; color: ' + T.ink2 + ';')}>
+        {runs ? 'Runs on its own when the trigger fires. Steps marked Sends outside reach people outside the team, so check them before you turn the workflow on.' : KINDS.find((k) => k[0] === g.kind)[2] + '.'}
+        {g.kind !== 'automation' && row.enabled && !row.is_draft ? ' Saving as a ' + g.kind + ' turns the automation off.' : ''}
       </div>
     </div>
   );
 
-  // ---------- Left panel ----------
-  const at = sel && sel !== 'trigger' && sel !== 'flow' ? locate(g, sel) : null;
-  const panelTitle = sel === 'trigger' ? (runs ? (g.trigger.key ? 'Set up trigger' : 'Select a trigger') : 'How it starts')
-    : sel === 'flow' ? 'Flow details' : at && at.node ? (at.node.type === 'action' ? 'Action details' : STEP_DEF[at.node.type].label + ' details') : at && at.path ? 'Path details' : 'Actions';
-  const panelIcon = sel === 'trigger' ? IC.bolt : sel === 'flow' ? IC.pencil : at && at.node ? (at.node.type === 'action' ? ACTION_IC[at.node.key] : STEP_DEF[at.node.type].icon) : at && at.path ? IC.split : null;
-
-  const palettePanel = () => {
-    const groups = [
-      ...ACTION_GROUPS.map((grp) => ({ head: grp.label, list: grp.keys.map((k) => ({ spec: { type: 'action', key: k }, label: actionById(k).label.replace(/^Notify Super Admin in /, '').replace(/^Email the assigned /, 'Email '), icon: ACTION_IC[k], tone: ACTION_TONE[k], off: actionById(k).needs && !connected[actionById(k).needs] })) })),
-      { head: 'Logic', list: ['delay', 'split'].map((t) => ({ spec: { type: t }, label: STEP_DEF[t].label, icon: STEP_DEF[t].icon, tone: STEP_DEF[t].tone })) },
-      { head: 'Planning', list: ['task', 'note'].map((t) => ({ spec: { type: t }, label: STEP_DEF[t].label, icon: STEP_DEF[t].icon, tone: STEP_DEF[t].tone })) },
-    ];
-    if (!runs) groups.unshift(groups.pop());
-    return (
-      <div style={css('display: flex; flex-direction: column; gap: 4px;')}>
-        <p style={css(S.muted + ' padding: 0 2px 6px;')}>Drag a step onto a + in the flow, or click one to add it at the end.</p>
-        {groups.map((grp) => (
-          <Fragment key={grp.head}>
-            <p style={css('margin: 10px 0 2px; font-size: 13px; color: var(--muted-2);')}>{grp.head}</p>
-            {grp.list.map((it) => (
-              <button key={it.label} type="button" draggable onDragStart={(e) => { e.dataTransfer.setData('text/x-flow-step', JSON.stringify(it.spec)); e.dataTransfer.effectAllowed = 'copy'; }}
-                onClick={() => addDefault(it.spec)} className="mitem" title={it.off ? 'Not connected yet' : undefined}
-                style={css(S.item + ' min-height: 44px; cursor: grab;')}>
-                <span style={css(tile(it.tone, 28))}><Ico d={it.icon} size={15} /></span>
-                <span style={css('flex: 1; font-weight: 500;')}>{it.label}</span>
-                {it.off ? <span style={css('font-size: 11px; color: var(--amber-ink);')}>Not connected</span> : null}
-                <span style={css('color: var(--faint); display: inline-flex;')}><Ico d={IC.grip} size={14} sw={2.4} /></span>
-              </button>
-            ))}
-          </Fragment>
+  // ---------- Inspector (right panel) ----------
+  const at = sel && sel !== 'trigger' ? locate(g, sel) : null;
+  const tokens = scope === 'idea' ? ['idea.title', 'idea.stage', 'idea.score', 'idea.link', 'trigger', 'flow.name'] : TOKENS.map((t) => t[0]);
+  const sampleRow = (D.rows || []).find((r) => !r.archived) || null;
+  const sample = sampleRow ? [['Project', sampleRow.title], ['Job', sampleRow.job], ['Stage', sampleRow.status], ['Channel', sampleRow.channel], ['Editor', sampleRow.editor], ['Designer', sampleRow.designer]].filter((x) => x[1]) : [];
+  const text = (id, label, value, onChange, placeholder, required) => (
+    <div style={css('display: flex; flex-direction: column; gap: 6px;')}>
+      <label htmlFor={id} style={css(labelStyle)}>{label}{required ? <span aria-hidden="true" style={css('color: ' + T.error + ';')}> *</span> : null}</label>
+      <input id={id} autoComplete="off" aria-required={required ? 'true' : undefined} value={value || ''} onChange={(e) => onChange(e.target.value)} onFocus={() => setFocusField('')} placeholder={placeholder} style={css(inputStyle)} />
+    </div>
+  );
+  const help = (t) => <p style={css('margin: 0; font-size: 13px; line-height: 1.5; color: ' + T.muted + ';')}>{t}</p>;
+  const addData = (label) => (
+    <div style={css('display: flex; flex-direction: column; gap: 8px;')}>
+      <div style={css('font-size: 13px; font-weight: 600; color: ' + T.ink3 + ';')}>Add data to {label}</div>
+      <div style={css('display: flex; flex-wrap: wrap; gap: 6px;')}>
+        {tokens.map((k) => (
+          <button key={k} type="button" className="wf-h" onMouseDown={(e) => e.preventDefault()} onClick={() => setIns({ token: k, n: Date.now() })}
+            style={css('min-height: 34px; padding: 0 12px 0 9px; border-radius: 999px; background: ' + T.varBg + '; border: 1px solid ' + T.chipLine + '; color: ' + T.varInk + '; font-weight: 600; font-size: 13px; display: flex; align-items: center; gap: 6px;')}>
+            <Svg d={ICON.plus} size={11} sw={2.6} />{VAR_LABEL[k] || k}
+          </button>
         ))}
       </div>
+    </div>
+  );
+  const head = (kind, eyebrow, title, app, extra) => (
+    <div style={css('padding: 18px; border-bottom: 1px solid ' + T.line + '; display: flex; gap: 12px; align-items: flex-start;')}>
+      <KindTile kind={kind} size={42} />
+      <div style={css('display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0;')}>
+        <div style={css('font-size: 12px; font-weight: 600; color: ' + KIND[kind].ink + ';')}>{eyebrow}</div>
+        <h2 style={css('margin: 0; font-size: 18px; font-weight: 700; line-height: 1.3; overflow-wrap: anywhere;')}>{title}</h2>
+        {app ? <div style={css('font-size: 13px; color: ' + T.muted + ';')}>{app}</div> : null}
+      </div>
+      {extra}
+    </div>
+  );
+  const fixNote = (id) => issues.filter((x) => x.id === id && !/^Connect /.test(x.title)).map((x, i) => (
+    <div key={i} role="status" style={css('background: ' + T.warnBg + '; border-radius: 12px; padding: 12px; font-size: 14px; line-height: 1.5; color: ' + T.warnInk + ';')}><strong>{x.title}.</strong> {x.body}</div>
+  ));
+  const iconBtn = (label, d, onClick, off) => (
+    <button type="button" className="wf-h" aria-label={label} title={label} disabled={off} onClick={onClick} style={css('width: 34px; height: 34px; flex: none; border: 0; border-radius: 9px; background: transparent; color: ' + T.ink3 + '; display: flex; align-items: center; justify-content: center;' + (off ? ' opacity: .35;' : ''))}><Svg d={d} size={15} /></button>
+  );
+
+  const triggerBody = () => {
+    if (!runs) return (
+      <>
+        <div style={css('display: flex; flex-direction: column; gap: 6px;')}>
+          <label htmlFor="fb-start" style={css(labelStyle)}>{g.kind === 'process' ? 'Starts when' : 'The spark'}</label>
+          <textarea id="fb-start" rows={3} value={g.trigger.text} onChange={(e) => edit((x) => { x.trigger.text = e.target.value; })} placeholder={g.kind === 'process' ? 'A sponsor signs, a video is greenlit…' : 'What if we…'} style={css(inputStyle + ' padding: 10px 12px; line-height: 1.5; resize: vertical;')} />
+        </div>
+        <TagSelect id="fb-ttags" value={g.trigger.tags} onChange={(v) => edit((x) => { x.trigger.tags = v; })} sources={sources} />
+      </>
+    );
+    const t = triggerById(g.trigger.key);
+    return (
+      <>
+        {fixNote('trigger')}
+        <div style={css('background: ' + T.ground2 + '; border-radius: 12px; padding: 12px 14px; font-size: 14px; line-height: 1.5; color: ' + T.ink2 + ';')}>
+          {t ? <>Work enters the flow <strong>{lower(trig.detail)}</strong>.</> : 'Pick a trigger from the Steps list, or set one up with a schedule or a webhook. A workflow has one trigger; picking another replaces it.'}
+        </div>
+        <button type="button" className="wf-k" onClick={() => setPanel({ name: 'trigger' })} style={css(btn('primary') + ' border-radius: 10px;')}>{t ? 'Edit trigger' : 'Set up the trigger'}</button>
+        <TagSelect id="fb-ttags" value={g.trigger.tags} onChange={(v) => edit((x) => { x.trigger.tags = v; })} sources={sources} />
+      </>
     );
   };
 
-  const triggerPanel = () => {
-    if (!runs) return (
-      <div style={css('display: flex; flex-direction: column; gap: 16px;')}>
-        <div style={css('display: flex; flex-direction: column; gap: 6px;')}>
-          <label htmlFor="fb-start" style={css(S.label)}>{g.kind === 'process' ? 'Starts when' : 'The spark'}</label>
-          <textarea id="fb-start" rows={3} value={g.trigger.text} onChange={(e) => edit((x) => { x.trigger.text = e.target.value; })} placeholder={g.kind === 'process' ? 'A sponsor signs, a video is greenlit…' : 'What if we…'} style={css(S.area)} />
-        </div>
-        <TagSelect id="fb-ttags" value={g.trigger.tags} onChange={(v) => edit((x) => { x.trigger.tags = v; })} sources={sources} />
-      </div>
-    );
-    const t = triggerById(g.trigger.key);
-    const vals = t && t.values ? (t.values === 'statuses' ? (D.statuses || []).map((x) => [x.label, x.label]) : t.values) : null;
+  const pathBlock = (n, p, i) => {
+    const lastP = i === n.paths.length - 1;
+    const label = n.paths.length === 2 ? (i === 0 ? 'If yes' : 'If no') : lastP ? 'Otherwise' : 'Path ' + (i + 1);
     return (
-      <div style={css('display: flex; flex-direction: column; gap: 10px;')}>
-        <p style={css(S.muted)}>Work enters the flow when this happens.</p>
-        {/* Flows run on projects; idea triggers live in simple workflows (Ideas > Automate). */}
-        {projectTriggers().map((tr) => {
-          const on = g.trigger.key === tr.key;
+      <div key={p.id} style={css('border: 1px solid ' + T.line + '; border-radius: 12px; padding: 12px; display: flex; flex-direction: column; gap: 8px;')}>
+        <div style={css('display: flex; align-items: center; gap: 8px;')}>
+          <span style={css('font-size: 12px; font-weight: 700; color: ' + (i === 0 ? T.live : T.sub) + ';')}>{label}</span>
+          <span style={css('flex: 1; min-width: 0; font-size: 14px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;')}>{p.name}</span>
+          <button type="button" className="wf-h" onClick={() => (lastP ? setSel(p.id) : setPanel({ name: 'condition', step: n.id, path: p.id }))} style={css(btn('ghost', 32) + ' padding: 0 10px; font-size: 13px;')}>{lastP ? 'Rename' : 'Edit rule'}</button>
+        </div>
+        <div style={css('font-size: 13px; color: ' + (fixCards.has(n.id) && !lastP && issues.some((x) => x.id === p.id) ? T.warnInk : T.muted) + ';')}>{lastP ? 'Everything the paths before did not take' : p.when.length ? p.when.map(critText).join(p.match === 'any' ? ' or ' : ' and ') + ((p.or || []).length ? ', or ' + plural(p.or.length, 'other group') : '') : 'No rule yet, so nothing takes this path'}</div>
+        {p.steps.map((c) => {
+          const v = stepOf(c);
           return (
-            <button key={tr.key} type="button" aria-pressed={on} onClick={() => edit((x) => { x.trigger.key = tr.key; x.trigger.value = tr.values === 'statuses' ? ((D.statuses || [])[0] || {}).label || '' : tr.values ? tr.values[0][0] : ''; })}
-              style={css('display: flex; flex-direction: column; gap: 4px; padding: ' + (on ? '13px 15px' : '14px 16px') + '; border-radius: 14px; text-align: left; cursor: pointer; font-family: inherit; color: var(--ink); background: var(--surface); border: ' + (on ? '2px solid ' + RING : '1px solid var(--line-4)') + ';')}>
-              <span style={css('display: flex; align-items: center; gap: 10px; font-size: 15px; font-weight: 600;')}><span style={css(tile('amber', 26))}><Ico d={IC.bolt} size={14} /></span>{tr.label.replace(/ becomes$/, ' changes').replace(/ is$/, ' is coming up')}</span>
-              <span style={css('padding-left: 36px; font-size: 13px; line-height: 1.45; color: var(--ink-3);')}>{(TRIGGER_DESC[tr.key] || ['', ''])[1]}</span>
+            <button key={c.id} type="button" className="wf-li" onClick={() => setSel(c.id)} aria-label={'Select ' + v.title} style={css('display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 10px; background: ' + T.surface + '; border: 1px solid ' + T.line + '; color: ' + T.ink + '; text-align: left;')}>
+              <KindTile kind={v.kind} size={24} />
+              <span style={css('flex: 1; min-width: 0; font-size: 13px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;')}>{v.title}</span>
+              <Svg d={ICON.chev} size={13} color={T.muted} />
             </button>
           );
         })}
-        {vals ? <div style={css('margin-top: 6px;')}><Pick id="fb-tval" label={t.valueLabel || 'Value'} value={g.trigger.value} onChange={(v) => edit((x) => { x.trigger.value = v; })} options={vals} /></div> : null}
-        <div style={css('margin-top: 6px;')}><TagSelect id="fb-ttags" value={g.trigger.tags} onChange={(v) => edit((x) => { x.trigger.tags = v; })} sources={sources} /></div>
+        <button type="button" className="wf-h" aria-label={'Add a step to ' + p.name} onClick={() => setFinder({ pathId: p.id, index: p.steps.length, afterTitle: p.steps.length ? stepOf(p.steps[p.steps.length - 1]).title : stepOf(n).title, afterKind: p.steps.length ? stepOf(p.steps[p.steps.length - 1]).kind : 'logic' })}
+          style={css('height: 34px; border-radius: 10px; background: transparent; border: 1px dashed ' + T.inputLine + '; color: ' + T.ink3 + '; font-size: 13px; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 6px;')}><Svg d={ICON.plus} size={13} />Add step</button>
       </div>
     );
   };
 
-  const nodePanel = (n) => {
+  const nodeBody = (n) => {
     const def = n.type === 'action' ? actionById(n.key) : null;
     const delAsk = confirm === 'delete:' + n.id;
     const inner = n.type === 'split' ? (n.paths || []).reduce((c, p) => { let k = 0; walk(p.steps, () => { k++; }); return c + k; }, 0) : 0;
+    const richLabel = n.type === 'action' && def && def.message ? def.message : n.type === 'task' ? 'Notes' : '';
     return (
-      <div style={css('display: flex; flex-direction: column; gap: 16px;')}>
+      <>
+        {def && def.needs && runs && !connected[def.needs] ? (
+          <div style={css('background: ' + T.warnBg + '; border: 1px solid ' + T.chipLine + '; border-radius: 12px; padding: 12px; display: flex; flex-direction: column; gap: 10px;')}>
+            <div style={css('font-size: 14px; color: ' + T.warnInk + ';')}>{def.app} is not connected. This step fails until it is.</div>
+            <button type="button" className="wf-k" onClick={() => exitTo(() => goConnect(def.needs))} style={css(btn('primary') + ' border-radius: 10px;')}>Connect {def.app}</button>
+            <button type="button" className="wf-l" onClick={() => exitTo(() => goHub('connectors'))} style={css('min-height: 36px; border: 0; background: transparent; font-size: 13px; font-weight: 600; color: ' + T.link + '; text-decoration: underline;')}>Manage all connectors</button>
+          </div>
+        ) : null}
+        {fixNote(n.id)}
         {n.type === 'action' ? (
           <>
-            <Pick id="fb-act" label="Action" value={n.key} onChange={(v) => editNode(n.id, { key: v })} options={ACTIONS.filter((a) => fits(a, 'project')).map((a) => [a.key, a.label])} />
-            {def && def.needs ? (
-              <div style={css('display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-radius: 12px; background: ' + (connected[def.needs] ? 'var(--green-soft)' : 'var(--amber-soft)') + '; color: ' + (connected[def.needs] ? 'var(--green-ink)' : 'var(--amber-ink)') + '; font-size: 13px; font-weight: 600;')}>
-                <span style={css('flex: 1;')}>{connected[def.needs] ? def.app + ' is connected.' : def.app + ' is not connected yet.'}</span>
-                {!connected[def.needs] ? <button type="button" onClick={async () => { if (dirty && !(await save())) return; goConnect(def.needs); }} style={css(S.btn + S.ghost + ' min-height: 32px; font-size: 13px;')}>Connect</button> : null}
-              </div>
-            ) : null}
-            {def && def.message ? <MessageField id="fb-msg" label={def.message} value={n.message} onChange={(v) => editNode(n.id, { message: v })} placeholder={'Add a note. Insert data like {{project.title}}.'} /> : null}
-            {def && !def.message ? <p style={css(S.muted)}>{def.key === 'status_next' ? 'Moves the project to the status after its current one, with the board’s approval and lock rules.' : def.key === 'buffer_publish' ? 'Posts the project’s Social post to the Buffer channels chosen in the project drawer.' : 'Sends the run (flow, trigger and project) as JSON to your n8n webhook.'}</p> : null}
+            <Pick id="fb-act" label="Action" value={n.key || ''} placeholder={n.key ? undefined : 'Choose an action'} onChange={(v) => editNode(n.id, { key: v })} options={ACTIONS.filter((a) => fits(a, scope)).map((a) => [a.key, (STEP_COPY[a.key] || {}).title || a.label])} />
+            {def && def.message ? <RichField key={n.id} id="fb-msg" label={def.message} value={n.message} onChange={(v) => editNode(n.id, { message: v })} onFocus={() => setFocusField(def.message)} focused={focusField === def.message} insert={ins} rows={3} placeholder="Leave empty to send the standard message" /> : null}
+            {def && !def.message ? help(def.key === 'status_next' || def.key === 'idea_stage_next' ? 'Moves it to the stage after its current one, with the board’s approval and lock rules.' : def.key === 'buffer_publish' ? 'Posts the project’s Social post to the Buffer channels chosen in the project drawer.' : def.key === 'idea_research' ? 'Scores the idea and gathers sources, the same as Research in Ideas.' : 'Sends the run and its project to your n8n workflow.') : null}
           </>
         ) : null}
         {n.type === 'task' ? (
           <>
-            <div style={css('display: flex; flex-direction: column; gap: 6px;')}>
-              <label htmlFor="fb-ttl" style={css(S.label)}>Task</label>
-              <input id="fb-ttl" value={n.title || ''} onChange={(e) => editNode(n.id, { title: e.target.value })} placeholder="Book the studio" style={css(S.input)} />
-            </div>
+            {text('fb-ttl', 'Task', n.title, (v) => editNode(n.id, { title: v }), 'Book the studio')}
             <Pick id="fb-own" label="Owner" value={n.owner || ''} onChange={(v) => editNode(n.id, { owner: v })} placeholder={runs ? 'Every Super Admin' : 'Unassigned'}
               options={(D.members || []).filter((m) => m.status === 'active').map((m) => [m.user_id, (m.person && (m.person.full_name || m.person.name)) || 'Member'])} />
-            <MessageField id="fb-tnote" label="Notes" rows={3} value={n.note} onChange={(v) => editNode(n.id, { note: v })} placeholder="Checklist, links, who to ask…" />
-            {runs ? <p style={css(S.muted)}>When the flow runs, this adds a To-Do on the owner’s Daily page.</p> : null}
+            <RichField key={n.id} id="fb-tnote" label="Notes" value={n.note} onChange={(v) => editNode(n.id, { note: v })} onFocus={() => setFocusField('Notes')} focused={focusField === 'Notes'} insert={ins} rows={3} placeholder="Checklist, links, who to ask" />
+            {runs ? help('When the flow runs, this adds a To-Do on the owner’s Daily page.') : null}
           </>
         ) : null}
         {n.type === 'note' ? (
           <>
+            {text('fb-nt', 'Title', n.title, (v) => editNode(n.id, { title: v }), 'Try a teaser cut')}
             <div style={css('display: flex; flex-direction: column; gap: 6px;')}>
-              <label htmlFor="fb-nt" style={css(S.label)}>Title</label>
-              <input id="fb-nt" value={n.title || ''} onChange={(e) => editNode(n.id, { title: e.target.value })} placeholder="Try a teaser cut" style={css(S.input)} />
+              <label htmlFor="fb-nn" style={css(labelStyle)}>Note</label>
+              <textarea id="fb-nn" rows={6} value={n.note || ''} onChange={(e) => editNode(n.id, { note: e.target.value })} placeholder="Thinking out loud is welcome here." style={css(inputStyle + ' padding: 10px 12px; line-height: 1.5; resize: vertical;')} />
             </div>
-            <div style={css('display: flex; flex-direction: column; gap: 6px;')}>
-              <label htmlFor="fb-nn" style={css(S.label)}>Note</label>
-              <textarea id="fb-nn" rows={6} value={n.note || ''} onChange={(e) => editNode(n.id, { note: e.target.value })} placeholder="Thinking out loud is welcome here." style={css(S.area)} />
-            </div>
-            <p style={css(S.muted)}>Notes never run. They keep ideas next to the steps they are about.</p>
+            {help('Notes never run. They keep ideas next to the steps they are about.')}
           </>
         ) : null}
         {n.type === 'delay' ? (
           <div style={css('display: grid; grid-template-columns: 1fr 1fr; gap: 10px;')}>
             <div style={css('display: flex; flex-direction: column; gap: 6px;')}>
-              <label htmlFor="fb-amt" style={css(S.label)}>Wait</label>
-              <input id="fb-amt" type="number" min={0} max={365} value={n.amount} onChange={(e) => editNode(n.id, { amount: Math.max(0, Math.min(365, Number(e.target.value) || 0)) })} style={css(S.input)} />
+              <label htmlFor="fb-amt" style={css(labelStyle)}>Wait</label>
+              <input id="fb-amt" type="number" min={0} max={365} value={n.amount} onChange={(e) => editNode(n.id, { amount: Math.max(0, Math.min(365, Number(e.target.value) || 0)) })} style={css(inputStyle)} />
             </div>
             <Pick id="fb-unit" label="Unit" value={n.unit || 'days'} onChange={(v) => editNode(n.id, { unit: v })} options={[['minutes', 'Minutes'], ['hours', 'Hours'], ['days', 'Days']]} />
           </div>
         ) : null}
         {n.type === 'split' ? (
           <>
-            <p style={css(S.muted)}>Define criteria for each path. Work goes down the first path it matches; the last path takes everything else.</p>
-            <div style={css('display: flex; flex-direction: column; gap: 6px;')}>
-              <label htmlFor="fb-sn" style={css(S.label)}>Split name</label>
-              <input id="fb-sn" value={n.name || ''} onChange={(e) => editNode(n.id, { name: e.target.value })} placeholder={titles[n.id]} style={css(S.input)} />
-            </div>
-            <div style={css('display: flex; align-items: center;')}>
-              <span style={css('flex: 1; font-size: 15px; font-weight: 600;')}>Paths ({n.paths.length} of 6)</span>
-              <button type="button" disabled={n.paths.length >= 6} onClick={() => edit((x) => { const s2 = locate(x, n.id).node; s2.paths.splice(s2.paths.length - 1, 0, { id: newId('p'), name: 'Path #' + s2.paths.length, when: [], steps: [] }); })}
-                style={css(S.btn + ' border: 0; background: transparent; color: var(--ink); padding: 0 6px;' + (n.paths.length >= 6 ? ' opacity: 0.4;' : ''))}><Ico d={IC.plus} /> Add path</button>
-            </div>
-            {n.paths.map((p, i) => (
-              <button key={p.id} type="button" onClick={() => setSel(p.id)} style={css('display: flex; align-items: center; gap: 10px; padding: 12px 14px; border: 1px solid var(--line-4); border-radius: 12px; background: var(--surface); text-align: left; cursor: pointer; font-family: inherit; color: var(--ink);')}>
-                <span style={css('width: 22px; height: 22px; flex: none; border-radius: 99px; background: var(--chip); display: inline-flex; align-items: center; justify-content: center; font-size: 12px;')}>{i + 1}</span>
-                <span style={css('flex: 1; min-width: 0;')}>
-                  <span style={css('display: block; font-size: 14px; font-weight: 600;')}>{p.name}</span>
-                  <span style={css('display: block; font-size: 12px; color: var(--muted);')}>{i === n.paths.length - 1 ? 'Otherwise' : p.when.length ? p.when.map(critText).join(' and ') : 'No criteria yet'}</span>
-                </span>
-                <Ico d={IC.right} />
-              </button>
-            ))}
+            {text('fb-sn', 'Question', n.name, (v) => editNode(n.id, { name: v }), 'Sponsored video?')}
+            <button type="button" className="wf-k" onClick={() => setPanel({ name: 'condition', step: n.id })} style={css(btn('primary') + ' border-radius: 10px;')}>Edit condition</button>
+            {help('Work takes the first path whose rule it matches. The last path takes everything else, then the flow carries on below.')}
+            {n.paths.map((p, i) => pathBlock(n, p, i))}
+            <button type="button" className="wf-h" disabled={n.paths.length >= 6} onClick={() => edit((x) => { const s2 = locate(x, n.id).node; s2.paths.splice(s2.paths.length - 1, 0, { id: newId('p'), name: 'Path ' + s2.paths.length, when: [], steps: [] }); })}
+              style={css(btn('ghost', 40) + (n.paths.length >= 6 ? ' opacity: .4;' : ''))}><Svg d={ICON.plus} size={14} />Add a path</button>
           </>
         ) : null}
-        <TagSelect id="fb-ntags" value={n.tags} onChange={(v) => editNode(n.id, { tags: v })} sources={sources} />
-        <div style={css('display: flex; flex-wrap: wrap; gap: 8px; padding-top: 8px; border-top: 1px solid var(--line);')}>
-          {n.type !== 'split' ? (
-            <>
-              <button type="button" onClick={() => move(n.id, -1)} aria-label="Move up" title="Move up" style={css(S.btn + S.ghost + ' padding: 0 10px;')}><Ico d={IC.up} /></button>
-              <button type="button" onClick={() => move(n.id, 1)} aria-label="Move down" title="Move down" style={css(S.btn + S.ghost + ' padding: 0 10px;')}><Ico d={IC.down} /></button>
-              <button type="button" onClick={() => duplicate(n.id)} style={css(S.btn + S.ghost)}><Ico d={IC.copy} /> Duplicate</button>
-            </>
+        {n.type === 'approval' ? (
+          <>
+            {text('fb-at', 'Name', n.title, (v) => editNode(n.id, { title: v }), 'Approval')}
+            <div style={css('display: flex; flex-direction: column; gap: 6px;')}>
+              <label htmlFor="fb-an" style={css(labelStyle)}>Why it needs a person</label>
+              <textarea id="fb-an" rows={3} value={n.note || ''} onChange={(e) => editNode(n.id, { note: e.target.value })} placeholder="Anything that leaves the studio waits for a Super Admin." style={css(inputStyle + ' padding: 10px 12px; line-height: 1.5; resize: vertical;')} />
+            </div>
+            <Pick id="fb-ato" label="If nobody decides" value={String(n.timeoutHours == null ? 24 : n.timeoutHours)} onChange={(v) => editNode(n.id, { timeoutHours: Number(v) })} options={[['4', 'Reject after 4 hours'], ['24', 'Reject after 24 hours'], ['72', 'Reject after 3 days'], ['0', 'Keep waiting']]} />
+            {help('The run pauses here and every Super Admin is told. Approving lets the step below run; rejecting stops the run.')}
+            <button type="button" className="wf-h" onClick={() => exitTo(() => goHub('approvals'))} style={css(btn('ghost') + ' border-radius: 10px;')}>Open approvals</button>
+          </>
+        ) : null}
+        {n.type === 'data' || n.type === 'ai' ? (
+          <>
+            {text('fb-xt', 'Name', n.title, (v) => editNode(n.id, { title: v }), STEP_DEF[n.type].label)}
+            {help(n.type === 'data' && (n.key || 'get_project') === 'get_project' ? 'Loads the project this run is about, so later steps can use its title, stage, people and dates.' : STEP_DEF[n.type].desc + '.')}
+          </>
+        ) : null}
+        {richLabel ? addData(richLabel) : null}
+        <div style={css('border: 1px solid ' + T.line + '; border-radius: 12px; overflow: hidden;')}>
+          <button type="button" className="wf-h" aria-expanded={peek} onClick={() => setPeek(!peek)} style={css('width: 100%; height: 44px; display: flex; justify-content: space-between; align-items: center; padding: 0 12px; background: ' + T.surface + '; border: 0; color: ' + T.ink + '; font-weight: 600; font-size: 14px;')}>Sample data<span style={css('color: ' + T.muted + '; font-weight: 500;')}>{peek ? 'Hide' : 'Show'}</span></button>
+          {peek ? (
+            <div style={css('padding: 0 12px 12px; display: flex; flex-direction: column; gap: 6px; font-size: 13px;')}>
+              {sample.length ? sample.map((ln) => <div key={ln[0]} style={css('display: flex; justify-content: space-between; gap: 12px;')}><span style={css('color: ' + T.muted + ';')}>{ln[0]}</span><span style={css('color: ' + T.ink + '; font-weight: 500; text-align: right; overflow-wrap: anywhere;')}>{ln[1]}</span></div>) : <span style={css('color: ' + T.muted + ';')}>No project to sample yet.</span>}
+              {sample.length ? <span style={css('color: ' + T.muted + ';')}>From the newest project. Test run uses the same one.</span> : null}
+            </div>
           ) : null}
-          <span style={css('flex: 1;')} />
-          <button type="button" onClick={() => (n.type === 'split' && inner > 0 && !delAsk ? setConfirm('delete:' + n.id) : remove(n.id))}
-            style={css(S.btn + ' border: 0; background: ' + (delAsk ? 'var(--red-soft)' : 'transparent') + '; color: var(--red-ink);')}>
-            <Ico d={IC.trash} /> {delAsk ? 'Delete split and ' + inner + ' step' + (inner === 1 ? '' : 's') + '?' : 'Delete'}
+        </div>
+        <TagSelect id="fb-ntags" value={n.tags} onChange={(v) => editNode(n.id, { tags: v })} sources={sources} />
+        <div style={css('display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px;')}>
+          <button type="button" className="wf-h" onClick={() => duplicate(n.id)} style={css(btn('ghost') + ' border-radius: 10px;')}>Duplicate</button>
+          <button type="button" className="wf-h" onClick={() => (n.type === 'split' && inner > 0 && !delAsk ? setConfirm('delete:' + n.id) : remove(n.id))} style={css(btn('danger') + ' border-radius: 10px; white-space: normal; line-height: 1.2;' + (delAsk ? ' background: ' + T.errorBg + ';' : ''))}>
+            {delAsk ? 'Delete it and ' + plural(inner, 'step') + '?' : 'Delete'}
           </button>
         </div>
-      </div>
+      </>
     );
   };
 
-  const pathPanel = (p, split) => {
+  const pathBody = (p, split) => {
     const idx = split.paths.findIndex((x) => x.id === p.id);
-    const last = idx === split.paths.length - 1;
+    const lastP = idx === split.paths.length - 1;
     const editPath = (fn) => edit((x) => { const at2 = locate(x, p.id); if (at2 && at2.path) fn(at2.path, at2.split); });
     const inner = stepCount({ steps: p.steps });
     return (
-      <div style={css('display: flex; flex-direction: column; gap: 16px;')}>
-        <div style={css('display: flex; flex-direction: column; gap: 6px;')}>
-          <label htmlFor="fb-pn" style={css(S.label)}>Path name</label>
-          <input id="fb-pn" value={p.name} onChange={(e) => editPath((pp) => { pp.name = e.target.value; })} style={css(S.input)} />
-        </div>
-        {last ? <p style={css(S.muted)}>Everything the paths before this one did not take comes here.</p> : (
-          <div style={css('display: flex; flex-direction: column; gap: 10px;')}>
-            <span style={css('font-size: 15px; font-weight: 600;')}>Path criteria</span>
-            {p.when.map((c, ci) => {
-              const f = FIELDS.find((x) => x.key === c.field) || FIELDS[0];
-              const needsValue = c.op === 'is' || c.op === 'is_not';
-              return (
-                <div key={ci} role="group" aria-label={'Condition ' + (ci + 1)} style={css('display: flex; flex-direction: column; gap: 8px; padding: 12px; border: 1px solid var(--line-4); border-radius: 12px;')}>
-                  {ci > 0 ? <span style={css('font-size: 12px; font-weight: 600; color: var(--muted-2);')}>AND</span> : null}
-                  <Pick id={'fb-cf' + ci} placeholder="Field" value={c.field} onChange={(v) => editPath((pp) => { const nf = FIELDS.find((x) => x.key === v); pp.when[ci] = { field: v, op: nf.ops[0], value: ((optionsFor(nf.source)[0]) || [''])[0] }; })} options={FIELDS.map((x) => [x.key, x.label])} />
-                  <div style={css('display: grid; grid-template-columns: ' + (needsValue ? '120px 1fr' : '1fr') + '; gap: 8px;')}>
-                    <Pick id={'fb-co' + ci} placeholder="Operator" value={c.op} onChange={(v) => editPath((pp) => { pp.when[ci].op = v; })} options={f.ops.map((o) => [o, OPS[o]])} />
-                    {needsValue ? <Pick id={'fb-cv' + ci} placeholder="Choose…" value={c.value} onChange={(v) => editPath((pp) => { pp.when[ci].value = v; })} options={optionsFor(f.source)} /> : null}
-                  </div>
-                  <button type="button" onClick={() => editPath((pp) => { pp.when.splice(ci, 1); })} style={css(S.btn + ' align-self: flex-end; min-height: 30px; border: 0; background: transparent; color: var(--red-ink); font-size: 13px;')}><Ico d={IC.trash} size={14} /> Remove</button>
-                </div>
-              );
-            })}
-            <button type="button" onClick={() => editPath((pp) => { pp.when.push({ field: 'status', op: 'is', value: ((D.statuses || [])[0] || {}).label || '' }); })} style={css(S.btn + S.primary + ' align-self: flex-start;')}>
-              <Ico d={IC.plus} /> {p.when.length ? 'Add condition' : 'Add path criteria'}
-            </button>
-          </div>
+      <>
+        {fixNote(p.id)}
+        {text('fb-pn', 'Path name', p.name, (v) => editPath((pp) => { pp.name = v; }))}
+        {lastP ? help('Everything the paths before this one did not take comes here.') : (
+          <>
+            <div style={css('background: ' + T.ground2 + '; border-radius: 12px; padding: 12px 14px; font-size: 14px; line-height: 1.5; color: ' + T.ink2 + ';')}>{p.when.length ? 'Taken when ' + lower(p.when.map(critText).join(p.match === 'any' ? ' or ' : ' and ')) + '.' : 'No rule yet, so nothing takes this path.'}</div>
+            <button type="button" className="wf-k" onClick={() => setPanel({ name: 'condition', step: split.id, path: p.id })} style={css(btn('primary') + ' border-radius: 10px;')}>Edit condition</button>
+          </>
         )}
-        <div style={css('display: flex; gap: 8px; padding-top: 8px; border-top: 1px solid var(--line);')}>
-          <button type="button" onClick={() => setSel(split.id)} style={css(S.btn + S.ghost)}><Ico d={IC.back} /> Split</button>
-          <span style={css('flex: 1;')} />
-          {!last && split.paths.length > 2 ? (
-            <button type="button" onClick={() => {
-              if (inner && confirm !== 'delpath:' + p.id) { setConfirm('delpath:' + p.id); return; }
-              edit((x) => { const s2 = locate(x, split.id).node; s2.paths = s2.paths.filter((q) => q.id !== p.id); }); setSel(split.id); setConfirm('');
-            }} style={css(S.btn + ' border: 0; background: ' + (confirm === 'delpath:' + p.id ? 'var(--red-soft)' : 'transparent') + '; color: var(--red-ink);')}>
-              <Ico d={IC.trash} /> {confirm === 'delpath:' + p.id ? 'Delete path and ' + plural(inner, 'step') + '?' : 'Delete path'}
-            </button>
-          ) : null}
-        </div>
+        {!lastP && split.paths.length > 2 ? (
+          <button type="button" className="wf-h" onClick={() => {
+            if (inner && confirm !== 'delpath:' + p.id) { setConfirm('delpath:' + p.id); return; }
+            edit((x) => { const s2 = locate(x, split.id).node; s2.paths = s2.paths.filter((q) => q.id !== p.id); }); setSel(split.id); setConfirm('');
+          }} style={css(btn('danger') + ' border-radius: 10px;' + (confirm === 'delpath:' + p.id ? ' background: ' + T.errorBg + ';' : ''))}>{confirm === 'delpath:' + p.id ? 'Delete path and ' + plural(inner, 'step') + '?' : 'Delete path'}</button>
+        ) : null}
+      </>
+    );
+  };
+
+  const backTo = (id, title) => (
+    <button type="button" className="wf-h" onClick={() => setSel(id)} style={css('align-self: flex-start; height: 36px; margin: 12px 0 -6px 12px; padding: 0 10px 0 6px; border: 0; border-radius: 9px; background: transparent; color: ' + T.ink + '; font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 4px;')}><Svg d={ICON.back} size={15} />{title}</button>
+  );
+  const inspector = () => {
+    if (sel === 'trigger') return (<>{head('trigger', trig.eyebrow, trig.title, trig.app)}<div style={css('padding: 18px; display: flex; flex-direction: column; gap: 16px;')}>{triggerBody()}</div></>);
+    if (at && at.node) {
+      const n = at.node, v = stepOf(n), mainIdx = at.pathId ? -1 : at.index;
+      const parent = at.pathId ? splitOf(g, at.pathId) : '';
+      return (
+        <>
+          {parent ? backTo(parent, stepOf(locate(g, parent).node).title) : null}
+          {head(v.kind, (mainIdx >= 0 ? 'Step ' + (mainIdx + 1) + ' · ' : '') + v.kindLabel, v.title, v.app, (
+            <div style={css('display: flex; flex: none;')}>
+              {iconBtn('Move up', ICON.up, () => move(n.id, -1), at.index === 0)}
+              {iconBtn('Move down', ICON.down, () => move(n.id, 1), at.index === at.list.length - 1)}
+            </div>
+          ))}
+          <div style={css('padding: 18px; display: flex; flex-direction: column; gap: 16px;')}>{nodeBody(n)}</div>
+        </>
+      );
+    }
+    if (at && at.path) return (
+      <>
+        {backTo(at.split.id, stepOf(at.split).title)}
+        {head('logic', 'Path', at.path.name, 'Logic')}
+        <div style={css('padding: 18px; display: flex; flex-direction: column; gap: 16px;')}>{pathBody(at.path, at.split)}</div>
+      </>
+    );
+    return (
+      <div style={css('padding: 18px; display: flex; flex-direction: column; gap: 14px;')}>
+        <h2 style={css('margin: 0; font-size: 18px; font-weight: 700;')}>{warns.length ? plural(warns.length, 'thing') + ' to fix' : 'Step settings'}</h2>
+        {help(warns.length ? 'Fix these before the workflow can turn on.' : 'Select a step on the canvas to set it up.')}
+        {warns.map((x, i) => (
+          <button key={i} type="button" className="wf-li" onClick={() => (x.id === 'end' ? setFinder({ pathId: null, index: g.steps.length, afterTitle: cards[cards.length - 1].title, afterKind: cards[cards.length - 1].kind }) : setSel(x.id))}
+            style={css('text-align: left; padding: 12px; border-radius: 12px; background: ' + T.surface + '; border: 1px solid ' + T.line + '; color: ' + T.ink + '; display: flex; flex-direction: column; gap: 2px;')}>
+            <span style={css('font-size: 14px; font-weight: 600;')}>{x.title}</span>
+            <span style={css('font-size: 13px; line-height: 1.45; color: ' + T.muted + ';')}>{x.body}</span>
+          </button>
+        ))}
       </div>
     );
   };
 
-  const flowPanel = () => (
-    <div style={css('display: flex; flex-direction: column; gap: 16px;')}>
-      <div style={css('display: flex; flex-direction: column; gap: 6px;')}>
-        <label htmlFor="fb-name" style={css(S.label)}>Name</label>
-        <input id="fb-name" value={name} onChange={(e) => { setName(e.target.value); setDirty(true); }} style={css(S.input)} />
-      </div>
-      <Pick id="fb-kind" label="Type" value={g.kind} onChange={(v) => edit((x) => { x.kind = v; if (v !== 'automation' && !x.trigger.key) x.trigger.key = 'manual'; if (v === 'automation' && x.trigger.key === 'manual') x.trigger.key = ''; })} options={KINDS.map((k) => [k[0], k[1] + ' — ' + k[2]])} />
-      <Pick id="fb-cat" label="Section" value={category} onChange={(v) => { setCategory(v); setDirty(true); }} options={[['production', 'Production'], ['sponsor', 'Sponsors & clients'], ['publishing', 'Publishing & distribution'], ['custom', 'Custom']]} />
-      <TagSelect id="fb-ftags" value={g.tags} onChange={(v) => edit((x) => { x.tags = v; })} sources={sources} />
-      {g.kind !== 'automation' && row.enabled && !row.is_draft ? <p style={css(S.muted)}>Saving as a {g.kind} turns the automation off.</p> : null}
-    </div>
-  );
-
   // ---------- Layout ----------
+  const branchAt = panel && panel.name === 'condition' ? (() => { const a2 = locate(g, panel.step); return a2 && a2.node && a2.node.type === 'split' ? a2 : null; })() : null;
   const steps = stepCount(g);
-  const warns = issues.filter((x) => x.level === 'warn').length;
   const zoomBy = (d) => setZoom((z) => Math.min(1.5, Math.max(0.3, Math.round((z + d) * 10) / 10)));
-  // Fit: the flow's natural size (its on-screen size over the current zoom) against the canvas, width and height.
   const fit = () => {
     const el = canvas.current, box = content.current;
     if (!el || !box) return;
     const r = box.getBoundingClientRect();
     const z = Math.min(1, (el.clientWidth - 48) / (r.width / zoom), (el.clientHeight - 120) / (r.height / zoom));
     setZoom(Math.max(0.3, Math.floor(z * 10) / 10));
-    requestAnimationFrame(() => { el.scrollTop = 0; el.scrollLeft = (el.scrollWidth - el.clientWidth) / 2; });
+    requestAnimationFrame(() => { el.scrollTop = 0; });
   };
   // Drag the background to pan; a click on it clears the selection. Touch keeps the browser's own scrolling.
-  const onBg = (t) => !(t instanceof Element && t.closest('button, input, textarea, select, a, [role=menu], [role=listbox]'));
+  const onBg = (t) => !(t instanceof Element && t.closest('button, input, textarea, select, a'));
   const onPanDown = (e) => {
     if (e.button !== 0 || !onBg(e.target)) return;
     pan.current = { x: e.clientX, y: e.clientY, l: canvas.current.scrollLeft, t: canvas.current.scrollTop, moved: false, touch: e.pointerType === 'touch' };
@@ -893,181 +946,186 @@ export default function FlowBuilder({ D, A, row, onClose, goConnect, review }) {
     if (Math.abs(dx) + Math.abs(dy) > 3) p.moved = true;
     if (!p.touch) { canvas.current.scrollLeft = p.l - dx; canvas.current.scrollTop = p.t - dy; }
   };
-  const onPanUp = () => { const p = pan.current; pan.current = null; if (p && !p.moved) { setSel(''); setMenu(''); } };
+  const onPanUp = () => { const p = pan.current; pan.current = null; if (p && !p.moved) setSel(''); };
   const onPanCancel = () => { pan.current = null; };
+  const jumpToFix = () => { const x = warns[0]; if (!x) return; setSel(x.id === 'end' ? '' : x.id); };
+  // What the test run walks: the cards in order, each with whatever is in the way of it.
+  const testPlan = cards.map((c, i) => ({ id: c.id, n: i ? String(i) : 'T', title: c.title, fix: (warns.find((x) => cardOf(x.id) === c.id) || {}).title || '' }));
+  // Review and turn on: four checks; Live stays locked until all pass (handoff Rules 2 to 5).
+  const stepFixes = warns.filter((x) => x.id !== 'trigger');
+  const passed = !!(g.lastTest && g.lastTest.ok);
+  const loose = []; // steps that send outside the team with no approval step above them
+  let outN = 0, looseId = '';
+  const scan = (list, covered) => { let c = covered; list.forEach((n) => { if (n.type === 'approval') c = true; const v = stepOf(n); if (v.outward) { outN += 1; if (!c) { loose.push(v.title); if (!looseId) looseId = n.id; } } if (n.type === 'split') (n.paths || []).forEach((p) => scan(p.steps, c)); }); };
+  scan(g.steps, false);
+  // Until approval steps can run, the Super Admin turning the workflow on signs off on what it sends instead.
+  const canApprove = !cannotRunYet({ type: 'approval' });
+  const trigOk = !!g.trigger.key && !warns.some((x) => x.id === 'trigger');
+  const closeReview = (then) => () => { setConfirm(''); then(); };
+  const checks = [
+    { ok: trigOk, label: trigOk ? 'Trigger is set' : g.trigger.key ? 'The trigger needs a fix' : 'Pick a trigger', detail: trigOk ? trig.detail : (warns.find((x) => x.id === 'trigger') || {}).body || '', fixLabel: 'Set trigger', fix: closeReview(() => setPanel({ name: 'trigger' })) },
+    { ok: !stepFixes.length, label: stepFixes.length ? plural(stepFixes.length, 'step') + (stepFixes.length === 1 ? ' needs' : ' need') + ' setup' : 'Every step is set up', detail: stepFixes.length ? stepFixes.map((x) => x.title).join(', ') : plural(steps, 'step') + ', nothing missing', fixLabel: 'Go to step', fix: closeReview(() => setSel(stepFixes[0].id === 'end' ? '' : stepFixes[0].id)) },
+    { ok: passed, label: passed ? 'Test run passed' : g.lastTest ? 'The last test failed' : 'Run a test first', detail: passed ? 'Every step ran on sample data' : 'Runs every step on sample data. Nothing is sent.', fixLabel: 'Test run', fix: () => runTest(testPlan) },
+    { ok: !loose.length || (!canApprove && ack), label: outN ? plural(outN, 'step') + (outN === 1 ? ' sends' : ' send') + ' outside' + (loose.length ? (canApprove ? ', no approval' : '') : ', approval covers it') : 'Nothing leaves the team',
+      detail: !outN ? 'Nobody outside the team sees anything from this workflow' : !loose.length ? 'A Super Admin signs off before anything leaves' : canApprove ? 'Add an Approval step above ' + loose.join(', ') : loose.join(', ') + ' reaches people outside the team. Approval steps are not available yet, so confirm you have checked it.',
+      fixLabel: 'Add approval', fix: canApprove && loose.length ? closeReview(() => { const at2 = locate(g, looseId); if (at2) { const before = at2.index ? stepOf(at2.list[at2.index - 1]) : null; setFinder({ pathId: at2.pathId, index: at2.index, afterTitle: before ? before.title : at2.pathId ? 'the path starts' : trig.title, afterKind: before ? before.kind : 'trigger' }); } }) : null,
+      ack: loose.length && !canApprove ? { on: ack, set: setAck, label: 'I have checked what this sends' } : null },
+  ];
+  const ready = checks.every((c) => c.ok);
+  const turnOn = async () => { if (await save('live')) { setConfirm(''); say(name + ' is live'); } };
+  const saveText = busy === 'save' || busy === 'live' ? 'Saving…' : dirty ? (autoFail ? 'Not saved' : 'Unsaved') : 'Saved';
 
-  const showPanel = palette || !!sel;
+
   return (
-    <div ref={root} className="fbx" role="dialog" aria-modal="true" aria-label={'Flow builder: ' + name}
-      style={css('position: fixed; inset: 0; z-index: 60; display: flex; flex-direction: column; background: var(--page); color: var(--ink); font-family: var(--font-main);')}>
-      <style>{`
+    <div ref={root} className="fbx wf" role="dialog" aria-modal="true" aria-label={'Workflow builder: ' + name}
+      style={css('position: fixed; inset: 0; z-index: 60; display: flex; flex-direction: column; background: ' + T.page + '; color: ' + T.ink + '; font-family: ' + FONT.body + ';')}>
+      <style>{WF_CSS + '\n' + RICH_CSS + `
         .fbx .mitem:hover { background: var(--hover); }
-        .fbx-body { display: flex; flex: 1 1 auto; min-height: 0; gap: 12px; padding: 0 12px 12px; }
-        .fbx-side { width: 340px; flex: none; display: flex; flex-direction: column; min-height: 0; background: var(--surface); border: 1px solid var(--line-4); border-radius: 18px; overflow: hidden; }
-        .fbx-right { width: 320px; flex: none; }
-        .fbx-hide-sm { display: inline-flex; }
-        @media (max-width: 860px) {
-          .fbx-body { flex-direction: column; overflow-y: auto; }
-          .fbx-side, .fbx-right { width: auto; max-height: 55vh; }
-          .fbx-canvas { min-height: 60vh; flex: none !important; }
-          .fbx-hide-sm { display: none; }
+        .wf-li:hover { border-color: ${T.borderHover} !important; background: ${T.ground} !important; }
+        .wf-sc { scrollbar-width: thin; scrollbar-color: ${T.borderHover} transparent; }
+        .wf-pulse { animation: wf-pulse 1s ease-in-out infinite; }
+        .wf-pop { animation: wf-pop 150ms ease-out; }
+        @keyframes wf-pop { from { opacity: 0; transform: scale(.98); } to { opacity: 1; transform: none; } }
+        .fbx-top { flex: none; display: flex; align-items: center; gap: 10px; padding: 12px 16px; }
+        .fbx-body { flex: 1; display: flex; gap: 12px; padding: 0 12px 12px; min-height: 0; }
+        .fbx-left { width: 300px; } .fbx-right { width: 340px; }
+        @media (max-width: 1500px) { .fbx-opt .fbx-lbl { display: none; } .fbx-opt { width: 42px; padding: 0 !important; } }
+        @media (max-width: 1240px) { .fbx-opt2 .fbx-lbl { display: none; } .fbx-opt2 { width: 42px; padding: 0 !important; } .fbx-left { width: 260px; } .fbx-right { width: 300px; } }
+        @media (max-width: 720px) { .wf-dlg { padding: 0 !important; } .wf-dlg-box { width: 100% !important; max-height: none !important; min-height: 100vh; border-radius: 0 !important; } .wf-two { grid-template-columns: minmax(0, 1fr) !important; } .wf-two > aside { border-left: 0 !important; border-top: 1px solid ${T.line}; } }
+        @media (max-width: 900px) {
+          .fbx { overflow-y: auto; }
+          .fbx-top { flex-wrap: wrap; }
+          .fbx-body { flex-direction: column; flex: none; }
+          .fbx-left, .fbx-right { width: auto; flex: none !important; }
+          .fbx-left { max-height: 360px; }
+          .fbx-canvas { min-height: 620px; flex: none !important; }
+          .fbx-btn { min-height: 44px; }
         }
       `}</style>
 
-      {/* Top bar */}
-      <header inert={!!dialog} style={css('flex: none; display: flex; align-items: center; gap: 8px; min-height: 60px; padding: 8px 12px; box-sizing: border-box; flex-wrap: wrap;')}>
-        <button type="button" onClick={leave} aria-label="Back to automations" title="Back to automations" style={css(S.icon)}><Ico d={IC.back} size={20} /></button>
-        <button type="button" onClick={() => setSel('flow')} title="Flow details" style={css('display: inline-flex; align-items: center; gap: 8px; min-width: 0; max-width: 46vw; height: 38px; padding: 0 8px; border: 0; border-radius: 10px; background: transparent; color: var(--ink); cursor: pointer; font-family: inherit;')}>
-          <span style={css('font-size: 17px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;')}>{name || 'Untitled flow'}</span>
-          <Ico d={IC.chev} />
-        </button>
-        <span style={css('display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 10px; border-radius: 999px; background: ' + toneBg(statusTone) + '; color: ' + toneInk(statusTone) + '; font-size: 13px; font-weight: 600;')}>
-          <span style={css('width: 7px; height: 7px; border-radius: 99px; background: currentColor;')} />{status}
+      <header className="fbx-top" inert={!!dialog}>
+        <button type="button" data-back="" className="wf-h" onClick={leave} aria-label="Back to automations" style={css('height: 42px; flex: none; display: flex; align-items: center; gap: 6px; padding: 0 12px 0 8px; border: 0; border-radius: 10px; background: transparent; color: ' + T.ink + '; font-weight: 600; font-size: 14px;')}><Svg d={ICON.back} size={16} /><span className="fbx-lbl">Automations</span></button>
+        <label htmlFor="fb-name" style={css(srOnly)}>Workflow name</label>
+        <input id="fb-name" autoComplete="off" value={name} onChange={(e) => { setName(e.target.value); touch(); }} className="wf-h" style={css('height: 42px; flex: 0 1 250px; min-width: 110px; background: transparent; border: 1px solid transparent; border-radius: 10px; color: ' + T.ink + '; font-family: inherit; font-weight: 700; font-size: 18px; padding: 0 8px; text-overflow: ellipsis;')} />
+        {runs ? <Seg label="Status" options={[['live', STATUS.live], ['off', STATUS.off], ['draft', STATUS.draft]]} value={status} onChange={setStatus} />
+          : <span style={css(pillStyle(KIND.ai.ink, KIND.ai.bg) + ' padding: 6px 10px;')}>{KINDS.find((k) => k[0] === g.kind)[1]}</span>}
+        <span aria-live="polite" style={css('display: flex; align-items: center; gap: 10px; flex: none;')}>
+          {warns.length ? <button type="button" onClick={jumpToFix} title="Show what to fix" style={css('border: 0; border-radius: 999px; padding: 6px 10px; font-size: 12px; font-weight: 600; color: ' + T.warnInk + '; background: ' + T.warnBg + '; white-space: nowrap;')}>{warns.length} to fix</button> : null}
+          <span style={css('font-size: 13px; color: ' + (autoFail && dirty ? T.error : T.muted) + '; white-space: nowrap;')}>{saveText}</span>
         </span>
-        {g.tags.length ? <span className="fbx-hide-sm" style={css('min-width: 0;')}><TagChips tags={g.tags} max={3} small /></span> : null}
-        {dirty ? <span style={css('font-size: 13px; color: var(--muted);')}>Unsaved changes</span> : null}
-        <span style={css('flex: 1;')} />
-        <button type="button" onClick={() => setSide(side === 'alerts' ? '' : 'alerts')} aria-pressed={side === 'alerts'} aria-label={'Alerts, ' + issues.length} title="Alerts"
-          style={css(S.icon + ' position: relative;' + (side === 'alerts' ? ' background: var(--blue-soft); color: var(--blue-ink);' : ''))}>
-          <Ico d={IC.bell} size={18} />
-          {issues.length ? <span style={css('position: absolute; top: 3px; right: 2px; min-width: 18px; height: 18px; padding: 0 4px; box-sizing: border-box; border-radius: 99px; background: ' + (warns ? '#C42B2F' : 'var(--ink-3)') + '; color: #FFFFFF; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center;')}>{issues.length}</span> : null}
-        </button>
-        {runs ? <button type="button" onClick={runTest} disabled={!!busy} style={css(S.btn + S.ghost + (busy ? ' opacity: 0.6;' : ''))}><Ico d={IC.play} size={14} /> {busy === 'test' ? 'Testing…' : 'Test run'}</button> : null}
-        <button type="button" onClick={() => (live ? setConfirm('update') : save())} disabled={!dirty || !!busy} style={css(S.btn + S.ghost + (!dirty || busy ? ' opacity: 0.5; cursor: default;' : ''))}>{busy === 'save' ? 'Saving…' : 'Save'}</button>
-        {runs ? (
-          row.enabled && !row.is_draft
-            ? <button type="button" onClick={() => save('off')} disabled={!!busy} style={css(S.btn + S.primary)}>Turn off</button>
-            : <button type="button" onClick={() => setConfirm('review')} disabled={!!busy} style={css(S.btn + S.primary)}>Review and turn on</button>
-        ) : null}
+        <span style={css('flex: 1; min-width: 0;')} />
+        {runs ? <TopBtn cls="fbx-opt" icon={ICON.history} label="Run history" onClick={() => exitTo(() => goHub('runs'))} /> : null}
+        <TopBtn cls="fbx-opt" icon={ICON.settings} label="Settings" onClick={() => setPanel({ name: 'settings' })} />
+        {runs ? <button type="button" className="fbx-btn fbx-opt2" aria-label={'Ask ' + AGENT_SHORT} title={'Ask ' + AGENT} onClick={() => say(AGENT + ' cannot draft steps yet. It arrives in a later phase of this build.')} style={css(btn('ghost') + ' background: ' + KIND.ai.bg + '; border-color: transparent; color: ' + KIND.ai.ink + ';')}><Svg d={KIND.ai.icon} size={16} /><span className="fbx-lbl">Ask {AGENT_SHORT}</span></button> : null}
+        {runs ? <TopBtn cls="" icon={ICON.play} label={busy === 'test' ? 'Testing…' : 'Test run'} onClick={() => runTest(testPlan)} off={!!busy} /> : null}
+        <button type="button" className="wf-h fbx-btn" onClick={() => (live ? setConfirm('update') : save())} disabled={!dirty || !!busy} style={css(btn('quiet') + (!dirty || busy ? ' opacity: .5; cursor: default;' : ''))}>Save</button>
+        {runs && !live ? <button type="button" className="wf-k fbx-btn" onClick={() => setConfirm('review')} disabled={!!busy} style={css(btn('primary') + ' padding: 0 16px;')}>Review and turn on</button> : null}
       </header>
 
       <div className="fbx-body" inert={!!dialog}>
-        {/* Left panel: Actions palette, or the selected card's details */}
-        {showPanel ? (
-          <aside className="fbx-side" aria-label={panelTitle}>
-            <div style={css('display: flex; align-items: center; gap: 12px; padding: 18px 16px 14px 20px; border-bottom: 1px solid var(--line);')}>
-              {panelIcon ? <span style={css(tile(sel === 'trigger' ? 'gray' : at && at.node && at.node.type === 'action' ? ACTION_TONE[at.node.key] : at && at.node ? STEP_DEF[at.node.type].tone : 'gray', 40) + ' border-radius: 12px;')}><Ico d={panelIcon} size={18} /></span> : null}
-              <h2 style={css('flex: 1; margin: 0; font-size: 19px; font-weight: 700;')}>{panelTitle}</h2>
-              <button type="button" aria-label={sel ? 'Close details' : 'Hide actions'} title={sel ? 'Close' : 'Hide panel'} onClick={() => (sel ? setSel('') : setPalette(false))} style={css(S.icon)}><Ico d={sel ? IC.close : IC.panel} size={18} /></button>
-            </div>
-            <div key={sel || 'palette'} style={css('flex: 1; min-height: 0; overflow-y: auto; padding: 16px 20px 24px;')}>
-              {sel === 'trigger' ? triggerPanel() : sel === 'flow' ? flowPanel() : at && at.node ? nodePanel(at.node) : at && at.path ? pathPanel(at.path, at.split) : palettePanel()}
-            </div>
-          </aside>
-        ) : null}
+        <aside className="fbx-left" aria-label="Step library" style={css('flex: none; background: ' + T.surface + '; border-radius: ' + R.card + 'px; display: flex; flex-direction: column; min-height: 0; overflow: hidden;')}>
+          <div role="tablist" aria-label="Left panel" style={css('display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px; margin: 12px; background: ' + T.count + '; border-radius: 12px; padding: 4px;')}>
+            {[['steps', 'Steps'], ['overview', 'Overview']].map((t) => (
+              <button key={t[0]} type="button" role="tab" id={'fb-tab-' + t[0]} aria-selected={left === t[0]} aria-controls="fb-left-panel" onClick={() => setLeft(t[0])}
+                style={css('height: 38px; border-radius: 9px; background: ' + (left === t[0] ? T.surface : 'transparent') + '; color: ' + (left === t[0] ? T.ink : T.sub) + '; border: 0; font-weight: 600; font-size: 14px; box-shadow: ' + (left === t[0] ? '0 1px 2px rgba(0,0,0,.08)' : 'none') + ';')}>{t[1]}</button>
+            ))}
+          </div>
+          <div id="fb-left-panel" role="tabpanel" aria-labelledby={'fb-tab-' + left} style={css('flex: 1; min-height: 0; display: flex; flex-direction: column;')}>
+            {left === 'overview' ? overview() : (
+              <>
+                <div style={css('padding: 0 14px 8px;')}>
+                  <label htmlFor="fb-lq" style={css(srOnly)}>Search steps</label>
+                  <input id="fb-lq" type="search" autoComplete="off" value={lq} onChange={(e) => setLq(e.target.value)} placeholder="Search steps" style={css('width: 100%; height: 42px; border-radius: 12px; background: ' + T.ground2 + '; border: 1px solid ' + T.line + '; color: ' + T.ink + '; padding: 0 12px; font-family: inherit; font-size: 14px;')} />
+                  <div style={css('font-size: 13px; color: ' + T.muted + '; margin-top: 8px;')}>Click to add at the end. Use + on the canvas to add between steps.</div>
+                </div>
+                <div className="wf-sc" style={css('flex: 1; overflow: auto; padding: 4px 14px 16px; display: flex; flex-direction: column; gap: 14px;')}>
+                  {KIND_ORDER.filter((k) => libShown.some((it) => it.kind === k)).map((k) => (
+                    <div key={k} role="group" aria-label={GROUP[k]} style={css('display: flex; flex-direction: column; gap: 6px;')}>
+                      <div style={css('font-size: 13px; font-weight: 700; color: ' + T.ink2 + '; padding: 4px 2px;')}>{GROUP[k]}</div>
+                      {libShown.filter((it) => it.kind === k).map(libItem)}
+                    </div>
+                  ))}
+                  {!libShown.length ? <div style={css('padding: 20px; text-align: center; color: ' + T.muted + '; font-size: 14px; border: 1.5px dashed ' + T.pillOn + '; border-radius: 12px;')}>No steps match.</div> : null}
+                </div>
+              </>
+            )}
+          </div>
+        </aside>
 
-        {/* Canvas */}
-        <main className="fbx-canvas" style={css('position: relative; flex: 1 1 auto; min-width: 0; display: flex; background: var(--surface-2); border: 1px solid var(--line-4); border-radius: 18px; overflow: hidden;')}>
-          {!showPanel ? (
-            <button type="button" onClick={() => setPalette(true)} aria-label="Show actions" title="Show actions" style={css(S.btn + S.ghost + ' position: absolute; z-index: 5; top: 12px; left: 12px;')}><Ico d={IC.panel} /> Actions</button>
-          ) : null}
-          <div ref={canvas} onPointerDown={onPanDown} onPointerMove={onPanMove} onPointerUp={onPanUp} onPointerCancel={onPanCancel} onLostPointerCapture={onPanCancel}
-            style={css('flex: 1; overflow: auto; cursor: grab; background-image: radial-gradient(var(--line-4) 1px, transparent 1px); background-size: 20px 20px;')}>
-            <div style={css('min-width: 100%; width: max-content; padding: 64px 24px 160px; box-sizing: border-box; display: flex; justify-content: center; zoom: ' + zoom + ';')}>
+        <main className="fbx-canvas" aria-label="Workflow canvas" style={css('flex: 1; min-width: 0; position: relative; display: flex; border-radius: ' + R.card + 'px; overflow: hidden;')}>
+          <div ref={canvas} className="wf-sc" onPointerDown={onPanDown} onPointerMove={onPanMove} onPointerUp={onPanUp} onPointerCancel={onPanCancel} onLostPointerCapture={onPanCancel}
+            style={css('flex: 1; overflow: auto; cursor: grab; background-color: ' + T.ground + '; background-image: radial-gradient(' + T.dot + ' 1px, transparent 1px); background-size: 20px 20px;')}>
+            <div style={css('min-width: 100%; width: max-content; padding: 40px 24px 220px; display: flex; justify-content: center; zoom: ' + zoom + ';')}>
               <div ref={content} style={css('display: flex; flex-direction: column; align-items: center;')}>
-                <button type="button" onClick={(e) => { e.stopPropagation(); setSel('trigger'); setMenu(''); }} aria-pressed={sel === 'trigger'} aria-label={'Trigger: ' + trigText}
-                  style={css(S.card + ' width: 340px;' + cardRing(sel === 'trigger', warnIds.has('trigger')))}>
-                  <span style={css('display: flex; align-items: center; gap: 10px;')}>
-                    <span style={css('width: 32px; height: 32px; flex: none; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; background: var(--ink-3); color: var(--surface);')}><Ico d={IC.bolt} /></span>
-                    <span style={css('flex: 1; font-size: 15px; font-weight: 600;')}>{runs ? 'Trigger' : g.kind === 'process' ? 'Start' : 'Spark'}</span>
-                  </span>
-                  <span style={css('display: block; margin-top: 12px; font-size: 15px; line-height: 1.45; color: ' + (runs && !g.trigger.key ? 'var(--muted)' : 'var(--ink-2)') + ';')}>{trigText}</span>
-                  {g.trigger.tags.length ? <span style={css('display: block; margin-top: 12px;')}><TagChips tags={g.trigger.tags} small /></span> : null}
-                </button>
-                {column(g.steps, null)}
+                {cards.map((c, i) => (
+                  <div key={c.id} style={css('display: flex; flex-direction: column; align-items: center;')}>
+                    {stepCard(c)}
+                    {wire}
+                    <button type="button" className="wf-h" aria-label={'Add a step after ' + c.title} onClick={() => setFinder({ pathId: null, index: i, afterTitle: c.title, afterKind: c.kind })}
+                      style={css('width: ' + H.plus + 'px; height: ' + H.plus + 'px; flex: none; border-radius: 999px; background: ' + T.surface + '; border: 1px solid ' + T.inputLine + '; color: ' + T.ink + '; display: flex; align-items: center; justify-content: center;')}><Svg d={ICON.plus} size={15} /></button>
+                    {wire}
+                  </div>
+                ))}
+                <span style={css('padding: 4px 12px; border-radius: 999px; background: ' + T.count + '; color: ' + T.sub + '; font-size: 13px; font-weight: 500;')}>End</span>
               </div>
             </div>
           </div>
-          {/* Zoom controls */}
-          <div role="group" aria-label="Zoom" style={css('position: absolute; right: 12px; bottom: 12px; display: flex; flex-direction: column; align-items: center; padding: 4px; background: var(--surface); border: 1px solid var(--line-4); border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.06);')}>
-            <button type="button" aria-label="Zoom in" onClick={() => zoomBy(0.1)} style={css(S.icon + ' width: 34px; height: 34px;')}><Ico d={IC.plus} /></button>
-            <button type="button" aria-label="Reset zoom" onClick={() => setZoom(1)} style={css('border: 0; background: transparent; padding: 4px 0; font-size: 12px; font-family: ui-monospace, monospace; color: var(--ink-2); cursor: pointer;')}>{Math.round(zoom * 100)}%</button>
-            <button type="button" aria-label="Zoom out" onClick={() => zoomBy(-0.1)} style={css(S.icon + ' width: 34px; height: 34px;')}><Ico d={IC.minus} /></button>
-            <span style={css('width: 24px; height: 1px; margin: 4px 0; background: var(--line-4);')} />
-            <button type="button" aria-label="Fit to screen" title="Fit" onClick={fit} style={css(S.icon + ' width: 34px; height: 34px;')}><Ico d={IC.fit} /></button>
+          {test ? <TestDrawer test={test} onFix={(id) => setSel(id)} onAgain={() => runTest(testPlan)} onClose={() => setTest(null)} /> : null}
+          <div role="group" aria-label="Zoom" style={css('position: absolute; right: 12px; bottom: 12px; z-index: 5; display: flex; flex-direction: column; align-items: center; background: ' + T.surface + '; border: 1px solid ' + T.border + '; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,.06);')}>
+            <button type="button" className="wf-h" aria-label="Zoom in" onClick={() => zoomBy(0.1)} style={css('width: 40px; height: 38px; border-radius: 12px 12px 0 0; background: transparent; border: 0; color: ' + T.ink + '; font-size: 18px;')}>+</button>
+            <span style={css('font-size: 12px; font-weight: 600; padding: 4px 0;')}>{Math.round(zoom * 100)}%</span>
+            <button type="button" className="wf-h" aria-label="Zoom out" onClick={() => zoomBy(-0.1)} style={css('width: 40px; height: 38px; background: transparent; border: 0; color: ' + T.ink + '; font-size: 18px;')}>−</button>
+            <button type="button" className="wf-h" aria-label="Fit to screen" title="Fit to screen" onClick={fit} style={css('width: 40px; height: 38px; border-radius: 0 0 12px 12px; background: transparent; border: 0; border-top: 1px solid ' + T.line + '; color: ' + T.ink + '; display: flex; align-items: center; justify-content: center;')}><Svg d={ICON.fit} size={15} /></button>
           </div>
-          <p style={css('position: absolute; left: 14px; bottom: 12px; margin: 0; font-size: 12px; color: var(--muted-2);')}>{steps} step{steps === 1 ? '' : 's'}</p>
+          <div aria-live="polite" style={css('position: absolute; left: 12px; bottom: 12px; z-index: 5; background: ' + T.surface + '; border: 1px solid ' + T.border + '; border-radius: 12px; padding: 7px 12px; font-size: 13px; color: ' + T.ink3 + '; font-weight: 500;')}>{plural(steps, 'step')}{warns.length ? ' · ' + warns.length + ' to fix' : ''}</div>
         </main>
 
-        {/* Right panel: alerts or the last test run */}
-        {side ? (
-          <aside className="fbx-side fbx-right" aria-label={side === 'alerts' ? 'Alerts' : 'Test run'}>
-            <div style={css('display: flex; align-items: center; gap: 8px; padding: 18px 12px 0 20px;')}>
-              <h2 style={css('flex: 1; margin: 0; font-size: 19px; font-weight: 700;')}>{side === 'alerts' ? 'Alerts' : 'Test run'}</h2>
-              <button type="button" aria-label="Close panel" onClick={() => setSide('')} style={css(S.icon)}><Ico d={IC.close} size={18} /></button>
-            </div>
-            <div role="tablist" aria-label="Panel" style={css('display: flex; gap: 20px; padding: 0 20px; border-bottom: 1px solid var(--line);')}>
-              {[['alerts', 'Alerts', issues.length], runs ? ['test', 'Test run', null] : null].filter(Boolean).map((t) => (
-                <button key={t[0]} type="button" role="tab" aria-selected={side === t[0]} onClick={() => setSide(t[0])}
-                  style={css('min-height: 44px; padding: 0 2px; border: 0; border-bottom: 2px solid ' + (side === t[0] ? 'var(--ink)' : 'transparent') + '; background: transparent; font-size: 14px; font-weight: 600; color: ' + (side === t[0] ? 'var(--ink)' : 'var(--muted)') + '; cursor: pointer; font-family: inherit;')}>
-                  {t[1]}{t[2] != null ? <span style={css('margin-left: 6px; padding: 1px 7px; border-radius: 99px; background: var(--chip); font-size: 12px;')}>{t[2]}</span> : null}
-                </button>
-              ))}
-            </div>
-            <div style={css('flex: 1; min-height: 0; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 12px;')}>
-              {side === 'alerts' ? (issues.length ? issues.map((x, i) => (
-                <div key={i} style={css('display: flex; gap: 12px; padding: 16px; border: 1px solid var(--line-4); border-radius: 16px;')}>
-                  <span style={css('flex: none; color: ' + (x.level === 'warn' ? 'var(--amber-ink)' : 'var(--blue-ink)') + ';')}><Ico d={x.level === 'warn' ? IC.warn : IC.info} size={18} /></span>
-                  <div style={css('flex: 1; display: flex; flex-direction: column; gap: 6px;')}>
-                    <strong style={css('font-size: 15px;')}>{x.title}</strong>
-                    <p style={css(S.muted + ' color: var(--ink-3);')}>{x.body}</p>
-                    {x.id !== 'end' ? <button type="button" onClick={() => setSel(x.id)} style={css(S.btn + S.ghost + ' align-self: flex-end; min-height: 32px; font-size: 13px;')}>Review</button> : null}
-                  </div>
-                </div>
-              )) : <p style={css(S.muted)}>No alerts. This flow is ready.</p>) : null}
-              {side === 'test' ? (
-                busy === 'test' ? <p role="status" style={css(S.muted)}>Running a test on the newest project…</p>
-                  : testRun ? (
-                    <>
-                      <p style={css(S.muted)}>{(testRun.output && testRun.output.project) ? 'On ' + testRun.output.project.job + ' · ' + testRun.output.project.title + '. Nothing was sent or changed.' : 'Nothing was sent or changed.'}</p>
-                      {((testRun.output || {}).steps || []).map((x, i) => (
-                        <div key={i} style={css('display: flex; gap: 10px; padding: 12px 14px; border-radius: 12px; background: ' + (x.ok ? 'var(--green-soft)' : 'var(--red-soft)') + '; color: ' + (x.ok ? 'var(--green-ink)' : 'var(--red-ink)') + '; font-size: 13px; line-height: 1.45;')}>
-                          <Ico d={x.ok ? IC.check : IC.close} size={15} sw={2.4} style="flex: none; margin-top: 2px;" />
-                          <span>{x.detail}</span>
-                        </div>
-                      ))}
-                      {testRun.error && !((testRun.output || {}).steps || []).some((x) => !x.ok) ? <p role="alert" style={css(S.muted + ' color: var(--red-ink);')}>{testRun.error}</p> : null}
-                    </>
-                  ) : <p style={css(S.muted)}>Test run describes what each step would do on the newest project, without sending or changing anything.</p>
-              ) : null}
-            </div>
-          </aside>
+        <aside className="fbx-right wf-sc" aria-label="Step settings" style={css('flex: none; background: ' + T.surface + '; border-radius: ' + R.card + 'px; overflow: auto; display: flex; flex-direction: column;')}>
+          {inspector()}
+        </aside>
+      </div>
+
+      {finder ? <StepFinder items={lib.filter((it) => !it.trigger)} groupLabel={GROUP} afterTitle={finder.afterTitle} afterKind={finder.afterKind} onAdd={(spec) => add(finder.pathId, finder.index, spec)} onClose={() => setFinder(null)} /> : null}
+
+      {panel && panel.name === 'settings' ? <SettingsModal g={g} name={name} D={D} live={live} slackOn={!!connected.slack} onSave={saveSettings} onClose={() => setPanel(null)} goConnectors={() => exitTo(() => goHub('connectors'))} /> : null}
+      {panel && panel.name === 'trigger' && runs ? <TriggerModal g={g} name={name} D={D} rowId={row.id} live={live} optionsFor={optionsFor} critText={critText} onSave={saveTrigger} onClose={() => setPanel(null)} /> : null}
+      {panel && panel.name === 'condition' && branchAt ? (
+        <ConditionModal key={panel.step} node={branchAt.node} stepNo={branchAt.pathId ? '' : branchAt.index + 1} pathId={panel.path} sampleRow={sampleRow} optionsFor={optionsFor} lib={lib.filter((it) => !it.trigger)} groupLabel={GROUP} makeNode={makeNode} onSave={saveBranch} onClose={() => setPanel(null)} />
+      ) : null}
+
+      <div aria-live="polite" style={css('position: fixed; left: 50%; bottom: 24px; z-index: 80; transform: translateX(-50%); max-width: calc(100vw - 32px);')}>
+        {toast ? (
+          <div style={css('display: flex; align-items: center; gap: 12px; padding: 10px 10px 10px 16px; border-radius: 12px; background: ' + T.accent + '; color: ' + T.accentInk + '; font-size: 14px; font-weight: 500; box-shadow: ' + SHADOW.toast + ';')}>
+            <span>{toast}</span>
+            <button type="button" aria-label="Dismiss" onClick={() => setToast('')} style={css('width: 28px; height: 28px; border: 0; border-radius: 8px; background: transparent; color: inherit; display: flex; align-items: center; justify-content: center;')}><Svg d={ICON.close} size={14} /></button>
+          </div>
         ) : null}
       </div>
 
-      {/* Confirmations: turning on, saving a live automation, and leaving with unsaved changes */}
+      {confirm === 'review' ? <ReviewModal name={name} checks={checks} paused={paused} busy={busy === 'live'} onTurnOn={turnOn} onClose={() => setConfirm('')} /> : null}
+
+      {/* Confirmations: saving a live automation, and leaving with unsaved changes */}
       {dialog ? (
-        <div style={css('position: fixed; inset: 0; z-index: 75; display: flex; align-items: center; justify-content: center; padding: 16px; background: rgba(0,0,0,0.45);')}>
-          <div role="alertdialog" aria-modal="true" aria-labelledby="fb-cf-t" aria-describedby="fb-cf-d" style={css('width: 520px; max-width: 100%; box-sizing: border-box; padding: 28px 32px; background: var(--surface); border-radius: 20px; box-shadow: 0 24px 80px rgba(0,0,0,0.25); display: flex; flex-direction: column; gap: 16px;')}>
+        <div style={css('position: fixed; inset: 0; z-index: 75; display: flex; align-items: center; justify-content: center; padding: 16px; background: rgba(17,17,17,.36);')}>
+          <div role="alertdialog" aria-modal="true" aria-labelledby="fb-cf-t" aria-describedby="fb-cf-d" className="wf-pop" style={css('width: 520px; max-width: 100%; padding: 24px; background: ' + T.surface + '; border-radius: 20px; box-shadow: ' + SHADOW.modal + '; display: flex; flex-direction: column; gap: 16px;')}>
             <div style={css('display: flex; align-items: center;')}>
-              <h2 id="fb-cf-t" style={css('flex: 1; margin: 0; font-size: 21px; font-weight: 700;')}>{dialog === 'leave' ? 'Leave without saving?' : dialog === 'update' ? 'Update the live automation?' : 'Review and turn on'}</h2>
-              <button type="button" aria-label="Close" onClick={() => setConfirm('')} style={css(S.icon)}><Ico d={IC.close} size={18} /></button>
+              <h2 id="fb-cf-t" style={css('flex: 1; margin: 0; font-family: ' + FONT.display + '; font-size: 20px; font-weight: 900;')}>{dialog === 'leave' ? 'Leave without saving?' : 'Update the live automation?'}</h2>
+              <button type="button" className="wf-h" aria-label="Close" onClick={() => setConfirm('')} style={css('width: 40px; height: 40px; border: 0; border-radius: 10px; background: transparent; color: ' + T.ink + '; display: flex; align-items: center; justify-content: center;')}><Svg d={ICON.close} size={18} /></button>
             </div>
-            {dialog === 'leave' ? <p id="fb-cf-d" style={css('margin: 0; font-size: 15px; line-height: 1.5; color: var(--ink-3);')}>Your changes to this flow are not saved yet.</p> : (
-              <>
-                <p id="fb-cf-d" style={css('margin: 0; font-size: 15px; line-height: 1.5; color: var(--ink-3);')}>
-                  {dialog === 'update' ? 'This flow is live. Saving changes what the next runs do; runs already waiting on a delay carry on from where they are.' : 'Once it is on, the flow runs each time its trigger fires. You can turn it off any time.'}
-                </p>
-                <div style={css('padding: 14px 16px; border-radius: 12px; background: var(--surface-2); display: flex; flex-direction: column; gap: 6px; font-size: 14px;')}>
-                  <span><strong>Trigger:</strong> {g.trigger.key ? triggerText(g.trigger.key, g.trigger.value, statusName) : 'none yet'}</span>
-                  <span><strong>Steps:</strong> {steps}{compile(g).actions.length ? ' (' + compile(g).actions.map((a) => a.label).join(', ') + ')' : ''}</span>
-                  {paused ? <span style={css('color: var(--amber-ink);')}>Pause all automations is on, so nothing runs until you resume.</span> : null}
-                </div>
-                {warns ? <p role="alert" style={css('margin: 0; font-size: 14px; color: var(--red-ink);')}>Fix {plural(warns, 'alert')} first: {issues.filter((x) => x.level === 'warn').map((x) => x.title).join(', ')}.</p> : null}
-              </>
-            )}
-            <div style={css('display: flex; justify-content: flex-end; gap: 10px;')}>
+            <p id="fb-cf-d" style={css('margin: 0; font-size: 15px; line-height: 1.5; color: ' + T.ink3 + ';')}>
+              {dialog === 'leave' ? 'Your changes to this workflow are not saved yet.' : 'This workflow is live. Saving changes what the next runs do; runs already waiting on a delay carry on from where they are.'}
+            </p>
+            {dialog === 'update' && warns.length ? <p role="alert" style={css('margin: 0; font-size: 14px; color: ' + T.error + ';')}>Fix {plural(warns.length, 'thing')} first: {warns.map((x) => x.title).join(', ')}.</p> : null}
+            <div style={css('display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 10px;')}>
               {dialog === 'leave' ? (
                 <>
-                  <button type="button" onClick={onClose} style={css(S.btn + S.ghost + ' color: var(--red-ink);')}>Discard changes</button>
-                  <button type="button" autoFocus onClick={async () => { if (await save(live && warns ? 'off' : undefined)) onClose(); }} style={css(S.btn + S.primary)}>{live && warns ? 'Save and turn off' : 'Save and leave'}</button>
+                  <button type="button" className="wf-h" onClick={onClose} style={css(btn('danger'))}>Discard changes</button>
+                  <button type="button" className="wf-k" autoFocus onClick={async () => { if (await save(live && warns.length ? 'off' : undefined)) onClose(); }} style={css(btn('primary'))}>{live && warns.length ? 'Save and turn off' : 'Save and leave'}</button>
                 </>
               ) : (
                 <>
-                  <button type="button" autoFocus onClick={() => setConfirm('')} style={css(S.btn + S.ghost)}>Cancel</button>
-                  <button type="button" disabled={!!warns || !!busy} onClick={async () => { if (await save(dialog === 'review' ? 'live' : undefined)) setConfirm(''); }} style={css(S.btn + S.primary + (warns || busy ? ' opacity: 0.45; cursor: default;' : ''))}>
-                    {dialog === 'update' ? (busy ? 'Saving…' : 'Save changes') : busy === 'live' ? 'Turning on…' : 'Turn on'}
-                  </button>
+                  <button type="button" className="wf-h" autoFocus onClick={() => setConfirm('')} style={css(btn('ghost'))}>Cancel</button>
+                  <button type="button" className="wf-k" disabled={!!warns.length || !!busy} onClick={async () => { if (await save()) setConfirm(''); }} style={css(btn('primary') + (warns.length || busy ? ' opacity: .45; cursor: default;' : ''))}>{busy ? 'Saving…' : 'Save changes'}</button>
                 </>
               )}
             </div>
@@ -1078,10 +1136,8 @@ export default function FlowBuilder({ D, A, row, onClose, goConnect, review }) {
   );
 }
 
-// Mounted by Studio.jsx while s.flowOpen is set: the Create flow dialog ('new'), then the builder for that flow
-// (flowReview: open on Review and turn on, from a card's switch). After Connect sends you to Integrations,
-// s.flowReturn keeps a "Back to <flow>" button on screen.
 export function FlowLayer({ D, A, open, review, back, set }) {
+  const leaveTo = (more) => set({ flowOpen: '', flowReview: false, ...more });
   if (open === 'new') return <CreateFlowDialog D={D} A={A} onCreated={(row) => set({ flowOpen: row.id })} onClose={() => set({ flowOpen: '' })} />;
   if (!open) {
     const ret = (D.automations || []).find((a) => a.id === back);
@@ -1097,6 +1153,7 @@ export function FlowLayer({ D, A, open, review, back, set }) {
   }
   const row = (D.automations || []).find((a) => a.id === open);
   if (!row) return null;
-  return <FlowBuilder key={row.id} D={D} A={A} row={row} review={review} onClose={() => set({ flowOpen: '', flowReview: false })}
-    goConnect={(provider) => set({ flowOpen: '', flowReview: false, flowReturn: row.id, nav: 'workspace', wsTab: 'integ', integFocus: provider, integExpanded: provider })} />;
+  return <FlowBuilder key={row.id} D={D} A={A} row={row} review={review} onClose={() => leaveTo({})}
+    goHub={(tab) => leaveTo(tab === 'connectors' ? { nav: 'auto', autoConn: true } : { nav: 'auto', autoTab: tab })}
+    goConnect={(provider) => leaveTo({ flowReturn: row.id, nav: 'workspace', wsTab: 'integ', integFocus: provider, integExpanded: provider })} />;
 }

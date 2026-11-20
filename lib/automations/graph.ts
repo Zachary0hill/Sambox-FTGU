@@ -13,22 +13,30 @@
 //
 // Messages can carry data tokens, {{project.title}} and friends, filled in when the step runs (fillTokens).
 
-import { actionById, actionsOf, triggerOf, triggerText, ACTIONS } from './catalog';
+import { actionById, actionsOf, triggerOf, triggerText, hasNoProject, ACTIONS } from './catalog';
 
 export type Kind = 'automation' | 'process' | 'idea';
 export type TagType = 'project' | 'idea' | 'client' | 'person' | 'status' | 'channel' | 'brand' | 'connector' | 'video' | 'buffer';
 export type Tag = { type: TagType; id: string; label: string };
 export type Crit = { field: string; op: 'is' | 'is_not' | 'set' | 'empty'; value: string };
-export type Path = { id: string; name: string; when: Crit[]; steps: Node[] };
+// A path is taken when its rules match: all of `when` (or any of them with match 'any'), or every rule of one of
+// the `or` groups.
+export type Path = { id: string; name: string; when: Crit[]; match?: 'all' | 'any'; or?: Crit[][]; steps: Node[] };
 export type Node = {
-  id: string; type: 'action' | 'task' | 'note' | 'delay' | 'split'; tags: Tag[];
+  id: string; type: 'action' | 'task' | 'note' | 'delay' | 'split' | 'data' | 'ai' | 'approval'; tags: Tag[];
   key?: string; message?: string;                       // action
   title?: string; note?: string; owner?: string;        // task, note (owner: a member's user id)
   amount?: number; unit?: 'minutes' | 'hours' | 'days'; // delay
   name?: string; paths?: Path[];                        // split
+  timeoutHours?: number;                                // approval: hours until it rejects itself (0: never)
 };
-export type Trigger = { key: string; value: string; text: string; tags: Tag[] };
-export type Graph = { v: 2; kind: Kind; tags: Tag[]; trigger: Trigger; steps: Node[] };
+// filters: "Only when" rules checked against the run's project before any step. tz: a schedule's timezone.
+// secret: a webhook's optional key (the x-workflow-key header).
+export type Trigger = { key: string; value: string; text: string; tags: Tag[]; filters?: Crit[]; tz?: string; secret?: string };
+// Optional extras the workflow builder keeps with the graph (lib/workflow/graph.js): description, owner, per-workflow
+// run settings, the last test result, whether Studio Assistant drafted it, and the template it started from.
+export type GraphExtras = { description?: string; owner?: string; settings?: Record<string, unknown>; lastTest?: unknown; byAgent?: boolean; template?: string };
+export type Graph = { v: 2; kind: Kind; tags: Tag[]; trigger: Trigger; steps: Node[] } & GraphExtras;
 
 export const KINDS: [Kind, string, string][] = [
   ['automation', 'Automation', 'Runs on its own when the trigger fires'],
@@ -64,6 +72,21 @@ export const TOKENS: [string, string][] = [
   ['project.editor', 'Editor'], ['project.designer', 'Designer'], ['trigger', 'What happened'], ['flow.name', 'Flow name'], ['workspace.name', 'Workspace'],
 ];
 
+// What rules check: one value per FIELDS key (ids, or the label for a status), null when the project has none.
+export type RuleValues = Record<string, string | null | undefined>;
+export function matchCrit(c: Crit, v: RuleValues | null) {
+  if (!v || !FIELDS.some((x) => x.key === c.field)) return false;
+  const have = v[c.field];
+  if (c.op === 'set') return !!have;
+  if (c.op === 'empty') return !have;
+  const same = String(have || '').toLowerCase() === String(c.value || '').toLowerCase();
+  return c.op === 'is' ? same : !same;
+}
+const matchGroup = (rules: Crit[], any: boolean, v: RuleValues | null) => rules.length > 0 && (any ? rules.some((c) => matchCrit(c, v)) : rules.every((c) => matchCrit(c, v)));
+export const matchPath = (p: Path, v: RuleValues | null) => matchGroup(p.when || [], p.match === 'any', v) || (p.or || []).some((grp) => matchGroup(grp, false, v));
+export const matchFilters = (filters: Crit[] | undefined, v: RuleValues | null) => !filters || !filters.length || filters.every((c) => matchCrit(c, v));
+export const critDone = (c: Crit) => !!c.field && (c.op === 'set' || c.op === 'empty' || !!c.value);
+
 export function fillTokens(text: string, data: Record<string, string | null | undefined>) {
   return (text || '').replace(/\{\{\s*([a-z_.]+)(?:\s*\|\s*default:\s*'([^']*)')?\s*\}\}/gi, (_, k: string, dflt?: string) => {
     const v = data[k.toLowerCase()];
@@ -74,8 +97,12 @@ export function fillTokens(text: string, data: Record<string, string | null | un
 let seq = 0;
 export const newId = (p = 'n') => p + Date.now().toString(36) + (seq++).toString(36) + Math.random().toString(36).slice(2, 5);
 
+// Run settings a new workflow starts with (handoff assumption 5): 1 retry, 5 minutes apart, alert the Super Admins,
+// turn off after 3 failures in a row. A workflow saved before the builder has none and keeps the workspace rules.
+export const NEW_SETTINGS = { retries: 1, retryWait: '5m', alert: ['admins'], autoOffAfter: 3, oneAtATime: false, perHour: 0 };
+
 export function emptyGraph(kind: Kind = 'automation', tags: Tag[] = []): Graph {
-  return { v: 2, kind, tags, trigger: { key: kind === 'automation' ? '' : 'manual', value: '', text: '', tags: [] }, steps: [] };
+  return { v: 2, kind, tags, settings: { ...NEW_SETTINGS }, trigger: { key: kind === 'automation' ? '' : 'manual', value: '', text: '', tags: [] }, steps: [] };
 }
 
 export const isGraph = (flow: unknown): flow is Graph => !!flow && typeof flow === 'object' && !Array.isArray(flow) && (flow as Graph).v === 2;
@@ -84,7 +111,9 @@ export const isGraph = (flow: unknown): flow is Graph => !!flow && typeof flow =
 export function graphOf(row: { flow?: unknown; trigger?: unknown; actions?: unknown } | null | undefined): Graph {
   if (row && isGraph(row.flow)) {
     const g = row.flow;
-    return { v: 2, kind: g.kind || 'automation', tags: g.tags || [], trigger: Object.assign({ key: '', value: '', text: '', tags: [] }, g.trigger), steps: g.steps || [] };
+    const extras: GraphExtras = {};
+    (['description', 'owner', 'settings', 'lastTest', 'byAgent', 'template'] as const).forEach((k) => { if (g[k] !== undefined) (extras as Record<string, unknown>)[k] = g[k]; });
+    return { v: 2, kind: g.kind || 'automation', tags: g.tags || [], trigger: Object.assign({ key: '', value: '', text: '', tags: [] }, g.trigger), steps: g.steps || [], ...extras };
   }
   // Converted steps keep their action key as id, the same key older runs list in output.done, so a run waiting to
   // retry when the workflow is first saved in the builder does not repeat a step that already worked.
@@ -143,7 +172,8 @@ export function compile(g: Graph, statusLabel?: (v: string) => string) {
   const when = runs ? (g.trigger.key ? triggerText(g.trigger.key, g.trigger.value, statusLabel) : 'No trigger yet') : (g.trigger.text || (g.kind === 'process' ? 'Started by hand' : 'An idea'));
   const then = said.length ? said.join(', then ') : stepCount(g) ? plural(stepCount(g), 'step') : 'nothing yet';
   return {
-    trigger: runs ? { key: g.trigger.key, value: g.trigger.value, label: when } : { key: 'manual', value: '', label: when },
+    trigger: runs ? { key: g.trigger.key, value: g.trigger.value, label: when, ...(g.trigger.tz ? { tz: g.trigger.tz } : {}), ...(g.trigger.key === 'webhook' && g.trigger.secret ? { secret: g.trigger.secret } : {}) }
+      : { key: 'manual', value: '', label: when },
     actions: runs ? acts : [],
     when_text: when.charAt(0).toLowerCase() + when.slice(1), then_text: then,
     app: runs ? Array.from(apps)[0] || 'Board' : g.kind === 'process' ? 'Process' : 'Idea',
@@ -153,22 +183,32 @@ export function compile(g: Graph, statusLabel?: (v: string) => string) {
 
 // Problems the builder flags in its Alerts panel; warnings block turning an automation on. Processes and ideas never
 // run, so they only get gentle notes about unfinished cards. connected: provider keys with a working connection.
+const STEP_NAME: Record<string, string> = { ai: 'Assistant', data: 'Board data' };
+// data 'get_project' is a no-op at run time: the runner already loads the run's project for every step.
+// An approval step runs: it parks the run until a Super Admin approves or rejects (lib/automations/run.ts).
+export const cannotRunYet = (n: Node) => n.type === 'ai' || (n.type === 'data' && (n.key || 'get_project') !== 'get_project');
 export function issuesOf(g: Graph, connected: Record<string, boolean>) {
   const out: { id: string; level: 'warn' | 'info'; title: string; body: string }[] = [];
   const runs = g.kind === 'automation';
   const warn = runs ? 'warn' as const : 'info' as const;
   if (runs && !g.trigger.key) out.push({ id: 'trigger', level: 'warn', title: 'Pick a trigger', body: 'An automation needs a trigger before it can turn on.' });
+  if (runs && (g.trigger.filters || []).some((c) => !critDone(c))) out.push({ id: 'trigger', level: 'warn', title: 'Finish the trigger filter', body: 'An Only when rule has no value picked.' });
+  if (runs && hasNoProject(g.trigger.key) && (g.trigger.filters || []).length) out.push({ id: 'trigger', level: 'warn', title: 'Remove the trigger filters', body: 'Schedules and webhooks run without a project, so Only when rules can never match.' });
+  const noProject = runs && hasNoProject(g.trigger.key);
   let work = 0;
   walk(g.steps, (n) => {
-    if (n.type === 'action' || n.type === 'task') work++;
+    if (n.type === 'action' || n.type === 'task' || n.type === 'ai' || n.type === 'approval') work++;
+    // Step types the runner cannot run yet (lib/automations/run.ts stops on them), so a flow with one stays a draft.
+    if (runs && cannotRunYet(n)) out.push({ id: n.id, level: 'warn', title: (n.title || STEP_NAME[n.type]) + ' is not available yet', body: STEP_NAME[n.type] + ' steps cannot run yet. Remove the step or keep this workflow as a draft.' });
     if (n.type === 'action') {
       const def = n.key ? actionById(n.key) : null;
       if (!def) out.push({ id: n.id, level: warn, title: 'Choose an action', body: 'This step has no action yet.' });
+      else if (noProject && def.scope !== 'any') out.push({ id: n.id, level: 'warn', title: '"' + def.label + '" needs a project', body: 'A schedule or webhook starts a run with no project, so this step has nothing to act on. Use a step that does not need one, such as a Slack message or a To-Do.' });
       else if (runs && def.needs && !connected[def.needs]) out.push({ id: n.id, level: 'warn', title: 'Connect ' + def.app, body: '"' + def.label + '" needs ' + def.app + ' connected in Workspace Settings > Integrations.' });
     }
     if (n.type === 'split') (n.paths || []).slice(0, -1).forEach((p) => {
-      if (!p.when.length) out.push({ id: p.id, level: warn, title: 'Add path criteria', body: p.name + ' has no criteria yet, so nothing goes down it.' });
-      else if (p.when.some((c) => (c.op === 'is' || c.op === 'is_not') && !c.value)) out.push({ id: p.id, level: warn, title: 'Finish the criteria', body: p.name + ' has a condition with no value picked.' });
+      if (!p.when.length) out.push({ id: p.id, level: warn, title: 'Add a rule to ' + p.name, body: p.name + ' has no rule yet, so nothing takes that path.' });
+      else if (p.when.concat(...(p.or || [])).some((c) => !critDone(c))) out.push({ id: p.id, level: warn, title: 'Finish the rule for ' + p.name, body: p.name + ' has a rule with no value picked.' });
     });
     if (n.type === 'delay' && runs && !(Number(n.amount) > 0)) out.push({ id: n.id, level: 'info', title: 'Set the wait', body: 'A wait of 0 does nothing.' });
     if (n.type === 'task' && !n.title) out.push({ id: n.id, level: 'info', title: 'Name the task', body: 'Give this task a short title.' });

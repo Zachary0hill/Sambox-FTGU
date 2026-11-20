@@ -1,0 +1,158 @@
+{
+  "name": "ideas-research-handoff-2026-11-19",
+  "created": "2026-11-19T21:49:11",
+  "counts": {
+    "source": 7,
+    "html": 7,
+    "screenshots": 7
+  },
+  "missing": [],
+  "layout": "<slug>-handoff-<date>/\n  START-HERE.md            read first: what this is, read order, first build phase\n  HANDOFF.md               the build spec\n  MANIFEST.json            every file with size and sha256\n  canvas.json              artboard frames, order, notes\n  render-report.json       per-artboard size, warnings, tweak props\n  tokens-candidates.json   colors, fonts, sizes, radii tallied from the artboards\n  screenshots/*.png        one per artboard, at frame size\n  html/*.html              static HTML per artboard, no canvas runtime\n  source/*.dc.html         original artboard sources\n  spec/                    original spec markdown, when supplied",
+  "files": [
+    {
+      "path": "HANDOFF.md",
+      "bytes": 38408,
+      "sha256": "0426b26e6cd979b4b666e1e24d285045ada2bbbc2244dbae729a51a545dbb0b2"
+    },
+    {
+      "path": "START-HERE.md",
+      "bytes": 2840,
+      "sha256": "165f42ad440765ec498b8518ad4e361ef57e2c4bcc79bb162e9a8d8ccb4fdcec"
+    },
+    {
+      "path": "canvas.json",
+      "bytes": 1804,
+      "sha256": "9a6b2c23a25764f95d27c8763ca65a3dc28861fdbe7e7bb252a92b8e8de0386d"
+    },
+    {
+      "path": "render-report.json",
+      "bytes": 2933,
+      "sha256": "737fe9ebb825d900aa547ef1dee0057d509486dd71e9dd527a1a2e14041f5d85"
+    },
+    {
+      "path": "tokens-candidates.json",
+      "bytes": 5946,
+      "sha256": "56dcc48044dcffe800341983c592fe7060b6431b121a941a8436f0c64e037766"
+    },
+    {
+      "path": "html/MainCompact.html",
+      "bytes": 85754,
+      "sha256": "dc8a66f5b56a5b54c87b79cd290af42fd899a6327d03127293c688902074ae43"
+    },
+    {
+      "path": "html/State-Board-1024.html",
+      "bytes": 67062,
+      "sha256": "49b07388d451b556e9b85d60e682df844d01c6972b4740cc33b40c58650e1fb2"
+    },
+    {
+      "path": "html/State-Board-1440.html",
+      "bytes": 67062,
+      "sha256": "c5604a80d9fecfed5e4dfa736992f54c9bb832e6bdfadbfaad810d989141e9ed"
+    },
+    {
+      "path": "html/State-Board-1920.html",
+      "bytes": 67062,
+      "sha256": "fa979025880b7ad691ecc3c6a026359d97a9edcc7f20d616a5b1b34140d40641"
+    },
+    {
+      "path": "html/State-Board-390.html",
+      "bytes": 67060,
+      "sha256": "f5db05649f934932a1a25b5a0b6f4b4ef76f211b757e6950852a9b070b353c78"
+    },
+    {
+      "path": "html/State-Detail-390.html",
+      "bytes": 85758,
+      "sha256": "0a17ebcca9101e4b5d58eae3e6126c498ed3525641e0f5a47d8b080c01cf36ac"
+    },
+    {
+      "path": "html/State-Filters-1440.html",
+      "bytes": 66987,
+      "sha256": "7fac1f2d15ebd8e031e59614c0f3b31387e90f7fa852a9eed9226b7e2fcaa78b"
+    },
+    {
+      "path": "screenshots/MainCompact.png",
+      "bytes": 270412,
+      "sha256": "e87d6210bf6b7b5738d5959923906e881bcac6f69c8d8c6bd01552630e769905"
+    },
+    {
+      "path": "screenshots/State-Board-1024.png",
+      "bytes": 224748,
+      "sha256": "0a1d9cc1725a8878d6f5f35139835356cb6d72b20dc5c39a5806d080e15387be"
+    },
+    {
+      "path": "screenshots/State-Board-1440.png",
+      "bytes": 284758,
+      "sha256": "ea1ac8750b1c68ccbb83b40de9d217e235135ce15cab051f63d357ac33018973"
+    },
+    {
+      "path": "screenshots/State-Board-1920.png",
+      "bytes": 314042,
+      "sha256": "06bccbd4f44aa6a877c70f2fba5cab08f018d60e46a945a6d14346a24a078393"
+    },
+    {
+      "path": "screenshots/State-Board-390.png",
+      "bytes": 134992,
+      "sha256": "4660f5fea53a639b100a91914d086d23df7d32f6e77bb1c79432244181c37be2"
+    },
+    {
+      "path": "screenshots/State-Detail-390.png",
+      "bytes": 143895,
+      "sha256": "f762cf7829cbbd2806f2f323f816beb4816375dd8339c2fc3799e9de1b659850"
+    },
+    {
+      "path": "screenshots/State-Filters-1440.png",
+      "bytes": 271647,
+      "sha256": "2c8a5595632913b57938688b4b81add8261e12cfbe88619e15e4301ee9f90d24"
+    },
+    {
+      "path": "source/MainCompact.dc.html",
+      "bytes": 118354,
+      "sha256": "339f9ba8a7d7270d5b56ab319083e11a20cf6bd30c87c2626dd00b37004a14e8"
+    },
+    {
+      "path": "source/State-Board-1024.dc.html",
+      "bytes": 118336,
+      "sha256": "702b6f9ca5058a6529fddae8aaeb4e37a0544df694288a7b83e2853751e3f107"
+    },
+    {
+      "path": "source/State-Board-1440.dc.html",
+      "bytes": 118336,
+      "sha256": "03566725cd91b4b3738fa2637d49b8a45aded91246af7df10ce09929128f2c19"
+    },
+    {
+      "path": "source/State-Board-1920.dc.html",
+      "bytes": 118336,
+      "sha256": "bf970239eadb5f9856618479e5d93c10a0361f3b933f90ddd16e89cce6300680"
+    },
+    {
+      "path": "source/State-Board-390.dc.html",
+      "bytes": 118335,
+      "sha256": "2e7442790ff0e463724f1648960d56fa46918fe43dca669a8f1a43b453efa54c"
+    },
+    {
+      "path": "source/State-Detail-390.dc.html",
+      "bytes": 118353,
+      "sha256": "764b2025d1b409b01f2afe7001b66ec02058d8b7472a94313378de700213fd64"
+    },
+    {
+      "path": "source/State-Filters-1440.dc.html",
+      "bytes": 118354,
+      "sha256": "cf58b19041787b6d9d1d95a124e0725662d8a40aaea7101de40dbd93a8b7beff"
+    },
+    {
+      "path": "spec/board-cards-and-columns-spec.md",
+      "bytes": 3181,
+      "sha256": "9c33523c50f14086bfe04cafb775efe208f6974bceca226f5b78ec649eff1d21"
+    },
+    {
+      "path": "spec/board-workflow.md",
+      "bytes": 2525,
+      "sha256": "be8ecace9c41d2615688a54091e5cc9871e82c895ad17872bf966a3dfc67ec8b"
+    },
+    {
+      "path": "spec/toolbar-and-filters-spec.md",
+      "bytes": 2553,
+      "sha256": "7438e4ed903ade1fe787d8d9bae19d6389881f2f5248f2318fbb55faea5f64b7"
+    }
+  ]
+}

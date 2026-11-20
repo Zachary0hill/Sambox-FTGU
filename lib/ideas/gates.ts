@@ -32,17 +32,20 @@ export function gateChecklist(idea: GateIdea, stage: (typeof GATED_STAGES)[numbe
 const missing = (idea: GateIdea, stage: (typeof GATED_STAGES)[number], rules: GateRules) =>
   gateChecklist(idea, stage, rules).filter((c) => !c.on).map((c) => c.label);
 
-// Why the idea cannot move between these stages, or '' when it can. Stages are the page's labels.
+// The board's names for the idea_stage keys (handoff/ideas-research-handoff-2026-11-19, Open question 1).
+export const STAGE_LABEL: Record<string, string> = { Inbox: 'Idea Inbox', Research: 'In Development', Ready: 'Ready for Review', Approved: 'Approved', Archived: 'Parked' };
+
+// Why the idea cannot move between these stages, or '' when it can. Stages are the page's keys.
 export function stageBlocker(idea: GateIdea, from: string, to: string, rules: GateRules): string {
   const a = ORDER.indexOf(from), b = ORDER.indexOf(to);
   if (a < 0 || b < 0 || b <= a) return '';
   if (a < 1 && b >= 1) {
     const need = missing(idea, 'research', rules);
-    if (need.length) return "Can't move to Research yet. Still needed: " + need.join(', ') + '.';
+    if (need.length) return "Can't move to In Development yet. Still needed: " + need.join(', ') + '.';
   }
   if (b >= 2) {
     const need = missing(idea, 'ready', rules);
-    if (need.length) return (b === 3 ? "Can't approve yet" : "Can't move to Ready yet") + '. Still needed: ' + need.join(', ') + '.';
+    if (need.length) return (b === 3 ? "Can't approve yet" : "Can't send to review yet") + '. Still needed: ' + need.join(', ') + '.';
   }
   return '';
 }

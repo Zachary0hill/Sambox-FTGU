@@ -1,0 +1,415 @@
+{
+  "colors": [
+    {
+      "value": "#C9CDD4",
+      "count": 335
+    },
+    {
+      "value": "#F2F3F5",
+      "count": 330
+    },
+    {
+      "value": "#A3A8B3",
+      "count": 285
+    },
+    {
+      "value": "#14151A",
+      "count": 151
+    },
+    {
+      "value": "#262830",
+      "count": 111
+    },
+    {
+      "value": "#23252C",
+      "count": 78
+    },
+    {
+      "value": "#1C1E24",
+      "count": 63
+    },
+    {
+      "value": "#19E6D0",
+      "count": 61
+    },
+    {
+      "value": "#0C0D10",
+      "count": 58
+    },
+    {
+      "value": "#2B2D35",
+      "count": 54
+    },
+    {
+      "value": "#101113",
+      "count": 52
+    },
+    {
+      "value": "#F5F6F8",
+      "count": 52
+    },
+    {
+      "value": "#22242B",
+      "count": 50
+    },
+    {
+      "value": "#33363F",
+      "count": 46
+    },
+    {
+      "value": "#C084FC",
+      "count": 42
+    },
+    {
+      "value": "#0A0B0D",
+      "count": 35
+    },
+    {
+      "value": "#16171C",
+      "count": 34
+    },
+    {
+      "value": "#06211E",
+      "count": 30
+    },
+    {
+      "value": "#C4B1FF",
+      "count": 29
+    },
+    {
+      "value": "#7CF0A8",
+      "count": 28
+    },
+    {
+      "value": "rgba(14,15,18,0.94)",
+      "count": 28
+    },
+    {
+      "value": "#1E2027",
+      "count": 27
+    },
+    {
+      "value": "#123222",
+      "count": 26
+    },
+    {
+      "value": "#6B7180",
+      "count": 23
+    },
+    {
+      "value": "#2A2C35",
+      "count": 22
+    },
+    {
+      "value": "#3DDC84",
+      "count": 21
+    },
+    {
+      "value": "#1B1630",
+      "count": 21
+    },
+    {
+      "value": "#5C616D",
+      "count": 20
+    },
+    {
+      "value": "#8A8F9A",
+      "count": 19
+    },
+    {
+      "value": "#2E3039",
+      "count": 17
+    },
+    {
+      "value": "#34363F",
+      "count": 15
+    },
+    {
+      "value": "#FFB020",
+      "count": 14
+    },
+    {
+      "value": "#9B7BFF",
+      "count": 13
+    },
+    {
+      "value": "#1A1B21",
+      "count": 13
+    },
+    {
+      "value": "rgba(10,11,13,0.86)",
+      "count": 13
+    },
+    {
+      "value": "#4A4128",
+      "count": 9
+    },
+    {
+      "value": "#FFD27A",
+      "count": 9
+    },
+    {
+      "value": "#8EC5FF",
+      "count": 9
+    },
+    {
+      "value": "#12233A",
+      "count": 8
+    },
+    {
+      "value": "#2A2C34",
+      "count": 7
+    }
+  ],
+  "fontFamilies": [
+    {
+      "value": "Unbounded, sans-serif",
+      "count": 58
+    },
+    {
+      "value": "inherit",
+      "count": 7
+    },
+    {
+      "value": "Inter, system-ui, sans-serif",
+      "count": 7
+    },
+    {
+      "value": "Inter, sans-serif",
+      "count": 7
+    }
+  ],
+  "fontSizes": [
+    {
+      "value": "12px",
+      "count": 255
+    },
+    {
+      "value": "13px",
+      "count": 246
+    },
+    {
+      "value": "14px",
+      "count": 160
+    },
+    {
+      "value": "11px",
+      "count": 127
+    },
+    {
+      "value": "16px",
+      "count": 52
+    },
+    {
+      "value": "40px",
+      "count": 28
+    },
+    {
+      "value": "15px",
+      "count": 8
+    },
+    {
+      "value": "28px",
+      "count": 7
+    },
+    {
+      "value": "18px",
+      "count": 7
+    },
+    {
+      "value": "22px",
+      "count": 2
+    },
+    {
+      "value": "10px",
+      "count": 2
+    }
+  ],
+  "radii": [
+    {
+      "value": "10px",
+      "count": 164
+    },
+    {
+      "value": "8px",
+      "count": 161
+    },
+    {
+      "value": "6px",
+      "count": 151
+    },
+    {
+      "value": "50%",
+      "count": 149
+    },
+    {
+      "value": "12px",
+      "count": 71
+    },
+    {
+      "value": "999px",
+      "count": 62
+    },
+    {
+      "value": "16px",
+      "count": 42
+    },
+    {
+      "value": "0 0 15px 15px",
+      "count": 28
+    },
+    {
+      "value": "7px",
+      "count": 25
+    },
+    {
+      "value": "9px",
+      "count": 17
+    },
+    {
+      "value": "5px",
+      "count": 15
+    },
+    {
+      "value": "2px",
+      "count": 8
+    },
+    {
+      "value": "0 !important",
+      "count": 7
+    },
+    {
+      "value": "15px",
+      "count": 7
+    },
+    {
+      "value": "18px",
+      "count": 2
+    }
+  ],
+  "spacing": [
+    {
+      "value": "6px",
+      "count": 224
+    },
+    {
+      "value": "12px",
+      "count": 196
+    },
+    {
+      "value": "0",
+      "count": 170
+    },
+    {
+      "value": "8px",
+      "count": 132
+    },
+    {
+      "value": "0 12px",
+      "count": 130
+    },
+    {
+      "value": "2px",
+      "count": 91
+    },
+    {
+      "value": "0 8px",
+      "count": 80
+    },
+    {
+      "value": "10px",
+      "count": 78
+    },
+    {
+      "value": "0 10px",
+      "count": 72
+    },
+    {
+      "value": "4px",
+      "count": 71
+    },
+    {
+      "value": "7px",
+      "count": 56
+    },
+    {
+      "value": "14px",
+      "count": 54
+    },
+    {
+      "value": "5px",
+      "count": 52
+    },
+    {
+      "value": "0 8px 0 14px",
+      "count": 39
+    },
+    {
+      "value": "0 16px",
+      "count": 32
+    },
+    {
+      "value": "2px 7px",
+      "count": 28
+    },
+    {
+      "value": "14px 12px 14px 16px",
+      "count": 28
+    },
+    {
+      "value": "20px",
+      "count": 16
+    },
+    {
+      "value": "3px",
+      "count": 14
+    },
+    {
+      "value": "3px 7px",
+      "count": 12
+    },
+    {
+      "value": "0 14px",
+      "count": 8
+    },
+    {
+      "value": "14px 16px",
+      "count": 8
+    },
+    {
+      "value": "20px 16px 32px !important",
+      "count": 7
+    },
+    {
+      "value": "0 !important",
+      "count": 7
+    },
+    {
+      "value": "20px 14px",
+      "count": 7
+    },
+    {
+      "value": "0 8px 16px",
+      "count": 7
+    },
+    {
+      "value": "0 12px 6px",
+      "count": 7
+    },
+    {
+      "value": "28px 32px 48px",
+      "count": 7
+    },
+    {
+      "value": "16px",
+      "count": 7
+    },
+    {
+      "value": "0 8px 0 10px",
+      "count": 7
+    }
+  ],
+  "googleFonts": [
+    "https://fonts.googleapis.com/css2?family=Inter:wght@500;600;700;800&family=Unbounded:wght@600;700;800&display=swap"
+  ]
+}

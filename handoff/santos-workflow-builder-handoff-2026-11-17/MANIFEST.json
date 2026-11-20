@@ -1,0 +1,173 @@
+{
+  "name": "santos-workflow-builder-handoff-2026-11-17",
+  "created": "2026-11-17T12:26:22",
+  "counts": {
+    "source": 9,
+    "html": 9,
+    "screenshots": 9
+  },
+  "missing": [],
+  "layout": "<slug>-handoff-<date>/\n  START-HERE.md            read first: what this is, read order, first build phase\n  HANDOFF.md               the build spec\n  MANIFEST.json            every file with size and sha256\n  canvas.json              artboard frames, order, notes\n  render-report.json       per-artboard size, warnings, tweak props\n  tokens-candidates.json   colors, fonts, sizes, radii tallied from the artboards\n  screenshots/*.png        one per artboard, at frame size\n  html/*.html              static HTML per artboard, no canvas runtime\n  source/*.dc.html         original artboard sources\n  spec/                    original spec markdown, when supplied",
+  "files": [
+    {
+      "path": "HANDOFF.md",
+      "bytes": 30979,
+      "sha256": "5061611478b06458ee7030378f4d58aa9ae1aba2e7d8800ede68c09fba7833f6"
+    },
+    {
+      "path": "START-HERE.md",
+      "bytes": 2197,
+      "sha256": "8dcd64f424adf33d1df588c363279bc6ccc44fc00464de2ce55379841085e5fb"
+    },
+    {
+      "path": "canvas.json",
+      "bytes": 1917,
+      "sha256": "de93267b23e686e16e97696ff754ccacf8fdcb79d4dcf2931b2e5bf692a85fcb"
+    },
+    {
+      "path": "render-report.json",
+      "bytes": 3171,
+      "sha256": "e52061c386b9695da40bd7489ba75351b8c8033fc972118b1547cacc27ab6f3c"
+    },
+    {
+      "path": "tokens-candidates.json",
+      "bytes": 6429,
+      "sha256": "ea4d94e87539873295c2248713f81fcb64576499ceae7a9d4f3aece9ed63ad7b"
+    },
+    {
+      "path": "html/Main.html",
+      "bytes": 14199,
+      "sha256": "8b3fd8869d96c001687f4185a53633f4808631ed2bd154afd3cb240694953f48"
+    },
+    {
+      "path": "html/Santos-Approval.html",
+      "bytes": 7870,
+      "sha256": "2ff903e188515f864edcb779d24e755358ced64fea1babce8620072da5c7d6e7"
+    },
+    {
+      "path": "html/Santos-Builder.html",
+      "bytes": 47949,
+      "sha256": "2bdac89a5558ba1e785311f14b6fb88370aba825efa596044a58d9295ee7f284"
+    },
+    {
+      "path": "html/Santos-Condition.html",
+      "bytes": 13235,
+      "sha256": "eee27b4627103d8f07e477b238cfa23d4386d9622f94a76983b1e1365ddcb2a0"
+    },
+    {
+      "path": "html/Santos-Connectors.html",
+      "bytes": 12845,
+      "sha256": "bcd80b2b18135775fab74cf565ebb1940d64399b37516a5d8bee45242bedfd23"
+    },
+    {
+      "path": "html/Santos-Hub.html",
+      "bytes": 44976,
+      "sha256": "f3cbd841975e7575cd399d10e4995d4730b8da36a78d774ccd6252fb7ff84a5e"
+    },
+    {
+      "path": "html/Santos-Run.html",
+      "bytes": 10112,
+      "sha256": "fca224243d6f47fefc77b9e4bf2d34008c744391ca98dd57d6d077095a81ae00"
+    },
+    {
+      "path": "html/Santos-Settings.html",
+      "bytes": 13792,
+      "sha256": "0e7b03343a8684c1edcd67567c0b4bca9b28edf7416fbc1e07677a7cc6c5be03"
+    },
+    {
+      "path": "html/Santos-Trigger.html",
+      "bytes": 12842,
+      "sha256": "037943e0e47161887e50c141016a3dec187e61a74d9679a7747c7dc0db5f0d4c"
+    },
+    {
+      "path": "screenshots/Main.png",
+      "bytes": 497527,
+      "sha256": "909c1510ae12edce2094b5b99de7492cb4884c2005800dbe5f038dd184e4e53f"
+    },
+    {
+      "path": "screenshots/Santos-Approval.png",
+      "bytes": 128383,
+      "sha256": "919fb21fca12709c29d0cb478d2a26e84ae436ad170eb918044eece38610d127"
+    },
+    {
+      "path": "screenshots/Santos-Builder.png",
+      "bytes": 207982,
+      "sha256": "ce276f61595f77c3c65acf45e6c1d78b4c907b31a01341299d4fcc7acc370889"
+    },
+    {
+      "path": "screenshots/Santos-Condition.png",
+      "bytes": 114228,
+      "sha256": "5b471039d931ed62bd33e400c655b54130cc56a9b54d970e704f09b5f3f9db8b"
+    },
+    {
+      "path": "screenshots/Santos-Connectors.png",
+      "bytes": 114698,
+      "sha256": "5507ed6b9c34cc0a65329e6ce878b1d4dcd13d08730457d7649b874399a3e9b2"
+    },
+    {
+      "path": "screenshots/Santos-Hub.png",
+      "bytes": 281910,
+      "sha256": "c699ef93803fc4a84bc6c5127e7df569b70eddefcbb60bf615883169d2380010"
+    },
+    {
+      "path": "screenshots/Santos-Run.png",
+      "bytes": 129427,
+      "sha256": "2e90e93d43fd0b0e9d5fe5237b461c80b4976790373b7109442c9b9fc809bda0"
+    },
+    {
+      "path": "screenshots/Santos-Settings.png",
+      "bytes": 99180,
+      "sha256": "e26df134cae32c1d060f249ee403220288d2ed7a521a2e698856e7f63eb08055"
+    },
+    {
+      "path": "screenshots/Santos-Trigger.png",
+      "bytes": 141238,
+      "sha256": "3698593636129a1030edd4f7cdb64400b4e22654129e482004e21e9a4247b274"
+    },
+    {
+      "path": "source/Main.dc.html",
+      "bytes": 14282,
+      "sha256": "75de175ee6896d228c0e434e0b66cb843e93ae9dd6caca548b6b02219843f67a"
+    },
+    {
+      "path": "source/Santos-Approval.dc.html",
+      "bytes": 14162,
+      "sha256": "0f3e1c77fc3ad2d713fdb26b662c02061f003e8fdfcfc4e0e4d47742000e814a"
+    },
+    {
+      "path": "source/Santos-Builder.dc.html",
+      "bytes": 52254,
+      "sha256": "434d27d387b43d8d452f312aac7b12fce9ddf690576ad816e670d44a91e21ab0"
+    },
+    {
+      "path": "source/Santos-Condition.dc.html",
+      "bytes": 15275,
+      "sha256": "84caac53e2b1245b8acebee526e76ed62c6ca0322d6e0e2a11bd6eafe5a7a421"
+    },
+    {
+      "path": "source/Santos-Connectors.dc.html",
+      "bytes": 16180,
+      "sha256": "8ac47d835e7470ca5a0ccdc1a2f08e7c971a7a741f27300023453bfd44547a60"
+    },
+    {
+      "path": "source/Santos-Hub.dc.html",
+      "bytes": 41513,
+      "sha256": "c9f89ad5743e9384a79e152cef1b9c506eaaac34d5eb60043873b1c8160613c2"
+    },
+    {
+      "path": "source/Santos-Run.dc.html",
+      "bytes": 11520,
+      "sha256": "9d5412d82815fb6da3205625bceabae8ff275cdf844bc12a4aa99c0cca6a699c"
+    },
+    {
+      "path": "source/Santos-Settings.dc.html",
+      "bytes": 14151,
+      "sha256": "ba152a5ccf56dd3a687415efde00c1dd0604633970676e0455623656e61157f2"
+    },
+    {
+      "path": "source/Santos-Trigger.dc.html",
+      "bytes": 19016,
+      "sha256": "287f932fdcea30c38676a8cbe12709384468fe3176328ba394abb775db0c2010"
+    }
+  ]
+}

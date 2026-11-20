@@ -3,7 +3,7 @@
 // Filter by, the rule editor, the chips row under the toolbar, the sort editor, the advanced filter and the
 // no-matches state. Models come from `fx` in lib/studio/vals.js. Toolbar popovers close through the board's own
 // menu backdrop, so these pass scrim={false} and close on Esc.
-import { useRef, useState } from 'react';
+import { useLayoutEffect, useRef, useState } from 'react';
 import { css } from '@/lib/studio/css';
 import { Popover, MenuRow, Divider, Field, Chip, Button, Icon, IC } from './Prims';
 import { useOptionDrag, DragHandle } from './SelectPicker';
@@ -286,16 +286,38 @@ export function FilterChips({ fx, dark }) {
   );
 }
 
-// G. A group with nothing left after the filters.
+// G. A group with nothing left after the filters. The group sits inside the board's horizontal scroller, which is
+// often far wider than the window, so the message is pinned (sticky) to the scroller's visible width and centred
+// there instead of on the full table width, where it ended up off to the side and under the right-edge fade.
 export function NoMatch({ text, fx }) {
+  const ref = useRef(null);
+  const [w, setW] = useState(0);
+  useLayoutEffect(() => {
+    let sc = ref.current ? ref.current.parentElement : null;
+    while (sc && sc !== document.body) {
+      const o = getComputedStyle(sc).overflowX;
+      if (o === 'auto' || o === 'scroll') break;
+      sc = sc.parentElement;
+    }
+    if (!sc || sc === document.body) return undefined;
+    const fit = () => setW(sc.clientWidth);
+    fit();
+    const ro = new ResizeObserver(fit);
+    ro.observe(sc);
+    return () => ro.disconnect();
+  }, []);
+  // - 2: the group box's left and right border.
+  const pin = w ? 'position: sticky; left: 0; width: ' + Math.max(w - 2, 0) + 'px; ' : '';
   return (
-    <div style={css('padding: 32px; display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center; border-bottom: 1px solid var(--line)')}>
-      <span aria-hidden="true" style={css('width: 48px; height: 48px; border-radius: 14px; background: var(--chip); color: var(--ink); display: inline-flex; align-items: center; justify-content: center')}><Icon d={FI.filter} size={20} /></span>
-      <p style={css('margin: 0; font-size: 16px; font-weight: 700; color: var(--ink)')}>No projects match these filters</p>
-      <p style={css('margin: 0; max-width: 300px; font-size: 14px; line-height: 1.5; color: var(--ink-3)')}>{text}</p>
-      <div style={css('display: flex; gap: 8px')}>
-        <Button kind="secondary" onClick={fx.editFilters}>Edit filters</Button>
-        <Button onClick={fx.clearAll}>Clear all</Button>
+    <div ref={ref} style={css('border-bottom: 1px solid var(--line)')}>
+      <div style={css(pin + 'box-sizing: border-box; padding: 28px 24px; display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center')}>
+        <span aria-hidden="true" style={css('width: 40px; height: 40px; margin-bottom: 4px; border-radius: 12px; background: var(--chip); color: var(--ink-2); display: inline-flex; align-items: center; justify-content: center')}><Icon d={FI.filter} size={18} /></span>
+        <p style={css('margin: 0; font-size: 15px; font-weight: 700; color: var(--ink)')}>No projects match these filters</p>
+        <p style={css('margin: 0; max-width: 320px; font-size: 13px; line-height: 1.5; color: var(--ink-3)')}>{text}</p>
+        <div style={css('display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 8px')}>
+          <Button kind="secondary" h={36} onClick={fx.editFilters}>Edit filters</Button>
+          <Button h={36} onClick={fx.clearAll}>Clear all</Button>
+        </div>
       </div>
     </div>
   );

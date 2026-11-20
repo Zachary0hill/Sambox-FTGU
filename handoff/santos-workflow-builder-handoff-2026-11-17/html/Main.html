@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Workflow builder shared spec</title>
+<!-- Generated from Main.dc.html by zz-handoff-design. Frame 1440x1100 (fluid page). -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,500..900&amp;family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#0B0B0C}
+a{color:#FF5A1F}a:hover{color:#FF8A5C}
+.sp *{box-sizing:border-box}
+@media (max-width:720px){.sp{padding:32px 16px !important}}
+</style>
+</head>
+<body>
+<div class="sp" style="min-height:1100px;background:#0B0B0C;color:#EDEDEB;font-family:Inter,system-ui,sans-serif;padding:64px 72px 80px">
+<div style="max-width:1296px;margin:0 auto;display:flex;flex-direction:column;gap:48px">
+
+<header style="display:flex;flex-direction:column;gap:14px">
+<div style="font-size:13px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#FF5A1F">Shared spec · Parish Tactical Hub · SantosStudios · ZZMEDIA Dashboard</div>
+<h1 style="margin:0;font-family:Archivo,sans-serif;font-stretch:72%;font-weight:800;font-size:72px;line-height:.95;text-transform:uppercase;letter-spacing:-.01em">Workflow builder</h1>
+<p style="margin:0;max-width:780px;font-size:18px;line-height:1.55;color:#BDBDBA;font-weight:500">One feature set, one data model, three skins. Each app gets the same hub, canvas, modals and rules. Only tokens, type, shapes and copy voice change.</p>
+</header>
+
+<section style="display:flex;flex-direction:column;gap:20px">
+<h2 style="margin:0;font-family:Archivo,sans-serif;font-stretch:72%;font-weight:800;font-size:32px;text-transform:uppercase">What every version has</h2>
+<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:16px">
+<div style="background:#161617;border:1px solid #2B2B2B;border-radius:10px;padding:20px;display:flex;flex-direction:column;gap:8px"><div style="font-weight:700;font-size:16px">Workflows hub</div><div style="font-size:14px;line-height:1.55;color:#BDBDBA">Stat strip, five tabs (Workflows, Templates, Runs, Approvals, Connectors), status filters, search, cards with a mini flow preview and an on/off switch.</div></div>
+<div style="background:#161617;border:1px solid #2B2B2B;border-radius:10px;padding:20px;display:flex;flex-direction:column;gap:8px"><div style="font-weight:700;font-size:16px">New workflow modal</div><div style="font-size:14px;line-height:1.55;color:#BDBDBA">Three starts: blank with a trigger pick, from a template, or describe it to the AI agent and get drafted steps.</div></div>
+<div style="background:#161617;border:1px solid #2B2B2B;border-radius:10px;padding:20px;display:flex;flex-direction:column;gap:8px"><div style="font-weight:700;font-size:16px">Canvas builder</div><div style="font-size:14px;line-height:1.55;color:#BDBDBA">Top to bottom flow. Trigger first, steps after, branch cards show both paths inline. Plus buttons between cards. Zoom and fit.</div></div>
+<div style="background:#161617;border:1px solid #2B2B2B;border-radius:10px;padding:20px;display:flex;flex-direction:column;gap:8px"><div style="font-weight:700;font-size:16px">Step library + finder</div><div style="font-size:14px;line-height:1.55;color:#BDBDBA">Left panel library grouped by type. Plus opens a finder modal with search, type chips and suggestions based on the step above.</div></div>
+<div style="background:#161617;border:1px solid #2B2B2B;border-radius:10px;padding:20px;display:flex;flex-direction:column;gap:8px"><div style="font-weight:700;font-size:16px">Inspector</div><div style="font-size:14px;line-height:1.55;color:#BDBDBA">Right panel for the selected card. Starred fields are required. Variable chips insert into the focused field. Sample output, duplicate, delete, connect app.</div></div>
+<div style="background:#161617;border:1px solid #2B2B2B;border-radius:10px;padding:20px;display:flex;flex-direction:column;gap:8px"><div style="font-weight:700;font-size:16px">Test run drawer</div><div style="font-size:14px;line-height:1.55;color:#BDBDBA">Runs each step on sample data, live status on every card, stops at the first broken step with a jump-to-fix button. Nothing is sent.</div></div>
+<div style="background:#161617;border:1px solid #2B2B2B;border-radius:10px;padding:20px;display:flex;flex-direction:column;gap:8px"><div style="font-weight:700;font-size:16px">Review and turn on</div><div style="font-size:14px;line-height:1.55;color:#BDBDBA">Checklist modal: trigger set, every step set up, test passed, outward steps covered by approval. Turn on stays locked until all pass.</div></div>
+<div style="background:#161617;border:1px solid #2B2B2B;border-radius:10px;padding:20px;display:flex;flex-direction:column;gap:8px"><div style="font-weight:700;font-size:16px">Ask the agent</div><div style="font-size:14px;line-height:1.55;color:#BDBDBA">Prompt modal with starter chips. The agent drafts steps and drops them on the canvas as unchecked cards to review.</div></div>
+</div>
+</section>
+
+<section style="display:flex;flex-direction:column;gap:20px">
+<h2 style="margin:0;font-family:Archivo,sans-serif;font-stretch:72%;font-weight:800;font-size:32px;text-transform:uppercase">Rules the canvas enforces</h2>
+<ol style="margin:0;padding-left:22px;display:flex;flex-direction:column;gap:10px;font-size:16px;line-height:1.55;color:#D6D6D4">
+<li>One trigger per workflow. Picking a new trigger replaces it.</li>
+<li>A step with an empty starred field or an unconnected app shows a fix badge and counts in the top bar.</li>
+<li>Status pills: picking the live state opens the review checklist when the workflow is not ready.</li>
+<li>Any edit clears the last test result. Turn on needs a fresh passing test.</li>
+<li>Steps that reach people outside the team carry an outward badge.</li>
+</ol>
+</section>
+
+<section style="display:flex;flex-direction:column;gap:20px">
+<h2 style="margin:0;font-family:Archivo,sans-serif;font-stretch:72%;font-weight:800;font-size:32px;text-transform:uppercase">Step types</h2>
+<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px">
+<div style="border:1px solid #2B2B2B;border-radius:10px;padding:16px"><div style="font-weight:700">Trigger</div><div style="font-size:14px;color:#BDBDBA;margin-top:4px">What starts the run</div></div>
+<div style="border:1px solid #2B2B2B;border-radius:10px;padding:16px"><div style="font-weight:700">Data</div><div style="font-size:14px;color:#BDBDBA;margin-top:4px">Get or update records</div></div>
+<div style="border:1px solid #2B2B2B;border-radius:10px;padding:16px"><div style="font-weight:700">Action</div><div style="font-size:14px;color:#BDBDBA;margin-top:4px">Send, post, create</div></div>
+<div style="border:1px solid #2B2B2B;border-radius:10px;padding:16px"><div style="font-weight:700">Logic</div><div style="font-size:14px;color:#BDBDBA;margin-top:4px">Branch, delay, filter</div></div>
+<div style="border:1px solid #2B2B2B;border-radius:10px;padding:16px"><div style="font-weight:700">AI</div><div style="font-size:14px;color:#BDBDBA;margin-top:4px">Draft, summarize, score</div></div>
+<div style="border:1px solid #2B2B2B;border-radius:10px;padding:16px"><div style="font-weight:700">Approval</div><div style="font-size:14px;color:#BDBDBA;margin-top:4px">A person signs off</div></div>
+</div>
+</section>
+
+<section style="display:flex;flex-direction:column;gap:20px">
+<h2 style="margin:0;font-family:Archivo,sans-serif;font-stretch:72%;font-weight:800;font-size:32px;text-transform:uppercase">Brand mapping</h2>
+<div style="overflow-x:auto;border:1px solid #2B2B2B;border-radius:10px">
+<table style="width:100%;min-width:860px;border-collapse:collapse;font-size:14px;line-height:1.45">
+<thead><tr style="background:#161617;text-align:left">
+<th style="padding:14px 16px;font-weight:700;color:#8F8F8F;width:160px">Token</th>
+<th style="padding:14px 16px;font-weight:700">Parish Tactical Hub</th>
+<th style="padding:14px 16px;font-weight:700">SantosStudios</th>
+<th style="padding:14px 16px;font-weight:700">ZZMEDIA Dashboard</th></tr></thead>
+<tbody style="color:#D6D6D4">
+<tr style="border-top:1px solid #2B2B2B"><td style="padding:12px 16px;color:#8F8F8F;font-weight:600">Ground</td><td style="padding:12px 16px">#000 canvas, #111 panels</td><td style="padding:12px 16px">#EBEBEB page, #FFF panels</td><td style="padding:12px 16px">#08090B canvas, #15171B glass panels</td></tr>
+<tr style="border-top:1px solid #2B2B2B"><td style="padding:12px 16px;color:#8F8F8F;font-weight:600">Accent</td><td style="padding:12px 16px">Parish Gold #E3C582</td><td style="padding:12px 16px">Ink #111 buttons, soft type tints</td><td style="padding:12px 16px">Orange #FF6B35</td></tr>
+<tr style="border-top:1px solid #2B2B2B"><td style="padding:12px 16px;color:#8F8F8F;font-weight:600">Type</td><td style="padding:12px 16px">Orbitron display, IBM Plex Sans, Plex Mono labels</td><td style="padding:12px 16px">Montserrat 900 titles, Inter body</td><td style="padding:12px 16px">Archivo condensed 800, Outfit body, JetBrains Mono</td></tr>
+<tr style="border-top:1px solid #2B2B2B"><td style="padding:12px 16px;color:#8F8F8F;font-weight:600">Shape</td><td style="padding:12px 16px">Square corners, top color rule on cards</td><td style="padding:12px 16px">12 to 16px radius, pill chips, switches</td><td style="padding:12px 16px">12px radius, floating toolbars, icon tiles</td></tr>
+<tr style="border-top:1px solid #2B2B2B"><td style="padding:12px 16px;color:#8F8F8F;font-weight:600">Labels</td><td style="padding:12px 16px">Uppercase mono, tracked</td><td style="padding:12px 16px">Sentence case</td><td style="padding:12px 16px">Sentence case, mono counters</td></tr>
+<tr style="border-top:1px solid #2B2B2B"><td style="padding:12px 16px;color:#8F8F8F;font-weight:600">AI agent</td><td style="padding:12px 16px">Pelican</td><td style="padding:12px 16px">Studio Assistant</td><td style="padding:12px 16px">Alfred</td></tr>
+<tr style="border-top:1px solid #2B2B2B"><td style="padding:12px 16px;color:#8F8F8F;font-weight:600">Status words</td><td style="padding:12px 16px">Active · Paused · Draft</td><td style="padding:12px 16px">Live · Off · Draft</td><td style="padding:12px 16px">Live · Paused · Draft</td></tr>
+<tr style="border-top:1px solid #2B2B2B"><td style="padding:12px 16px;color:#8F8F8F;font-weight:600">Triggers</td><td style="padding:12px 16px">WooCommerce orders, stock, reviews, schedule</td><td style="padding:12px 16px">Project, editor, thumbnail, sponsor status, mentions, publish dates</td><td style="padding:12px 16px">Inquiries, bookings, forms, lead stage, invoices, email</td></tr>
+</tbody></table>
+</div>
+</section>
+
+<section style="display:flex;flex-direction:column;gap:20px">
+<h2 style="margin:0;font-family:Archivo,sans-serif;font-stretch:72%;font-weight:800;font-size:32px;text-transform:uppercase">Screen flow</h2>
+<p style="margin:0;max-width:820px;font-size:16px;line-height:1.55;color:#BDBDBA">Every screen links to the next one in Play. Same paths in all three apps. The hub is home, the builder is the work surface, every other screen returns to one of those two.</p>
+<div style="overflow-x:auto;border:1px solid #2B2B2B;border-radius:10px">
+<table style="width:100%;min-width:860px;border-collapse:collapse;font-size:14px;line-height:1.5">
+<thead><tr style="background:#161617;text-align:left"><th style="padding:14px 16px;font-weight:700;color:#8F8F8F;width:200px">Screen</th><th style="padding:14px 16px;font-weight:700">Goes to</th></tr></thead>
+<tbody style="color:#D6D6D4">
+<tr style="border-top:1px solid #2B2B2B"><td style="padding:12px 16px;font-weight:600;color:#EDEDEB">Hub</td><td style="padding:12px 16px">Builder: card, Set up, Use template, New workflow. Run detail: Runs tab row, View run, failed-run alert. Approval detail: Approvals tab title, Review and edit. Connectors: Connectors tab, Manage connectors, Reconnect, alert banner. Stat cards switch tabs.</td></tr>
+<tr style="border-top:1px solid #2B2B2B"><td style="padding:12px 16px;font-weight:600;color:#EDEDEB">Builder</td><td style="padding:12px 16px">Hub: back. Run detail: Runs. Settings: Settings. Trigger setup: trigger card inspector. Condition builder: branch card inspector. Approval detail: approval card inspector. Connectors: unconnected step.</td></tr>
+<tr style="border-top:1px solid #2B2B2B"><td style="padding:12px 16px;font-weight:600;color:#EDEDEB">Run detail</td><td style="padding:12px 16px">Hub: back. Builder: Open workflow. Connectors: fix button on the failed step.</td></tr>
+<tr style="border-top:1px solid #2B2B2B"><td style="padding:12px 16px;font-weight:600;color:#EDEDEB">Settings, Trigger, Condition</td><td style="padding:12px 16px">Builder: close, Cancel. The Cancel label turns into Back to builder once saved. Settings also links to Connectors for an unconnected alert channel.</td></tr>
+<tr style="border-top:1px solid #2B2B2B"><td style="padding:12px 16px;font-weight:600;color:#EDEDEB">Connectors</td><td style="padding:12px 16px">Hub: back. Builder: Used by rows. Run detail or Approval detail: next-step banner after a reconnect.</td></tr>
+<tr style="border-top:1px solid #2B2B2B"><td style="padding:12px 16px;font-weight:600;color:#EDEDEB">Approval detail</td><td style="padding:12px 16px">Hub: back, All clear. Builder: Open workflow. Approve or reject shows a status line, then the next item.</td></tr>
+</tbody></table>
+</div>
+</section>
+
+<section style="display:flex;flex-direction:column;gap:12px">
+<h2 style="margin:0;font-family:Archivo,sans-serif;font-stretch:72%;font-weight:800;font-size:32px;text-transform:uppercase">Build contract</h2>
+<p style="margin:0;max-width:900px;font-size:16px;line-height:1.6;color:#D6D6D4">Ship one WorkflowBuilder component per repo with the same props and graph shape: workflow { name, status, trigger, steps[] }, step { id, kind, title, app, outward, fields[] { label, value, required } }. Brand lives in a theme token file and a copy file (agent name, status words, step library). Feature work lands in all three at once.</p>
+</section>
+
+</div>
+</div>
+</body>
+</html>

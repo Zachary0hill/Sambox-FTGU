@@ -1,0 +1,348 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>SantosStudios automations hub</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Montserrat:wght@800;900&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#EBEBEB}
+a{color:#2F5BEA}a:hover{color:#1E3FB0}
+.ss *{box-sizing:border-box}
+.ss button{font-family:inherit;cursor:pointer}
+.ss button:focus-visible,.ss a:focus-visible,.ss input:focus-visible,.ss textarea:focus-visible{outline:2px solid #111;outline-offset:2px}
+.ss input::placeholder,.ss textarea::placeholder{color:#8a8a8a}
+.ss-h:hover{background:#F0F0F0 !important}
+.ss-k:hover{background:#2b2b2b !important}
+.ss-c:hover{border-color:#CFCFCF !important;box-shadow:0 4px 16px rgba(0,0,0,.06) !important}
+.ss-n:hover{background:#F0F0F0 !important}
+@media (max-width:900px){.ss-side{display:none !important}.ss-main{padding:24px 16px 48px !important}.ss-frame{margin:0 !important;border-radius:0 !important}}
+</style>
+</helmet>
+<div class="ss" style="min-height:1100px;background:#EBEBEB;color:#111111;font-family:Inter,system-ui,sans-serif;padding:14px;position:relative">
+<div class="ss-frame" style="min-height:1072px;background:#FFFFFF;border-radius:20px;display:flex;flex-wrap:wrap;overflow:hidden">
+
+<aside class="ss-side" style="flex:0 0 264px;border-right:1px solid #EDEDED;padding:20px 14px;display:flex;flex-direction:column;gap:18px">
+<div style="display:flex;align-items:center;gap:12px;padding:4px 6px 16px;border-bottom:1px solid #EDEDED">
+<span style="width:40px;height:40px;border-radius:10px;background:#111;color:#fff;display:flex;align-items:center;justify-content:center;font-family:Montserrat,sans-serif;font-weight:900;font-size:11px;letter-spacing:.02em">FTGU</span>
+<div><div style="font-weight:700;font-size:15px">SantosStudios</div><div style="font-size:13px;color:#666">Production board</div></div>
+</div>
+<nav aria-label="Main" style="display:flex;flex-direction:column;gap:2px;font-size:15px;font-weight:500">
+<a href="#" class="ss-n" style="padding:10px 12px;border-radius:10px;color:#111;text-decoration:none">Daily</a>
+<a href="#" class="ss-n" style="padding:10px 12px;border-radius:10px;color:#111;text-decoration:none">Projects</a>
+<a href="#" class="ss-n" style="padding:10px 12px;border-radius:10px;color:#111;text-decoration:none">Ideas &amp; Research</a>
+<a href="#" class="ss-n" style="padding:10px 12px;border-radius:10px;color:#111;text-decoration:none">Inbox</a>
+<a href="#" class="ss-n" style="padding:10px 12px;border-radius:10px;color:#111;text-decoration:none">Content</a>
+<div style="padding:16px 12px 6px;font-size:13px;color:#666;font-weight:600">Admin</div>
+<a href="#" class="ss-n" style="padding:10px 12px;border-radius:10px;color:#111;text-decoration:none">Users</a>
+<a href="#" class="ss-n" style="padding:10px 12px;border-radius:10px;color:#111;text-decoration:none">Clients &amp; Sponsors</a>
+<a href="#" aria-current="page" style="padding:10px 12px;border-radius:10px;background:#EFEFEF;color:#111;text-decoration:none;font-weight:600">Automations</a>
+<a href="#" class="ss-n" style="padding:10px 12px;border-radius:10px;color:#111;text-decoration:none">Activity Log</a>
+<a href="#" class="ss-n" style="padding:10px 12px;border-radius:10px;color:#111;text-decoration:none">Workspace Settings</a>
+</nav>
+</aside>
+
+<main class="ss-main" style="flex:999 1 560px;min-width:0;padding:40px 40px 64px;display:flex;flex-direction:column;gap:24px">
+<div style="display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-end;gap:16px">
+<div style="display:flex;flex-direction:column;gap:8px">
+<div style="font-size:14px;color:#666;display:flex;align-items:center;gap:6px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>Admin · Super Admin only</div>
+<h1 style="margin:0;font-family:Montserrat,sans-serif;font-weight:900;font-size:38px;letter-spacing:-.02em">Automation Management</h1>
+<p style="margin:0;font-size:15px;color:#555">Workflows first. Templates, run history, approvals and connectors live in their own tabs.</p>
+</div>
+<button class="ss-k" onClick="{{openNew}}" style="height:46px;padding:0 20px;border-radius:12px;background:#111;color:#fff;border:0;font-weight:600;font-size:15px;display:flex;align-items:center;gap:8px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>New flow</button>
+</div>
+
+<sc-if value="{{hasAlert}}" hint-placeholder-val="{{true}}">
+<div role="alert" style="display:flex;flex-wrap:wrap;align-items:center;gap:12px;padding:12px 14px 12px 16px;border-radius:16px;background:#FDECEC;border:1px solid #F1C4C4">
+<span style="width:8px;height:8px;flex:none;border-radius:999px;background:#B42318" aria-hidden="true"></span>
+<span style="flex:1 1 320px;font-size:14px;line-height:1.5;color:#3A0F0A"><span style="font-weight:700">Slack is not connected.</span> 3 workflows use it and 1 run failed yesterday.</span>
+<a href="Santos-Run.dc.html" class="ss-h" style="height:42px;display:flex;align-items:center;padding:0 14px;border-radius:10px;background:#fff;border:1px solid #E0E0E0;color:#111;text-decoration:none;font-weight:600;font-size:14px">View failed run</a>
+<a href="Santos-Connectors.dc.html" class="ss-k" style="height:42px;display:flex;align-items:center;padding:0 14px;border-radius:10px;background:#111;color:#fff;text-decoration:none;font-weight:600;font-size:14px">Connect Slack</a>
+</div>
+</sc-if>
+
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px">
+<sc-for list="{{stats}}" as="st" hint-placeholder-count="4">
+<button class="ss-c" onClick="{{st.go}}" style="text-align:left;background:#fff;border:1px solid #E6E6E6;border-radius:16px;padding:18px 20px;display:flex;flex-direction:column;gap:6px;color:#111">
+<span style="font-size:13px;font-weight:500;color:#555">{{st.label}}</span>
+<span style="font-family:Montserrat,sans-serif;font-weight:900;font-size:30px;color:{{st.c}}">{{st.value}}</span>
+<span style="display:flex;align-items:center;gap:6px;font-size:13px;color:#666">{{st.sub}}<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></span>
+</button>
+</sc-for>
+</div>
+
+<div style="display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:12px;border-bottom:1px solid #E6E6E6">
+<div role="tablist" aria-label="Automation sections" style="display:flex;flex-wrap:wrap;gap:6px">
+<sc-for list="{{tabs}}" as="t" hint-placeholder-count="5">
+<button role="tab" aria-selected="{{t.on}}" onClick="{{t.pick}}" style="height:46px;padding:0 10px;background:transparent;border:0;border-bottom:2px solid {{t.line}};color:{{t.fg}};font-weight:{{t.w}};font-size:15px;display:flex;align-items:center;gap:8px">{{t.label}}<span style="background:{{t.cbg}};color:{{t.cf}};border-radius:999px;padding:2px 8px;font-size:12px;font-weight:600">{{t.count}}</span></button>
+</sc-for>
+</div>
+<label for="ss-q" style="position:absolute;left:-9999px">Search workflows</label>
+<input id="ss-q" value="{{q}}" onChange="{{onQ}}" placeholder="Search workflows" style="width:260px;max-width:100%;height:42px;border-radius:12px;background:#F5F5F5;border:1px solid #EDEDED;padding:0 14px;font-family:inherit;font-size:14px;color:#111;margin-bottom:6px">
+</div>
+
+<sc-if value="{{isWf}}" hint-placeholder-val="{{true}}">
+<div style="display:flex;flex-direction:column;gap:20px">
+<div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center">
+<span style="font-size:14px;color:#555;margin-right:4px">Status</span>
+<sc-for list="{{filters}}" as="f" hint-placeholder-count="5">
+<button onClick="{{f.pick}}" aria-pressed="{{f.on}}" style="height:38px;padding:0 12px;border-radius:999px;background:{{f.bg}};color:#111;border:1px solid {{f.bd}};font-weight:{{f.w}};font-size:14px;display:flex;align-items:center;gap:8px">{{f.label}}<span style="background:#E9E9E9;border-radius:999px;padding:1px 7px;font-size:12px;font-weight:600">{{f.n}}</span></button>
+</sc-for>
+</div>
+<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:12px">
+<sc-for list="{{shown}}" as="w" hint-placeholder-count="5">
+<article class="ss-c" style="border:1px solid #E6E6E6;border-radius:16px;overflow:hidden;display:flex;flex-direction:column;box-shadow:none">
+<a href="Santos-Builder.dc.html" aria-label="Open {{w.name}}" style="position:relative;height:248px;display:flex;flex-direction:column;align-items:center;justify-content:center;background-color:#FAFAFA;background-image:radial-gradient(#DEDEDE 1px,transparent 1px);background-size:16px 16px;border-bottom:1px solid #EDEDED;text-decoration:none;overflow:hidden">
+<sc-if value="{{w.from}}" hint-placeholder-val="{{false}}"><span style="position:absolute;top:10px;right:10px;display:flex;align-items:center;gap:5px;background:#F0EBFF;color:#5B3FC4;border-radius:999px;padding:3px 9px;font-size:11px;font-weight:700"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9L12 3z"/></svg>Assistant</span></sc-if>
+<sc-for list="{{w.flow}}" as="b" hint-placeholder-count="4">
+<sc-if value="{{b.notFirst}}" hint-placeholder-val="{{true}}"><span aria-hidden="true" style="width:1.5px;height:8px;background:#CFCFCF"></span></sc-if>
+<span style="display:flex;align-items:center;gap:8px;height:28px;padding:0 11px 0 3px;background:#fff;border:1px solid #E3E3E3;border-radius:9px;box-shadow:0 1px 2px rgba(0,0,0,.05);color:#111;font-size:12px;font-weight:600;white-space:nowrap"><span style="width:22px;height:22px;border-radius:6px;background:{{b.bg}};display:flex;align-items:center;justify-content:center"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="{{b.c}}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{b.d}}"></path></svg></span>{{b.t}}</span>
+<sc-if value="{{b.hasBr}}" hint-placeholder-val="{{false}}"><span style="display:flex;gap:16px;margin-top:7px;font-size:11px;font-weight:600;white-space:nowrap"><span style="display:flex;align-items:center;gap:4px;color:#1F7A45"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>{{b.yes}}</span><span style="display:flex;align-items:center;gap:4px;color:#666"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>{{b.no}}</span></span></sc-if>
+</sc-for>
+</a>
+<div style="padding:10px 8px 10px 14px;display:flex;align-items:center;gap:8px">
+<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:3px">
+<a href="Santos-Builder.dc.html" style="color:#111;text-decoration:none;font-weight:700;font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{w.name}}</a>
+<div style="display:flex;align-items:center;gap:8px;font-size:13px;color:#666;white-space:nowrap;overflow:hidden"><span style="display:flex;align-items:center;gap:5px;color:{{w.sc}};font-weight:600"><span style="width:7px;height:7px;border-radius:999px;background:{{w.sc}}" aria-hidden="true"></span>{{w.statusLabel}}</span><span style="overflow:hidden;text-overflow:ellipsis">{{w.meta}}</span></div>
+</div>
+<sc-if value="{{w.notDraft}}" hint-placeholder-val="{{true}}">
+<button onClick="{{w.toggle}}" role="switch" aria-checked="{{w.on}}" aria-label="{{w.name}} on or off" style="width:56px;height:44px;flex:none;background:transparent;border:0;padding:0;display:flex;align-items:center;justify-content:center"><span style="width:44px;height:26px;border-radius:999px;background:{{w.trk}};position:relative;display:block"><span style="position:absolute;top:3px;left:{{w.knob}};width:20px;height:20px;border-radius:999px;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.25)"></span></span></button>
+</sc-if>
+<sc-if value="{{w.isDraft}}" hint-placeholder-val="{{false}}">
+<a href="Santos-Builder.dc.html" class="ss-k" style="height:44px;flex:none;margin-right:6px;border-radius:10px;padding:0 14px;display:flex;align-items:center;background:#111;color:#fff;text-decoration:none;font-weight:600;font-size:13px">Set up</a>
+</sc-if>
+</div>
+</article>
+</sc-for>
+</div>
+<sc-if value="{{noneShown}}" hint-placeholder-val="{{false}}"><div style="border:1.5px dashed #D6D6D6;border-radius:16px;padding:40px;text-align:center;color:#666;font-size:14px">No workflows match. Clear the search or pick another status.</div></sc-if>
+<div style="display:flex;justify-content:space-between;align-items:flex-end;gap:12px;margin-top:8px;flex-wrap:wrap">
+<div><h2 style="margin:0;font-family:Montserrat,sans-serif;font-weight:900;font-size:20px">Start from a template</h2><div style="font-size:14px;color:#555;margin-top:4px">Each template starts as a draft. Check the steps, run a test, then turn it on.</div></div>
+</div>
+<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:12px">
+<sc-for list="{{tplTop}}" as="tp" hint-placeholder-count="3">
+<article style="border:1px solid #E6E6E6;border-radius:16px;overflow:hidden;display:flex;flex-direction:column">
+<div aria-hidden="true" style="height:200px;display:flex;flex-direction:column;align-items:center;justify-content:center;background-color:#FAFAFA;background-image:radial-gradient(#DEDEDE 1px,transparent 1px);background-size:16px 16px;border-bottom:1px solid #EDEDED;overflow:hidden">
+<sc-for list="{{tp.flow}}" as="b" hint-placeholder-count="4">
+<sc-if value="{{b.notFirst}}" hint-placeholder-val="{{true}}"><span style="width:1.5px;height:8px;background:#CFCFCF"></span></sc-if>
+<span style="display:flex;align-items:center;gap:8px;height:28px;padding:0 11px 0 3px;background:#fff;border:1px solid #E3E3E3;border-radius:9px;box-shadow:0 1px 2px rgba(0,0,0,.05);color:#111;font-size:12px;font-weight:600;white-space:nowrap"><span style="width:22px;height:22px;border-radius:6px;background:{{b.bg}};display:flex;align-items:center;justify-content:center"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="{{b.c}}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="{{b.d}}"></path></svg></span>{{b.t}}</span>
+<sc-if value="{{b.hasBr}}" hint-placeholder-val="{{false}}"><span style="display:flex;gap:16px;margin-top:7px;font-size:11px;font-weight:600;white-space:nowrap"><span style="display:flex;align-items:center;gap:4px;color:#1F7A45"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6 9 17l-5-5"/></svg>{{b.yes}}</span><span style="display:flex;align-items:center;gap:4px;color:#666"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M18 6 6 18M6 6l12 12"/></svg>{{b.no}}</span></span></sc-if>
+</sc-for>
+</div>
+<div style="padding:10px 8px 12px 14px;display:flex;flex-direction:column;gap:4px">
+<div style="display:flex;align-items:center;gap:8px"><div style="flex:1;min-width:0;font-weight:700;font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{tp.name}}</div><a href="Santos-Builder.dc.html" class="ss-k" style="height:44px;flex:none;margin-right:6px;border-radius:10px;padding:0 14px;display:flex;align-items:center;background:#111;color:#fff;text-decoration:none;font-weight:600;font-size:13px">Use</a></div>
+<div style="font-size:13px;color:#444;line-height:1.45;padding-right:6px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">{{tp.desc}}</div>
+<div style="font-size:12px;color:#666">Needs {{tp.needs}}</div>
+</div>
+</article>
+</sc-for>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{isTpl}}" hint-placeholder-val="{{false}}">
+<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:12px">
+<sc-for list="{{tpl}}" as="tp" hint-placeholder-count="6">
+<article style="border:1px solid #E6E6E6;border-radius:16px;overflow:hidden;display:flex;flex-direction:column">
+<div aria-hidden="true" style="height:200px;display:flex;flex-direction:column;align-items:center;justify-content:center;background-color:#FAFAFA;background-image:radial-gradient(#DEDEDE 1px,transparent 1px);background-size:16px 16px;border-bottom:1px solid #EDEDED;overflow:hidden">
+<sc-for list="{{tp.flow}}" as="b" hint-placeholder-count="4">
+<sc-if value="{{b.notFirst}}" hint-placeholder-val="{{true}}"><span style="width:1.5px;height:8px;background:#CFCFCF"></span></sc-if>
+<span style="display:flex;align-items:center;gap:8px;height:28px;padding:0 11px 0 3px;background:#fff;border:1px solid #E3E3E3;border-radius:9px;box-shadow:0 1px 2px rgba(0,0,0,.05);color:#111;font-size:12px;font-weight:600;white-space:nowrap"><span style="width:22px;height:22px;border-radius:6px;background:{{b.bg}};display:flex;align-items:center;justify-content:center"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="{{b.c}}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="{{b.d}}"></path></svg></span>{{b.t}}</span>
+<sc-if value="{{b.hasBr}}" hint-placeholder-val="{{false}}"><span style="display:flex;gap:16px;margin-top:7px;font-size:11px;font-weight:600;white-space:nowrap"><span style="display:flex;align-items:center;gap:4px;color:#1F7A45"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6 9 17l-5-5"/></svg>{{b.yes}}</span><span style="display:flex;align-items:center;gap:4px;color:#666"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M18 6 6 18M6 6l12 12"/></svg>{{b.no}}</span></span></sc-if>
+</sc-for>
+</div>
+<div style="padding:10px 8px 12px 14px;display:flex;flex-direction:column;gap:4px">
+<div style="display:flex;align-items:center;gap:8px"><div style="flex:1;min-width:0;font-weight:700;font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{tp.name}}</div><a href="Santos-Builder.dc.html" class="ss-k" style="height:44px;flex:none;margin-right:6px;border-radius:10px;padding:0 14px;display:flex;align-items:center;background:#111;color:#fff;text-decoration:none;font-weight:600;font-size:13px">Use</a></div>
+<div style="font-size:13px;color:#444;line-height:1.45;padding-right:6px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">{{tp.desc}}</div>
+<div style="font-size:12px;color:#666">Needs {{tp.needs}}</div>
+</div>
+</article>
+</sc-for>
+</div>
+</sc-if>
+
+<sc-if value="{{isRuns}}" hint-placeholder-val="{{false}}">
+<div style="overflow-x:auto;border:1px solid #E6E6E6;border-radius:16px">
+<table style="width:100%;min-width:760px;border-collapse:collapse;font-size:14px">
+<thead><tr style="text-align:left;font-size:13px;color:#555;background:#FAFAFA">
+<th style="padding:12px 16px;font-weight:600">Workflow</th><th style="padding:12px 16px;font-weight:600">Started</th><th style="padding:12px 16px;font-weight:600">Time</th><th style="padding:12px 16px;font-weight:600">Steps</th><th style="padding:12px 16px;font-weight:600">Result</th><th style="padding:12px 16px"><span style="position:absolute;left:-9999px">Actions</span></th></tr></thead>
+<tbody>
+<sc-for list="{{runs}}" as="r" hint-placeholder-count="6">
+<tr style="border-top:1px solid #EDEDED">
+<td style="padding:12px 16px;font-weight:600"><a href="Santos-Run.dc.html" style="color:#111;text-decoration:none">{{r.wf}}</a><div style="font-weight:400;font-size:13px;color:#666;margin-top:2px">{{r.note}}</div></td>
+<td style="padding:12px 16px;color:#333">{{r.when}}</td>
+<td style="padding:12px 16px;color:#333">{{r.dur}}</td>
+<td style="padding:12px 16px;color:#333">{{r.steps}}</td>
+<td style="padding:12px 16px"><span style="background:{{r.bg}};color:{{r.fg}};border-radius:999px;padding:4px 10px;font-size:12px;font-weight:600">{{r.label}}</span></td>
+<td style="padding:8px 16px"><div style="display:flex;gap:8px;justify-content:flex-end"><sc-if value="{{r.failed}}" hint-placeholder-val="{{false}}"><button class="ss-h" onClick="{{r.retry}}" style="height:38px;padding:0 14px;border-radius:10px;background:#fff;border:1px solid #E0E0E0;color:#111;font-weight:600;font-size:13px">Retry</button></sc-if><a href="Santos-Run.dc.html" class="ss-h" style="height:38px;display:flex;align-items:center;padding:0 14px;border-radius:10px;background:#fff;border:1px solid #E0E0E0;color:#111;text-decoration:none;font-weight:600;font-size:13px;white-space:nowrap">View run</a></div></td>
+</tr>
+</sc-for>
+</tbody></table>
+</div>
+</sc-if>
+
+<sc-if value="{{isAppr}}" hint-placeholder-val="{{false}}">
+<div style="display:flex;flex-direction:column;gap:12px">
+<sc-for list="{{appr}}" as="a" hint-placeholder-count="2">
+<article style="border:1px solid #E6E6E6;border-radius:16px;padding:18px;display:flex;flex-wrap:wrap;gap:18px;align-items:flex-start">
+<div style="flex:1 1 380px;display:flex;flex-direction:column;gap:8px;min-width:0">
+<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center"><span style="background:#FFF4D6;color:#7A5300;border-radius:999px;padding:3px 10px;font-size:12px;font-weight:600">Waiting on you</span><span style="font-size:13px;color:#666">{{a.wf}} · {{a.when}}</span></div>
+<a href="Santos-Approval.dc.html" style="font-weight:700;font-size:16px;color:#111;text-decoration:none">{{a.what}}</a>
+<div style="background:#F7F7F7;border-radius:12px;padding:12px 14px;font-size:14px;line-height:1.55;color:#333">{{a.draft}}</div>
+</div>
+<div style="display:flex;gap:8px;flex-wrap:wrap">
+<button class="ss-k" onClick="{{a.ok}}" style="height:42px;padding:0 16px;border-radius:10px;background:#111;color:#fff;border:0;font-weight:600;font-size:14px">Approve and send</button>
+<a href="Santos-Approval.dc.html" class="ss-h" style="height:42px;display:flex;align-items:center;padding:0 16px;border-radius:10px;border:1px solid #E0E0E0;color:#111;text-decoration:none;font-weight:600;font-size:14px">Review and edit</a>
+<button class="ss-h" onClick="{{a.no}}" style="height:42px;padding:0 16px;border-radius:10px;background:#fff;border:1px solid #F1C4C4;color:#B42318;font-weight:600;font-size:14px">Reject</button>
+</div>
+</article>
+</sc-for>
+<sc-if value="{{noAppr}}" hint-placeholder-val="{{false}}"><div style="border:1.5px dashed #D6D6D6;border-radius:16px;padding:40px;text-align:center;color:#666;font-size:14px">Nothing waiting. Approvals show here when a workflow pauses for sign off.</div></sc-if>
+</div>
+</sc-if>
+
+<sc-if value="{{isConn}}" hint-placeholder-val="{{false}}">
+<div style="display:flex;flex-direction:column;gap:14px">
+<div style="display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:10px"><span style="font-size:14px;color:#555">Apps your automations sign in to. Open one to test it, see what uses it, or fix a sign-in.</span><a href="Santos-Connectors.dc.html" class="ss-h" style="height:42px;display:flex;align-items:center;gap:6px;padding:0 14px;border-radius:10px;background:#fff;border:1px solid #E0E0E0;color:#111;text-decoration:none;font-weight:600;font-size:14px">Manage connectors<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></a></div>
+<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px">
+<sc-for list="{{conn}}" as="c" hint-placeholder-count="8">
+<article style="border:1px solid #E6E6E6;border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:10px">
+<div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><a href="Santos-Connectors.dc.html" style="font-weight:700;font-size:16px;color:#111;text-decoration:none">{{c.name}}</a><span style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:{{c.sc}}"><span style="width:8px;height:8px;border-radius:999px;background:{{c.dot}}" aria-hidden="true"></span>{{c.state}}</span></div>
+<div style="font-size:13px;color:#666">Used by {{c.used}}</div>
+<sc-if value="{{c.exp}}" hint-placeholder-val="{{false}}"><a href="Santos-Connectors.dc.html" class="ss-k" style="height:40px;display:flex;align-items:center;justify-content:center;border-radius:10px;background:#111;color:#fff;text-decoration:none;font-weight:600;font-size:14px">Reconnect</a></sc-if>
+<sc-if value="{{c.notExp}}" hint-placeholder-val="{{true}}"><button class="ss-h" onClick="{{c.flip}}" style="height:40px;border-radius:10px;background:{{c.bbg}};color:{{c.bfg}};border:1px solid {{c.bbd}};font-weight:600;font-size:14px">{{c.action}}</button></sc-if>
+</article>
+</sc-for>
+</div>
+</div>
+</sc-if>
+</main>
+</div>
+
+<sc-if value="{{modal}}" hint-placeholder-val="{{false}}">
+<div style="position:absolute;inset:0;background:rgba(17,17,17,.36);display:flex;align-items:flex-start;justify-content:center;padding:80px 16px;z-index:20">
+<div role="dialog" aria-modal="true" aria-labelledby="ss-new-t" style="width:720px;max-width:100%;background:#fff;border-radius:20px;box-shadow:0 24px 64px rgba(0,0,0,.18);display:flex;flex-direction:column;overflow:hidden">
+<div style="display:flex;justify-content:space-between;align-items:center;padding:20px 22px;border-bottom:1px solid #EDEDED">
+<div><div style="font-size:13px;color:#666">New flow</div><h2 id="ss-new-t" style="margin:2px 0 0;font-family:Montserrat,sans-serif;font-weight:900;font-size:22px">How do you want to start?</h2></div>
+<button onClick="{{closeNew}}" aria-label="Close" class="ss-h" style="width:40px;height:40px;border-radius:10px;background:transparent;border:0;color:#111;display:flex;align-items:center;justify-content:center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+</div>
+<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;padding:20px 22px">
+<sc-for list="{{modes}}" as="m" hint-placeholder-count="3">
+<button onClick="{{m.pick}}" aria-pressed="{{m.on}}" style="text-align:left;padding:14px;border-radius:14px;background:{{m.bg}};border:1.5px solid {{m.bd}};color:#111;display:flex;flex-direction:column;gap:6px;min-height:96px">
+<span style="font-weight:700;font-size:15px">{{m.label}}</span>
+<span style="font-size:13px;color:#555;line-height:1.45">{{m.sub}}</span>
+</button>
+</sc-for>
+</div>
+<div style="padding:0 22px 20px;display:flex;flex-direction:column;gap:12px">
+<sc-if value="{{mBlank}}" hint-placeholder-val="{{false}}">
+<div style="font-size:14px;font-weight:600">Select a trigger</div>
+<div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px">
+<sc-for list="{{trigs}}" as="tg" hint-placeholder-count="6">
+<button onClick="{{tg.pick}}" aria-pressed="{{tg.on}}" style="text-align:left;padding:12px;border-radius:12px;background:{{tg.bg}};border:1.5px solid {{tg.bd}};color:#111;font-size:14px;font-weight:500;display:flex;align-items:center;gap:10px;min-height:46px"><span style="width:26px;height:26px;border-radius:8px;background:#FFF4D6;display:flex;align-items:center;justify-content:center;flex:none"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#9A6B00" stroke-width="2.2" aria-hidden="true"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg></span>{{tg.t}}</button>
+</sc-for>
+</div>
+</sc-if>
+<sc-if value="{{mTpl}}" hint-placeholder-val="{{true}}">
+<div style="font-size:14px;font-weight:600">Pick a template</div>
+<div style="display:flex;flex-direction:column;gap:8px;max-height:260px;overflow:auto">
+<sc-for list="{{tplPick}}" as="tp" hint-placeholder-count="4">
+<button onClick="{{tp.pick}}" aria-pressed="{{tp.on}}" style="text-align:left;padding:12px 14px;border-radius:12px;background:{{tp.bg}};border:1.5px solid {{tp.bd}};color:#111;display:flex;flex-direction:column;gap:4px"><span style="font-weight:700;font-size:15px">{{tp.name}}</span><span style="font-size:13px;color:#555">When {{tp.trig}}. Then {{tp.then}}.</span></button>
+</sc-for>
+</div>
+</sc-if>
+<sc-if value="{{mAi}}" hint-placeholder-val="{{false}}">
+<label for="ss-p" style="font-size:14px;font-weight:600">Tell Studio Assistant what should happen</label>
+<textarea id="ss-p" value="{{prompt}}" onChange="{{onPrompt}}" rows="3" placeholder="When an edit needs changes, send the editor a short fix list" style="border-radius:12px;background:#F7F7F7;border:1px solid #E6E6E6;color:#111;padding:12px;font-family:inherit;font-size:14px;line-height:1.5;resize:vertical"></textarea>
+<div style="display:flex;flex-wrap:wrap;gap:8px">
+<sc-for list="{{chips}}" as="ch" hint-placeholder-count="3"><button onClick="{{ch.pick}}" class="ss-h" style="min-height:36px;padding:0 12px;border-radius:999px;background:#fff;border:1px solid #E0E0E0;color:#333;font-size:13px">{{ch.t}}</button></sc-for>
+</div>
+<sc-if value="{{hasPrompt}}" hint-placeholder-val="{{false}}">
+<div style="background:#F0EBFF;border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:6px">
+<div style="font-size:13px;font-weight:700;color:#5B3FC4">Studio Assistant will draft</div>
+<div style="font-size:14px;color:#333;line-height:1.55">Editor Status changes → Get project → Branch: sponsored video → Summarize review notes → Approval → Notify editor in Slack</div>
+</div>
+</sc-if>
+</sc-if>
+</div>
+<div style="display:flex;justify-content:flex-end;gap:8px;padding:16px 22px;border-top:1px solid #EDEDED;background:#FAFAFA">
+<button onClick="{{closeNew}}" class="ss-h" style="height:44px;padding:0 18px;border-radius:12px;background:#fff;border:1px solid #E0E0E0;color:#111;font-weight:600;font-size:14px">Cancel</button>
+<a href="Santos-Builder.dc.html" class="ss-k" style="height:44px;display:flex;align-items:center;padding:0 18px;border-radius:12px;background:#111;color:#fff;text-decoration:none;font-weight:600;font-size:14px">{{cta}}</a>
+</div>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{hasToast}}" hint-placeholder-val="{{false}}">
+<div role="status" style="position:absolute;right:32px;bottom:32px;z-index:30;background:#111;color:#fff;border-radius:12px;padding:12px 16px;font-size:14px;font-weight:500;box-shadow:0 8px 24px rgba(0,0,0,.2)">{{toast}}</div>
+</sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1100}}'>
+const KC={trigger:['#8A5A00','#FFF4D6'],data:['#2449C7','#EAF0FF'],action:['#1F7A45','#E6F5EC'],logic:['#B4470E','#FFEDE1'],ai:['#5B3FC4','#F0EBFF'],human:['#444444','#EDEDED']};
+const D={trigger:'M13 2 3 14h9l-1 8 10-12h-9l1-8z',data:'M3 3h7v9H3zM14 3h7v5h-7zM14 12h7v9h-7zM3 16h7v5H3z',action:'M22 2 11 13M22 2l-7 20-4-9-9-4 20-7z',logic:'M6 3v12M18 9a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM6 21a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM18 9a9 9 0 0 1-9 9',ai:'M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9L12 3z',human:'M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM16 11l2 2 4-4'};
+const SW={live:['Live','#1F7A45','#E6F5EC','#BFE3CC'],off:['Off','#555555','#F1F1F1','#E0E0E0'],draft:['Draft','#8A5A00','#FFFFFF','#CFCFCF']};
+const WF0=[
+{id:'w1',name:'Sponsor approved to publishing',status:'live',trig:'Sponsor Approval changes',steps:[['trigger','Sponsor approved'],['data','Move to Publishing'],['action','Slack Super Admin']],meta:'Last run today, 10:12 AM',from:false},
+{id:'w2',name:'Edit needs changes',status:'live',trig:'Editor Status changes',steps:[['trigger','Edit needs changes'],['ai','Summarize notes'],['action','Slack the editor']],meta:'Last run today, 9:05 AM',from:false},
+{id:'w3',name:'Review notes to editor',status:'draft',trig:'Editor Status changes',steps:[['trigger','Editor status'],['data','Get project'],['logic','Sponsored?','Ping producer','Continue'],['ai','Summarize notes'],['human','Approval'],['action','Slack the editor']],meta:'Slack not connected',from:false},
+{id:'w4',name:'Publishing reminder',status:'off',trig:'Publishing date is coming up',steps:[['trigger','Publish date soon'],['logic','Wait 1 day'],['action','Add to Inbox']],meta:'Off since Nov 4',from:true},
+{id:'w5',name:'new flow',status:'draft',trig:'No trigger yet',steps:[['trigger','Pick a trigger'],['action','Slack Super Admin']],meta:'Needs a trigger',from:false}];
+const TPL=[
+{name:'Sponsor follow-up',needs:'Board, Gmail',desc:'When a sponsor asks for changes, Studio Assistant drafts a reply with the notes. You approve it before it sends.',trig:'Sponsor Approval changes',then:'Draft with Assistant, approval, send email',steps:[['trigger','Sponsor approval'],['ai','Draft reply'],['human','Approval'],['action','Send email']]},
+{name:'Thumbnail ready',needs:'Board, Slack',desc:'When a thumbnail moves to Ready, ping the Super Admin in Slack to pick a winner.',trig:'Thumbnail changes',then:'Notify in Slack',steps:[['trigger','Thumbnail ready'],['action','Slack Super Admin']]},
+{name:'Publishing countdown',needs:'Board',desc:'Two days before a video goes out, check every stage is done and add a task for any gap.',trig:'Publishing date is coming up',then:'Get project, branch, create task',steps:[['trigger','Publish in 2 days'],['data','Get project'],['logic','All stages done?','Continue','Add task']]},
+{name:'Mention to Inbox',needs:'Board',desc:'When a comment mentions a Super Admin, drop it in their Inbox with the project link.',trig:'A comment mentions a Super Admin',then:'Add to Inbox',steps:[['trigger','Super Admin mention'],['action','Add to Inbox']]},
+{name:'Weekly production recap',needs:'Board, Slack',desc:'Every Friday, summarize what moved stages this week and post it to the team channel.',trig:'Fridays at 4 PM',then:'Get projects, summarize, notify in Slack',steps:[['trigger','Fridays, 4 PM'],['data','Get projects'],['ai','Summarize'],['action','Post to Slack']]},
+{name:'Editor handoff',needs:'Board',desc:'When filming wraps, assign the next free editor and set a due date.',trig:'Status changes to Post Production',then:'Assign editor, set due date',steps:[['trigger','Post Production'],['human','Assign editor'],['data','Set due date']]}];
+const RUNS=[
+{id:'r1',wf:'Sponsor approved to publishing',note:'Kitchen remodel episode',when:'Today 10:12',dur:'2.4s',steps:'3 of 3',res:'passed'},
+{id:'r2',wf:'Edit needs changes',note:'Shop tour v2',when:'Today 9:05',dur:'5.8s',steps:'3 of 3',res:'passed'},
+{id:'r3',wf:'Edit needs changes',note:'Slack is not connected',when:'Yesterday 5:40',dur:'0.9s',steps:'2 of 3',res:'failed'},
+{id:'r4',wf:'Publishing reminder',note:'Garage build episode',when:'Nov 4',dur:'1.1s',steps:'3 of 3',res:'passed'},
+{id:'r5',wf:'Sponsor approved to publishing',note:'Deck repair episode',when:'Nov 3',dur:'2.2s',steps:'3 of 3',res:'passed'},
+{id:'r6',wf:'Edit needs changes',note:'Tool haul',when:'Nov 2',dur:'6.0s',steps:'3 of 3',res:'passed'}];
+const APPR=[
+{id:'a1',wf:'Sponsor follow-up',when:'8 min ago',what:'Reply to the sponsor on the kitchen remodel episode',draft:'Thanks for the notes. We moved the product shot into the first minute and kept the code on screen for 5 seconds. The new cut is in review today.'},
+{id:'a2',wf:'Edit needs changes',when:'40 min ago',what:'Fix list for the editor on Shop tour v2',draft:'1. Trim the intro to 20 seconds. 2. Fix the lower third spelling. 3. Swap the end card for the new one.'}];
+const CONN=[{n:'Board',on:true,used:5},{n:'Slack',on:false,used:3},{n:'Gmail',on:true,used:1},{n:'Google Drive',on:true,used:1},{n:'YouTube',on:true,exp:true,used:1},{n:'Frame.io',on:false,used:0},{n:'Notion',on:false,used:0},{n:'Webhook',on:false,used:0}];
+const TRIGS=['Status changes','Editor Status changes','Thumbnail changes','Sponsor Approval changes','A comment mentions a Super Admin','Publishing date is coming up'];
+const CHIPS=['Send the editor a fix list when an edit needs changes','Remind the team 2 days before publishing','Post a weekly recap to Slack'];
+const flow=(st)=>st.map((s,i)=>({t:s[1],c:KC[s[0]][0],bg:KC[s[0]][1],d:D[s[0]],notFirst:i>0,hasBr:s.length>2,yes:s[2]||'',no:s[3]||''}));
+class Component extends DCLogic {
+constructor(p){super(p);this.state={tab:'wf',filter:'all',q:'',wfs:WF0.map(w=>({...w})),runs:RUNS.map(r=>({...r})),appr:APPR.slice(),conn:CONN.map(c=>({...c})),modal:false,mode:'tpl',tp:0,tg:1,prompt:'',toast:''};}
+componentWillUnmount(){clearTimeout(this.tt);}
+say(t){this.setState({toast:t});clearTimeout(this.tt);this.tt=setTimeout(()=>this.setState({toast:''}),2600);}
+renderVals(){
+const s=this.state,q=s.q.trim().toLowerCase();
+const inF=(w,f)=>f==='all'||(f==='assistant'?w.from:w.status===f);
+const shown=s.wfs.filter(w=>inF(w,s.filter)&&(!q||(w.name+' '+w.trig).toLowerCase().indexOf(q)>-1)).map(w=>{const on=w.status==='live',m=SW[w.status];return {...w,flow:flow(w.steps),statusLabel:m[0],sc:m[1],sbg:m[2],sbd:m[3],stepsTxt:(w.steps.length-1)+' steps',isDraft:w.status==='draft',notDraft:w.status!=='draft',on:on,trk:on?'#1F7A45':'#D6D6D6',knob:on?'21px':'3px',toggle:()=>{this.setState(st=>({wfs:st.wfs.map(x=>x.id===w.id?{...x,status:on?'off':'live',meta:on?'Turned off just now':'Waiting for the next trigger'}:x)}));this.say(w.name+(on?' is off':' is live'));}};});
+const cnt=f=>s.wfs.filter(w=>inF(w,f)).length;
+const filters=[['all','All'],['live','Live'],['off','Off'],['draft','Draft'],['assistant','From Assistant']].map(([k,l])=>{const on=s.filter===k;return {label:l,n:cnt(k),on,bg:on?'#EFEFEF':'#fff',bd:on?'#D6D6D6':'#EDEDED',w:on?600:500,pick:()=>this.setState({filter:k})};});
+const failed=s.runs.filter(r=>r.res==='failed').length;
+const tabs=[['wf','Workflows',s.wfs.length],['tpl','Templates',TPL.length],['runs','Run history',s.runs.length],['appr','Approvals',s.appr.length],['conn','Connectors',s.conn.filter(c=>c.on&&!c.exp).length+' of '+s.conn.length]].map(([k,l,n])=>{const on=s.tab===k,hot=k==='appr'&&s.appr.length>0;return {label:l,count:n,on,line:on?'#111':'transparent',fg:on?'#111':'#555',w:on?600:500,cbg:hot?'#111':'#EFEFEF',cf:hot?'#fff':'#333',pick:()=>this.setState({tab:k})};});
+const stats=[{label:'Live workflows',value:cnt('live'),sub:cnt('draft')+' drafts, '+cnt('off')+' off',c:'#111'},{label:'Runs this week',value:s.runs.length,sub:s.runs.filter(r=>r.res==='passed').length+' passed',c:'#111'},{label:'Failed this week',value:failed,sub:failed?'View failed runs':'Nothing failed',c:failed?'#B42318':'#111'},{label:'Waiting on approval',value:s.appr.length,sub:s.appr.length?'Review the queue':'Queue is clear',c:'#111'}];
+stats.forEach((x,i)=>{const t=[{tab:'wf',filter:'live'},{tab:'runs'},{tab:'runs'},{tab:'appr'}][i];x.go=()=>this.setState(t);});
+const runs=s.runs.map(r=>{const m={passed:['Passed','#1F7A45','#E6F5EC'],failed:['Failed','#B42318','#FDECEC'],retry:['Retrying','#7A5300','#FFF4D6']}[r.res];return {...r,label:m[0],fg:m[1],bg:m[2],failed:r.res==='failed',retry:()=>{this.setState(st=>({runs:st.runs.map(x=>x.id===r.id?{...x,res:'retry',note:'Retry queued'}:x)}));this.say('Retry queued for '+r.wf);}};});
+const appr=s.appr.map(a=>({...a,ok:()=>{this.setState(st=>({appr:st.appr.filter(x=>x.id!==a.id)}));this.say('Approved. '+a.wf+' continues.');},no:()=>{this.setState(st=>({appr:st.appr.filter(x=>x.id!==a.id)}));this.say('Rejected. The run stopped.');}}));
+const conn=s.conn.map(c=>({name:c.n,exp:!!c.exp,notExp:!c.exp,used:c.used+(c.used===1?' workflow':' workflows'),state:c.exp?'Sign-in expired':(c.on?'Connected':'Not connected'),dot:c.exp?'#B42318':(c.on?'#1F7A45':'#B0B0B0'),sc:c.exp?'#B42318':(c.on?'#1F7A45':'#666'),action:c.on?'Disconnect':'Connect',bbg:c.on?'#fff':'#111',bfg:c.on?'#111':'#fff',bbd:c.on?'#E0E0E0':'#111',flip:()=>{this.setState(st=>({conn:st.conn.map(x=>x.n===c.n?{...x,on:!x.on}:x)}));this.say(c.n+(c.on?' disconnected':' connected'));}}));
+const modes=[['blank','Start blank','Pick a trigger and add steps yourself'],['tpl','From a template','Start from a proven flow, edit after'],['ai','Ask Studio Assistant','Describe it in a sentence and get drafted steps']].map(([k,l,sub])=>{const on=s.mode===k;return {label:l,sub,on,bg:on?'#F5F7FF':'#fff',bd:on?'#2F5BEA':'#E6E6E6',pick:()=>this.setState({mode:k})};});
+const row=on=>({bg:on?'#F5F7FF':'#fff',bd:on?'#2F5BEA':'#E6E6E6'});
+return {hasAlert:s.conn.some(c=>c.n==='Slack'&&!c.on),q:s.q,onQ:e=>this.setState({q:e.target.value}),stats,tabs,filters,shown,noneShown:shown.length===0,
+isWf:s.tab==='wf',isTpl:s.tab==='tpl',isRuns:s.tab==='runs',isAppr:s.tab==='appr',isConn:s.tab==='conn',
+tplTop:TPL.slice(0,3).map(t=>({...t,flow:flow(t.steps)})),tpl:TPL.map(t=>({...t,flow:flow(t.steps)})),runs,appr,noAppr:appr.length===0,conn,
+modal:s.modal,openNew:()=>this.setState({modal:true}),closeNew:()=>this.setState({modal:false}),modes,mBlank:s.mode==='blank',mTpl:s.mode==='tpl',mAi:s.mode==='ai',
+trigs:TRIGS.map((t,i)=>({t,on:s.tg===i,...row(s.tg===i),pick:()=>this.setState({tg:i})})),
+tplPick:TPL.map((t,i)=>({...t,on:s.tp===i,...row(s.tp===i),pick:()=>this.setState({tp:i})})),
+prompt:s.prompt,onPrompt:e=>this.setState({prompt:e.target.value}),hasPrompt:s.prompt.trim().length>0,chips:CHIPS.map(t=>({t,pick:()=>this.setState({prompt:t})})),
+cta:s.mode==='ai'?'Draft with Assistant':(s.mode==='tpl'?'Use this template':'Open builder'),toast:s.toast,hasToast:!!s.toast};
+}
+}
+</script>
+</body>
+</html>

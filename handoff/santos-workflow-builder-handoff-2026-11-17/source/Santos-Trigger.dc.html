@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>SantosStudios trigger setup</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Montserrat:wght@800;900&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#EBEBEB}
+a{color:#2F5BEA}a:hover{color:#1E3FB0}
+.ss *{box-sizing:border-box}
+.ss button{font-family:inherit;cursor:pointer}
+.ss button:focus-visible,.ss a:focus-visible,.ss input:focus-visible{outline:2px solid #2F5BEA;outline-offset:2px}
+.ss input::placeholder{color:#8a8a8a}
+.ss-h:hover{background:#F0F0F0 !important}
+.ss-k:hover{background:#2b2b2b !important}
+@keyframes ssp{0%,100%{opacity:1}50%{opacity:.35}}
+.ss-pulse{animation:ssp 1.1s ease-in-out infinite}
+@media (max-width:900px){.ss-two{grid-template-columns:1fr !important}}
+</style>
+</helmet>
+<div class="ss" style="min-height:900px;position:relative;background:#EBEBEB;color:#111;font-family:Inter,system-ui,sans-serif;display:flex;justify-content:center;align-items:flex-start;padding:48px 16px">
+<div aria-hidden="true" style="position:absolute;inset:12px;border-radius:16px;background-color:#FAFAFA;background-image:radial-gradient(#DADADA 1px,transparent 1px);background-size:20px 20px"></div>
+<div aria-hidden="true" style="position:absolute;inset:0;background:rgba(17,17,17,.32)"></div>
+<div role="dialog" aria-modal="true" aria-labelledby="st-t" style="position:relative;width:980px;max-width:100%;background:#fff;border-radius:20px;box-shadow:0 24px 64px rgba(0,0,0,.2);display:flex;flex-direction:column;overflow:hidden">
+<div style="display:flex;justify-content:space-between;align-items:center;gap:12px;padding:20px 24px;border-bottom:1px solid #EDEDED;flex-wrap:wrap">
+<div><div style="font-size:13px;color:#666">Trigger · Review notes to editor</div><h1 id="st-t" style="margin:2px 0 0;font-family:Montserrat,sans-serif;font-weight:900;font-size:24px;letter-spacing:-.02em">What starts this flow?</h1></div>
+<div style="display:flex;align-items:center;gap:10px">
+<div role="tablist" aria-label="Trigger type" style="display:flex;background:#F2F2F2;border-radius:12px;padding:4px">
+<sc-for list="{{modes}}" as="m" hint-placeholder-count="3"><button role="tab" aria-selected="{{m.on}}" onClick="{{m.pick}}" style="height:38px;display:flex;align-items:center;gap:7px;padding:0 14px;border-radius:9px;background:{{m.bg}};color:{{m.fg}};box-shadow:{{m.sh}};border:0;font-size:14px;font-weight:600"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="{{m.d}}"></path></svg>{{m.l}}</button></sc-for>
+</div>
+<a href="Santos-Builder.dc.html" aria-label="Close" class="ss-h" style="width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;color:#111"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></a>
+</div>
+</div>
+
+<div class="ss-two" style="display:grid;grid-template-columns:minmax(0,1fr) 320px;min-height:520px">
+<div style="padding:22px 24px;display:flex;flex-direction:column;gap:22px">
+
+<sc-if value="{{isSched}}" hint-placeholder-val="{{false}}">
+<div style="display:flex;flex-direction:column;gap:10px"><div style="font-size:15px;font-weight:700">How often</div>
+<div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px">
+<sc-for list="{{freqs}}" as="f" hint-placeholder-count="4"><button onClick="{{f.pick}}" aria-pressed="{{f.on}}" style="height:48px;border-radius:12px;background:{{f.bg}};border:1.5px solid {{f.bd}};color:#111;font-size:15px;font-weight:600">{{f.l}}</button></sc-for>
+</div></div>
+<sc-if value="{{isWeekly}}" hint-placeholder-val="{{true}}">
+<div style="display:flex;flex-direction:column;gap:10px"><div style="font-size:15px;font-weight:700">On these days</div>
+<div style="display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px">
+<sc-for list="{{days}}" as="d" hint-placeholder-count="7"><button onClick="{{d.flip}}" aria-pressed="{{d.on}}" aria-label="{{d.full}}" style="height:48px;border-radius:999px;background:{{d.bg}};border:1.5px solid {{d.bd}};color:{{d.fg}};font-size:14px;font-weight:700">{{d.l}}</button></sc-for>
+</div></div>
+</sc-if>
+<sc-if value="{{showTime}}" hint-placeholder-val="{{true}}">
+<div style="display:flex;flex-direction:column;gap:10px"><div style="font-size:15px;font-weight:700">At</div>
+<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+<div style="display:flex;align-items:center;border:1px solid #E0E0E0;border-radius:12px">
+<button onClick="{{hDown}}" aria-label="Earlier hour" class="ss-h" style="width:44px;height:48px;border-radius:12px 0 0 12px;background:transparent;border:0;color:#111;font-size:18px">−</button>
+<span style="width:96px;text-align:center;font-family:Montserrat,sans-serif;font-weight:900;font-size:24px">{{timeTxt}}</span>
+<button onClick="{{hUp}}" aria-label="Later hour" class="ss-h" style="width:44px;height:48px;border-radius:0 12px 12px 0;background:transparent;border:0;color:#111;font-size:18px">+</button>
+</div>
+<div role="radiogroup" aria-label="Minutes" style="display:flex;background:#F2F2F2;border-radius:12px;padding:4px"><sc-for list="{{mins}}" as="mn" hint-placeholder-count="4"><button role="radio" aria-checked="{{mn.on}}" onClick="{{mn.pick}}" style="height:38px;padding:0 12px;border-radius:9px;background:{{mn.bg}};color:{{mn.fg}};box-shadow:{{mn.sh}};border:0;font-size:14px;font-weight:600">{{mn.l}}</button></sc-for></div>
+<div role="radiogroup" aria-label="AM or PM" style="display:flex;background:#F2F2F2;border-radius:12px;padding:4px"><sc-for list="{{ampm}}" as="a" hint-placeholder-count="2"><button role="radio" aria-checked="{{a.on}}" onClick="{{a.pick}}" style="height:38px;padding:0 14px;border-radius:9px;background:{{a.bg}};color:{{a.fg}};box-shadow:{{a.sh}};border:0;font-size:14px;font-weight:600">{{a.l}}</button></sc-for></div>
+</div>
+<div style="font-size:14px;color:#666">Time zone: Central Time</div>
+</div>
+</sc-if>
+</sc-if>
+
+<sc-if value="{{isEvent}}" hint-placeholder-val="{{true}}">
+<div style="display:flex;flex-direction:column;gap:10px"><div style="font-size:15px;font-weight:700">When this happens</div>
+<div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px">
+<sc-for list="{{events}}" as="e" hint-placeholder-count="6"><button onClick="{{e.pick}}" aria-pressed="{{e.on}}" style="text-align:left;display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:14px;background:{{e.bg}};border:1.5px solid {{e.bd}};color:#111;min-height:62px"><span style="width:30px;height:30px;flex:none;border-radius:9px;background:#FFF4D6;display:flex;align-items:center;justify-content:center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#8A5A00" stroke-width="2.2" aria-hidden="true"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg></span><span style="display:flex;flex-direction:column;gap:1px"><span style="font-weight:600;font-size:14px">{{e.l}}</span><span style="font-size:12px;color:#666">{{e.app}}</span></span></button></sc-for>
+</div></div>
+<div style="display:flex;flex-direction:column;gap:10px"><div style="font-size:15px;font-weight:700">Only when</div>
+<sc-for list="{{filters}}" as="f" hint-placeholder-count="1">
+<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+<button onClick="{{f.nextField}}" aria-label="Change field" class="ss-h" style="height:44px;display:flex;align-items:center;gap:6px;padding:0 12px;border-radius:999px;background:#EAF0FF;border:0;color:#2449C7;font-size:14px;font-weight:600">{{f.field}}<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
+<button onClick="{{f.nextOp}}" aria-label="Change rule" class="ss-h" style="height:44px;display:flex;align-items:center;gap:6px;padding:0 12px;border-radius:999px;background:#fff;border:1px solid #E0E0E0;color:#111;font-size:14px;font-weight:600">{{f.op}}<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
+<input id="{{f.id}}" aria-label="Value" value="{{f.v}}" onChange="{{f.change}}" placeholder="Value" style="flex:1 1 140px;height:44px;border-radius:12px;background:#fff;border:1.5px solid #E3E3E3;color:#111;padding:0 12px;font-family:inherit;font-size:14px">
+<button onClick="{{f.rm}}" aria-label="Remove filter" class="ss-h" style="width:44px;height:44px;border-radius:12px;background:#fff;border:1px solid #E0E0E0;color:#666;display:flex;align-items:center;justify-content:center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+</div>
+</sc-for>
+<button onClick="{{addFilter}}" class="ss-h" style="align-self:flex-start;height:40px;display:flex;align-items:center;gap:6px;padding:0 14px;border-radius:999px;background:#fff;border:1.5px dashed #CFCFCF;color:#333;font-size:14px;font-weight:600"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Add a filter</button>
+</div>
+</sc-if>
+
+<sc-if value="{{isHook}}" hint-placeholder-val="{{false}}">
+<div style="display:flex;flex-direction:column;gap:10px"><div style="font-size:15px;font-weight:700">Send requests to this address</div>
+<div style="display:flex;gap:8px;align-items:center"><div style="flex:1;min-width:0;height:48px;display:flex;align-items:center;padding:0 14px;border-radius:12px;background:#F7F7F7;border:1px solid #EDEDED;font-family:ui-monospace,Menlo,monospace;font-size:13px;color:#333;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">hooks.santosstudios.com/w/review-notes</div>
+<button onClick="{{copy}}" class="ss-h" style="height:48px;padding:0 16px;border-radius:12px;background:#fff;border:1px solid #E0E0E0;color:#111;font-size:14px;font-weight:600">{{copyTxt}}</button></div></div>
+<div style="display:flex;align-items:center;justify-content:space-between;gap:12px"><div><div style="font-size:15px;font-weight:600">Require a secret key</div><div style="font-size:13px;color:#666">Rejects requests that do not send it</div></div>
+<button onClick="{{secFlip}}" role="switch" aria-checked="{{sec}}" aria-label="Require a secret key" style="width:56px;height:44px;background:transparent;border:0;padding:0;display:flex;align-items:center;justify-content:center"><span style="width:44px;height:26px;border-radius:999px;background:{{secT}};position:relative;display:block"><span style="position:absolute;top:3px;left:{{secK}};width:20px;height:20px;border-radius:999px;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.25)"></span></span></button></div>
+<div style="border:1px solid #EDEDED;border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:12px">
+<div style="display:flex;align-items:center;gap:10px"><span class="{{pulseCls}}" style="width:10px;height:10px;border-radius:999px;background:{{hookDot}}" aria-hidden="true"></span><span style="font-weight:600;font-size:15px">{{hookHead}}</span><div style="flex:1"></div><button onClick="{{sendTest}}" class="ss-h" style="height:40px;padding:0 14px;border-radius:10px;background:#fff;border:1px solid #E0E0E0;color:#111;font-size:14px;font-weight:600">Send a test request</button></div>
+<sc-for list="{{hookFields}}" as="r" hint-placeholder-count="0"><div style="display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-top:1px solid #EDEDED;font-size:14px"><span style="color:#666">{{r.k}}</span><span style="font-weight:600">{{r.v}}</span></div></sc-for>
+</div>
+</sc-if>
+</div>
+
+<aside style="padding:22px 24px;display:flex;flex-direction:column;gap:14px;background:#FAFAFA;border-left:1px solid #EDEDED">
+<div style="font-size:13px;font-weight:600;color:#666">Summary</div>
+<div style="font-family:Montserrat,sans-serif;font-weight:900;font-size:22px;line-height:1.2;letter-spacing:-.01em">{{summary}}</div>
+<div style="font-size:13px;font-weight:600;color:#666;margin-top:8px">{{nextHead}}</div>
+<sc-for list="{{nextRuns}}" as="n" hint-placeholder-count="3"><div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid #EDEDED;font-size:14px"><span style="width:7px;height:7px;border-radius:999px;background:#C9A227" aria-hidden="true"></span>{{n.t}}</div></sc-for>
+</aside>
+</div>
+
+<div style="display:flex;align-items:center;gap:8px;padding:16px 24px;border-top:1px solid #EDEDED;background:#FAFAFA">
+<span style="font-size:13px;font-weight:500;color:{{saveC}};margin-right:auto">{{saveTxt}}</span>
+<a href="Santos-Builder.dc.html" class="ss-h" style="height:44px;display:flex;align-items:center;padding:0 16px;border-radius:12px;border:1px solid #E0E0E0;background:#fff;color:#111;text-decoration:none;font-weight:600;font-size:14px">{{doneTxt}}</a>
+<button onClick="{{save}}" class="ss-k" style="height:44px;padding:0 18px;border-radius:12px;background:#111;color:#fff;border:0;font-weight:600;font-size:14px">Save trigger</button>
+</div>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+const MODES=[['sched','Schedule','M12 7v5l3 2M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z'],['event','Event','M13 2 3 14h9l-1 8 10-12h-9l1-8z'],['hook','Webhook','M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7']];
+const FREQ=['Every hour','Daily','Weekly','Monthly'];
+const DAYS=[['M','Monday'],['T','Tuesday'],['W','Wednesday'],['T','Thursday'],['F','Friday'],['S','Saturday'],['S','Sunday']];
+const MINS=[':00',':15',':30',':45'];
+const EVENTS=[['Status changes','A project reaches a stage'],['Editor Status changes','An edit is in review or needs changes'],['Thumbnail changes','A thumbnail moves along'],['Sponsor Approval changes','A sponsor approves or asks for changes'],['A comment mentions a Super Admin','A comment asks for help'],['Publishing date is coming up','Before a video goes out']];
+const FIELDS=['New status','Project type','Editor','Sponsor'];
+const OPS=['is','is not','contains'];
+const MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const WD=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+class Component extends DCLogic {
+constructor(p){super(p);this.seq=2;this.state={mode:'event',freq:2,days:[false,false,false,false,true,false,false],h:4,m:0,pm:true,ev:1,filters:[{id:'sf1',f:0,o:0,v:'Needs changes'}],copied:false,sec:true,hook:'idle',dirty:false,saved:false};}
+componentWillUnmount(){clearTimeout(this.th);clearTimeout(this.tc);}
+set(p){this.setState(Object.assign({dirty:true,saved:false},p));}
+renderVals(){
+const s=this.state;
+const pill=(on)=>({bg:on?'#F5F7FF':'#fff',bd:on?'#2F5BEA':'#E3E3E3',fg:on?'#2449C7':'#111'});
+const seg=(on)=>({bg:on?'#fff':'transparent',fg:on?'#111':'#555',sh:on?'0 1px 2px rgba(0,0,0,.08)':'none'});
+const time=s.h+':'+MINS[s.m].slice(1)+' '+(s.pm?'PM':'AM');
+const picked=DAYS.map((d,i)=>s.days[i]?d[1]:null).filter(Boolean);
+let summary='',nextHead='Next runs',next=[];
+if(s.mode==='sched'){
+const dayTxt=s.freq===0?'Every hour':s.freq===1?'Every day':s.freq===3?'The 1st of each month':(picked.length===7?'Every day':picked.length?picked.map(d=>d+'s').join(', '):'Pick a day');
+summary=s.freq===0?'Every hour, on the hour':dayTxt+' at '+time;
+const base=new Date(2026,10,7,12,0,0);
+for(let i=1;i<=40&&next.length<3;i++){const d=new Date(base.getTime()+i*86400000);const wi=(d.getDay()+6)%7;
+const ok=s.freq===1||s.freq===0||(s.freq===2&&s.days[wi])||(s.freq===3&&d.getDate()===1);
+if(ok)next.push({t:WD[d.getDay()]+', '+MON[d.getMonth()]+' '+d.getDate()+(s.freq===0?', every hour':' at '+time)});}
+}else if(s.mode==='event'){
+summary='When '+EVENTS[s.ev][0].charAt(0).toLowerCase()+EVENTS[s.ev][0].slice(1)+(s.filters.length?' and '+s.filters.map(f=>FIELDS[f.f].toLowerCase()+' '+OPS[f.o]+' '+(f.v||'...')).join(' and '):'');
+nextHead='Last 3 matches';next=[{t:'Shop tour v2, yesterday'},{t:'Kitchen remodel, Nov 5'},{t:'Deck repair, Nov 3'}];
+}else{summary='When a request reaches the webhook address';nextHead='Last request';next=s.hook==='got'?[{t:'Today, just now, test request'}]:[{t:'No requests yet'}];}
+return {doneTxt:s.dirty?'Cancel':'Back to builder',
+modes:MODES.map(m=>({l:m[1],d:m[2],on:s.mode===m[0],...seg(s.mode===m[0]),pick:()=>this.setState({mode:m[0]})})),
+isSched:s.mode==='sched',isEvent:s.mode==='event',isHook:s.mode==='hook',isWeekly:s.freq===2,showTime:s.freq!==0,
+freqs:FREQ.map((l,i)=>({l,on:s.freq===i,...pill(s.freq===i),pick:()=>this.set({freq:i})})),
+days:DAYS.map((d,i)=>({l:d[0],full:d[1],on:s.days[i],bg:s.days[i]?'#111':'#fff',bd:s.days[i]?'#111':'#E3E3E3',fg:s.days[i]?'#fff':'#111',flip:()=>this.set({days:s.days.map((x,j)=>j===i?!x:x)})})),
+timeTxt:s.h+':'+MINS[s.m].slice(1),hUp:()=>this.set({h:s.h===12?1:s.h+1}),hDown:()=>this.set({h:s.h===1?12:s.h-1}),
+mins:MINS.map((l,i)=>({l,on:s.m===i,...seg(s.m===i),pick:()=>this.set({m:i})})),
+ampm:['AM','PM'].map((l,i)=>({l,on:s.pm===(i===1),...seg(s.pm===(i===1)),pick:()=>this.set({pm:i===1})})),
+events:EVENTS.map((e,i)=>({l:e[0],app:e[1],on:s.ev===i,...pill(s.ev===i),pick:()=>this.set({ev:i})})),
+filters:s.filters.map(f=>({id:f.id,field:FIELDS[f.f],op:OPS[f.o],v:f.v,
+nextField:()=>this.set({filters:s.filters.map(x=>x.id===f.id?{...x,f:(x.f+1)%FIELDS.length}:x)}),
+nextOp:()=>this.set({filters:s.filters.map(x=>x.id===f.id?{...x,o:(x.o+1)%OPS.length}:x)}),
+change:e=>this.set({filters:s.filters.map(x=>x.id===f.id?{...x,v:e.target.value}:x)}),
+rm:()=>this.set({filters:s.filters.filter(x=>x.id!==f.id)})})),
+addFilter:()=>{this.seq+=1;this.set({filters:s.filters.concat([{id:'sf'+this.seq,f:3,o:0,v:''}])});},
+copyTxt:s.copied?'Copied':'Copy',copy:()=>{this.setState({copied:true});clearTimeout(this.tc);this.tc=setTimeout(()=>this.setState({copied:false}),1800);},
+sec:s.sec,secFlip:()=>this.set({sec:!s.sec}),secT:s.sec?'#111':'#D6D6D6',secK:s.sec?'21px':'3px',
+hookHead:s.hook==='got'?'Test request received':(s.hook==='wait'?'Listening for a request':'Not listening'),hookDot:s.hook==='got'?'#1F7A45':(s.hook==='wait'?'#2F5BEA':'#B0B0B0'),pulseCls:s.hook==='wait'?'ss-pulse':'',
+sendTest:()=>{this.setState({hook:'wait'});clearTimeout(this.th);this.th=setTimeout(()=>this.setState({hook:'got'}),1400);},
+hookFields:s.hook==='got'?[{k:'Project',v:'Garage build'},{k:'New status',v:'Needs changes'},{k:'Editor',v:'Dani'}]:[],
+summary,nextHead,nextRuns:next,
+saveTxt:s.saved?'Trigger saved':(s.dirty?'Unsaved changes':'No changes'),saveC:s.saved?'#1F7A45':(s.dirty?'#7A5300':'#666'),save:()=>this.setState({dirty:false,saved:true})};
+}
+}
+</script>
+</body>
+</html>

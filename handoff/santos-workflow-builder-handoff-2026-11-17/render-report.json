@@ -1,0 +1,123 @@
+{
+  "project": "/tmp/claude-0/-home-claude/2d2ce6b4-8cf0-593a-9079-e3651baea1ed/scratchpad/ho/santos/project",
+  "title": "Workflow Builder · Three Brands",
+  "artboards": [
+    {
+      "file": "Main.dc.html",
+      "name": "Main",
+      "title": "Workflow builder shared spec",
+      "w": 1440,
+      "h": 1100,
+      "fluid": true,
+      "html": "html/Main.html",
+      "png": "screenshots/Main.png",
+      "imports": [],
+      "warnings": [],
+      "tweaks": []
+    },
+    {
+      "file": "Santos-Hub.dc.html",
+      "name": "Santos-Hub",
+      "title": "SantosStudios automations hub",
+      "w": 1440,
+      "h": 1100,
+      "fluid": true,
+      "html": "html/Santos-Hub.html",
+      "png": "screenshots/Santos-Hub.png",
+      "imports": [],
+      "warnings": [],
+      "tweaks": []
+    },
+    {
+      "file": "Santos-Builder.dc.html",
+      "name": "Santos-Builder",
+      "title": "SantosStudios workflow builder",
+      "w": 1440,
+      "h": 900,
+      "fluid": true,
+      "html": "html/Santos-Builder.html",
+      "png": "screenshots/Santos-Builder.png",
+      "imports": [],
+      "warnings": [],
+      "tweaks": []
+    },
+    {
+      "file": "Santos-Run.dc.html",
+      "name": "Santos-Run",
+      "title": "SantosStudios run detail",
+      "w": 1440,
+      "h": 900,
+      "fluid": true,
+      "html": "html/Santos-Run.html",
+      "png": "screenshots/Santos-Run.png",
+      "imports": [],
+      "warnings": [],
+      "tweaks": []
+    },
+    {
+      "file": "Santos-Settings.dc.html",
+      "name": "Santos-Settings",
+      "title": "SantosStudios workflow settings",
+      "w": 1440,
+      "h": 900,
+      "fluid": true,
+      "html": "html/Santos-Settings.html",
+      "png": "screenshots/Santos-Settings.png",
+      "imports": [],
+      "warnings": [],
+      "tweaks": []
+    },
+    {
+      "file": "Santos-Trigger.dc.html",
+      "name": "Santos-Trigger",
+      "title": "SantosStudios trigger setup",
+      "w": 1440,
+      "h": 900,
+      "fluid": true,
+      "html": "html/Santos-Trigger.html",
+      "png": "screenshots/Santos-Trigger.png",
+      "imports": [],
+      "warnings": [],
+      "tweaks": []
+    },
+    {
+      "file": "Santos-Condition.dc.html",
+      "name": "Santos-Condition",
+      "title": "SantosStudios condition builder",
+      "w": 1440,
+      "h": 900,
+      "fluid": true,
+      "html": "html/Santos-Condition.html",
+      "png": "screenshots/Santos-Condition.png",
+      "imports": [],
+      "warnings": [],
+      "tweaks": []
+    },
+    {
+      "file": "Santos-Connectors.dc.html",
+      "name": "Santos-Connectors",
+      "title": "SantosStudios connectors",
+      "w": 1440,
+      "h": 900,
+      "fluid": true,
+      "html": "html/Santos-Connectors.html",
+      "png": "screenshots/Santos-Connectors.png",
+      "imports": [],
+      "warnings": [],
+      "tweaks": []
+    },
+    {
+      "file": "Santos-Approval.dc.html",
+      "name": "Santos-Approval",
+      "title": "SantosStudios approval detail",
+      "w": 1440,
+      "h": 900,
+      "fluid": true,
+      "html": "html/Santos-Approval.html",
+      "png": "screenshots/Santos-Approval.png",
+      "imports": [],
+      "warnings": [],
+      "tweaks": []
+    }
+  ]
+}

@@ -12,6 +12,10 @@ import NotificationBanners from './NotificationBanners';
 const DEV_NOTE_ROLES = ['admin', 'manager', 'editor', 'designer'];
 import MemberWelcome, { welcomeKind } from './MemberWelcome';
 import { FlowLayer, flowGuard } from './FlowBuilder';
+import WorkflowHub from './workflow/Hub';
+import RunDetail from './workflow/RunDetail';
+import ApprovalDetail from './workflow/ApprovalDetail';
+import Connectors, { ConnectorsReturn } from './workflow/Connectors';
 import { supabaseBrowser } from '@/lib/supabase/client';
 import { readAll } from '@/lib/studio/paging';
 import { loadContext, loadWorkspace, loadPortalDetail } from '@/lib/studio/load';
@@ -29,9 +33,29 @@ const PATH_NAV = Object.fromEntries(Object.entries(NAV_PATH).map(([k, v]) => [v,
 const ACCT_KEY = 'ftgu.account';
 
 export function navFromPath(path) {
-  return PATH_NAV[path.replace(/\/+$/, '')] || 'projects';
+  const p = path.replace(/\/+$/, '');
+  // Pages under Automations (/admin/automations/runs/<run id>) belong to it.
+  return PATH_NAV[p] || (p.startsWith(NAV_PATH.auto + '/') ? 'auto' : 'projects');
 }
+// The Automations sub page a path names: a run's detail, an approval, or Connectors (with ?app=<provider>).
+const autoSub = (path) => {
+  const m = /^\/admin\/automations\/(runs|approvals|connectors)(?:\/([^/]+))?/.exec(path || '');
+  const id = m && m[2] ? decodeURIComponent(m[2]) : '';
+  const app = m && m[1] === 'connectors' && typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('app') || '' : '';
+  return { autoRun: m && m[1] === 'runs' ? id : '', autoAppr: m && m[1] === 'approvals' ? id : '', autoConn: m && m[1] === 'connectors' ? app || true : '' };
+};
+const autoPath = (s) => (s.nav !== 'auto' || s.flowOpen ? '' : s.autoRun ? '/runs/' + encodeURIComponent(s.autoRun) : s.autoAppr ? '/approvals/' + encodeURIComponent(s.autoAppr) : s.autoConn ? '/connectors' : '');
+const autoQuery = (s) => (s.autoConn && s.autoConn !== true && !s.autoRun && !s.autoAppr ? '?app=' + encodeURIComponent(s.autoConn) : '');
 
+const hubFromUrl = () => { const q = new URLSearchParams(window.location.search); return { autoTab: q.get('tab') || 'workflows', autoSt: q.get('status') || 'all' }; };
+const hubQuery = (s) => { const q = new URLSearchParams(); if (s.autoTab && s.autoTab !== 'workflows') q.set('tab', s.autoTab); if (s.autoSt && s.autoSt !== 'all' && (s.autoTab || 'workflows') === 'workflows') q.set('status', s.autoSt); const t = q.toString(); return t ? '?' + t : ''; };
+// The builder keeps its open dialog in the URL (?panel=settings&step=…, components/studio/FlowBuilder.jsx); keep it
+// when this effect rewrites the URL for the same flow, so a reload reopens the dialog.
+const builderPanel = (flowId) => {
+  const q = new URLSearchParams(window.location.search);
+  if (q.get('flow') !== flowId || !q.get('panel')) return '';
+  return '&panel=' + encodeURIComponent(q.get('panel')) + (q.get('step') ? '&step=' + encodeURIComponent(q.get('step')) : '');
+};
 const readAcct = () => { try { return window.localStorage.getItem(ACCT_KEY) || ''; } catch { return ''; } };
 const initialUi = (c, data, path, project) => {
   const prefs = (c.profile && c.profile.prefs) || {};
@@ -47,6 +71,8 @@ const initialUi = (c, data, path, project) => {
     q: '', menu: '', todos: false, added: {}, modal: '', mq: '', newColName: '',
     // The flow builder stays open across a reload (/admin/automations?flow=<id>).
     flowOpen: (typeof window === 'undefined' ? '' : new URLSearchParams(window.location.search).get('flow')) || '',
+    // The Automations hub keeps its tab and status filter in the URL (/admin/automations?tab=runs&status=live).
+    ...(typeof window === 'undefined' ? {} : hubFromUrl()), ...autoSub(path || '/'),
   };
 };
 const writeAcct = (id) => { try { window.localStorage.setItem(ACCT_KEY, id); } catch { /* storage off */ } };
@@ -145,19 +171,19 @@ export default function Studio({ initialPath, initialProject }) {
   // Keep the URL in step with the page and the open project.
   useEffect(() => {
     if (!s) return;
-    const path = NAV_PATH[s.nav] || '/projects';
-    const url = path + (s.openJob ? '?project=' + encodeURIComponent(s.openJob) : s.nav === 'ideas' && s.ideaOpen ? '?idea=' + encodeURIComponent(s.ideaOpen) : s.nav === 'auto' && s.flowOpen && s.flowOpen !== 'new' ? '?flow=' + encodeURIComponent(s.flowOpen) : '');
+    const path = (NAV_PATH[s.nav] || '/projects') + autoPath(s);
+    const url = path + (s.openJob ? '?project=' + encodeURIComponent(s.openJob) : s.nav === 'ideas' && s.ideaOpen ? '?idea=' + encodeURIComponent(s.ideaOpen) : s.nav === 'auto' && s.flowOpen && s.flowOpen !== 'new' ? '?flow=' + encodeURIComponent(s.flowOpen) + builderPanel(s.flowOpen) : s.nav === 'auto' && autoPath(s) ? autoQuery(s) : s.nav === 'auto' ? hubQuery(s) : '');
     if (window.location.pathname + window.location.search === url) return;
     // Opening or closing the flow builder replaces the entry, so Back leaves the page instead of toggling the builder.
     const flowOnly = window.location.pathname === path && !s.openJob && !new URLSearchParams(window.location.search).get('project');
     window.history[flowOnly ? 'replaceState' : 'pushState']({ nav: s.nav, openJob: s.openJob }, '', url);
-  }, [s && s.nav, s && s.openJob, s && s.flowOpen, s && s.ideaOpen]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [s && s.nav, s && s.openJob, s && s.flowOpen, s && s.ideaOpen, s && s.autoTab, s && s.autoSt, s && s.autoRun, s && s.autoAppr, s && s.autoConn]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
     const onPop = () => {
       // Unsaved flow builder changes: stay put and ask first (components/studio/FlowBuilder.jsx).
       if (flowGuard.dirty && flowGuard.ask) { window.history.pushState(null, '', flowGuard.url); flowGuard.ask(); return; }
       const p = new URLSearchParams(window.location.search).get('project') || '';
-      set({ nav: navFromPath(window.location.pathname), openJob: p, flowOpen: new URLSearchParams(window.location.search).get('flow') || '', ideaOpen: new URLSearchParams(window.location.search).get('idea') || '' });
+      set({ nav: navFromPath(window.location.pathname), openJob: p, flowOpen: new URLSearchParams(window.location.search).get('flow') || '', ideaOpen: new URLSearchParams(window.location.search).get('idea') || '', ...(navFromPath(window.location.pathname) === 'auto' ? { ...hubFromUrl(), ...autoSub(window.location.pathname) } : {}) });
     };
     window.addEventListener('popstate', onPop);
     return () => window.removeEventListener('popstate', onPop);
@@ -205,7 +231,7 @@ export default function Studio({ initialPath, initialProject }) {
     const bump = () => { clearTimeout(t); t = setTimeout(() => reload(), 350); };
     const ch = sb.channel('board-' + rtWs);
     ['projects', 'project_edits', 'project_thumbnails', 'sponsorships', 'comments', 'project_assets', 'distribution_tasks', 'inbox_items', 'research_runs',
-      'ideas', 'ideas_rules', 'idea_comments', 'project_checklist', 'project_last_edit', 'automation_runs', 'project_publish', 'buffer_publications', 'content_entries'].forEach((table) =>
+      'ideas', 'ideas_rules', 'idea_board_columns', 'idea_comments', 'project_checklist', 'project_last_edit', 'automation_runs', 'project_publish', 'buffer_publications', 'content_entries'].forEach((table) =>
       ch.on('postgres_changes', { event: '*', schema: 'public', table }, bump));
     ch.on('postgres_changes', { event: '*', schema: 'public', table: 'invite_deliveries', filter: 'workspace_id=eq.' + rtWs }, bump);
     ch.on('postgres_changes', { event: '*', schema: 'public', table: 'notifications', filter: 'user_id=eq.' + rtUser }, bump);
@@ -318,8 +344,14 @@ export default function Studio({ initialPath, initialProject }) {
   V.devNotesOpen = notesRole ? openDevNotes : null;
   V.bannerLayer = <NotificationBanners items={V.inbox.banners} onMore={V.inbox.bannersMore} />;
   // Automations > New flow and the flow builder canvas (s.flowOpen: 'new' or a workflow id).
-  V.flowLayer = me.uiRole === 'admin' && (s.flowOpen || s.flowReturn)
-    ? <FlowLayer D={D} A={A} open={s.flowOpen} review={!!s.flowReview} back={s.flowReturn} set={set} /> : null;
+  V.workflowHub = me.uiRole === 'admin' && s.nav === 'auto' ? <WorkflowHub D={D} A={A} s={s} set={set} /> : null;
+  // Full-screen layers over the board: the flow builder, or a run's detail page (/admin/automations/runs/<id>).
+  V.flowLayer = me.uiRole !== 'admin' ? null
+    : s.flowOpen || s.flowReturn ? <FlowLayer D={D} A={A} open={s.flowOpen} review={!!s.flowReview} back={s.flowReturn} set={set} />
+      : s.nav === 'auto' && s.autoRun ? <RunDetail key={s.autoRun} D={D} A={A} runId={s.autoRun} set={set} />
+        : s.nav === 'auto' && s.autoAppr ? <ApprovalDetail D={D} A={A} id={s.autoAppr} set={set} />
+          : s.nav === 'auto' && s.autoConn ? <Connectors D={D} s={s} set={set} />
+            : s.connReturn && s.nav !== 'auto' ? <ConnectorsReturn D={D} app={s.connReturn} set={set} /> : null;
   // Settings shows a Getting started card for roles that have a guide.
   V.guide = welcomeKind(ctx.role) ? { open: () => setGuide(true) } : null;
   return <MemberWelcome key={ctx.workspace_id + ctx.user_id} sb={sb} ctx={ctx} D={D} set={set} reload={reload} openMyQueue={V.openMyQueue} rootStyle={V.rootStyle} manual={guide} onManualClose={() => setGuide(false)}><StudioView V={V} />{error && <div role="status" style={{ position: 'fixed', top: 12, left: '50%', transform: 'translateX(-50%)', zIndex: 10000, maxWidth: 'calc(100vw - 24px)', padding: '12px 16px', borderRadius: 12, background: '#fff4d6', color: '#493600', boxShadow: '0 2px 12px #0002', fontSize: 14 }}>Could not refresh. Showing the last loaded board. <button type="button" onClick={reload}>Try again</button></div>}<UploadStatus /></MemberWelcome>;

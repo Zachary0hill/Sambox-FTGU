@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SantosStudios workflow settings</title>
+<!-- Generated from Santos-Settings.dc.html by zz-handoff-design. Frame 1440x900 (fluid page). -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Montserrat:wght@800;900&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#EBEBEB}
+a{color:#2F5BEA}a:hover{color:#1E3FB0}
+.ss *{box-sizing:border-box}
+.ss button{font-family:inherit;cursor:pointer}
+.ss button:focus-visible,.ss a:focus-visible,.ss input:focus-visible,.ss textarea:focus-visible{outline:2px solid #2F5BEA;outline-offset:2px}
+.ss-h:hover{background:#F0F0F0 !important}
+.ss-k:hover{background:#2b2b2b !important}
+.ss-sc{scrollbar-width:thin;scrollbar-color:#CFCFCF transparent}
+@media (max-width:760px){.ss-drawer{top:16px !important;max-height:calc(100% - 32px) !important}}
+</style>
+</head>
+<body>
+<div class="ss" style="height:100vh;min-height:900px;position:relative;overflow:hidden;background:#EBEBEB;color:#111;font-family:Inter,system-ui,sans-serif">
+<div aria-hidden="true" style="position:absolute;inset:12px;border-radius:16px;background-color:#FAFAFA;background-image:radial-gradient(#DADADA 1px,transparent 1px);background-size:20px 20px;display:flex;flex-direction:column;align-items:center;padding-top:110px;gap:22px">
+<span style="width:360px;height:76px;border-radius:16px;border:1px solid #E3E3E3;background:#fff"></span>
+<span style="width:360px;height:76px;border-radius:16px;border:1px solid #E3E3E3;background:#fff"></span>
+<span style="width:360px;height:116px;border-radius:16px;border:1px solid #E3E3E3;background:#fff"></span>
+<span style="width:360px;height:76px;border-radius:16px;border:1px solid #E3E3E3;background:#fff"></span>
+</div>
+<div aria-hidden="true" style="position:absolute;inset:0;background:rgba(17,17,17,.32)"></div>
+
+<aside class="ss-drawer" role="dialog" aria-modal="true" aria-labelledby="ss-t" style="position:absolute;top:48px;left:50%;transform:translateX(-50%);width:720px;max-width:calc(100% - 32px);max-height:calc(100% - 96px);background:#fff;border-radius:20px;box-shadow:0 24px 64px rgba(0,0,0,.2);display:flex;flex-direction:column;overflow:hidden">
+<div style="display:flex;justify-content:space-between;align-items:center;gap:12px;padding:22px 24px;border-bottom:1px solid #EDEDED">
+<div><div style="font-size:13px;color:#666">Review notes to editor</div><h1 id="ss-t" style="margin:2px 0 0;font-family:Montserrat,sans-serif;font-weight:900;font-size:26px;letter-spacing:-.02em">Workflow settings</h1></div>
+<a href="Santos-Builder.dc.html" aria-label="Close settings" class="ss-h" style="width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;color:#111"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></a>
+</div>
+
+<div class="ss-sc" style="flex:1;overflow:auto;padding:22px 24px;display:flex;flex-direction:column;gap:28px">
+<div style="background:#F5F7FF;border-radius:14px;padding:14px 16px;font-size:15px;line-height:1.55;color:#1B2B5E">If a run fails, it retries 1 time, 5 minutes apart, then alerts Super Admin. 3 failures in a row turns the workflow off.</div>
+
+<section style="display:flex;flex-direction:column;gap:14px">
+<h2 style="margin:0;font-size:17px;font-weight:700">General</h2>
+<label for="ss-name" style="font-size:14px;font-weight:600">Name</label>
+<input id="ss-name" value="Review notes to editor" style="height:44px;border-radius:12px;background:#fff;border:1.5px solid #E3E3E3;color:#111;padding:0 12px;font-family:inherit;font-size:15px;margin-top:-8px">
+<div style="font-size:14px;font-weight:600">Owner</div>
+<div role="radiogroup" aria-label="Owner" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:-8px">
+<button role="radio" aria-checked="true" style="height:44px;display:flex;align-items:center;gap:8px;padding:0 14px 0 6px;border-radius:999px;background:#F5F7FF;border:1.5px solid #2F5BEA;color:#111;font-size:14px;font-weight:600"><span style="width:30px;height:30px;border-radius:999px;background:#111;color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700">SA</span>Super Admin</button><button role="radio" aria-checked="false" style="height:44px;display:flex;align-items:center;gap:8px;padding:0 14px 0 6px;border-radius:999px;background:#fff;border:1.5px solid #E3E3E3;color:#111;font-size:14px;font-weight:600"><span style="width:30px;height:30px;border-radius:999px;background:#111;color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700">P</span>Producer</button>
+</div>
+<label for="ss-desc" style="font-size:14px;font-weight:600">What it does</label>
+<textarea id="ss-desc" value="Send editors a short fix list when an edit needs changes." rows="2" style="border-radius:12px;background:#fff;border:1.5px solid #E3E3E3;color:#111;padding:12px;font-family:inherit;font-size:14px;line-height:1.5;resize:vertical;margin-top:-8px"></textarea>
+</section>
+
+<section style="display:flex;flex-direction:column;gap:16px">
+<h2 style="margin:0;font-size:17px;font-weight:700">When a run fails</h2>
+<div style="display:flex;align-items:center;justify-content:space-between;gap:12px">
+<div><div style="font-size:15px;font-weight:600">Retry</div><div style="font-size:13px;color:#666">Times the failed step runs again</div></div>
+<div style="display:flex;align-items:center;border:1px solid #E0E0E0;border-radius:12px">
+<button aria-label="Fewer retries" class="ss-h" style="width:42px;height:42px;border-radius:12px 0 0 12px;background:transparent;border:0;color:#111;font-size:18px">−</button>
+<span style="width:72px;text-align:center;font-weight:600;font-size:15px">1 time</span>
+<button aria-label="More retries" class="ss-h" style="width:42px;height:42px;border-radius:0 12px 12px 0;background:transparent;border:0;color:#111;font-size:18px">+</button>
+</div>
+</div>
+<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
+<div style="font-size:15px;font-weight:600">Wait between tries</div>
+<div role="radiogroup" aria-label="Wait between tries" style="display:flex;background:#F2F2F2;border-radius:12px;padding:4px">
+<button role="radio" aria-checked="false" style="height:36px;padding:0 12px;border-radius:9px;background:transparent;color:#555;box-shadow:none;border:0;font-size:13px;font-weight:600">1 min</button><button role="radio" aria-checked="true" style="height:36px;padding:0 12px;border-radius:9px;background:#fff;color:#111;box-shadow:0 1px 2px rgba(0,0,0,.08);border:0;font-size:13px;font-weight:600">5 min</button><button role="radio" aria-checked="false" style="height:36px;padding:0 12px;border-radius:9px;background:transparent;color:#555;box-shadow:none;border:0;font-size:13px;font-weight:600">15 min</button>
+</div>
+</div>
+<div style="display:flex;flex-direction:column;gap:8px">
+<div><div style="font-size:15px;font-weight:600">Then alert</div><div style="font-size:13px;color:#666">Pick one or more</div></div>
+
+<button role="checkbox" aria-checked="true" class="ss-h" style="display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:14px;background:#fff;border:1.5px solid #2F5BEA;color:#111;text-align:left;min-height:54px">
+<span style="width:22px;height:22px;flex:none;border-radius:7px;border:1.5px solid #111;background:#111;display:flex;align-items:center;justify-content:center"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.4" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg></span>
+<span style="flex:1;display:flex;flex-direction:column;gap:1px"><span style="font-weight:600;font-size:14px">Super Admin</span><span style="font-size:13px;color:#666">Inbox notification</span></span>
+
+</button>
+
+<button role="checkbox" aria-checked="false" class="ss-h" style="display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:14px;background:#fff;border:1.5px solid #E3E3E3;color:#111;text-align:left;min-height:54px">
+<span style="width:22px;height:22px;flex:none;border-radius:7px;border:1.5px solid #CFCFCF;background:#fff;display:flex;align-items:center;justify-content:center"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.4" aria-hidden="true"><path d=""></path></svg></span>
+<span style="flex:1;display:flex;flex-direction:column;gap:1px"><span style="font-weight:600;font-size:14px">Producer</span><span style="font-size:13px;color:#666">Email</span></span>
+
+</button>
+
+<button role="checkbox" aria-checked="false" class="ss-h" style="display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:14px;background:#fff;border:1.5px solid #E3E3E3;color:#111;text-align:left;min-height:54px">
+<span style="width:22px;height:22px;flex:none;border-radius:7px;border:1.5px solid #CFCFCF;background:#fff;display:flex;align-items:center;justify-content:center"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.4" aria-hidden="true"><path d=""></path></svg></span>
+<span style="flex:1;display:flex;flex-direction:column;gap:1px"><span style="font-weight:600;font-size:14px">#production</span><span style="font-size:13px;color:#666">Slack channel</span></span>
+<span style="background:#FFF4D6;color:#7A5300;border-radius:999px;padding:3px 9px;font-size:12px;font-weight:600">Not connected</span>
+</button>
+
+<a href="Santos-Connectors.dc.html" style="align-self:flex-start;min-height:40px;display:flex;align-items:center;font-size:13px;font-weight:600;color:#2F5BEA">Connect Slack in Connectors</a>
+</div>
+<div style="display:flex;align-items:center;justify-content:space-between;gap:12px">
+<div><div style="font-size:15px;font-weight:600">Auto-pause</div><div style="font-size:13px;color:#666">Turns off after 3 failures in a row</div></div>
+<div style="display:flex;align-items:center;gap:10px">
+<div style="display:flex;align-items:center;border:1px solid #E0E0E0;border-radius:12px"><button aria-label="Fewer failures" class="ss-h" style="width:38px;height:38px;border-radius:12px 0 0 12px;background:transparent;border:0;color:#111">−</button><span style="width:30px;text-align:center;font-weight:600">3</span><button aria-label="More failures" class="ss-h" style="width:38px;height:38px;border-radius:0 12px 12px 0;background:transparent;border:0;color:#111">+</button></div>
+<button role="switch" aria-checked="true" aria-label="Auto-pause" style="width:56px;height:44px;background:transparent;border:0;padding:0;display:flex;align-items:center;justify-content:center"><span style="width:44px;height:26px;border-radius:999px;background:#111;position:relative;display:block"><span style="position:absolute;top:3px;left:21px;width:20px;height:20px;border-radius:999px;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.25)"></span></span></button>
+</div>
+</div>
+</section>
+
+<section style="display:flex;flex-direction:column;gap:16px">
+<h2 style="margin:0;font-size:17px;font-weight:700">Run limits</h2>
+<div style="display:flex;align-items:center;justify-content:space-between;gap:12px">
+<div><div style="font-size:15px;font-weight:600">One run at a time</div><div style="font-size:13px;color:#666">Status changes wait in line while one runs</div></div>
+<button role="switch" aria-checked="false" aria-label="One run at a time" style="width:56px;height:44px;background:transparent;border:0;padding:0;display:flex;align-items:center;justify-content:center"><span style="width:44px;height:26px;border-radius:999px;background:#D6D6D6;position:relative;display:block"><span style="position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:999px;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.25)"></span></span></button>
+</div>
+<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
+<div style="font-size:15px;font-weight:600">Most runs per hour</div>
+<div role="radiogroup" aria-label="Most runs per hour" style="display:flex;background:#F2F2F2;border-radius:12px;padding:4px">
+<button role="radio" aria-checked="false" style="height:36px;padding:0 12px;border-radius:9px;background:transparent;color:#555;box-shadow:none;border:0;font-size:13px;font-weight:600">10</button><button role="radio" aria-checked="false" style="height:36px;padding:0 12px;border-radius:9px;background:transparent;color:#555;box-shadow:none;border:0;font-size:13px;font-weight:600">25</button><button role="radio" aria-checked="false" style="height:36px;padding:0 12px;border-radius:9px;background:transparent;color:#555;box-shadow:none;border:0;font-size:13px;font-weight:600">50</button><button role="radio" aria-checked="true" style="height:36px;padding:0 12px;border-radius:9px;background:#fff;color:#111;box-shadow:0 1px 2px rgba(0,0,0,.08);border:0;font-size:13px;font-weight:600">No limit</button>
+</div>
+</div>
+</section>
+</div>
+
+<div style="display:flex;align-items:center;gap:8px;padding:16px 24px;border-top:1px solid #EDEDED;background:#FAFAFA">
+<span style="font-size:13px;color:#666;margin-right:auto;font-weight:500">No changes</span>
+<a href="Santos-Builder.dc.html" class="ss-h" style="height:44px;display:flex;align-items:center;padding:0 16px;border-radius:12px;border:1px solid #E0E0E0;background:#fff;color:#111;text-decoration:none;font-weight:600;font-size:14px">Back to builder</a>
+<button class="ss-k" style="height:44px;padding:0 18px;border-radius:12px;background:#111;color:#fff;border:0;font-weight:600;font-size:14px">Save settings</button>
+</div>
+</aside>
+</div>
+</body>
+</html>

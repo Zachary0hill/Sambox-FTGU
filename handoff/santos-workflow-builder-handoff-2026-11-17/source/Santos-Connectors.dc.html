@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>SantosStudios connectors</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Montserrat:wght@800;900&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#EBEBEB}
+a{color:#2F5BEA}a:hover{color:#1E3FB0}
+.ss *{box-sizing:border-box}
+.ss button{font-family:inherit;cursor:pointer}
+.ss button:focus-visible,.ss a:focus-visible{outline:2px solid #2F5BEA;outline-offset:2px}
+.ss-h:hover{background:#F0F0F0 !important}
+.ss-k:hover{background:#2b2b2b !important}
+@keyframes ssp{0%,100%{opacity:1}50%{opacity:.35}}
+.ss-pulse{animation:ssp 1.1s ease-in-out infinite}
+@media (max-width:900px){.ss-two{grid-template-columns:1fr !important}.ss-pad{padding:16px !important}}
+</style>
+</helmet>
+<div class="ss" style="min-height:900px;position:relative;background:#EBEBEB;color:#111;font-family:Inter,system-ui,sans-serif;padding:14px">
+<div class="ss-pad" style="min-height:872px;background:#fff;border-radius:20px;padding:32px 32px 40px;display:flex;flex-direction:column;gap:22px">
+<div style="display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:16px">
+<div style="display:flex;flex-direction:column;gap:8px">
+<a href="Santos-Hub.dc.html" class="ss-h" style="align-self:flex-start;height:42px;display:flex;align-items:center;gap:6px;padding:0 12px 0 8px;margin-left:-8px;border-radius:10px;color:#111;text-decoration:none;font-weight:600;font-size:14px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>Automations</a>
+<h1 style="margin:0;font-family:Montserrat,sans-serif;font-weight:900;font-size:38px;letter-spacing:-.02em">Connectors</h1>
+<div style="font-size:15px;color:#555">{{countTxt}}</div>
+</div>
+<div role="radiogroup" aria-label="Show" style="display:flex;background:#F2F2F2;border-radius:12px;padding:4px">
+<sc-for list="{{views}}" as="v" hint-placeholder-count="2"><button role="radio" aria-checked="{{v.on}}" onClick="{{v.pick}}" style="height:38px;padding:0 14px;border-radius:9px;background:{{v.bg}};color:{{v.fg}};box-shadow:{{v.sh}};border:0;font-size:14px;font-weight:600">{{v.l}}</button></sc-for>
+</div>
+</div>
+
+<div class="ss-two" style="display:grid;grid-template-columns:360px minmax(0,1fr);gap:16px;align-items:start">
+<section aria-label="Connector list" style="border:1px solid #E6E6E6;border-radius:16px;padding:8px">
+<sc-for list="{{list}}" as="c" hint-placeholder-count="7">
+<button onClick="{{c.pick}}" aria-pressed="{{c.on}}" style="width:100%;text-align:left;display:flex;gap:12px;align-items:center;padding:10px 12px;border-radius:12px;background:{{c.bg}};border:1.5px solid {{c.bd}};color:#111;margin-bottom:2px;min-height:60px">
+<span style="width:36px;height:36px;flex:none;border-radius:10px;background:#111;color:#fff;display:flex;align-items:center;justify-content:center;font-family:Montserrat,sans-serif;font-weight:900;font-size:15px">{{c.i}}</span>
+<span style="flex:1;min-width:0;display:flex;flex-direction:column;gap:1px"><span style="font-weight:600;font-size:15px">{{c.n}}</span><span style="font-size:13px;color:#666">{{c.usedTxt}}</span></span>
+<span style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:{{c.sc}}"><span style="width:8px;height:8px;border-radius:999px;background:{{c.dot}}" aria-hidden="true"></span>{{c.sl}}</span>
+</button>
+</sc-for>
+</section>
+
+<section aria-label="Connector detail" style="border:1px solid #E6E6E6;border-radius:16px;padding:24px;display:flex;flex-direction:column;gap:22px">
+<div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+<span style="width:56px;height:56px;flex:none;border-radius:14px;background:#111;color:#fff;display:flex;align-items:center;justify-content:center;font-family:Montserrat,sans-serif;font-weight:900;font-size:24px">{{cur.i}}</span>
+<div style="flex:1;min-width:0"><h2 style="margin:0;font-size:24px;font-weight:700">{{cur.n}}</h2><div style="font-size:14px;color:#666;margin-top:2px">{{cur.acct}}</div></div>
+<span style="background:{{cur.sBg}};color:{{cur.sc}};border-radius:999px;padding:4px 11px;font-size:13px;font-weight:600">{{cur.sl}}</span>
+</div>
+<sc-if value="{{cur.hasWarn}}" hint-placeholder-val="{{false}}"><div style="background:#FFF8E6;border-radius:14px;padding:14px 16px;font-size:15px;line-height:1.55;color:#3D2C00">{{cur.warn}}</div></sc-if>
+<sc-if value="{{cur.retryReady}}" hint-placeholder-val="{{false}}"><div role="status" style="background:#E6F5EC;border-radius:14px;padding:12px 14px 12px 16px;display:flex;flex-wrap:wrap;align-items:center;gap:12px"><span style="flex:1 1 260px;font-size:15px;line-height:1.55;color:#0F3D22">Connected. 1 failed run is ready to retry.</span><a href="Santos-Run.dc.html" class="ss-k" style="height:42px;display:flex;align-items:center;padding:0 14px;border-radius:10px;background:#111;color:#fff;text-decoration:none;font-weight:600;font-size:14px">Open failed run</a></div></sc-if>
+<div style="display:flex;gap:8px;flex-wrap:wrap">
+<sc-if value="{{cur.needsConnect}}" hint-placeholder-val="{{false}}"><button onClick="{{openConnect}}" class="ss-k" style="height:44px;padding:0 18px;border-radius:12px;background:#111;color:#fff;border:0;font-weight:600;font-size:14px">{{cur.connectLabel}}</button></sc-if>
+<sc-if value="{{cur.live}}" hint-placeholder-val="{{true}}"><button onClick="{{testConn}}" class="ss-h" style="height:44px;display:flex;align-items:center;gap:8px;padding:0 16px;border-radius:12px;background:#fff;border:1px solid #E0E0E0;color:#111;font-weight:600;font-size:14px"><span class="{{testCls}}" style="width:8px;height:8px;border-radius:999px;background:{{testDot}}" aria-hidden="true"></span>{{testTxt}}</button>
+<button onClick="{{disconnect}}" class="ss-h" style="height:44px;padding:0 16px;border-radius:12px;background:#fff;border:1px solid #F1C4C4;color:#B42318;font-weight:600;font-size:14px">Disconnect</button></sc-if>
+</div>
+<div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px">
+<div style="display:flex;flex-direction:column"><div style="font-size:15px;font-weight:700;margin-bottom:6px">What it can do</div>
+<sc-for list="{{cur.perms}}" as="p" hint-placeholder-count="2"><div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid #EDEDED;font-size:14px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1F7A45" stroke-width="3" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>{{p.t}}</div></sc-for>
+</div>
+<div style="display:flex;flex-direction:column"><div style="font-size:15px;font-weight:700;margin-bottom:6px">Used by</div>
+<sc-for list="{{cur.used}}" as="u" hint-placeholder-count="2"><a href="Santos-Builder.dc.html" style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 0;border-bottom:1px solid #EDEDED;font-size:14px;color:#111;text-decoration:none"><span>{{u.t}}</span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="2.2" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></a></sc-for>
+<sc-if value="{{cur.unused}}" hint-placeholder-val="{{false}}"><div style="padding:10px 0;font-size:14px;color:#666">No workflows use it yet.</div></sc-if>
+</div>
+</div>
+<div style="display:flex;flex-direction:column"><div style="font-size:15px;font-weight:700;margin-bottom:6px">Recent activity</div>
+<sc-for list="{{cur.act}}" as="a" hint-placeholder-count="3"><div style="display:grid;grid-template-columns:140px minmax(0,1fr);gap:12px;padding:9px 0;border-bottom:1px solid #EDEDED;font-size:14px"><span style="color:#666">{{a.t}}</span><span style="color:{{a.c}}">{{a.m}}</span></div></sc-for>
+</div>
+</section>
+</div>
+</div>
+
+<sc-if value="{{modal}}" hint-placeholder-val="{{false}}">
+<div style="position:absolute;inset:0;z-index:20;background:rgba(17,17,17,.36);display:flex;justify-content:center;align-items:flex-start;padding:90px 16px">
+<div role="dialog" aria-modal="true" aria-labelledby="scn-t" style="width:560px;max-width:100%;background:#fff;border-radius:20px;box-shadow:0 24px 64px rgba(0,0,0,.18);display:flex;flex-direction:column;overflow:hidden">
+<div style="display:flex;justify-content:space-between;align-items:center;padding:20px 22px;border-bottom:1px solid #EDEDED">
+<div><div style="font-size:13px;color:#666">{{modalKicker}}</div><h2 id="scn-t" style="margin:2px 0 0;font-family:Montserrat,sans-serif;font-weight:900;font-size:22px">{{cur.n}}</h2></div>
+<button onClick="{{closeModal}}" aria-label="Close" class="ss-h" style="width:40px;height:40px;border-radius:10px;background:transparent;border:0;color:#111;display:flex;align-items:center;justify-content:center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+</div>
+<ol style="list-style:none;margin:0;padding:18px 22px 0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px">
+<sc-for list="{{steps}}" as="st" hint-placeholder-count="3"><li style="display:flex;flex-direction:column;gap:8px"><span style="height:4px;border-radius:999px;background:{{st.bar}}"></span><span style="font-size:13px;font-weight:600;color:{{st.fg}}">{{st.l}}</span></li></sc-for>
+</ol>
+<div style="padding:20px 22px;display:flex;flex-direction:column;gap:12px;min-height:180px">
+<sc-if value="{{s1}}" hint-placeholder-val="{{true}}"><div style="font-size:15px;line-height:1.55;color:#333">You sign in on {{cur.n}} in a new window. Come back here when it says you are done.</div></sc-if>
+<sc-if value="{{s2}}" hint-placeholder-val="{{false}}"><div style="font-size:15px;color:#333">The production board asks for this access:</div><sc-for list="{{cur.perms}}" as="p" hint-placeholder-count="2"><div style="display:flex;align-items:center;gap:10px;font-size:15px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1F7A45" stroke-width="3" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>{{p.t}}</div></sc-for></sc-if>
+<sc-if value="{{s3}}" hint-placeholder-val="{{false}}"><div style="display:flex;align-items:center;gap:12px"><span class="{{s3Cls}}" style="width:12px;height:12px;border-radius:999px;background:{{s3Dot}}" aria-hidden="true"></span><span style="font-size:16px;font-weight:600">{{s3Head}}</span></div><div style="font-size:14px;color:#666">{{s3Sub}}</div></sc-if>
+</div>
+<div style="display:flex;justify-content:flex-end;gap:8px;padding:16px 22px;border-top:1px solid #EDEDED;background:#FAFAFA">
+<button onClick="{{closeModal}}" class="ss-h" style="height:44px;padding:0 16px;border-radius:12px;background:#fff;border:1px solid #E0E0E0;color:#111;font-weight:600;font-size:14px">Cancel</button>
+<button onClick="{{next}}" class="ss-k" style="height:44px;padding:0 18px;border-radius:12px;background:#111;color:#fff;border:0;font-weight:600;font-size:14px">{{nextTxt}}</button>
+</div>
+</div>
+</div>
+</sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+const C0=[
+{n:'Board',i:'B',st:'ok',acct:'Built into the production board',perms:['Read and move projects','Post to Inbox'],used:['Sponsor approved to publishing','Edit needs changes','Review notes to editor','Publishing reminder'],act:[['Today, 10:12 AM','Kitchen remodel moved to Publishing'],['Yesterday','Shop tour v2 moved to Needs changes']]},
+{n:'Slack',i:'S',st:'none',acct:'Not connected',perms:['Post to channels','Message people directly'],used:['Edit needs changes','Review notes to editor','new flow'],act:[['Yesterday, 5:40 PM','Edit needs changes failed, not connected']],warn:'3 workflows use Slack. They fail at their Slack step until you connect it.'},
+{n:'Gmail',i:'G',st:'ok',acct:'Signed in as studio@santosstudios.com',perms:['Send email as the studio'],used:['Sponsor follow-up'],act:[['Nov 5','Sent sponsor update']]},
+{n:'Google Drive',i:'D',st:'ok',acct:'Studio shared drive',perms:['Read project folders'],used:['Editor handoff'],act:[['Nov 4','Linked raw footage folder']]},
+{n:'YouTube',i:'Y',st:'exp',acct:'SantosStudios channel',perms:['Read publish schedule','Read video stats'],used:['Publishing reminder'],act:[['Nov 3','Sign-in expired'],['Nov 1','Read 4 scheduled videos']],warn:'Sign-in expired on Nov 3. Publishing reminder cannot see scheduled dates until you reconnect.'},
+{n:'Frame.io',i:'F',st:'none',acct:'Not connected',perms:['Read review comments'],used:[],act:[['','Never connected']]},
+{n:'Notion',i:'N',st:'none',acct:'Not connected',perms:['Add pages to a database'],used:[],act:[['','Never connected']]}];
+const SS={ok:['Connected','#1F7A45','#E6F5EC','#1F7A45'],exp:['Expired','#B42318','#FDECEC','#B42318'],none:['Not connected','#555','#F1F1F1','#B0B0B0']};
+class Component extends DCLogic {
+constructor(p){super(p);this.state={cs:C0.map(c=>({...c})),sel:1,view:'all',modal:false,step:1,phase:'',test:''};}
+componentWillUnmount(){clearTimeout(this.t1);clearTimeout(this.t2);}
+renderVals(){
+const s=this.state;const c=s.cs[s.sel],m=SS[c.st];
+const shown=s.cs.map((x,i)=>({x,i})).filter(o=>s.view==='all'||o.x.st!=='ok');
+const bad=s.cs.filter(x=>x.st!=='ok'&&x.used.length).length;
+return {
+countTxt:s.cs.filter(x=>x.st==='ok').length+' of '+s.cs.length+' connected · '+bad+' blocking a workflow',
+views:[['all','All'],['bad','Needs attention']].map(v=>({l:v[1],on:s.view===v[0],bg:s.view===v[0]?'#fff':'transparent',fg:s.view===v[0]?'#111':'#555',sh:s.view===v[0]?'0 1px 2px rgba(0,0,0,.08)':'none',pick:()=>this.setState({view:v[0]})})),
+list:shown.map(o=>{const mm=SS[o.x.st],on=o.i===s.sel;return {n:o.x.n,i:o.x.i,on,bg:on?'#F5F7FF':'#fff',bd:on?'#2F5BEA':'transparent',sc:mm[1],dot:mm[3],sl:mm[0],usedTxt:o.x.used.length?'Used by '+o.x.used.length+(o.x.used.length>1?' workflows':' workflow'):'Not in use',pick:()=>this.setState({sel:o.i,test:''})};}),
+cur:{retryReady:!!s.fixed&&c.n==='Slack'&&c.st==='ok',n:c.n,i:c.i,acct:c.acct,sl:m[0],sc:m[1],sBg:m[2],hasWarn:!!c.warn,warn:c.warn||'',needsConnect:c.st!=='ok',live:c.st==='ok',connectLabel:(c.st==='exp'?'Reconnect ':'Connect ')+c.n,
+perms:c.perms.map(t=>({t})),used:c.used.map(t=>({t})),unused:c.used.length===0,act:c.act.map(a=>({t:a[0],m:a[1],c:/expired|failed/i.test(a[1])?'#B42318':'#333'}))},
+testTxt:s.test==='run'?'Testing...':(s.test==='ok'?'Connection works':'Test connection'),testDot:s.test==='ok'?'#1F7A45':(s.test==='run'?'#2F5BEA':'#B0B0B0'),testCls:s.test==='run'?'ss-pulse':'',
+testConn:()=>{this.setState({test:'run'});clearTimeout(this.t1);this.t1=setTimeout(()=>this.setState({test:'ok'}),1200);},
+disconnect:()=>this.setState({cs:s.cs.map((x,i)=>i===s.sel?{...x,st:'none',acct:'Not connected'}:x),test:''}),
+openConnect:()=>this.setState({modal:true,step:1,phase:''}),closeModal:()=>this.setState({modal:false}),
+modal:s.modal,modalKicker:c.st==='exp'?'Reconnect':'Connect',
+steps:['Sign in','Allow access','Test'].map((l,i)=>({l,bar:i+1<=s.step?'#111':'#E3E3E3',fg:i+1<=s.step?'#111':'#666'})),
+s1:s.step===1,s2:s.step===2,s3:s.step===3,
+s3Head:s.phase==='done'?'Connected':'Testing the connection',s3Sub:s.phase==='done'?(c.used.length?c.used.length+(c.used.length>1?' workflows are':' workflow is')+' unblocked. Failed runs are ready to retry.':'Pick it in any step that uses '+c.n+'.'):'Sending a test message. This takes a few seconds.',s3Dot:s.phase==='done'?'#1F7A45':'#2F5BEA',s3Cls:s.phase==='done'?'':'ss-pulse',
+nextTxt:s.step===1?'Continue to '+c.n:(s.step===2?'Allow':(s.phase==='done'?'Done':'Testing...')),
+next:()=>{if(s.step===1)return this.setState({step:2});if(s.step===2){this.setState({step:3,phase:'test'});clearTimeout(this.t2);this.t2=setTimeout(()=>this.setState({phase:'done'}),1400);return;}
+if(s.phase==='done')this.setState({fixed:s.fixed||c.n==='Slack',modal:false,cs:s.cs.map((x,i)=>i===s.sel?{...x,st:'ok',acct:x.st==='none'?'SantosStudios workspace':x.acct,warn:'',act:[['Just now','Connected and tested']].concat(x.act)}:x)});}};
+}
+}
+</script>
+</body>
+</html>

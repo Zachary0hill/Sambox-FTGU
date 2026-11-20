@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>SantosStudios workflow settings</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Montserrat:wght@800;900&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#EBEBEB}
+a{color:#2F5BEA}a:hover{color:#1E3FB0}
+.ss *{box-sizing:border-box}
+.ss button{font-family:inherit;cursor:pointer}
+.ss button:focus-visible,.ss a:focus-visible,.ss input:focus-visible,.ss textarea:focus-visible{outline:2px solid #2F5BEA;outline-offset:2px}
+.ss-h:hover{background:#F0F0F0 !important}
+.ss-k:hover{background:#2b2b2b !important}
+.ss-sc{scrollbar-width:thin;scrollbar-color:#CFCFCF transparent}
+@media (max-width:760px){.ss-drawer{top:16px !important;max-height:calc(100% - 32px) !important}}
+</style>
+</helmet>
+<div class="ss" style="height:100vh;min-height:900px;position:relative;overflow:hidden;background:#EBEBEB;color:#111;font-family:Inter,system-ui,sans-serif">
+<div aria-hidden="true" style="position:absolute;inset:12px;border-radius:16px;background-color:#FAFAFA;background-image:radial-gradient(#DADADA 1px,transparent 1px);background-size:20px 20px;display:flex;flex-direction:column;align-items:center;padding-top:110px;gap:22px">
+<span style="width:360px;height:76px;border-radius:16px;border:1px solid #E3E3E3;background:#fff"></span>
+<span style="width:360px;height:76px;border-radius:16px;border:1px solid #E3E3E3;background:#fff"></span>
+<span style="width:360px;height:116px;border-radius:16px;border:1px solid #E3E3E3;background:#fff"></span>
+<span style="width:360px;height:76px;border-radius:16px;border:1px solid #E3E3E3;background:#fff"></span>
+</div>
+<div aria-hidden="true" style="position:absolute;inset:0;background:rgba(17,17,17,.32)"></div>
+
+<aside class="ss-drawer" role="dialog" aria-modal="true" aria-labelledby="ss-t" style="position:absolute;top:48px;left:50%;transform:translateX(-50%);width:720px;max-width:calc(100% - 32px);max-height:calc(100% - 96px);background:#fff;border-radius:20px;box-shadow:0 24px 64px rgba(0,0,0,.2);display:flex;flex-direction:column;overflow:hidden">
+<div style="display:flex;justify-content:space-between;align-items:center;gap:12px;padding:22px 24px;border-bottom:1px solid #EDEDED">
+<div><div style="font-size:13px;color:#666">Review notes to editor</div><h1 id="ss-t" style="margin:2px 0 0;font-family:Montserrat,sans-serif;font-weight:900;font-size:26px;letter-spacing:-.02em">Workflow settings</h1></div>
+<a href="Santos-Builder.dc.html" aria-label="Close settings" class="ss-h" style="width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;color:#111"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></a>
+</div>
+
+<div class="ss-sc" style="flex:1;overflow:auto;padding:22px 24px;display:flex;flex-direction:column;gap:28px">
+<div style="background:#F5F7FF;border-radius:14px;padding:14px 16px;font-size:15px;line-height:1.55;color:#1B2B5E">{{summary}}</div>
+
+<section style="display:flex;flex-direction:column;gap:14px">
+<h2 style="margin:0;font-size:17px;font-weight:700">General</h2>
+<label for="ss-name" style="font-size:14px;font-weight:600">Name</label>
+<input id="ss-name" value="{{name}}" onChange="{{onName}}" style="height:44px;border-radius:12px;background:#fff;border:1.5px solid #E3E3E3;color:#111;padding:0 12px;font-family:inherit;font-size:15px;margin-top:-8px">
+<div style="font-size:14px;font-weight:600">Owner</div>
+<div role="radiogroup" aria-label="Owner" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:-8px">
+<sc-for list="{{owners}}" as="o" hint-placeholder-count="2"><button role="radio" aria-checked="{{o.on}}" onClick="{{o.pick}}" style="height:44px;display:flex;align-items:center;gap:8px;padding:0 14px 0 6px;border-radius:999px;background:{{o.bg}};border:1.5px solid {{o.bd}};color:#111;font-size:14px;font-weight:600"><span style="width:30px;height:30px;border-radius:999px;background:#111;color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700">{{o.i}}</span>{{o.n}}</button></sc-for>
+</div>
+<label for="ss-desc" style="font-size:14px;font-weight:600">What it does</label>
+<textarea id="ss-desc" value="{{desc}}" onChange="{{onDesc}}" rows="2" style="border-radius:12px;background:#fff;border:1.5px solid #E3E3E3;color:#111;padding:12px;font-family:inherit;font-size:14px;line-height:1.5;resize:vertical;margin-top:-8px"></textarea>
+</section>
+
+<section style="display:flex;flex-direction:column;gap:16px">
+<h2 style="margin:0;font-size:17px;font-weight:700">When a run fails</h2>
+<div style="display:flex;align-items:center;justify-content:space-between;gap:12px">
+<div><div style="font-size:15px;font-weight:600">Retry</div><div style="font-size:13px;color:#666">Times the failed step runs again</div></div>
+<div style="display:flex;align-items:center;border:1px solid #E0E0E0;border-radius:12px">
+<button onClick="{{rDown}}" aria-label="Fewer retries" class="ss-h" style="width:42px;height:42px;border-radius:12px 0 0 12px;background:transparent;border:0;color:#111;font-size:18px">−</button>
+<span style="width:72px;text-align:center;font-weight:600;font-size:15px">{{retryTxt}}</span>
+<button onClick="{{rUp}}" aria-label="More retries" class="ss-h" style="width:42px;height:42px;border-radius:0 12px 12px 0;background:transparent;border:0;color:#111;font-size:18px">+</button>
+</div>
+</div>
+<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
+<div style="font-size:15px;font-weight:600">Wait between tries</div>
+<div role="radiogroup" aria-label="Wait between tries" style="display:flex;background:#F2F2F2;border-radius:12px;padding:4px">
+<sc-for list="{{waits}}" as="w" hint-placeholder-count="3"><button role="radio" aria-checked="{{w.on}}" onClick="{{w.pick}}" style="height:36px;padding:0 12px;border-radius:9px;background:{{w.bg}};color:{{w.fg}};box-shadow:{{w.sh}};border:0;font-size:13px;font-weight:600">{{w.l}}</button></sc-for>
+</div>
+</div>
+<div style="display:flex;flex-direction:column;gap:8px">
+<div><div style="font-size:15px;font-weight:600">Then alert</div><div style="font-size:13px;color:#666">Pick one or more</div></div>
+<sc-for list="{{alerts}}" as="a" hint-placeholder-count="3">
+<button onClick="{{a.flip}}" role="checkbox" aria-checked="{{a.on}}" class="ss-h" style="display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:14px;background:#fff;border:1.5px solid {{a.bd}};color:#111;text-align:left;min-height:54px">
+<span style="width:22px;height:22px;flex:none;border-radius:7px;border:1.5px solid {{a.cb}};background:{{a.cbg}};display:flex;align-items:center;justify-content:center"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.4" aria-hidden="true"><path d="{{a.ck}}"></path></svg></span>
+<span style="flex:1;display:flex;flex-direction:column;gap:1px"><span style="font-weight:600;font-size:14px">{{a.n}}</span><span style="font-size:13px;color:#666">{{a.via}}</span></span>
+<sc-if value="{{a.off}}" hint-placeholder-val="{{false}}"><span style="background:#FFF4D6;color:#7A5300;border-radius:999px;padding:3px 9px;font-size:12px;font-weight:600">Not connected</span></sc-if>
+</button>
+</sc-for>
+<a href="Santos-Connectors.dc.html" style="align-self:flex-start;min-height:40px;display:flex;align-items:center;font-size:13px;font-weight:600;color:#2F5BEA">Connect Slack in Connectors</a>
+</div>
+<div style="display:flex;align-items:center;justify-content:space-between;gap:12px">
+<div><div style="font-size:15px;font-weight:600">Auto-pause</div><div style="font-size:13px;color:#666">{{pauseTxt}}</div></div>
+<div style="display:flex;align-items:center;gap:10px">
+<sc-if value="{{pauseOn}}" hint-placeholder-val="{{true}}"><div style="display:flex;align-items:center;border:1px solid #E0E0E0;border-radius:12px"><button onClick="{{pDown}}" aria-label="Fewer failures" class="ss-h" style="width:38px;height:38px;border-radius:12px 0 0 12px;background:transparent;border:0;color:#111">−</button><span style="width:30px;text-align:center;font-weight:600">{{pauseN}}</span><button onClick="{{pUp}}" aria-label="More failures" class="ss-h" style="width:38px;height:38px;border-radius:0 12px 12px 0;background:transparent;border:0;color:#111">+</button></div></sc-if>
+<button onClick="{{pFlip}}" role="switch" aria-checked="{{pauseOn}}" aria-label="Auto-pause" style="width:56px;height:44px;background:transparent;border:0;padding:0;display:flex;align-items:center;justify-content:center"><span style="width:44px;height:26px;border-radius:999px;background:{{pTrk}};position:relative;display:block"><span style="position:absolute;top:3px;left:{{pKnob}};width:20px;height:20px;border-radius:999px;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.25)"></span></span></button>
+</div>
+</div>
+</section>
+
+<section style="display:flex;flex-direction:column;gap:16px">
+<h2 style="margin:0;font-size:17px;font-weight:700">Run limits</h2>
+<div style="display:flex;align-items:center;justify-content:space-between;gap:12px">
+<div><div style="font-size:15px;font-weight:600">One run at a time</div><div style="font-size:13px;color:#666">Status changes wait in line while one runs</div></div>
+<button onClick="{{oFlip}}" role="switch" aria-checked="{{oneOn}}" aria-label="One run at a time" style="width:56px;height:44px;background:transparent;border:0;padding:0;display:flex;align-items:center;justify-content:center"><span style="width:44px;height:26px;border-radius:999px;background:{{oTrk}};position:relative;display:block"><span style="position:absolute;top:3px;left:{{oKnob}};width:20px;height:20px;border-radius:999px;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.25)"></span></span></button>
+</div>
+<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
+<div style="font-size:15px;font-weight:600">Most runs per hour</div>
+<div role="radiogroup" aria-label="Most runs per hour" style="display:flex;background:#F2F2F2;border-radius:12px;padding:4px">
+<sc-for list="{{caps}}" as="c" hint-placeholder-count="4"><button role="radio" aria-checked="{{c.on}}" onClick="{{c.pick}}" style="height:36px;padding:0 12px;border-radius:9px;background:{{c.bg}};color:{{c.fg}};box-shadow:{{c.sh}};border:0;font-size:13px;font-weight:600">{{c.l}}</button></sc-for>
+</div>
+</div>
+</section>
+</div>
+
+<div style="display:flex;align-items:center;gap:8px;padding:16px 24px;border-top:1px solid #EDEDED;background:#FAFAFA">
+<span style="font-size:13px;color:{{saveC}};margin-right:auto;font-weight:500">{{saveTxt}}</span>
+<a href="Santos-Builder.dc.html" class="ss-h" style="height:44px;display:flex;align-items:center;padding:0 16px;border-radius:12px;border:1px solid #E0E0E0;background:#fff;color:#111;text-decoration:none;font-weight:600;font-size:14px">{{doneTxt}}</a>
+<button onClick="{{save}}" class="ss-k" style="height:44px;padding:0 18px;border-radius:12px;background:#111;color:#fff;border:0;font-weight:600;font-size:14px">Save settings</button>
+</div>
+</aside>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+const OWN=[['Super Admin','SA'],['Producer','P']];
+const WAITS=['1 min','5 min','15 min'];
+const WAITW=['1 minute','5 minutes','15 minutes'];
+const CAPS=['10','25','50','No limit'];
+const ALERTS=[{n:'Super Admin',via:'Inbox notification',on:true},{n:'Producer',via:'Email',on:false},{n:'#production',via:'Slack channel',on:false,off:true}];
+class Component extends DCLogic {
+constructor(p){super(p);this.state={name:'Review notes to editor',desc:'Send editors a short fix list when an edit needs changes.',owner:0,retry:1,wait:1,alerts:ALERTS.map(a=>({...a})),pause:true,pauseN:3,one:false,cap:3,dirty:false,saved:false};}
+set(p){this.setState(Object.assign({dirty:true,saved:false},p));}
+renderVals(){
+const s=this.state;
+const seg=(arr,cur,key)=>arr.map((l,i)=>({l,on:cur===i,bg:cur===i?'#fff':'transparent',fg:cur===i?'#111':'#555',sh:cur===i?'0 1px 2px rgba(0,0,0,.08)':'none',pick:()=>this.set({[key]:i})}));
+const al=s.alerts.filter(a=>a.on).map(a=>a.n+(a.off?' (not connected)':''));
+const who=al.length?al.join(' and '):'nobody';
+const summary=(s.retry?'If a run fails, it retries '+s.retry+(s.retry>1?' times, ':' time, ')+WAITW[s.wait]+' apart, then alerts '+who+'.':'If a run fails, it alerts '+who+' right away.')+(s.pause?' '+s.pauseN+' failures in a row turns the workflow off.':' It never turns off on its own.');
+return {doneTxt:s.dirty?'Cancel':'Back to builder',name:s.name,onName:e=>this.set({name:e.target.value}),desc:s.desc,onDesc:e=>this.set({desc:e.target.value}),
+owners:OWN.map((x,i)=>({n:x[0],i:x[1],on:s.owner===i,bg:s.owner===i?'#F5F7FF':'#fff',bd:s.owner===i?'#2F5BEA':'#E3E3E3',pick:()=>this.set({owner:i})})),
+summary,retryTxt:s.retry===0?'Off':s.retry+(s.retry>1?' times':' time'),rUp:()=>this.set({retry:Math.min(5,s.retry+1)}),rDown:()=>this.set({retry:Math.max(0,s.retry-1)}),
+waits:seg(WAITS,s.wait,'wait'),caps:seg(CAPS,s.cap,'cap'),
+alerts:s.alerts.map((a,i)=>({n:a.n,via:a.via,off:!!a.off,on:a.on,bd:a.on?'#2F5BEA':'#E3E3E3',cb:a.on?'#111':'#CFCFCF',cbg:a.on?'#111':'#fff',ck:a.on?'M20 6 9 17l-5-5':'',flip:()=>this.set({alerts:s.alerts.map((x,j)=>j===i?{...x,on:!x.on}:x)})})),
+pauseOn:s.pause,pauseN:s.pauseN,pauseTxt:s.pause?'Turns off after '+s.pauseN+' failures in a row':'Off. Keeps running after failures',pUp:()=>this.set({pauseN:Math.min(10,s.pauseN+1)}),pDown:()=>this.set({pauseN:Math.max(1,s.pauseN-1)}),pFlip:()=>this.set({pause:!s.pause}),
+pTrk:s.pause?'#111':'#D6D6D6',pKnob:s.pause?'21px':'3px',oneOn:s.one,oFlip:()=>this.set({one:!s.one}),oTrk:s.one?'#111':'#D6D6D6',oKnob:s.one?'21px':'3px',
+saveTxt:s.saved?'Settings saved':(s.dirty?'Unsaved changes':'No changes'),saveC:s.saved?'#1F7A45':(s.dirty?'#7A5300':'#666'),save:()=>this.setState({dirty:false,saved:true})};
+}
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,84 @@
+{
+  "v": 3,
+  "title": "Ideas & Research Refactor",
+  "boards": {
+    "MainCompact.dc.html": {
+      "x": 0,
+      "y": 0,
+      "w": 1440,
+      "h": 1800,
+      "title": "Combined: board + idea detail (canvas default)",
+      "expand": "fill",
+      "is_interactive": true
+    },
+    "State-Board-1440.dc.html": {
+      "x": 0,
+      "y": 1920,
+      "w": 1440,
+      "h": 1800,
+      "title": "Default at 1440",
+      "expand": "fill",
+      "is_interactive": true
+    },
+    "State-Board-1920.dc.html": {
+      "x": 1520,
+      "y": 1920,
+      "w": 1920,
+      "h": 1800,
+      "title": "Default at 1920",
+      "expand": "fill",
+      "is_interactive": true
+    },
+    "State-Board-1024.dc.html": {
+      "x": 3520,
+      "y": 1920,
+      "w": 1024,
+      "h": 1800,
+      "title": "Default at 1024",
+      "expand": "fill",
+      "is_interactive": true
+    },
+    "State-Board-390.dc.html": {
+      "x": 4624,
+      "y": 1920,
+      "w": 390,
+      "h": 2400,
+      "title": "Default at 390",
+      "expand": "fill",
+      "is_interactive": true
+    },
+    "State-Detail-390.dc.html": {
+      "x": 5094,
+      "y": 1920,
+      "w": 390,
+      "h": 2400,
+      "title": "Idea detail open at 390",
+      "expand": "fill",
+      "is_interactive": true
+    },
+    "State-Filters-1440.dc.html": {
+      "x": 5564,
+      "y": 1920,
+      "w": 1440,
+      "h": 1800,
+      "title": "Filter menu open at 1440",
+      "expand": "fill",
+      "is_interactive": true
+    }
+  },
+  "order": [
+    "MainCompact.dc.html",
+    "State-Board-1440.dc.html",
+    "State-Board-1920.dc.html",
+    "State-Board-1024.dc.html",
+    "State-Board-390.dc.html",
+    "State-Detail-390.dc.html",
+    "State-Filters-1440.dc.html"
+  ],
+  "notes": {},
+  "pages": [],
+  "launch": {
+    "view": "canvas"
+  },
+  "designSystems": []
+}

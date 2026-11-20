@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>SantosStudios condition builder</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Montserrat:wght@800;900&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#EBEBEB}
+a{color:#2F5BEA}a:hover{color:#1E3FB0}
+.ss *{box-sizing:border-box}
+.ss button{font-family:inherit;cursor:pointer}
+.ss button:focus-visible,.ss a:focus-visible,.ss input:focus-visible{outline:2px solid #2F5BEA;outline-offset:2px}
+.ss input::placeholder{color:#8a8a8a}
+.ss-h:hover{background:#F0F0F0 !important}
+.ss-k:hover{background:#2b2b2b !important}
+@media (max-width:1000px){.ss-two{grid-template-columns:1fr !important}}
+</style>
+</helmet>
+<div class="ss" style="min-height:900px;position:relative;background:#EBEBEB;color:#111;font-family:Inter,system-ui,sans-serif;display:flex;justify-content:center;align-items:flex-start;padding:40px 16px">
+<div aria-hidden="true" style="position:absolute;inset:12px;border-radius:16px;background-color:#FAFAFA;background-image:radial-gradient(#DADADA 1px,transparent 1px);background-size:20px 20px"></div>
+<div aria-hidden="true" style="position:absolute;inset:0;background:rgba(17,17,17,.32)"></div>
+<div role="dialog" aria-modal="true" aria-labelledby="sc-name" style="position:relative;width:1180px;max-width:100%;background:#fff;border-radius:20px;box-shadow:0 24px 64px rgba(0,0,0,.2);display:flex;flex-direction:column;overflow:hidden">
+<div style="display:flex;justify-content:space-between;align-items:center;gap:12px;padding:18px 24px;border-bottom:1px solid #EDEDED">
+<div style="min-width:0;flex:1"><div style="font-size:13px;color:#666">Branch · Step 2</div>
+<input id="sc-name" aria-label="Branch name" value="{{name}}" onChange="{{onName}}" style="margin-top:2px;width:520px;max-width:100%;background:transparent;border:1px solid transparent;border-radius:8px;color:#111;font-family:Montserrat,sans-serif;font-weight:900;font-size:24px;letter-spacing:-.02em;padding:0 4px"></div>
+<a href="Santos-Builder.dc.html" aria-label="Close" class="ss-h" style="width:40px;height:40px;flex:none;border-radius:10px;display:flex;align-items:center;justify-content:center;color:#111"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></a>
+</div>
+
+<div class="ss-two" style="display:grid;grid-template-columns:minmax(0,1fr) 440px">
+<div style="padding:22px 24px;display:flex;flex-direction:column;gap:14px">
+<div style="font-size:15px;font-weight:700">Take the Yes path when</div>
+<sc-for list="{{groups}}" as="g" hint-placeholder-count="1">
+<sc-if value="{{g.notFirst}}" hint-placeholder-val="{{false}}"><div style="display:flex;align-items:center;gap:10px"><span style="height:1px;flex:1;background:#E3E3E3"></span><span style="background:#FFEDE1;color:#B4470E;border-radius:999px;padding:3px 10px;font-size:12px;font-weight:700">Or</span><span style="height:1px;flex:1;background:#E3E3E3"></span></div></sc-if>
+<div style="border:1px solid #E6E6E6;border-radius:16px;padding:14px;display:flex;flex-direction:column;gap:10px;background:#FAFAFA">
+<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><div role="radiogroup" aria-label="Match" style="display:flex;background:#EFEFEF;border-radius:10px;padding:3px"><sc-for list="{{g.modes}}" as="m" hint-placeholder-count="2"><button role="radio" aria-checked="{{m.on}}" onClick="{{m.pick}}" style="height:34px;padding:0 12px;border-radius:8px;background:{{m.bg}};color:{{m.fg}};box-shadow:{{m.sh}};border:0;font-size:13px;font-weight:600">{{m.l}}</button></sc-for></div><span style="font-size:14px;color:#555">of these match</span><div style="flex:1"></div><sc-if value="{{g.canRm}}" hint-placeholder-val="{{false}}"><button onClick="{{g.rm}}" class="ss-h" style="height:34px;padding:0 10px;border-radius:8px;background:transparent;border:0;color:#555;font-size:13px;font-weight:600">Remove group</button></sc-if></div>
+<sc-for list="{{g.rules}}" as="r" hint-placeholder-count="1">
+<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+<button onClick="{{r.nf}}" aria-label="Change field" class="ss-h" style="height:44px;display:flex;align-items:center;gap:6px;padding:0 12px;border-radius:999px;background:#EAF0FF;border:0;color:#2449C7;font-size:14px;font-weight:600">{{r.field}}<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
+<button onClick="{{r.no}}" aria-label="Change rule" class="ss-h" style="height:44px;display:flex;align-items:center;gap:6px;padding:0 12px;border-radius:999px;background:#fff;border:1px solid #E0E0E0;color:#111;font-size:14px;font-weight:600">{{r.op}}<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
+<input id="{{r.id}}" aria-label="Value" value="{{r.v}}" onChange="{{r.change}}" placeholder="Value" style="flex:1 1 120px;height:44px;border-radius:12px;background:#fff;border:1.5px solid #E3E3E3;color:#111;padding:0 12px;font-family:inherit;font-size:14px">
+<span title="Result on the last project" style="width:28px;height:28px;flex:none;border-radius:999px;background:{{r.okBg}};display:flex;align-items:center;justify-content:center"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="{{r.okC}}" stroke-width="3" stroke-linecap="round" aria-hidden="true"><path d="{{r.okD}}"></path></svg></span>
+<button onClick="{{r.rm}}" aria-label="Remove rule" class="ss-h" style="width:44px;height:44px;border-radius:12px;background:#fff;border:1px solid #E0E0E0;color:#666;display:flex;align-items:center;justify-content:center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+</div>
+</sc-for>
+<button onClick="{{g.add}}" class="ss-h" style="align-self:flex-start;height:38px;display:flex;align-items:center;gap:6px;padding:0 12px;border-radius:999px;background:#fff;border:1.5px dashed #CFCFCF;color:#333;font-size:14px;font-weight:600"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Add a rule</button>
+</div>
+</sc-for>
+<button onClick="{{addGroup}}" class="ss-h" style="align-self:flex-start;height:42px;padding:0 14px;border-radius:12px;background:#fff;border:1px solid #E0E0E0;color:#111;font-size:14px;font-weight:600">Add an Or group</button>
+<div style="margin-top:6px;border-radius:16px;background:{{testBg}};padding:14px 16px;display:flex;align-items:center;gap:12px">
+<span style="width:34px;height:34px;flex:none;border-radius:999px;background:#fff;display:flex;align-items:center;justify-content:center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="{{testC}}" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="{{testD}}"></path></svg></span>
+<div><div style="font-weight:700;font-size:15px">{{testHead}}</div><div style="font-size:13px;color:#555">Last project: Shop tour v2, sponsored, long form, 7 review comments</div></div>
+</div>
+</div>
+
+<div style="padding:22px 24px;background:#FAFAFA;border-left:1px solid #EDEDED;display:flex;flex-direction:column;align-items:center;background-image:radial-gradient(#DEDEDE 1px,transparent 1px);background-size:16px 16px">
+<div style="align-self:flex-start;font-size:13px;font-weight:600;color:#666;margin-bottom:14px">Paths</div>
+<div style="display:flex;align-items:center;gap:10px;height:42px;padding:0 14px 0 6px;border-radius:12px;background:#fff;border:1px solid #E3E3E3;box-shadow:0 1px 2px rgba(0,0,0,.05);font-weight:700;font-size:14px"><span style="width:28px;height:28px;border-radius:8px;background:#FFEDE1;display:flex;align-items:center;justify-content:center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#B4470E" stroke-width="2.2" aria-hidden="true"><path d="M6 3v12M18 9a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM6 21a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM18 9a9 9 0 0 1-9 9"/></svg></span>{{name}}</div>
+<div aria-hidden="true" style="width:1.5px;height:16px;background:#CFCFCF"></div>
+<div aria-hidden="true" style="width:50%;height:1.5px;background:#CFCFCF"></div>
+<div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;width:100%">
+<sc-for list="{{lanes}}" as="l" hint-placeholder-count="2">
+<div style="display:flex;flex-direction:column;align-items:center">
+<div aria-hidden="true" style="width:1.5px;height:16px;background:#CFCFCF"></div>
+<div style="display:flex;align-items:center;gap:5px;background:{{l.bg}};color:{{l.c}};border-radius:999px;padding:3px 10px;font-size:12px;font-weight:700"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" aria-hidden="true"><path d="{{l.ico}}"></path></svg>{{l.head}}</div>
+<input id="{{l.id}}" aria-label="Path name" value="{{l.label}}" onChange="{{l.change}}" style="margin-top:8px;width:100%;height:38px;text-align:center;border-radius:10px;background:#fff;border:1.5px dashed #D6D6D6;color:#111;font-family:inherit;font-size:14px;font-weight:600">
+<sc-for list="{{l.steps}}" as="st" hint-placeholder-count="2">
+<div aria-hidden="true" style="width:1.5px;height:10px;background:#CFCFCF"></div>
+<div style="width:100%;display:flex;align-items:center;gap:8px;height:36px;padding:0 10px 0 4px;border-radius:10px;background:#fff;border:1px solid #E3E3E3;font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden"><span style="width:26px;height:26px;flex:none;border-radius:7px;background:{{st.bg}};display:flex;align-items:center;justify-content:center"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="{{st.c}}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{st.d}}"></path></svg></span>{{st.t}}</div>
+</sc-for>
+<div aria-hidden="true" style="width:1.5px;height:10px;background:#CFCFCF"></div>
+<button onClick="{{l.add}}" aria-label="{{l.addLabel}}" class="ss-h" style="width:34px;height:34px;border-radius:999px;background:#fff;border:1px solid #DADADA;color:#111;display:flex;align-items:center;justify-content:center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
+</div>
+</sc-for>
+</div>
+</div>
+</div>
+
+<div style="display:flex;align-items:center;gap:8px;padding:16px 24px;border-top:1px solid #EDEDED;background:#FAFAFA">
+<span style="font-size:13px;font-weight:500;color:{{saveC}};margin-right:auto">{{saveTxt}}</span>
+<a href="Santos-Builder.dc.html" class="ss-h" style="height:44px;display:flex;align-items:center;padding:0 16px;border-radius:12px;border:1px solid #E0E0E0;background:#fff;color:#111;text-decoration:none;font-weight:600;font-size:14px">{{doneTxt}}</a>
+<button onClick="{{save}}" class="ss-k" style="height:44px;padding:0 18px;border-radius:12px;background:#111;color:#fff;border:0;font-weight:600;font-size:14px">Save branch</button>
+</div>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+const FIELDS=['Sponsor','Project type','Review comments','Editor'];
+const SAMPLE={'Sponsor':'Yes','Project type':'Long form','Review comments':'7','Editor':'Dani'};
+const OPS=['is','is not','is over','contains'];
+const KS={action:['#1F7A45','#E6F5EC','M22 2 11 13M22 2l-7 20-4-9-9-4 20-7z'],ai:['#5B3FC4','#F0EBFF','M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9L12 3z'],human:['#444444','#EDEDED','M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM16 11l2 2 4-4']};
+const test=(r)=>{const a=String(SAMPLE[FIELDS[r.f]]||'').toLowerCase(),b=String(r.v||'').toLowerCase();if(!b)return null;
+switch(OPS[r.o]){case 'is over':return parseFloat(a)>parseFloat(b);case 'is':return a===b;case 'is not':return a!==b;default:return a.indexOf(b)>-1;}};
+class Component extends DCLogic {
+constructor(p){super(p);this.seq=5;this.state={name:'Sponsored video?',groups:[{id:'g1',all:true,rules:[{id:'r1',f:0,o:0,v:'Yes'}]}],yes:'Sponsor video',no:'Regular video',ys:[['action','Notify producer in Slack'],['human','Super Admin approval']],ns:[['ai','Summarize notes']],dirty:false,saved:false};}
+set(p){this.setState(Object.assign({dirty:true,saved:false},p));}
+upd(gid,fn){this.set({groups:this.state.groups.map(g=>g.id===gid?fn(g):g)});}
+renderVals(){
+const s=this.state;
+const yes=s.groups.map(g=>{const v=g.rules.map(test).filter(x=>x!==null);return v.length?(g.all?v.every(Boolean):v.some(Boolean)):false;}).some(Boolean);
+const groups=s.groups.map((g,gi)=>({notFirst:gi>0,canRm:s.groups.length>1,rm:()=>this.set({groups:s.groups.filter(x=>x.id!==g.id)}),
+modes:[['All',true],['Any',false]].map(m=>({l:m[0],on:g.all===m[1],bg:g.all===m[1]?'#fff':'transparent',fg:g.all===m[1]?'#111':'#555',sh:g.all===m[1]?'0 1px 2px rgba(0,0,0,.08)':'none',pick:()=>this.upd(g.id,x=>({...x,all:m[1]}))})),
+rules:g.rules.map(r=>{const t=test(r);return {id:'v-'+r.id,field:FIELDS[r.f],op:OPS[r.o],v:r.v,
+okBg:t===null?'#EFEFEF':(t?'#E6F5EC':'#FDECEC'),okC:t===null?'#8a8a8a':(t?'#1F7A45':'#B42318'),okD:t===null?'M8 12h8':(t?'M20 6 9 17l-5-5':'M18 6 6 18M6 6l12 12'),
+nf:()=>this.upd(g.id,x=>({...x,rules:x.rules.map(y=>y.id===r.id?{...y,f:(y.f+1)%FIELDS.length}:y)})),
+no:()=>this.upd(g.id,x=>({...x,rules:x.rules.map(y=>y.id===r.id?{...y,o:(y.o+1)%OPS.length}:y)})),
+change:e=>this.upd(g.id,x=>({...x,rules:x.rules.map(y=>y.id===r.id?{...y,v:e.target.value}:y)})),
+rm:()=>this.upd(g.id,x=>({...x,rules:x.rules.filter(y=>y.id!==r.id)}))};}),
+add:()=>{this.seq+=1;const id='r'+this.seq;this.upd(g.id,x=>({...x,rules:x.rules.concat([{id,f:2,o:2,v:''}])}));}}));
+const step=(x)=>({t:x[1],c:KS[x[0]][0],bg:KS[x[0]][1],d:KS[x[0]][2]});
+const lanes=[
+{id:'sl-y',head:'Yes',c:'#1F7A45',bg:'#E6F5EC',ico:'M20 6 9 17l-5-5',label:s.yes,change:e=>this.set({yes:e.target.value}),steps:s.ys.map(step),addLabel:'Add a step to the Yes path',add:()=>this.set({ys:s.ys.concat([['action','New step']])})},
+{id:'sl-n',head:'No',c:'#555',bg:'#EFEFEF',ico:'M18 6 6 18M6 6l12 12',label:s.no,change:e=>this.set({no:e.target.value}),steps:s.ns.map(step),addLabel:'Add a step to the No path',add:()=>this.set({ns:s.ns.concat([['action','New step']])})}];
+return {doneTxt:s.dirty?'Cancel':'Back to builder',name:s.name,onName:e=>this.set({name:e.target.value}),groups,
+addGroup:()=>{this.seq+=1;this.set({groups:s.groups.concat([{id:'g'+this.seq,all:true,rules:[{id:'r'+this.seq+'a',f:2,o:2,v:'10'}]}])});},
+testHead:yes?'Shop tour v2 takes the Yes path: '+s.yes:'Shop tour v2 takes the No path: '+s.no,
+testBg:yes?'#E6F5EC':'#F3F3F3',testC:yes?'#1F7A45':'#555',testD:yes?'M20 6 9 17l-5-5':'M18 6 6 18M6 6l12 12',
+lanes,saveTxt:s.saved?'Branch saved':(s.dirty?'Unsaved changes':'No changes'),saveC:s.saved?'#1F7A45':(s.dirty?'#7A5300':'#666'),save:()=>this.setState({dirty:false,saved:true})};
+}
+}
+</script>
+</body>
+</html>

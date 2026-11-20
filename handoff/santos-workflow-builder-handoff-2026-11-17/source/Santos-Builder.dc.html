@@ -1,0 +1,448 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>SantosStudios workflow builder</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Montserrat:wght@800;900&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#EBEBEB}
+a{color:#2F5BEA}a:hover{color:#1E3FB0}
+.ss *{box-sizing:border-box}
+.ss button{font-family:inherit;cursor:pointer}
+.ss button:disabled{cursor:not-allowed}
+.ss button:focus-visible,.ss a:focus-visible,.ss input:focus-visible,.ss textarea:focus-visible{outline:2px solid #2F5BEA;outline-offset:2px}
+.ss input::placeholder,.ss textarea::placeholder{color:#8a8a8a}
+.ss-h:hover{background:#F0F0F0 !important}
+.ss-k:hover{background:#2b2b2b !important}
+.ss-li:hover{border-color:#CFCFCF !important;background:#FAFAFA !important}
+.ss-sc{scrollbar-width:thin;scrollbar-color:#CFCFCF transparent}
+@keyframes ssp{0%,100%{opacity:1}50%{opacity:.4}}
+.ss-pulse{animation:ssp 1s ease-in-out infinite}
+@media (max-width:900px){.ss-root{height:auto !important}.ss-body{flex-direction:column !important}.ss-left,.ss-right{width:auto !important;flex:none !important}.ss-canvas{min-height:620px}}
+</style>
+</helmet>
+<div class="ss ss-root" style="height:100vh;min-height:820px;display:flex;flex-direction:column;background:#EBEBEB;color:#111111;font-family:Inter,system-ui,sans-serif;position:relative;overflow:hidden">
+
+<header style="display:flex;flex-wrap:wrap;align-items:center;gap:10px;padding:12px 16px">
+<a href="Santos-Hub.dc.html" class="ss-h" style="height:42px;display:flex;align-items:center;gap:6px;padding:0 12px 0 8px;border-radius:10px;color:#111;text-decoration:none;font-weight:600;font-size:14px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>Automations</a>
+<label for="sb-name" style="position:absolute;left:-9999px">Workflow name</label>
+<input id="sb-name" value="{{name}}" onChange="{{onName}}" style="height:42px;width:250px;max-width:100%;background:transparent;border:1px solid transparent;border-radius:10px;color:#111;font-family:inherit;font-weight:700;font-size:18px;padding:0 8px">
+<div role="group" aria-label="Status" style="display:flex;background:#fff;border:1px solid #E0E0E0;border-radius:999px;padding:3px;height:42px">
+<sc-for list="{{statuses}}" as="st" hint-placeholder-count="3">
+<button onClick="{{st.pick}}" aria-pressed="{{st.on}}" style="padding:0 14px;border-radius:999px;background:{{st.bg}};color:{{st.fg}};border:0;font-weight:600;font-size:13px">{{st.label}}</button>
+</sc-for>
+</div>
+<span style="border-radius:999px;padding:6px 10px;font-size:12px;font-weight:600;color:{{issueColor}};background:{{issueBg}}">{{issueTxt}}</span>
+<span style="font-size:13px;color:#666">{{saveLabel}}</span>
+<div style="flex:1"></div>
+<a href="Santos-Run.dc.html" class="ss-h" style="height:42px;display:flex;align-items:center;gap:8px;padding:0 14px;border-radius:12px;background:#fff;border:1px solid #E0E0E0;color:#111;text-decoration:none;font-weight:600;font-size:14px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7L3 8M3 3v5h5M12 7v5l4 2"/></svg>Run history</a>
+<a href="Santos-Settings.dc.html" class="ss-h" style="height:42px;display:flex;align-items:center;gap:8px;padding:0 14px;border-radius:12px;background:#fff;border:1px solid #E0E0E0;color:#111;text-decoration:none;font-weight:600;font-size:14px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></svg>Settings</a>
+<button onClick="{{openAi}}" class="ss-h" style="height:42px;display:flex;align-items:center;gap:8px;padding:0 14px;border-radius:12px;background:#F0EBFF;border:0;color:#5B3FC4;font-weight:600;font-size:14px"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9L12 3z"/></svg>Ask Assistant</button>
+<button onClick="{{startRun}}" class="ss-h" style="height:42px;display:flex;align-items:center;gap:8px;padding:0 14px;border-radius:12px;background:#fff;border:1px solid #E0E0E0;color:#111;font-weight:600;font-size:14px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M6 4l14 8-14 8z"/></svg>Test run</button>
+<button onClick="{{save}}" class="ss-h" style="height:42px;padding:0 14px;border-radius:12px;background:#F5F5F5;border:1px solid #E6E6E6;color:#111;font-weight:600;font-size:14px">Save</button>
+<button onClick="{{openReview}}" class="ss-k" style="height:42px;padding:0 16px;border-radius:12px;background:#111;color:#fff;border:0;font-weight:600;font-size:14px">Review and turn on</button>
+</header>
+
+<div class="ss-body" style="flex:1;display:flex;gap:12px;padding:0 12px 12px;min-height:0">
+
+<aside class="ss-left" aria-label="Step library" style="width:300px;flex:none;background:#fff;border-radius:16px;display:flex;flex-direction:column;min-height:0;overflow:hidden">
+<div role="tablist" aria-label="Left panel" style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px;margin:12px;background:#F2F2F2;border-radius:12px;padding:4px">
+<sc-for list="{{ltabs}}" as="t" hint-placeholder-count="2">
+<button role="tab" aria-selected="{{t.on}}" onClick="{{t.pick}}" style="height:38px;border-radius:9px;background:{{t.bg}};color:{{t.fg}};border:0;font-weight:600;font-size:14px;box-shadow:{{t.sh}}">{{t.label}}</button>
+</sc-for>
+</div>
+<sc-if value="{{lSteps}}" hint-placeholder-val="{{true}}">
+<div style="padding:0 14px 8px">
+<label for="sb-lq" style="position:absolute;left:-9999px">Search steps</label>
+<input id="sb-lq" value="{{lq}}" onChange="{{onLq}}" placeholder="Search steps" style="width:100%;height:42px;border-radius:12px;background:#F5F5F5;border:1px solid #EDEDED;color:#111;padding:0 12px;font-family:inherit;font-size:14px">
+<div style="font-size:13px;color:#666;margin-top:8px">Click to add at the end. Use + on the canvas to add between steps.</div>
+</div>
+<div class="ss-sc" style="flex:1;overflow:auto;padding:4px 14px 16px;display:flex;flex-direction:column;gap:14px">
+<sc-for list="{{groups}}" as="g" hint-placeholder-count="4">
+<div style="display:flex;flex-direction:column;gap:6px">
+<div style="font-size:13px;font-weight:700;color:#333;padding:4px 2px">{{g.label}}</div>
+<sc-for list="{{g.items}}" as="it" hint-placeholder-count="3">
+<button onClick="{{it.add}}" aria-label="{{it.aria}}" class="ss-li" style="text-align:left;display:flex;gap:10px;align-items:flex-start;padding:10px;border-radius:12px;background:#fff;border:1px solid #EDEDED;color:#111">
+<span style="width:30px;height:30px;flex:none;border-radius:9px;background:{{it.ibg}};display:flex;align-items:center;justify-content:center"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="{{it.c}}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{it.d}}"></path></svg></span>
+<span style="display:flex;flex-direction:column;gap:2px;min-width:0"><span style="font-weight:600;font-size:14px">{{it.title}}</span><span style="font-size:13px;color:#666;line-height:1.4">{{it.desc}}</span></span>
+</button>
+</sc-for>
+</div>
+</sc-for>
+</div>
+</sc-if>
+<sc-if value="{{lOver}}" hint-placeholder-val="{{false}}">
+<div class="ss-sc" style="flex:1;overflow:auto;padding:4px 16px 16px;display:flex;flex-direction:column;gap:14px">
+<label for="sb-desc" style="font-size:14px;font-weight:600">What it does</label>
+<textarea id="sb-desc" value="{{desc}}" onChange="{{onDesc}}" rows="3" placeholder="One or two lines for the team" style="border-radius:12px;background:#F7F7F7;border:1px solid #E6E6E6;color:#111;padding:12px;font-family:inherit;font-size:14px;line-height:1.5;resize:vertical"></textarea>
+<div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px">
+<sc-for list="{{facts}}" as="f" hint-placeholder-count="4">
+<div style="border:1px solid #EDEDED;border-radius:12px;padding:12px"><div style="font-size:12px;font-weight:500;color:#666">{{f.k}}</div><div style="font-family:Montserrat,sans-serif;font-weight:900;font-size:20px;margin-top:4px;color:{{f.c}}">{{f.v}}</div></div>
+</sc-for>
+</div>
+<div style="background:#F7F7F7;border-radius:12px;padding:12px;font-size:13px;line-height:1.55;color:#333">Runs on its own when the trigger fires. Steps marked Sends outside reach sponsors or guests, so keep an Approval above them.</div>
+</div>
+</sc-if>
+</aside>
+
+<main class="ss-canvas ss-sc" aria-label="Workflow canvas" style="flex:1;min-width:0;position:relative;overflow:auto;border-radius:16px;background-color:#FAFAFA;background-image:radial-gradient(#DADADA 1px,transparent 1px);background-size:20px 20px">
+<div style="transform:scale({{zs}});transform-origin:top center;padding:40px 24px 220px;display:flex;flex-direction:column;align-items:center">
+<sc-for list="{{nodes}}" as="n" hint-placeholder-count="6">
+<div style="display:flex;flex-direction:column;align-items:center">
+<button onClick="{{n.pick}}" aria-label="Select {{n.title}}" style="width:380px;max-width:calc(100vw - 48px);text-align:left;background:#fff;border:{{n.bw}} solid {{n.ring}};border-radius:16px;box-shadow:{{n.shadow}};color:#111;padding:14px 16px;display:flex;flex-direction:column;gap:10px">
+<span style="display:flex;align-items:center;gap:12px;width:100%">
+<span style="width:38px;height:38px;flex:none;border-radius:11px;background:{{n.ibg}};display:flex;align-items:center;justify-content:center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="{{n.c}}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{n.d}}"></path></svg></span>
+<span style="display:flex;flex-direction:column;gap:2px;flex:1;min-width:0">
+<span style="font-size:12px;font-weight:600;color:{{n.c}}">{{n.tag}}</span>
+<span style="font-weight:700;font-size:16px">{{n.title}}</span>
+</span>
+<sc-if value="{{n.issue}}" hint-placeholder-val="{{false}}"><span style="flex:none;display:flex;align-items:center;gap:4px;background:#FFF4D6;color:#7A5300;border-radius:999px;padding:4px 9px;font-size:12px;font-weight:600"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg>Needs setup</span></sc-if>
+<sc-if value="{{n.isOk}}" hint-placeholder-val="{{false}}"><span style="flex:none;background:#E6F5EC;color:#1F7A45;border-radius:999px;padding:4px 9px;font-size:12px;font-weight:600">Passed</span></sc-if>
+<sc-if value="{{n.isRun}}" hint-placeholder-val="{{false}}"><span class="ss-pulse" style="flex:none;background:#EAF0FF;color:#2449C7;border-radius:999px;padding:4px 9px;font-size:12px;font-weight:600">Running</span></sc-if>
+<sc-if value="{{n.isFail}}" hint-placeholder-val="{{false}}"><span style="flex:none;background:#FDECEC;color:#B42318;border-radius:999px;padding:4px 9px;font-size:12px;font-weight:600">Failed</span></sc-if>
+<sc-if value="{{n.isWait}}" hint-placeholder-val="{{false}}"><span style="flex:none;background:#F1F1F1;color:#555;border-radius:999px;padding:4px 9px;font-size:12px;font-weight:600">Waiting</span></sc-if>
+</span>
+<span style="font-size:14px;color:#555;line-height:1.45">{{n.detail}}</span>
+<sc-if value="{{n.hasBranch}}" hint-placeholder-val="{{false}}">
+<span style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;width:100%">
+<span style="border-radius:10px;background:#E6F5EC;padding:8px 10px;display:flex;flex-direction:column;gap:2px"><span style="font-size:12px;font-weight:700;color:#1F7A45">If yes</span><span style="font-size:13px;color:#222">{{n.yes}}</span></span>
+<span style="border-radius:10px;background:#F3F3F3;padding:8px 10px;display:flex;flex-direction:column;gap:2px"><span style="font-size:12px;font-weight:700;color:#555">If no</span><span style="font-size:13px;color:#222">{{n.no}}</span></span>
+</span>
+</sc-if>
+<span style="display:flex;gap:6px;flex-wrap:wrap">
+<span style="background:#F5F5F5;border:1px solid #EAEAEA;border-radius:999px;padding:3px 9px;font-size:12px;font-weight:500;color:#444">{{n.app}}</span>
+<sc-if value="{{n.needConn}}" hint-placeholder-val="{{false}}"><span style="display:flex;align-items:center;gap:5px;background:#fff;border:1px solid #EAEAEA;border-radius:999px;padding:3px 9px;font-size:12px;font-weight:500;color:#7A5300"><span style="width:6px;height:6px;border-radius:999px;background:#C9A227" aria-hidden="true"></span>Not connected</span></sc-if>
+<sc-if value="{{n.outward}}" hint-placeholder-val="{{false}}"><span style="background:#111;color:#fff;border-radius:999px;padding:3px 9px;font-size:12px;font-weight:600">Sends outside</span></sc-if>
+</span>
+</button>
+<span aria-hidden="true" style="width:1.5px;height:16px;background:#CFCFCF"></span>
+<button onClick="{{n.add}}" aria-label="{{n.addLabel}}" class="ss-h" style="width:34px;height:34px;border-radius:999px;background:#fff;border:1px solid #DADADA;color:#111;display:flex;align-items:center;justify-content:center"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
+<span aria-hidden="true" style="width:1.5px;height:16px;background:#CFCFCF"></span>
+</div>
+</sc-for>
+<div style="background:#EDEDED;border-radius:999px;padding:6px 14px;font-size:13px;font-weight:600;color:#444">End</div>
+</div>
+<div style="position:sticky;left:12px;bottom:12px;float:left;margin:-48px 0 0 12px;background:#fff;border:1px solid #E6E6E6;border-radius:10px;padding:7px 12px;font-size:13px;color:#444;font-weight:500">{{stepsTxt}}</div>
+</main>
+
+<aside class="ss-right ss-sc" aria-label="Step settings" style="width:340px;flex:none;background:#fff;border-radius:16px;overflow:auto;display:flex;flex-direction:column">
+<div style="padding:18px;border-bottom:1px solid #EDEDED;display:flex;gap:12px;align-items:flex-start">
+<span style="width:42px;height:42px;flex:none;border-radius:12px;background:{{cur.ibg}};display:flex;align-items:center;justify-content:center"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="{{cur.c}}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{cur.d}}"></path></svg></span>
+<div style="display:flex;flex-direction:column;gap:2px;min-width:0">
+<div style="font-size:12px;font-weight:600;color:{{cur.c}}">{{cur.tag}}</div>
+<h2 style="margin:0;font-size:18px;font-weight:700">{{cur.title}}</h2>
+<div style="font-size:13px;color:#666">{{cur.app}}</div>
+</div>
+</div>
+<div style="padding:18px;display:flex;flex-direction:column;gap:16px">
+<sc-if value="{{cur.needConn}}" hint-placeholder-val="{{false}}">
+<div style="background:#FFF8E6;border:1px solid #F2DDA2;border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:10px">
+<div style="font-size:14px;color:#3D2C00">{{cur.app}} is not connected. This step fails until it is.</div>
+<button onClick="{{cur.connect}}" class="ss-k" style="height:42px;border-radius:10px;background:#111;color:#fff;border:0;font-weight:600;font-size:14px">Connect {{cur.app}}</button>
+<a href="Santos-Connectors.dc.html" style="min-height:36px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;color:#2F5BEA">Manage all connectors</a>
+</div>
+</sc-if>
+<sc-if value="{{cur.isTrig}}" hint-placeholder-val="{{false}}"><a href="Santos-Trigger.dc.html" class="ss-h" style="display:flex;align-items:center;gap:12px;min-height:58px;padding:10px 14px;border-radius:12px;background:#fff;border:1px solid #E6E6E6;color:#111;text-decoration:none"><span style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px"><span style="font-weight:600;font-size:14px">Open trigger setup</span><span style="font-size:12px;color:#666">Schedule, board events or webhook</span></span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="2.2" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></a></sc-if>
+<sc-if value="{{cur.isBranch}}" hint-placeholder-val="{{false}}"><a href="Santos-Condition.dc.html" class="ss-h" style="display:flex;align-items:center;gap:12px;min-height:58px;padding:10px 14px;border-radius:12px;background:#fff;border:1px solid #E6E6E6;color:#111;text-decoration:none"><span style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px"><span style="font-weight:600;font-size:14px">Open condition builder</span><span style="font-size:12px;color:#666">Rules, OR groups and both paths</span></span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="2.2" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></a></sc-if>
+<sc-if value="{{cur.isAppr}}" hint-placeholder-val="{{false}}"><a href="Santos-Approval.dc.html" class="ss-h" style="display:flex;align-items:center;gap:12px;min-height:58px;padding:10px 14px;border-radius:12px;background:#fff;border:1px solid #E6E6E6;color:#111;text-decoration:none"><span style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px"><span style="font-weight:600;font-size:14px">Open approval queue</span><span style="font-size:12px;color:#666">What this step is holding for sign off</span></span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="2.2" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></a></sc-if>
+<sc-for list="{{cur.fields}}" as="f" hint-placeholder-count="2">
+<div style="display:flex;flex-direction:column;gap:6px">
+<label for="{{f.id}}" style="font-size:14px;font-weight:600">{{f.label}}<span style="color:#B42318">{{f.star}}</span></label>
+<div style="min-height:44px;display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:6px 8px;border-radius:12px;background:#fff;border:1.5px solid {{f.bd}}">
+<input id="{{f.id}}" value="{{f.value}}" onChange="{{f.change}}" onFocus="{{f.focus}}" placeholder="{{f.ph}}" style="flex:1 1 110px;min-width:0;height:30px;background:transparent;border:0;color:#111;padding:0 4px;font-family:inherit;font-size:14px">
+<sc-for list="{{f.chips}}" as="ch" hint-placeholder-count="1"><span style="display:inline-flex;align-items:center;gap:2px;height:28px;padding:0 2px 0 10px;border-radius:999px;background:#EAF0FF;color:#2449C7;font-size:13px;font-weight:600;white-space:nowrap">{{ch.label}}<button onClick="{{ch.rm}}" aria-label="{{ch.aria}}" style="width:24px;height:24px;border-radius:999px;background:transparent;border:0;color:#2449C7;display:flex;align-items:center;justify-content:center"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></button></span></sc-for>
+</div>
+<sc-if value="{{f.miss}}" hint-placeholder-val="{{false}}"><div style="font-size:13px;color:#7A5300">Required to turn on</div></sc-if>
+</div>
+</sc-for>
+<div style="display:flex;flex-direction:column;gap:8px">
+<div style="font-size:13px;font-weight:600;color:#444">Add data to {{ffLabel}}</div>
+<div style="display:flex;flex-wrap:wrap;gap:6px">
+<sc-for list="{{vars}}" as="v" hint-placeholder-count="5"><button onClick="{{v.put}}" class="ss-h" style="min-height:34px;padding:0 12px 0 9px;border-radius:999px;background:#F5F7FF;border:1px solid #DCE3FB;color:#2449C7;font-weight:600;font-size:13px;display:flex;align-items:center;gap:6px"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>{{v.v}}</button></sc-for>
+</div>
+</div>
+<div style="border:1px solid #EDEDED;border-radius:12px;overflow:hidden">
+<button onClick="{{togglePeek}}" aria-expanded="{{peek}}" class="ss-h" style="width:100%;height:44px;display:flex;justify-content:space-between;align-items:center;padding:0 12px;background:#fff;border:0;color:#111;font-weight:600;font-size:14px">Sample output<span style="color:#666;font-weight:500">{{peekSign}}</span></button>
+<sc-if value="{{peek}}" hint-placeholder-val="{{false}}">
+<div style="padding:0 12px 12px;display:flex;flex-direction:column;gap:6px;font-size:13px">
+<sc-for list="{{cur.sample}}" as="ln" hint-placeholder-count="3"><div style="display:flex;justify-content:space-between;gap:12px"><span style="color:#666">{{ln.k}}</span><span style="color:#111;font-weight:500;text-align:right">{{ln.v}}</span></div></sc-for>
+</div>
+</sc-if>
+</div>
+<sc-if value="{{cur.canDel}}" hint-placeholder-val="{{true}}">
+<div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px">
+<button onClick="{{cur.dup}}" class="ss-h" style="height:42px;border-radius:10px;background:#fff;border:1px solid #E0E0E0;color:#111;font-weight:600;font-size:14px">Duplicate</button>
+<button onClick="{{cur.del}}" class="ss-h" style="height:42px;border-radius:10px;background:#fff;border:1px solid #F1C4C4;color:#B42318;font-weight:600;font-size:14px">Delete</button>
+</div>
+</sc-if>
+</div>
+</aside>
+</div>
+
+<div role="group" aria-label="Zoom" style="position:absolute;right:372px;bottom:28px;z-index:5;display:flex;flex-direction:column;align-items:center;background:#fff;border:1px solid #E6E6E6;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.06)">
+<button onClick="{{zin}}" aria-label="Zoom in" class="ss-h" style="width:40px;height:38px;border-radius:12px 12px 0 0;background:transparent;border:0;color:#111;font-size:18px">+</button>
+<span style="font-size:12px;font-weight:600;padding:4px 0">{{zoom}}%</span>
+<button onClick="{{zout}}" aria-label="Zoom out" class="ss-h" style="width:40px;height:38px;background:transparent;border:0;color:#111;font-size:18px">−</button>
+<button onClick="{{zfit}}" aria-label="Reset zoom" class="ss-h" style="width:40px;height:38px;border-radius:0 0 12px 12px;background:transparent;border:0;border-top:1px solid #EDEDED;color:#111;display:flex;align-items:center;justify-content:center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M8 3H3v5M21 8V3h-5M16 21h5v-5M3 16v5h5"/></svg></button>
+</div>
+
+<sc-if value="{{runView}}" hint-placeholder-val="{{false}}">
+<section aria-label="Test run" style="position:absolute;left:336px;right:428px;bottom:24px;z-index:8;background:#fff;border:1px solid #E0E0E0;border-radius:16px;box-shadow:0 12px 32px rgba(0,0,0,.12);max-height:300px;display:flex;flex-direction:column;overflow:hidden">
+<div style="display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid #EDEDED;flex-wrap:wrap">
+<span style="width:10px;height:10px;border-radius:999px;background:{{runTop}}" aria-hidden="true"></span>
+<span style="font-weight:700;font-size:15px">{{runHead}}</span>
+<span style="font-size:13px;color:#666">Sample data, nothing is sent</span>
+<div style="flex:1"></div>
+<sc-if value="{{runFail}}" hint-placeholder-val="{{false}}"><button onClick="{{fixRun}}" class="ss-k" style="height:36px;padding:0 12px;border-radius:10px;background:#111;color:#fff;border:0;font-weight:600;font-size:13px">Fix step</button></sc-if>
+<button onClick="{{startRun}}" class="ss-h" style="height:36px;padding:0 12px;border-radius:10px;background:#fff;border:1px solid #E0E0E0;color:#111;font-weight:600;font-size:13px">Run again</button>
+<button onClick="{{closeRun}}" aria-label="Close test run" class="ss-h" style="width:36px;height:36px;border-radius:10px;background:#fff;border:0;color:#111;display:flex;align-items:center;justify-content:center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+</div>
+<div class="ss-sc" style="overflow:auto">
+<sc-for list="{{runRows}}" as="r" hint-placeholder-count="6">
+<div style="display:grid;grid-template-columns:28px minmax(0,1fr) 80px;gap:10px;align-items:center;padding:8px 14px;border-bottom:1px solid #F2F2F2;font-size:13px">
+<span style="font-weight:600;color:#666">{{r.n}}</span>
+<span style="min-width:0"><span style="font-weight:600">{{r.title}}</span> <span style="font-size:12px;color:#666">{{r.out}}</span></span>
+<span style="font-weight:600;font-size:12px;color:{{r.col}};text-align:right">{{r.lab}}</span>
+</div>
+</sc-for>
+</div>
+</section>
+</sc-if>
+
+<sc-if value="{{mAdd}}" hint-placeholder-val="{{false}}">
+<div style="position:absolute;inset:0;z-index:20;background:rgba(17,17,17,.36);display:flex;justify-content:center;align-items:flex-start;padding:72px 16px">
+<div role="dialog" aria-modal="true" aria-labelledby="sb-add-t" style="width:640px;max-width:100%;max-height:calc(100% - 40px);background:#fff;border-radius:20px;box-shadow:0 24px 64px rgba(0,0,0,.18);display:flex;flex-direction:column;overflow:hidden">
+<div style="display:flex;justify-content:space-between;align-items:center;gap:12px;padding:18px 20px;border-bottom:1px solid #EDEDED">
+<div style="min-width:0"><div style="font-size:13px;color:#666">Add a step after {{prevTitle}}</div><h2 id="sb-add-t" style="margin:2px 0 0;font-family:Montserrat,sans-serif;font-weight:900;font-size:20px">What happens next?</h2></div>
+<button onClick="{{closeModal}}" aria-label="Close" class="ss-h" style="width:40px;height:40px;flex:none;border-radius:10px;background:transparent;border:0;color:#111;display:flex;align-items:center;justify-content:center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+</div>
+<div style="padding:14px 20px;display:flex;flex-direction:column;gap:10px;border-bottom:1px solid #F2F2F2">
+<label for="sb-q" style="position:absolute;left:-9999px">Search steps</label>
+<input id="sb-q" value="{{q}}" onChange="{{onQ}}" placeholder="Search: Slack, branch, approval, summarize" style="height:46px;border-radius:12px;background:#F5F5F5;border:1px solid #EDEDED;color:#111;padding:0 14px;font-family:inherit;font-size:15px">
+<div style="display:flex;flex-wrap:wrap;gap:6px">
+<sc-for list="{{cats}}" as="c" hint-placeholder-count="6"><button onClick="{{c.pick}}" aria-pressed="{{c.on}}" style="height:34px;padding:0 12px;border-radius:999px;background:{{c.bg}};color:{{c.fg}};border:1px solid {{c.bd}};font-weight:600;font-size:13px">{{c.label}}</button></sc-for>
+</div>
+</div>
+<div class="ss-sc" style="overflow:auto;padding:14px 20px 20px;display:flex;flex-direction:column;gap:14px">
+<sc-if value="{{showSugg}}" hint-placeholder-val="{{true}}">
+<div style="display:flex;flex-direction:column;gap:8px">
+<div style="font-size:13px;font-weight:700;color:#2449C7">Suggested after a {{prevKindLow}} step</div>
+<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px">
+<sc-for list="{{sugg}}" as="it" hint-placeholder-count="3">
+<button onClick="{{it.add}}" class="ss-li" style="text-align:left;padding:12px;border-radius:14px;background:#F5F7FF;border:1px solid #DCE3FB;color:#111;display:flex;flex-direction:column;gap:6px;min-height:88px">
+<span style="font-size:12px;font-weight:600;color:{{it.c}}">{{it.kl}}</span><span style="font-weight:700;font-size:14px">{{it.title}}</span><span style="font-size:12px;color:#555;line-height:1.35">{{it.desc}}</span>
+</button>
+</sc-for>
+</div>
+</div>
+</sc-if>
+<div style="display:flex;flex-direction:column;gap:6px">
+<sc-for list="{{results}}" as="it" hint-placeholder-count="6">
+<button onClick="{{it.add}}" class="ss-li" style="text-align:left;display:flex;gap:12px;align-items:center;padding:10px 12px;border-radius:12px;background:#fff;border:1px solid #EDEDED;color:#111">
+<span style="width:34px;height:34px;flex:none;border-radius:10px;background:{{it.ibg}};display:flex;align-items:center;justify-content:center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="{{it.c}}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{it.d}}"></path></svg></span>
+<span style="display:flex;flex-direction:column;gap:2px;flex:1;min-width:0"><span style="font-weight:600;font-size:14px">{{it.title}}</span><span style="font-size:13px;color:#666">{{it.desc}}</span></span>
+<span style="font-size:12px;color:#666;background:#F5F5F5;border-radius:999px;padding:3px 8px">{{it.app}}</span>
+</button>
+</sc-for>
+<sc-if value="{{noResults}}" hint-placeholder-val="{{false}}"><div style="padding:20px;text-align:center;color:#666;font-size:14px;border:1.5px dashed #D6D6D6;border-radius:12px">No step matches. Try fewer words, or ask Studio Assistant to build it.</div></sc-if>
+</div>
+</div>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{mReview}}" hint-placeholder-val="{{false}}">
+<div style="position:absolute;inset:0;z-index:20;background:rgba(17,17,17,.36);display:flex;justify-content:center;align-items:flex-start;padding:72px 16px">
+<div role="dialog" aria-modal="true" aria-labelledby="sb-rv-t" style="width:600px;max-width:100%;background:#fff;border-radius:20px;box-shadow:0 24px 64px rgba(0,0,0,.18);display:flex;flex-direction:column;overflow:hidden">
+<div style="display:flex;justify-content:space-between;align-items:center;gap:12px;padding:18px 20px;border-bottom:1px solid #EDEDED">
+<div><div style="font-size:13px;color:#666">Review · {{name}}</div><h2 id="sb-rv-t" style="margin:2px 0 0;font-family:Montserrat,sans-serif;font-weight:900;font-size:20px">{{reviewHead}}</h2></div>
+<button onClick="{{closeModal}}" aria-label="Close" class="ss-h" style="width:40px;height:40px;flex:none;border-radius:10px;background:transparent;border:0;color:#111;display:flex;align-items:center;justify-content:center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+</div>
+<div style="padding:6px 20px">
+<sc-for list="{{checks}}" as="c" hint-placeholder-count="4">
+<div style="display:flex;gap:12px;align-items:center;padding:12px 0;border-bottom:1px solid #F2F2F2">
+<span style="width:32px;height:32px;flex:none;border-radius:999px;background:{{c.markBg}};display:flex;align-items:center;justify-content:center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="{{c.mark}}" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="{{c.sym}}"></path></svg></span>
+<div style="flex:1;min-width:0"><div style="font-weight:600;font-size:15px">{{c.label}}</div><div style="font-size:13px;color:#666;margin-top:2px">{{c.detail}}</div></div>
+<sc-if value="{{c.need}}" hint-placeholder-val="{{false}}"><button onClick="{{c.fix}}" class="ss-h" style="height:38px;padding:0 12px;flex:none;border-radius:10px;background:#fff;border:1px solid #E0E0E0;color:#111;font-weight:600;font-size:13px">{{c.fixLabel}}</button></sc-if>
+</div>
+</sc-for>
+</div>
+<div style="display:flex;justify-content:flex-end;align-items:center;gap:8px;padding:16px 20px;border-top:1px solid #EDEDED;background:#FAFAFA;flex-wrap:wrap">
+<span style="font-size:13px;color:#666;margin-right:auto">{{readyNote}}</span>
+<button onClick="{{closeModal}}" class="ss-h" style="height:44px;padding:0 16px;border-radius:12px;background:#fff;border:1px solid #E0E0E0;color:#111;font-weight:600;font-size:14px">Keep editing</button>
+<button onClick="{{turnOn}}" disabled="{{notReady}}" style="height:44px;padding:0 16px;border-radius:12px;background:{{onBg}};color:{{onFg}};border:1px solid {{onBd}};font-weight:600;font-size:14px">Turn on</button>
+</div>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{mAi}}" hint-placeholder-val="{{false}}">
+<div style="position:absolute;inset:0;z-index:20;background:rgba(17,17,17,.36);display:flex;justify-content:center;align-items:flex-start;padding:72px 16px">
+<div role="dialog" aria-modal="true" aria-labelledby="sb-ai-t" style="width:600px;max-width:100%;background:#fff;border-radius:20px;box-shadow:0 24px 64px rgba(0,0,0,.18);display:flex;flex-direction:column;overflow:hidden">
+<div style="display:flex;justify-content:space-between;align-items:center;gap:12px;padding:18px 20px;border-bottom:1px solid #EDEDED">
+<div><div style="font-size:13px;color:#5B3FC4;font-weight:600">Studio Assistant</div><h2 id="sb-ai-t" style="margin:2px 0 0;font-family:Montserrat,sans-serif;font-weight:900;font-size:20px">Describe the next steps</h2></div>
+<button onClick="{{closeModal}}" aria-label="Close" class="ss-h" style="width:40px;height:40px;flex:none;border-radius:10px;background:transparent;border:0;color:#111;display:flex;align-items:center;justify-content:center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+</div>
+<div style="padding:18px 20px;display:flex;flex-direction:column;gap:12px">
+<label for="sb-ai" style="font-size:14px;color:#333">Studio Assistant reads the steps on the canvas and adds new ones at the end. New steps arrive unchecked.</label>
+<textarea id="sb-ai" value="{{ai}}" onChange="{{onAi}}" rows="4" placeholder="Also copy the producer and set a new due date" style="border-radius:12px;background:#F7F7F7;border:1px solid #E6E6E6;color:#111;padding:12px;font-family:inherit;font-size:14px;line-height:1.5;resize:vertical"></textarea>
+<div style="display:flex;flex-wrap:wrap;gap:6px">
+<sc-for list="{{aiChips}}" as="ch" hint-placeholder-count="3"><button onClick="{{ch.pick}}" class="ss-h" style="min-height:36px;padding:0 12px;border-radius:999px;background:#fff;border:1px solid #E0E0E0;color:#333;font-size:13px">{{ch.t}}</button></sc-for>
+</div>
+</div>
+<div style="display:flex;justify-content:flex-end;gap:8px;padding:16px 20px;border-top:1px solid #EDEDED;background:#FAFAFA">
+<button onClick="{{closeModal}}" class="ss-h" style="height:44px;padding:0 16px;border-radius:12px;background:#fff;border:1px solid #E0E0E0;color:#111;font-weight:600;font-size:14px">Cancel</button>
+<button onClick="{{draftAi}}" disabled="{{aiEmpty}}" style="height:44px;padding:0 16px;border-radius:12px;background:{{aiBg}};color:{{aiFg}};border:1px solid {{aiBd}};font-weight:600;font-size:14px">Draft steps</button>
+</div>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{hasToast}}" hint-placeholder-val="{{false}}">
+<div role="status" style="position:absolute;left:50%;top:72px;transform:translateX(-50%);z-index:30;background:#111;color:#fff;border-radius:12px;padding:10px 16px;font-size:14px;font-weight:500;box-shadow:0 8px 24px rgba(0,0,0,.2);max-width:90%">{{toast}}</div>
+</sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+const B=(s)=>'{'+'{'+s+'}'+'}';
+const K={
+trigger:{label:'Trigger',c:'#8A5A00',bg:'#FFF4D6',d:'M13 2 3 14h9l-1 8 10-12h-9l1-8z'},
+data:{label:'Board',c:'#2449C7',bg:'#EAF0FF',d:'M3 3h7v9H3zM14 3h7v5h-7zM14 12h7v9h-7zM3 16h7v5H3z'},
+action:{label:'Action',c:'#1F7A45',bg:'#E6F5EC',d:'M22 2 11 13M22 2l-7 20-4-9-9-4 20-7z'},
+logic:{label:'Logic',c:'#B4470E',bg:'#FFEDE1',d:'M6 3v12M18 9a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM6 21a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM18 9a9 9 0 0 1-9 9'},
+ai:{label:'Assistant',c:'#5B3FC4',bg:'#F0EBFF',d:'M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9L12 3z'},
+human:{label:'Approval',c:'#444444',bg:'#F1F1F1',d:'M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM16 11l2 2 4-4'}};
+const ORDER=['trigger','data','action','logic','ai','human'];
+const AGENT='Studio Assistant';
+const F={trigger:[['Event',1,'Pick what starts this']],data:[['Find',1,'e.g. project id is ...'],['Limit',0,'1']],action:[['To',1,'Who gets it'],['Message',1,'Write it or insert a variable']],logic:[['Condition',1,'e.g. project has a sponsor'],['If yes',1,'What happens on yes'],['If no',0,'Continue']],ai:[['Instructions',1,'Tell the Assistant what to write'],['Tone',0,'Plain and direct']],human:[['Approver',1,'Who signs off'],['Timeout',0,'4 hours']]};
+const mk=(kind,vals,fo)=>(fo||F[kind]).map((f,i)=>{const x=vals&&vals[i];const o=!!x&&typeof x==='object';return {label:f[0],req:!!f[1],ph:f[2],value:o?(x.t||''):(x||''),vars:o&&x.v?x.v.slice():[]};});
+const V=(t,v)=>({t:t,v:v});
+const empty=f=>f.req&&!String(f.value).trim()&&!f.vars.length;
+const LIB=[
+{kind:'trigger',title:'Status changes',desc:'A project reaches a stage',app:'Board'},
+{kind:'trigger',title:'Editor Status changes',desc:'An edit is in review or needs changes',app:'Board'},
+{kind:'trigger',title:'Thumbnail changes',desc:'A thumbnail moves along',app:'Board'},
+{kind:'trigger',title:'Sponsor Approval changes',desc:'A sponsor approves or asks for changes',app:'Board'},
+{kind:'trigger',title:'A comment mentions a Super Admin',desc:'A comment asks a Super Admin for help',app:'Board'},
+{kind:'trigger',title:'Publishing date is coming up',desc:'Remind people before a video goes out',app:'Board'},
+{kind:'data',title:'Get project',desc:'Title, stage, owner, sponsor and comments',app:'Board'},
+{kind:'data',title:'Move project stage',desc:'Set the stage on the board',app:'Board'},
+{kind:'data',title:'Set due date',desc:'Change a project deadline',app:'Board'},
+{kind:'action',title:'Notify in Slack',desc:'Message a person or channel',app:'Slack',conn:false},
+{kind:'action',title:'Send email',desc:'Email a sponsor or teammate',app:'Gmail',outward:true},
+{kind:'action',title:'Add to Inbox',desc:'Put an item in a person Inbox',app:'Board'},
+{kind:'action',title:'Create task',desc:'Add a task to a project',app:'Board'},
+{kind:'action',title:'Update sponsor',desc:'Share status on the sponsor view',app:'Board',outward:true},
+{kind:'logic',title:'Branch',desc:'Split into yes and no paths',app:'Logic',br:true},
+{kind:'logic',title:'Delay',desc:'Wait minutes, hours or days',app:'Logic',f:[['Wait',1,'e.g. 2 hours']]},
+{kind:'logic',title:'Filter',desc:'Stop the run unless a rule passes',app:'Logic',f:[['Only continue if',1,'e.g. stage is Review']]},
+{kind:'ai',title:'Summarize notes',desc:'Turn review comments into a fix list',app:'Studio Assistant'},
+{kind:'ai',title:'Draft with Assistant',desc:'Write a reply, update or brief',app:'Studio Assistant'},
+{kind:'ai',title:'Title ideas',desc:'Pitch 5 titles from the script',app:'Studio Assistant'},
+{kind:'human',title:'Approval',desc:'Pause until a Super Admin signs off',app:'Team'},
+{kind:'human',title:'Assign editor',desc:'Hand the edit to a person',app:'Team'}];
+const NEXT={trigger:['Get project','Branch','Summarize notes'],data:['Branch','Notify in Slack','Summarize notes'],logic:['Notify in Slack','Create task','Delay'],ai:['Approval','Notify in Slack','Send email'],human:['Notify in Slack','Send email','Update sponsor'],action:['Delay','Add to Inbox','Create task']};
+const START=[
+{id:'n0',kind:'trigger',title:'Editor Status changes',detail:'An edit is in review or needs changes',app:'Board',fields:mk('trigger',['Editor Status is Needs changes']),sample:[['Project','Shop tour v2'],['Stage','Post Production'],['Editor','Dani']]},
+{id:'n1',kind:'data',title:'Get project',detail:'Title, stage, sponsor and review comments',app:'Board',fields:mk('data',[V('Match',['trigger.project.title']),'1']),sample:[['Comments','7'],['Sponsor','Yes']]},
+{id:'n2',kind:'logic',br:true,title:'Sponsored video?',detail:'Sponsor edits get a second look',app:'Logic',fields:mk('logic',['Project has a sponsor','Notify producer in Slack','Continue']),sample:[['Result','Yes']]},
+{id:'n3',kind:'ai',title:'Summarize review notes',detail:'Numbered fix list, shortest first',app:'Studio Assistant',fields:mk('ai',['Turn the review comments into a numbered fix list. Keep it under 6 items.','Plain and direct']),sample:[['Fix list','1. Trim the intro to 20 seconds...']]},
+{id:'n4',kind:'human',title:'Approval',detail:'Super Admin checks the list first',app:'Team',fields:mk('human',['Super Admin','4 hours']),sample:[['Approved by','Super Admin']]},
+{id:'n5',kind:'action',title:'Notify editor in Slack',detail:'Sends the fix list to the editor',app:'Slack',conn:false,fields:mk('action',[V('',['editor.slack']),V('',['steps.3.summary'])]),sample:[['Status','Queued']]}];
+const VL={'trigger.project.title':'Project title','trigger.project.stage':'Project stage','editor.name':'Editor name','editor.slack':'Editor in Slack','steps.3.summary':'Fix list'};
+const VARS=Object.keys(VL);
+const AI_ADD=[{kind:'action',title:'Add to Inbox',desc:'Copy the fix list to the producer',app:'Board',vals:['Producer',V('',['trigger.project.title','steps.3.summary'])]},{kind:'data',title:'Set due date',desc:'New cut due tomorrow',app:'Board',vals:[V('Match',['trigger.project.title']),'1']}];
+const AI_CHIPS=['Copy the producer on the fix list','Set the new cut due tomorrow','Ping me if no new cut in 24 hours'];
+const WORDS={active:'Live',paused:'Off',draft:'Draft'};
+const T={sel:'#2F5BEA',warn:'#E8B04A',edge:'#E3E3E3',ok:'#1F7A45',okBg:'#E6F5EC',amber:'#7A5300',amberBg:'#FFF4D6',red:'#B42318',dim:'#8a8a8a',acc:'#111111',accFg:'#FFFFFF'};
+class Component extends DCLogic {
+constructor(p){super(p);this.seq=10;this.state={name:'Review notes to editor',desc:'Send editors a short fix list when an edit needs changes.',status:'draft',nodes:START.map(n=>({...n,fields:n.fields.map(f=>({...f}))})),sel:'n5',ff:0,ltab:'steps',lq:'',modal:null,at:0,q:'',cat:'all',run:null,runView:false,saved:true,zoom:100,ai:'',peek:false,toast:''};}
+componentWillUnmount(){clearInterval(this.ti);clearTimeout(this.tt);}
+say(t){this.setState({toast:t});clearTimeout(this.tt);this.tt=setTimeout(()=>this.setState({toast:''}),2800);}
+bad(n){return n.conn===false||n.fields.some(empty);}
+edit(fn){this.setState(s=>Object.assign({},fn(s),{saved:false,run:null}));}
+setField(id,j,v){this.edit(s=>({nodes:s.nodes.map(n=>n.id!==id?n:{...n,fields:n.fields.map((f,k)=>k===j?{...f,value:v}:f)})}));}
+addVar(id,j,key){this.edit(s=>({nodes:s.nodes.map(n=>n.id!==id?n:{...n,fields:n.fields.map((f,k)=>k!==j||f.vars.indexOf(key)>-1?f:{...f,vars:f.vars.concat([key])})})}));}
+rmVar(id,j,key){this.edit(s=>({nodes:s.nodes.map(n=>n.id!==id?n:{...n,fields:n.fields.map((f,k)=>k!==j?f:{...f,vars:f.vars.filter(x=>x!==key)})})}));}
+newNode(it,vals){this.seq+=1;return {id:'n'+this.seq,kind:it.kind,title:it.title,detail:it.desc,app:it.app,outward:!!it.outward,conn:it.conn,fields:mk(it.kind,vals,it.f),br:!!it.br,sample:null};}
+insert(at,it){
+if(it.kind==='trigger'){this.edit(s=>({nodes:s.nodes.map((n,i)=>i===0?{...n,title:it.title,detail:it.desc,app:it.app,fields:mk('trigger',[]),sample:null}:n),sel:s.nodes[0].id,ff:0,modal:null}));this.say('Trigger changed to '+it.title+'. Set the event.');return;}
+const n=this.newNode(it);
+this.edit(s=>{const a=s.nodes.slice();a.splice(Math.max(1,at),0,n);return {nodes:a,sel:n.id,ff:0,modal:null};});
+this.say(it.title+' added. Fill the starred fields.');}
+startRun(){clearInterval(this.ti);this.setState({run:{i:0,fail:null,done:false},runView:true,modal:null});
+this.ti=setInterval(()=>{const s=this.state,r=s.run;if(!r){clearInterval(this.ti);return;}const n=s.nodes[r.i];
+if(!n){clearInterval(this.ti);this.setState({run:{...r,done:true}});return;}
+if(this.bad(n)){clearInterval(this.ti);this.setState({run:{...r,fail:n.id}});return;}
+if(r.i>=s.nodes.length-1){clearInterval(this.ti);this.setState({run:{...r,i:r.i+1,done:true}});this.say('Test passed. Ready for review.');return;}
+this.setState({run:{...r,i:r.i+1}});},700);}
+renderVals(){
+const s=this.state,run=s.run,N=s.nodes.length;
+const badList=s.nodes.filter(n=>this.bad(n));
+const passed=!!(run&&run.done&&!run.fail);
+const outN=s.nodes.filter(n=>n.outward).length,hasAppr=s.nodes.some(n=>n.kind==='human');
+const ready=badList.length===0&&passed&&(!outN||hasAppr);
+const nodes=s.nodes.map((n,i)=>{const k=K[n.kind],iss=this.bad(n),sel=s.sel===n.id;let rs='';
+if(run){if(run.fail===n.id)rs='fail';else if(run.done||i<run.i)rs='ok';else if(i===run.i&&!run.fail)rs='run';else rs='wait';}
+const lg=!!n.br;
+return {title:n.title,detail:n.detail,app:n.app,c:k.c,ibg:k.bg,d:k.d,tag:i===0?k.label:('Step '+i+' · '+k.label),ring:sel?T.sel:(iss?T.warn:T.edge),bw:sel?'2px':'1px',shadow:sel?'0 0 0 4px rgba(47,91,234,.14)':'0 1px 2px rgba(0,0,0,.04)',issue:iss&&rs!=='fail',needConn:n.conn===false,outward:!!n.outward,hasBranch:lg,yes:lg?(n.fields[1].value||'Pick a step'):'',no:lg?(n.fields[2].value||'Continue'):'',isOk:rs==='ok',isRun:rs==='run',isFail:rs==='fail',isWait:rs==='wait',pick:()=>this.setState({sel:n.id,peek:false,ff:0}),add:()=>this.setState({modal:'add',at:i+1,q:'',cat:'all'}),addLabel:'Add a step after '+n.title};});
+const cn=s.nodes.find(n=>n.id===s.sel)||s.nodes[0],ck=K[cn.kind],ci=s.nodes.indexOf(cn);
+const ff=Math.min(s.ff,cn.fields.length-1);
+const cur={title:cn.title,app:cn.app,c:ck.c,ibg:ck.bg,d:ck.d,tag:ci===0?ck.label:('Step '+ci+' · '+ck.label),needConn:cn.conn===false,canDel:ci>0,isTrig:ci===0,isBranch:!!cn.br,isAppr:cn.kind==='human',
+fields:cn.fields.map((f,j)=>{const miss=empty(f);return {label:f.label,ph:f.vars.length?'':f.ph,value:f.value,chips:f.vars.map(k=>({label:VL[k]||k,aria:'Remove '+(VL[k]||k),rm:()=>this.rmVar(cn.id,j,k)})),star:f.req?' *':'',id:'f-'+cn.id+'-'+j,miss:miss,bd:miss?T.warn:(ff===j?T.sel:T.edge),change:e=>this.setField(cn.id,j,e.target.value),focus:()=>this.setState({ff:j})};}),
+sample:(cn.sample||[['No sample yet','Run a test']]).map(p=>({k:p[0],v:p[1]})),
+connect:()=>{this.edit(st=>({nodes:st.nodes.map(n=>n.id===cn.id?{...n,conn:true}:n)}));this.say(cn.app+' connected');},
+del:()=>{this.edit(st=>{const a=st.nodes.filter(n=>n.id!==cn.id);return {nodes:a,sel:a[Math.max(0,ci-1)].id,ff:0};});this.say('Step deleted');},
+dup:()=>{this.seq+=1;const cp={...cn,id:'n'+this.seq,fields:cn.fields.map(f=>({...f}))};this.edit(st=>{const a=st.nodes.slice();a.splice(ci+1,0,cp);return {nodes:a,sel:cp.id};});this.say('Step duplicated');}};
+const vars=VARS.map(k=>({v:VL[k],put:()=>this.addVar(cn.id,ff,k)}));
+const lq=s.lq.trim().toLowerCase();
+const groups=ORDER.map(kind=>({label:K[kind].label,items:LIB.filter(it=>it.kind===kind&&(!lq||(it.title+' '+it.desc).toLowerCase().indexOf(lq)>-1)).map(it=>({title:it.title,desc:it.desc,d:K[kind].d,c:K[kind].c,ibg:K[kind].bg,aria:(kind==='trigger'?'Use trigger ':'Add step ')+it.title,add:()=>this.insert(s.nodes.length,it)}))})).filter(g=>g.items.length);
+const prev=s.nodes[Math.max(0,Math.min(s.at,N)-1)];
+const q=s.q.trim().toLowerCase();
+const toItem=it=>({title:it.title,desc:it.desc,app:it.app,d:K[it.kind].d,c:K[it.kind].c,ibg:K[it.kind].bg,kl:K[it.kind].label,add:()=>this.insert(s.at,it)});
+const results=LIB.filter(it=>it.kind!=='trigger'&&(s.cat==='all'||it.kind===s.cat)&&(!q||(it.title+' '+it.desc+' '+it.app).toLowerCase().indexOf(q)>-1)).map(toItem);
+const sugg=(NEXT[prev.kind]||[]).map(t=>LIB.find(x=>x.title===t)).filter(Boolean).map(toItem);
+const cats=[{k:'all',label:'All'}].concat(ORDER.filter(k=>k!=='trigger').map(k=>({k,label:K[k].label}))).map(c=>{const on=s.cat===c.k;return {label:c.label,on,bg:on?T.acc:'#fff',fg:on?T.accFg:'#333',bd:on?T.acc:'#E0E0E0',pick:()=>this.setState({cat:c.k})};});
+const checks=[
+{ok:!this.bad(s.nodes[0]),label:'Trigger is set',detail:s.nodes[0].title,fixLabel:'Set trigger',fix:()=>this.setState({sel:s.nodes[0].id,modal:null})},
+{ok:badList.length===0,label:badList.length?(badList.length+(badList.length>1?' steps need setup':' step needs setup')):'Every step is set up',detail:badList.length?badList.map(n=>n.title).join(', '):N+' steps, no missing fields',fixLabel:'Go to step',fix:()=>this.setState({sel:badList[0]?badList[0].id:s.sel,modal:null,ff:0})},
+{ok:passed,label:passed?'Test run passed':'Run a test first',detail:passed?'All '+N+' steps ran on sample data':'Runs every step on sample data. Nothing is sent.',fixLabel:'Test run',fix:()=>this.startRun()},
+{ok:!outN||hasAppr,label:outN?(outN+(outN>1?' steps send outside':' step sends outside')+(hasAppr?', approval covers it':', no approval')):'Nothing leaves the team',detail:outN?(hasAppr?'A Super Admin signs off before anything leaves':'Add an Approval step above it'):'Sponsors and guests see nothing from this flow',fixLabel:'Add approval',fix:()=>this.setState({modal:'add',at:N,q:'Approval',cat:'all'})}
+].map(c=>({...c,need:!c.ok,mark:c.ok?T.ok:T.amber,markBg:c.ok?T.okBg:T.amberBg,sym:c.ok?'M20 6 9 17l-5-5':'M12 7v6M12 17h.01'}));
+const statuses=['active','paused','draft'].map(k=>{const on=s.status===k;return {label:WORDS[k],on,bg:on?T.acc:'transparent',fg:on?T.accFg:'#333',pick:()=>{if(k==='active'&&!ready){this.setState({modal:'review'});return;}this.setState({status:k,saved:false});}};});
+const runRows=run?s.nodes.map((n,i)=>{const st=nodes[i];return {n:i===0?'T':String(i),title:n.title,lab:st.isOk?'Passed':st.isRun?'Running':st.isFail?'Failed':'Waiting',col:st.isOk?T.ok:st.isRun?'#2449C7':st.isFail?T.red:'#666',out:st.isOk?(n.sample?n.sample[0].join(': '):'Done'):(st.isFail?('Missing: '+(n.conn===false?'connect '+n.app:n.fields.filter(empty).map(f=>f.label).join(', '))):'')};}):[];
+const failNode=run&&run.fail?s.nodes.find(n=>n.id===run.fail):null;
+const runHead=!run?'':failNode?('Stopped at '+failNode.title):run.done?('Passed · '+N+' of '+N+' steps'):('Running step '+(run.i+1)+' of '+N);
+const zset=z=>this.setState({zoom:Math.max(60,Math.min(140,z))});
+return {
+name:s.name,onName:e=>this.edit(()=>({name:e.target.value})),
+statuses,issueTxt:badList.length?(badList.length+' to fix'):'Ready',issueColor:badList.length?T.amber:T.ok,issueBg:badList.length?T.amberBg:T.okBg,saveLabel:s.saved?'Saved':'Unsaved changes',
+save:()=>{this.setState({saved:true});this.say('Saved');},
+openAi:()=>this.setState({modal:'ai'}),openReview:()=>this.setState({modal:'review'}),closeModal:()=>this.setState({modal:null}),
+startRun:()=>this.startRun(),
+ltabs:[['steps','Steps'],['over','Overview']].map(([k,l])=>{const on=s.ltab===k;return {label:l,on,bg:on?'#fff':'transparent',fg:on?'#111':'#555',sh:on?'0 1px 2px rgba(0,0,0,.08)':'none',pick:()=>this.setState({ltab:k})};}),
+lSteps:s.ltab==='steps',lOver:s.ltab==='over',lq:s.lq,onLq:e=>this.setState({lq:e.target.value}),groups,
+desc:s.desc,onDesc:e=>this.edit(()=>({desc:e.target.value})),
+facts:[{k:'Steps',v:N,c:'#111'},{k:'To fix',v:badList.length,c:badList.length?T.amber:'#111'},{k:'Sends outside',v:outN,c:'#111'},{k:'Last test',v:passed?'Pass':(run&&run.fail?'Fail':'None'),c:passed?T.ok:(run&&run.fail?T.red:'#666')}],
+nodes,zs:s.zoom/100,zoom:s.zoom,zin:()=>zset(s.zoom+10),zout:()=>zset(s.zoom-10),zfit:()=>zset(100),
+stepsTxt:(N-1)+' steps · '+badList.length+' to fix',
+cur,vars,ffLabel:cn.fields[ff]?cn.fields[ff].label:'',peek:s.peek,peekSign:s.peek?'Hide':'Show',togglePeek:()=>this.setState({peek:!s.peek}),
+runView:s.runView&&!!run,runRows,runHead,runFail:!!failNode,runTop:failNode?T.red:(run&&run.done?T.ok:'#2449C7'),fixRun:()=>this.setState({sel:run.fail,ff:0}),closeRun:()=>this.setState({runView:false}),
+mAdd:s.modal==='add',mReview:s.modal==='review',mAi:s.modal==='ai',
+q:s.q,onQ:e=>this.setState({q:e.target.value}),cats,results,noResults:results.length===0,sugg,showSugg:!q&&s.cat==='all'&&sugg.length>0,prevTitle:prev.title,prevKindLow:K[prev.kind].label.toLowerCase(),
+checks,reviewHead:ready?'Ready to turn on':'Not ready yet',readyNote:ready?'Runs on its own once it is live.':'Fix the open items to unlock Turn on.',notReady:!ready,onBg:ready?T.acc:'#F1F1F1',onFg:ready?T.accFg:'#8a8a8a',onBd:ready?T.acc:'#E6E6E6',
+turnOn:()=>{if(!ready)return;this.setState({status:'active',modal:null,saved:true});this.say('Workflow is live.');},
+ai:s.ai,onAi:e=>this.setState({ai:e.target.value}),aiChips:AI_CHIPS.map(t=>({t,pick:()=>this.setState({ai:t})})),aiEmpty:!s.ai.trim(),aiBg:s.ai.trim()?T.acc:'#F1F1F1',aiFg:s.ai.trim()?T.accFg:'#8a8a8a',aiBd:s.ai.trim()?T.acc:'#E6E6E6',
+draftAi:()=>{if(!s.ai.trim())return;const add=AI_ADD.map(it=>this.newNode(it,it.vals));this.edit(st=>({nodes:st.nodes.concat(add),sel:add[0].id,modal:null,ai:'',ff:0}));this.say(AGENT+' added '+add.length+' steps. Check them before turning on.');},
+toast:s.toast,hasToast:!!s.toast};
+}
+}
+</script>
+</body>
+</html>

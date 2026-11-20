@@ -1,0 +1,469 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SantosStudios workflow builder</title>
+<!-- Generated from Santos-Builder.dc.html by zz-handoff-design. Frame 1440x900 (fluid page). -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Montserrat:wght@800;900&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#EBEBEB}
+a{color:#2F5BEA}a:hover{color:#1E3FB0}
+.ss *{box-sizing:border-box}
+.ss button{font-family:inherit;cursor:pointer}
+.ss button:disabled{cursor:not-allowed}
+.ss button:focus-visible,.ss a:focus-visible,.ss input:focus-visible,.ss textarea:focus-visible{outline:2px solid #2F5BEA;outline-offset:2px}
+.ss input::placeholder,.ss textarea::placeholder{color:#8a8a8a}
+.ss-h:hover{background:#F0F0F0 !important}
+.ss-k:hover{background:#2b2b2b !important}
+.ss-li:hover{border-color:#CFCFCF !important;background:#FAFAFA !important}
+.ss-sc{scrollbar-width:thin;scrollbar-color:#CFCFCF transparent}
+@keyframes ssp{0%,100%{opacity:1}50%{opacity:.4}}
+.ss-pulse{animation:ssp 1s ease-in-out infinite}
+@media (max-width:900px){.ss-root{height:auto !important}.ss-body{flex-direction:column !important}.ss-left,.ss-right{width:auto !important;flex:none !important}.ss-canvas{min-height:620px}}
+</style>
+</head>
+<body>
+<div class="ss ss-root" style="height:100vh;min-height:820px;display:flex;flex-direction:column;background:#EBEBEB;color:#111111;font-family:Inter,system-ui,sans-serif;position:relative;overflow:hidden">
+
+<header style="display:flex;flex-wrap:wrap;align-items:center;gap:10px;padding:12px 16px">
+<a href="Santos-Hub.dc.html" class="ss-h" style="height:42px;display:flex;align-items:center;gap:6px;padding:0 12px 0 8px;border-radius:10px;color:#111;text-decoration:none;font-weight:600;font-size:14px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>Automations</a>
+<label for="sb-name" style="position:absolute;left:-9999px">Workflow name</label>
+<input id="sb-name" value="Review notes to editor" style="height:42px;width:250px;max-width:100%;background:transparent;border:1px solid transparent;border-radius:10px;color:#111;font-family:inherit;font-weight:700;font-size:18px;padding:0 8px">
+<div role="group" aria-label="Status" style="display:flex;background:#fff;border:1px solid #E0E0E0;border-radius:999px;padding:3px;height:42px">
+
+<button aria-pressed="false" style="padding:0 14px;border-radius:999px;background:transparent;color:#333;border:0;font-weight:600;font-size:13px">Live</button>
+
+<button aria-pressed="false" style="padding:0 14px;border-radius:999px;background:transparent;color:#333;border:0;font-weight:600;font-size:13px">Off</button>
+
+<button aria-pressed="true" style="padding:0 14px;border-radius:999px;background:#111111;color:#FFFFFF;border:0;font-weight:600;font-size:13px">Draft</button>
+
+</div>
+<span style="border-radius:999px;padding:6px 10px;font-size:12px;font-weight:600;color:#7A5300;background:#FFF4D6">1 to fix</span>
+<span style="font-size:13px;color:#666">Saved</span>
+<div style="flex:1"></div>
+<a href="Santos-Run.dc.html" class="ss-h" style="height:42px;display:flex;align-items:center;gap:8px;padding:0 14px;border-radius:12px;background:#fff;border:1px solid #E0E0E0;color:#111;text-decoration:none;font-weight:600;font-size:14px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7L3 8M3 3v5h5M12 7v5l4 2"/></svg>Run history</a>
+<a href="Santos-Settings.dc.html" class="ss-h" style="height:42px;display:flex;align-items:center;gap:8px;padding:0 14px;border-radius:12px;background:#fff;border:1px solid #E0E0E0;color:#111;text-decoration:none;font-weight:600;font-size:14px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></svg>Settings</a>
+<button class="ss-h" style="height:42px;display:flex;align-items:center;gap:8px;padding:0 14px;border-radius:12px;background:#F0EBFF;border:0;color:#5B3FC4;font-weight:600;font-size:14px"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9L12 3z"/></svg>Ask Assistant</button>
+<button class="ss-h" style="height:42px;display:flex;align-items:center;gap:8px;padding:0 14px;border-radius:12px;background:#fff;border:1px solid #E0E0E0;color:#111;font-weight:600;font-size:14px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M6 4l14 8-14 8z"/></svg>Test run</button>
+<button class="ss-h" style="height:42px;padding:0 14px;border-radius:12px;background:#F5F5F5;border:1px solid #E6E6E6;color:#111;font-weight:600;font-size:14px">Save</button>
+<button class="ss-k" style="height:42px;padding:0 16px;border-radius:12px;background:#111;color:#fff;border:0;font-weight:600;font-size:14px">Review and turn on</button>
+</header>
+
+<div class="ss-body" style="flex:1;display:flex;gap:12px;padding:0 12px 12px;min-height:0">
+
+<aside class="ss-left" aria-label="Step library" style="width:300px;flex:none;background:#fff;border-radius:16px;display:flex;flex-direction:column;min-height:0;overflow:hidden">
+<div role="tablist" aria-label="Left panel" style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px;margin:12px;background:#F2F2F2;border-radius:12px;padding:4px">
+
+<button role="tab" aria-selected="true" style="height:38px;border-radius:9px;background:#fff;color:#111;border:0;font-weight:600;font-size:14px;box-shadow:0 1px 2px rgba(0,0,0,.08)">Steps</button>
+
+<button role="tab" aria-selected="false" style="height:38px;border-radius:9px;background:transparent;color:#555;border:0;font-weight:600;font-size:14px;box-shadow:none">Overview</button>
+
+</div>
+
+<div style="padding:0 14px 8px">
+<label for="sb-lq" style="position:absolute;left:-9999px">Search steps</label>
+<input id="sb-lq" value="" placeholder="Search steps" style="width:100%;height:42px;border-radius:12px;background:#F5F5F5;border:1px solid #EDEDED;color:#111;padding:0 12px;font-family:inherit;font-size:14px">
+<div style="font-size:13px;color:#666;margin-top:8px">Click to add at the end. Use + on the canvas to add between steps.</div>
+</div>
+<div class="ss-sc" style="flex:1;overflow:auto;padding:4px 14px 16px;display:flex;flex-direction:column;gap:14px">
+
+<div style="display:flex;flex-direction:column;gap:6px">
+<div style="font-size:13px;font-weight:700;color:#333;padding:4px 2px">Trigger</div>
+
+<button aria-label="Use trigger Status changes" class="ss-li" style="text-align:left;display:flex;gap:10px;align-items:flex-start;padding:10px;border-radius:12px;background:#fff;border:1px solid #EDEDED;color:#111">
+<span style="width:30px;height:30px;flex:none;border-radius:9px;background:#FFF4D6;display:flex;align-items:center;justify-content:center"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#8A5A00" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"></path></svg></span>
+<span style="display:flex;flex-direction:column;gap:2px;min-width:0"><span style="font-weight:600;font-size:14px">Status changes</span><span style="font-size:13px;color:#666;line-height:1.4">A project reaches a stage</span></span>
+</button>
+
+<button aria-label="Use trigger Editor Status changes" class="ss-li" style="text-align:left;display:flex;gap:10px;align-items:flex-start;padding:10px;border-radius:12px;background:#fff;border:1px solid #EDEDED;color:#111">
+<span style="width:30px;height:30px;flex:none;border-radius:9px;background:#FFF4D6;display:flex;align-items:center;justify-content:center"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#8A5A00" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"></path></svg></span>
+<span style="display:flex;flex-direction:column;gap:2px;min-width:0"><span style="font-weight:600;font-size:14px">Editor Status changes</span><span style="font-size:13px;color:#666;line-height:1.4">An edit is in review or needs changes</span></span>
+</button>
+
+<button aria-label="Use trigger Thumbnail changes" class="ss-li" style="text-align:left;display:flex;gap:10px;align-items:flex-start;padding:10px;border-radius:12px;background:#fff;border:1px solid #EDEDED;color:#111">
+<span style="width:30px;height:30px;flex:none;border-radius:9px;background:#FFF4D6;display:flex;align-items:center;justify-content:center"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#8A5A00" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"></path></svg></span>
+<span style="display:flex;flex-direction:column;gap:2px;min-width:0"><span style="font-weight:600;font-size:14px">Thumbnail changes</span><span style="font-size:13px;color:#666;line-height:1.4">A thumbnail moves along</span></span>
+</button>
+
+<button aria-label="Use trigger Sponsor Approval changes" class="ss-li" style="text-align:left;display:flex;gap:10px;align-items:flex-start;padding:10px;border-radius:12px;background:#fff;border:1px solid #EDEDED;color:#111">
+<span style="width:30px;height:30px;flex:none;border-radius:9px;background:#FFF4D6;display:flex;align-items:center;justify-content:center"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#8A5A00" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"></path></svg></span>
+<span style="display:flex;flex-direction:column;gap:2px;min-width:0"><span style="font-weight:600;font-size:14px">Sponsor Approval changes</span><span style="font-size:13px;color:#666;line-height:1.4">A sponsor approves or asks for changes</span></span>
+</button>
+
+<button aria-label="Use trigger A comment mentions a Super Admin" class="ss-li" style="text-align:left;display:flex;gap:10px;align-items:flex-start;padding:10px;border-radius:12px;background:#fff;border:1px solid #EDEDED;color:#111">
+<span style="width:30px;height:30px;flex:none;border-radius:9px;background:#FFF4D6;display:flex;align-items:center;justify-content:center"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#8A5A00" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"></path></svg></span>
+<span style="display:flex;flex-direction:column;gap:2px;min-width:0"><span style="font-weight:600;font-size:14px">A comment mentions a Super Admin</span><span style="font-size:13px;color:#666;line-height:1.4">A comment asks a Super Admin for help</span></span>
+</button>
+
+<button aria-label="Use trigger Publishing date is coming up" class="ss-li" style="text-align:left;display:flex;gap:10px;align-items:flex-start;padding:10px;border-radius:12px;background:#fff;border:1px solid #EDEDED;color:#111">
+<span style="width:30px;height:30px;flex:none;border-radius:9px;background:#FFF4D6;display:flex;align-items:center;justify-content:center"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#8A5A00" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"></path></svg></span>
+<span style="display:flex;flex-direction:column;gap:2px;min-width:0"><span style="font-weight:600;font-size:14px">Publishing date is coming up</span><span style="font-size:13px;color:#666;line-height:1.4">Remind people before a video goes out</span></span>
+</button>
+
+</div>
+
+<div style="display:flex;flex-direction:column;gap:6px">
+<div style="font-size:13px;font-weight:700;color:#333;padding:4px 2px">Board</div>
+
+<button aria-label="Add step Get project" class="ss-li" style="text-align:left;display:flex;gap:10px;align-items:flex-start;padding:10px;border-radius:12px;background:#fff;border:1px solid #EDEDED;color:#111">
+<span style="width:30px;height:30px;flex:none;border-radius:9px;background:#EAF0FF;display:flex;align-items:center;justify-content:center"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#2449C7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3h7v9H3zM14 3h7v5h-7zM14 12h7v9h-7zM3 16h7v5H3z"></path></svg></span>
+<span style="display:flex;flex-direction:column;gap:2px;min-width:0"><span style="font-weight:600;font-size:14px">Get project</span><span style="font-size:13px;color:#666;line-height:1.4">Title, stage, owner, sponsor and comments</span></span>
+</button>
+
+<button aria-label="Add step Move project stage" class="ss-li" style="text-align:left;display:flex;gap:10px;align-items:flex-start;padding:10px;border-radius:12px;background:#fff;border:1px solid #EDEDED;color:#111">
+<span style="width:30px;height:30px;flex:none;border-radius:9px;background:#EAF0FF;display:flex;align-items:center;justify-content:center"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#2449C7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3h7v9H3zM14 3h7v5h-7zM14 12h7v9h-7zM3 16h7v5H3z"></path></svg></span>
+<span style="display:flex;flex-direction:column;gap:2px;min-width:0"><span style="font-weight:600;font-size:14px">Move project stage</span><span style="font-size:13px;color:#666;line-height:1.4">Set the stage on the board</span></span>
+</button>
+
+<button aria-label="Add step Set due date" class="ss-li" style="text-align:left;display:flex;gap:10px;align-items:flex-start;padding:10px;border-radius:12px;background:#fff;border:1px solid #EDEDED;color:#111">
+<span style="width:30px;height:30px;flex:none;border-radius:9px;background:#EAF0FF;display:flex;align-items:center;justify-content:center"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#2449C7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3h7v9H3zM14 3h7v5h-7zM14 12h7v9h-7zM3 16h7v5H3z"></path></svg></span>
+<span style="display:flex;flex-direction:column;gap:2px;min-width:0"><span style="font-weight:600;font-size:14px">Set due date</span><span style="font-size:13px;color:#666;line-height:1.4">Change a project deadline</span></span>
+</button>
+
+</div>
+
+<div style="display:flex;flex-direction:column;gap:6px">
+<div style="font-size:13px;font-weight:700;color:#333;padding:4px 2px">Action</div>
+
+<button aria-label="Add step Notify in Slack" class="ss-li" style="text-align:left;display:flex;gap:10px;align-items:flex-start;padding:10px;border-radius:12px;background:#fff;border:1px solid #EDEDED;color:#111">
+<span style="width:30px;height:30px;flex:none;border-radius:9px;background:#E6F5EC;display:flex;align-items:center;justify-content:center"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#1F7A45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 2 11 13M22 2l-7 20-4-9-9-4 20-7z"></path></svg></span>
+<span style="display:flex;flex-direction:column;gap:2px;min-width:0"><span style="font-weight:600;font-size:14px">Notify in Slack</span><span style="font-size:13px;color:#666;line-height:1.4">Message a person or channel</span></span>
+</button>
+
+<button aria-label="Add step Send email" class="ss-li" style="text-align:left;display:flex;gap:10px;align-items:flex-start;padding:10px;border-radius:12px;background:#fff;border:1px solid #EDEDED;color:#111">
+<span style="width:30px;height:30px;flex:none;border-radius:9px;background:#E6F5EC;display:flex;align-items:center;justify-content:center"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#1F7A45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 2 11 13M22 2l-7 20-4-9-9-4 20-7z"></path></svg></span>
+<span style="display:flex;flex-direction:column;gap:2px;min-width:0"><span style="font-weight:600;font-size:14px">Send email</span><span style="font-size:13px;color:#666;line-height:1.4">Email a sponsor or teammate</span></span>
+</button>
+
+<button aria-label="Add step Add to Inbox" class="ss-li" style="text-align:left;display:flex;gap:10px;align-items:flex-start;padding:10px;border-radius:12px;background:#fff;border:1px solid #EDEDED;color:#111">
+<span style="width:30px;height:30px;flex:none;border-radius:9px;background:#E6F5EC;display:flex;align-items:center;justify-content:center"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#1F7A45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 2 11 13M22 2l-7 20-4-9-9-4 20-7z"></path></svg></span>
+<span style="display:flex;flex-direction:column;gap:2px;min-width:0"><span style="font-weight:600;font-size:14px">Add to Inbox</span><span style="font-size:13px;color:#666;line-height:1.4">Put an item in a person Inbox</span></span>
+</button>
+
+<button aria-label="Add step Create task" class="ss-li" style="text-align:left;display:flex;gap:10px;align-items:flex-start;padding:10px;border-radius:12px;background:#fff;border:1px solid #EDEDED;color:#111">
+<span style="width:30px;height:30px;flex:none;border-radius:9px;background:#E6F5EC;display:flex;align-items:center;justify-content:center"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#1F7A45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 2 11 13M22 2l-7 20-4-9-9-4 20-7z"></path></svg></span>
+<span style="display:flex;flex-direction:column;gap:2px;min-width:0"><span style="font-weight:600;font-size:14px">Create task</span><span style="font-size:13px;color:#666;line-height:1.4">Add a task to a project</span></span>
+</button>
+
+<button aria-label="Add step Update sponsor" class="ss-li" style="text-align:left;display:flex;gap:10px;align-items:flex-start;padding:10px;border-radius:12px;background:#fff;border:1px solid #EDEDED;color:#111">
+<span style="width:30px;height:30px;flex:none;border-radius:9px;background:#E6F5EC;display:flex;align-items:center;justify-content:center"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#1F7A45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 2 11 13M22 2l-7 20-4-9-9-4 20-7z"></path></svg></span>
+<span style="display:flex;flex-direction:column;gap:2px;min-width:0"><span style="font-weight:600;font-size:14px">Update sponsor</span><span style="font-size:13px;color:#666;line-height:1.4">Share status on the sponsor view</span></span>
+</button>
+
+</div>
+
+<div style="display:flex;flex-direction:column;gap:6px">
+<div style="font-size:13px;font-weight:700;color:#333;padding:4px 2px">Logic</div>
+
+<button aria-label="Add step Branch" class="ss-li" style="text-align:left;display:flex;gap:10px;align-items:flex-start;padding:10px;border-radius:12px;background:#fff;border:1px solid #EDEDED;color:#111">
+<span style="width:30px;height:30px;flex:none;border-radius:9px;background:#FFEDE1;display:flex;align-items:center;justify-content:center"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#B4470E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3v12M18 9a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM6 21a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM18 9a9 9 0 0 1-9 9"></path></svg></span>
+<span style="display:flex;flex-direction:column;gap:2px;min-width:0"><span style="font-weight:600;font-size:14px">Branch</span><span style="font-size:13px;color:#666;line-height:1.4">Split into yes and no paths</span></span>
+</button>
+
+<button aria-label="Add step Delay" class="ss-li" style="text-align:left;display:flex;gap:10px;align-items:flex-start;padding:10px;border-radius:12px;background:#fff;border:1px solid #EDEDED;color:#111">
+<span style="width:30px;height:30px;flex:none;border-radius:9px;background:#FFEDE1;display:flex;align-items:center;justify-content:center"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#B4470E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3v12M18 9a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM6 21a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM18 9a9 9 0 0 1-9 9"></path></svg></span>
+<span style="display:flex;flex-direction:column;gap:2px;min-width:0"><span style="font-weight:600;font-size:14px">Delay</span><span style="font-size:13px;color:#666;line-height:1.4">Wait minutes, hours or days</span></span>
+</button>
+
+<button aria-label="Add step Filter" class="ss-li" style="text-align:left;display:flex;gap:10px;align-items:flex-start;padding:10px;border-radius:12px;background:#fff;border:1px solid #EDEDED;color:#111">
+<span style="width:30px;height:30px;flex:none;border-radius:9px;background:#FFEDE1;display:flex;align-items:center;justify-content:center"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#B4470E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3v12M18 9a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM6 21a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM18 9a9 9 0 0 1-9 9"></path></svg></span>
+<span style="display:flex;flex-direction:column;gap:2px;min-width:0"><span style="font-weight:600;font-size:14px">Filter</span><span style="font-size:13px;color:#666;line-height:1.4">Stop the run unless a rule passes</span></span>
+</button>
+
+</div>
+
+<div style="display:flex;flex-direction:column;gap:6px">
+<div style="font-size:13px;font-weight:700;color:#333;padding:4px 2px">Assistant</div>
+
+<button aria-label="Add step Summarize notes" class="ss-li" style="text-align:left;display:flex;gap:10px;align-items:flex-start;padding:10px;border-radius:12px;background:#fff;border:1px solid #EDEDED;color:#111">
+<span style="width:30px;height:30px;flex:none;border-radius:9px;background:#F0EBFF;display:flex;align-items:center;justify-content:center"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#5B3FC4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9L12 3z"></path></svg></span>
+<span style="display:flex;flex-direction:column;gap:2px;min-width:0"><span style="font-weight:600;font-size:14px">Summarize notes</span><span style="font-size:13px;color:#666;line-height:1.4">Turn review comments into a fix list</span></span>
+</button>
+
+<button aria-label="Add step Draft with Assistant" class="ss-li" style="text-align:left;display:flex;gap:10px;align-items:flex-start;padding:10px;border-radius:12px;background:#fff;border:1px solid #EDEDED;color:#111">
+<span style="width:30px;height:30px;flex:none;border-radius:9px;background:#F0EBFF;display:flex;align-items:center;justify-content:center"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#5B3FC4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9L12 3z"></path></svg></span>
+<span style="display:flex;flex-direction:column;gap:2px;min-width:0"><span style="font-weight:600;font-size:14px">Draft with Assistant</span><span style="font-size:13px;color:#666;line-height:1.4">Write a reply, update or brief</span></span>
+</button>
+
+<button aria-label="Add step Title ideas" class="ss-li" style="text-align:left;display:flex;gap:10px;align-items:flex-start;padding:10px;border-radius:12px;background:#fff;border:1px solid #EDEDED;color:#111">
+<span style="width:30px;height:30px;flex:none;border-radius:9px;background:#F0EBFF;display:flex;align-items:center;justify-content:center"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#5B3FC4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9L12 3z"></path></svg></span>
+<span style="display:flex;flex-direction:column;gap:2px;min-width:0"><span style="font-weight:600;font-size:14px">Title ideas</span><span style="font-size:13px;color:#666;line-height:1.4">Pitch 5 titles from the script</span></span>
+</button>
+
+</div>
+
+<div style="display:flex;flex-direction:column;gap:6px">
+<div style="font-size:13px;font-weight:700;color:#333;padding:4px 2px">Approval</div>
+
+<button aria-label="Add step Approval" class="ss-li" style="text-align:left;display:flex;gap:10px;align-items:flex-start;padding:10px;border-radius:12px;background:#fff;border:1px solid #EDEDED;color:#111">
+<span style="width:30px;height:30px;flex:none;border-radius:9px;background:#F1F1F1;display:flex;align-items:center;justify-content:center"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#444444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM16 11l2 2 4-4"></path></svg></span>
+<span style="display:flex;flex-direction:column;gap:2px;min-width:0"><span style="font-weight:600;font-size:14px">Approval</span><span style="font-size:13px;color:#666;line-height:1.4">Pause until a Super Admin signs off</span></span>
+</button>
+
+<button aria-label="Add step Assign editor" class="ss-li" style="text-align:left;display:flex;gap:10px;align-items:flex-start;padding:10px;border-radius:12px;background:#fff;border:1px solid #EDEDED;color:#111">
+<span style="width:30px;height:30px;flex:none;border-radius:9px;background:#F1F1F1;display:flex;align-items:center;justify-content:center"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#444444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM16 11l2 2 4-4"></path></svg></span>
+<span style="display:flex;flex-direction:column;gap:2px;min-width:0"><span style="font-weight:600;font-size:14px">Assign editor</span><span style="font-size:13px;color:#666;line-height:1.4">Hand the edit to a person</span></span>
+</button>
+
+</div>
+
+</div>
+
+
+</aside>
+
+<main class="ss-canvas ss-sc" aria-label="Workflow canvas" style="flex:1;min-width:0;position:relative;overflow:auto;border-radius:16px;background-color:#FAFAFA;background-image:radial-gradient(#DADADA 1px,transparent 1px);background-size:20px 20px">
+<div style="transform:scale(1);transform-origin:top center;padding:40px 24px 220px;display:flex;flex-direction:column;align-items:center">
+
+<div style="display:flex;flex-direction:column;align-items:center">
+<button aria-label="Select Editor Status changes" style="width:380px;max-width:calc(100vw - 48px);text-align:left;background:#fff;border:1px solid #E3E3E3;border-radius:16px;box-shadow:0 1px 2px rgba(0,0,0,.04);color:#111;padding:14px 16px;display:flex;flex-direction:column;gap:10px">
+<span style="display:flex;align-items:center;gap:12px;width:100%">
+<span style="width:38px;height:38px;flex:none;border-radius:11px;background:#FFF4D6;display:flex;align-items:center;justify-content:center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8A5A00" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"></path></svg></span>
+<span style="display:flex;flex-direction:column;gap:2px;flex:1;min-width:0">
+<span style="font-size:12px;font-weight:600;color:#8A5A00">Trigger</span>
+<span style="font-weight:700;font-size:16px">Editor Status changes</span>
+</span>
+
+
+
+
+
+</span>
+<span style="font-size:14px;color:#555;line-height:1.45">An edit is in review or needs changes</span>
+
+<span style="display:flex;gap:6px;flex-wrap:wrap">
+<span style="background:#F5F5F5;border:1px solid #EAEAEA;border-radius:999px;padding:3px 9px;font-size:12px;font-weight:500;color:#444">Board</span>
+
+
+</span>
+</button>
+<span aria-hidden="true" style="width:1.5px;height:16px;background:#CFCFCF"></span>
+<button aria-label="Add a step after Editor Status changes" class="ss-h" style="width:34px;height:34px;border-radius:999px;background:#fff;border:1px solid #DADADA;color:#111;display:flex;align-items:center;justify-content:center"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
+<span aria-hidden="true" style="width:1.5px;height:16px;background:#CFCFCF"></span>
+</div>
+
+<div style="display:flex;flex-direction:column;align-items:center">
+<button aria-label="Select Get project" style="width:380px;max-width:calc(100vw - 48px);text-align:left;background:#fff;border:1px solid #E3E3E3;border-radius:16px;box-shadow:0 1px 2px rgba(0,0,0,.04);color:#111;padding:14px 16px;display:flex;flex-direction:column;gap:10px">
+<span style="display:flex;align-items:center;gap:12px;width:100%">
+<span style="width:38px;height:38px;flex:none;border-radius:11px;background:#EAF0FF;display:flex;align-items:center;justify-content:center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2449C7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3h7v9H3zM14 3h7v5h-7zM14 12h7v9h-7zM3 16h7v5H3z"></path></svg></span>
+<span style="display:flex;flex-direction:column;gap:2px;flex:1;min-width:0">
+<span style="font-size:12px;font-weight:600;color:#2449C7">Step 1 · Board</span>
+<span style="font-weight:700;font-size:16px">Get project</span>
+</span>
+
+
+
+
+
+</span>
+<span style="font-size:14px;color:#555;line-height:1.45">Title, stage, sponsor and review comments</span>
+
+<span style="display:flex;gap:6px;flex-wrap:wrap">
+<span style="background:#F5F5F5;border:1px solid #EAEAEA;border-radius:999px;padding:3px 9px;font-size:12px;font-weight:500;color:#444">Board</span>
+
+
+</span>
+</button>
+<span aria-hidden="true" style="width:1.5px;height:16px;background:#CFCFCF"></span>
+<button aria-label="Add a step after Get project" class="ss-h" style="width:34px;height:34px;border-radius:999px;background:#fff;border:1px solid #DADADA;color:#111;display:flex;align-items:center;justify-content:center"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
+<span aria-hidden="true" style="width:1.5px;height:16px;background:#CFCFCF"></span>
+</div>
+
+<div style="display:flex;flex-direction:column;align-items:center">
+<button aria-label="Select Sponsored video?" style="width:380px;max-width:calc(100vw - 48px);text-align:left;background:#fff;border:1px solid #E3E3E3;border-radius:16px;box-shadow:0 1px 2px rgba(0,0,0,.04);color:#111;padding:14px 16px;display:flex;flex-direction:column;gap:10px">
+<span style="display:flex;align-items:center;gap:12px;width:100%">
+<span style="width:38px;height:38px;flex:none;border-radius:11px;background:#FFEDE1;display:flex;align-items:center;justify-content:center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#B4470E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3v12M18 9a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM6 21a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM18 9a9 9 0 0 1-9 9"></path></svg></span>
+<span style="display:flex;flex-direction:column;gap:2px;flex:1;min-width:0">
+<span style="font-size:12px;font-weight:600;color:#B4470E">Step 2 · Logic</span>
+<span style="font-weight:700;font-size:16px">Sponsored video?</span>
+</span>
+
+
+
+
+
+</span>
+<span style="font-size:14px;color:#555;line-height:1.45">Sponsor edits get a second look</span>
+
+<span style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;width:100%">
+<span style="border-radius:10px;background:#E6F5EC;padding:8px 10px;display:flex;flex-direction:column;gap:2px"><span style="font-size:12px;font-weight:700;color:#1F7A45">If yes</span><span style="font-size:13px;color:#222">Notify producer in Slack</span></span>
+<span style="border-radius:10px;background:#F3F3F3;padding:8px 10px;display:flex;flex-direction:column;gap:2px"><span style="font-size:12px;font-weight:700;color:#555">If no</span><span style="font-size:13px;color:#222">Continue</span></span>
+</span>
+
+<span style="display:flex;gap:6px;flex-wrap:wrap">
+<span style="background:#F5F5F5;border:1px solid #EAEAEA;border-radius:999px;padding:3px 9px;font-size:12px;font-weight:500;color:#444">Logic</span>
+
+
+</span>
+</button>
+<span aria-hidden="true" style="width:1.5px;height:16px;background:#CFCFCF"></span>
+<button aria-label="Add a step after Sponsored video?" class="ss-h" style="width:34px;height:34px;border-radius:999px;background:#fff;border:1px solid #DADADA;color:#111;display:flex;align-items:center;justify-content:center"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
+<span aria-hidden="true" style="width:1.5px;height:16px;background:#CFCFCF"></span>
+</div>
+
+<div style="display:flex;flex-direction:column;align-items:center">
+<button aria-label="Select Summarize review notes" style="width:380px;max-width:calc(100vw - 48px);text-align:left;background:#fff;border:1px solid #E3E3E3;border-radius:16px;box-shadow:0 1px 2px rgba(0,0,0,.04);color:#111;padding:14px 16px;display:flex;flex-direction:column;gap:10px">
+<span style="display:flex;align-items:center;gap:12px;width:100%">
+<span style="width:38px;height:38px;flex:none;border-radius:11px;background:#F0EBFF;display:flex;align-items:center;justify-content:center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#5B3FC4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9L12 3z"></path></svg></span>
+<span style="display:flex;flex-direction:column;gap:2px;flex:1;min-width:0">
+<span style="font-size:12px;font-weight:600;color:#5B3FC4">Step 3 · Assistant</span>
+<span style="font-weight:700;font-size:16px">Summarize review notes</span>
+</span>
+
+
+
+
+
+</span>
+<span style="font-size:14px;color:#555;line-height:1.45">Numbered fix list, shortest first</span>
+
+<span style="display:flex;gap:6px;flex-wrap:wrap">
+<span style="background:#F5F5F5;border:1px solid #EAEAEA;border-radius:999px;padding:3px 9px;font-size:12px;font-weight:500;color:#444">Studio Assistant</span>
+
+
+</span>
+</button>
+<span aria-hidden="true" style="width:1.5px;height:16px;background:#CFCFCF"></span>
+<button aria-label="Add a step after Summarize review notes" class="ss-h" style="width:34px;height:34px;border-radius:999px;background:#fff;border:1px solid #DADADA;color:#111;display:flex;align-items:center;justify-content:center"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
+<span aria-hidden="true" style="width:1.5px;height:16px;background:#CFCFCF"></span>
+</div>
+
+<div style="display:flex;flex-direction:column;align-items:center">
+<button aria-label="Select Approval" style="width:380px;max-width:calc(100vw - 48px);text-align:left;background:#fff;border:1px solid #E3E3E3;border-radius:16px;box-shadow:0 1px 2px rgba(0,0,0,.04);color:#111;padding:14px 16px;display:flex;flex-direction:column;gap:10px">
+<span style="display:flex;align-items:center;gap:12px;width:100%">
+<span style="width:38px;height:38px;flex:none;border-radius:11px;background:#F1F1F1;display:flex;align-items:center;justify-content:center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#444444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM16 11l2 2 4-4"></path></svg></span>
+<span style="display:flex;flex-direction:column;gap:2px;flex:1;min-width:0">
+<span style="font-size:12px;font-weight:600;color:#444444">Step 4 · Approval</span>
+<span style="font-weight:700;font-size:16px">Approval</span>
+</span>
+
+
+
+
+
+</span>
+<span style="font-size:14px;color:#555;line-height:1.45">Super Admin checks the list first</span>
+
+<span style="display:flex;gap:6px;flex-wrap:wrap">
+<span style="background:#F5F5F5;border:1px solid #EAEAEA;border-radius:999px;padding:3px 9px;font-size:12px;font-weight:500;color:#444">Team</span>
+
+
+</span>
+</button>
+<span aria-hidden="true" style="width:1.5px;height:16px;background:#CFCFCF"></span>
+<button aria-label="Add a step after Approval" class="ss-h" style="width:34px;height:34px;border-radius:999px;background:#fff;border:1px solid #DADADA;color:#111;display:flex;align-items:center;justify-content:center"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
+<span aria-hidden="true" style="width:1.5px;height:16px;background:#CFCFCF"></span>
+</div>
+
+<div style="display:flex;flex-direction:column;align-items:center">
+<button aria-label="Select Notify editor in Slack" style="width:380px;max-width:calc(100vw - 48px);text-align:left;background:#fff;border:2px solid #2F5BEA;border-radius:16px;box-shadow:0 0 0 4px rgba(47,91,234,.14);color:#111;padding:14px 16px;display:flex;flex-direction:column;gap:10px">
+<span style="display:flex;align-items:center;gap:12px;width:100%">
+<span style="width:38px;height:38px;flex:none;border-radius:11px;background:#E6F5EC;display:flex;align-items:center;justify-content:center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1F7A45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 2 11 13M22 2l-7 20-4-9-9-4 20-7z"></path></svg></span>
+<span style="display:flex;flex-direction:column;gap:2px;flex:1;min-width:0">
+<span style="font-size:12px;font-weight:600;color:#1F7A45">Step 5 · Action</span>
+<span style="font-weight:700;font-size:16px">Notify editor in Slack</span>
+</span>
+<span style="flex:none;display:flex;align-items:center;gap:4px;background:#FFF4D6;color:#7A5300;border-radius:999px;padding:4px 9px;font-size:12px;font-weight:600"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg>Needs setup</span>
+
+
+
+
+</span>
+<span style="font-size:14px;color:#555;line-height:1.45">Sends the fix list to the editor</span>
+
+<span style="display:flex;gap:6px;flex-wrap:wrap">
+<span style="background:#F5F5F5;border:1px solid #EAEAEA;border-radius:999px;padding:3px 9px;font-size:12px;font-weight:500;color:#444">Slack</span>
+<span style="display:flex;align-items:center;gap:5px;background:#fff;border:1px solid #EAEAEA;border-radius:999px;padding:3px 9px;font-size:12px;font-weight:500;color:#7A5300"><span style="width:6px;height:6px;border-radius:999px;background:#C9A227" aria-hidden="true"></span>Not connected</span>
+
+</span>
+</button>
+<span aria-hidden="true" style="width:1.5px;height:16px;background:#CFCFCF"></span>
+<button aria-label="Add a step after Notify editor in Slack" class="ss-h" style="width:34px;height:34px;border-radius:999px;background:#fff;border:1px solid #DADADA;color:#111;display:flex;align-items:center;justify-content:center"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
+<span aria-hidden="true" style="width:1.5px;height:16px;background:#CFCFCF"></span>
+</div>
+
+<div style="background:#EDEDED;border-radius:999px;padding:6px 14px;font-size:13px;font-weight:600;color:#444">End</div>
+</div>
+<div style="position:sticky;left:12px;bottom:12px;float:left;margin:-48px 0 0 12px;background:#fff;border:1px solid #E6E6E6;border-radius:10px;padding:7px 12px;font-size:13px;color:#444;font-weight:500">5 steps · 1 to fix</div>
+</main>
+
+<aside class="ss-right ss-sc" aria-label="Step settings" style="width:340px;flex:none;background:#fff;border-radius:16px;overflow:auto;display:flex;flex-direction:column">
+<div style="padding:18px;border-bottom:1px solid #EDEDED;display:flex;gap:12px;align-items:flex-start">
+<span style="width:42px;height:42px;flex:none;border-radius:12px;background:#E6F5EC;display:flex;align-items:center;justify-content:center"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#1F7A45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 2 11 13M22 2l-7 20-4-9-9-4 20-7z"></path></svg></span>
+<div style="display:flex;flex-direction:column;gap:2px;min-width:0">
+<div style="font-size:12px;font-weight:600;color:#1F7A45">Step 5 · Action</div>
+<h2 style="margin:0;font-size:18px;font-weight:700">Notify editor in Slack</h2>
+<div style="font-size:13px;color:#666">Slack</div>
+</div>
+</div>
+<div style="padding:18px;display:flex;flex-direction:column;gap:16px">
+
+<div style="background:#FFF8E6;border:1px solid #F2DDA2;border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:10px">
+<div style="font-size:14px;color:#3D2C00">Slack is not connected. This step fails until it is.</div>
+<button class="ss-k" style="height:42px;border-radius:10px;background:#111;color:#fff;border:0;font-weight:600;font-size:14px">Connect Slack</button>
+<a href="Santos-Connectors.dc.html" style="min-height:36px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;color:#2F5BEA">Manage all connectors</a>
+</div>
+
+
+
+
+
+<div style="display:flex;flex-direction:column;gap:6px">
+<label for="f-n5-0" style="font-size:14px;font-weight:600">To<span style="color:#B42318"> *</span></label>
+<div style="min-height:44px;display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:6px 8px;border-radius:12px;background:#fff;border:1.5px solid #2F5BEA">
+<input id="f-n5-0" value="" placeholder="" style="flex:1 1 110px;min-width:0;height:30px;background:transparent;border:0;color:#111;padding:0 4px;font-family:inherit;font-size:14px">
+<span style="display:inline-flex;align-items:center;gap:2px;height:28px;padding:0 2px 0 10px;border-radius:999px;background:#EAF0FF;color:#2449C7;font-size:13px;font-weight:600;white-space:nowrap">Editor in Slack<button aria-label="Remove Editor in Slack" style="width:24px;height:24px;border-radius:999px;background:transparent;border:0;color:#2449C7;display:flex;align-items:center;justify-content:center"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></button></span>
+</div>
+
+</div>
+
+<div style="display:flex;flex-direction:column;gap:6px">
+<label for="f-n5-1" style="font-size:14px;font-weight:600">Message<span style="color:#B42318"> *</span></label>
+<div style="min-height:44px;display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:6px 8px;border-radius:12px;background:#fff;border:1.5px solid #E3E3E3">
+<input id="f-n5-1" value="" placeholder="" style="flex:1 1 110px;min-width:0;height:30px;background:transparent;border:0;color:#111;padding:0 4px;font-family:inherit;font-size:14px">
+<span style="display:inline-flex;align-items:center;gap:2px;height:28px;padding:0 2px 0 10px;border-radius:999px;background:#EAF0FF;color:#2449C7;font-size:13px;font-weight:600;white-space:nowrap">Fix list<button aria-label="Remove Fix list" style="width:24px;height:24px;border-radius:999px;background:transparent;border:0;color:#2449C7;display:flex;align-items:center;justify-content:center"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></button></span>
+</div>
+
+</div>
+
+<div style="display:flex;flex-direction:column;gap:8px">
+<div style="font-size:13px;font-weight:600;color:#444">Add data to To</div>
+<div style="display:flex;flex-wrap:wrap;gap:6px">
+<button class="ss-h" style="min-height:34px;padding:0 12px 0 9px;border-radius:999px;background:#F5F7FF;border:1px solid #DCE3FB;color:#2449C7;font-weight:600;font-size:13px;display:flex;align-items:center;gap:6px"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Project title</button><button class="ss-h" style="min-height:34px;padding:0 12px 0 9px;border-radius:999px;background:#F5F7FF;border:1px solid #DCE3FB;color:#2449C7;font-weight:600;font-size:13px;display:flex;align-items:center;gap:6px"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Project stage</button><button class="ss-h" style="min-height:34px;padding:0 12px 0 9px;border-radius:999px;background:#F5F7FF;border:1px solid #DCE3FB;color:#2449C7;font-weight:600;font-size:13px;display:flex;align-items:center;gap:6px"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Editor name</button><button class="ss-h" style="min-height:34px;padding:0 12px 0 9px;border-radius:999px;background:#F5F7FF;border:1px solid #DCE3FB;color:#2449C7;font-weight:600;font-size:13px;display:flex;align-items:center;gap:6px"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Editor in Slack</button><button class="ss-h" style="min-height:34px;padding:0 12px 0 9px;border-radius:999px;background:#F5F7FF;border:1px solid #DCE3FB;color:#2449C7;font-weight:600;font-size:13px;display:flex;align-items:center;gap:6px"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Fix list</button>
+</div>
+</div>
+<div style="border:1px solid #EDEDED;border-radius:12px;overflow:hidden">
+<button aria-expanded="false" class="ss-h" style="width:100%;height:44px;display:flex;justify-content:space-between;align-items:center;padding:0 12px;background:#fff;border:0;color:#111;font-weight:600;font-size:14px">Sample output<span style="color:#666;font-weight:500">Show</span></button>
+
+</div>
+
+<div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px">
+<button class="ss-h" style="height:42px;border-radius:10px;background:#fff;border:1px solid #E0E0E0;color:#111;font-weight:600;font-size:14px">Duplicate</button>
+<button class="ss-h" style="height:42px;border-radius:10px;background:#fff;border:1px solid #F1C4C4;color:#B42318;font-weight:600;font-size:14px">Delete</button>
+</div>
+
+</div>
+</aside>
+</div>
+
+<div role="group" aria-label="Zoom" style="position:absolute;right:372px;bottom:28px;z-index:5;display:flex;flex-direction:column;align-items:center;background:#fff;border:1px solid #E6E6E6;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.06)">
+<button aria-label="Zoom in" class="ss-h" style="width:40px;height:38px;border-radius:12px 12px 0 0;background:transparent;border:0;color:#111;font-size:18px">+</button>
+<span style="font-size:12px;font-weight:600;padding:4px 0">100%</span>
+<button aria-label="Zoom out" class="ss-h" style="width:40px;height:38px;background:transparent;border:0;color:#111;font-size:18px">−</button>
+<button aria-label="Reset zoom" class="ss-h" style="width:40px;height:38px;border-radius:0 0 12px 12px;background:transparent;border:0;border-top:1px solid #EDEDED;color:#111;display:flex;align-items:center;justify-content:center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M8 3H3v5M21 8V3h-5M16 21h5v-5M3 16v5h5"/></svg></button>
+</div>
+
+
+
+
+
+
+
+
+
+
+</div>
+</body>
+</html>

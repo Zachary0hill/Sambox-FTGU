@@ -46,7 +46,7 @@ test('the capture form reads its lists from Rules', () => {
 });
 
 test('score labels and Top scored follow the Rules thresholds', () => {
-  const count = (ids) => ids.views.find((v) => v.label === 'Top scored').count;
+  const count = (ids) => ids.tb.views.rows.find((v) => v.label === 'Top scored').count;
   assert.equal(count(page('admin', { recommendation: { pursue: 80, park: 45 } }, [7, 7, 7])), '0');
   assert.equal(count(page('admin', { recommendation: { pursue: 70, park: 45 } }, [7, 7, 7])), '1');
 });
@@ -67,8 +67,8 @@ test('the checklist ticks each Ready requirement live', () => {
 test('a forward move names everything missing and checks each stage passed', () => {
   const { stageBlocker } = gates();
   const rules = rulesWith(['notes', 'cover'], ['source']);
-  assert.equal(stageBlocker({ body: [], refs: [] }, 'Inbox', 'Research', rules), "Can't move to Research yet. Still needed: At least one source.");
-  assert.equal(stageBlocker({ body: [], refs: ['x'] }, 'Inbox', 'Ready', rules), "Can't move to Ready yet. Still needed: Notes written, Cover image set.");
+  assert.equal(stageBlocker({ body: [], refs: [] }, 'Inbox', 'Research', rules), "Can't move to In Development yet. Still needed: At least one source.");
+  assert.equal(stageBlocker({ body: [], refs: ['x'] }, 'Inbox', 'Ready', rules), "Can't send to review yet. Still needed: Notes written, Cover image set.");
   assert.equal(stageBlocker({ body: ['n'], refs: ['x'], coverPath: 'p' }, 'Inbox', 'Ready', rules), '');
 });
 
@@ -93,15 +93,20 @@ test('unknown gate fields and an empty target list are refused', () => {
   assert.equal(validateIdeasRules({ conversion_targets: [] }).ok, false);
 });
 
-function browse(s2, ideasOver) {
-  const f = fixture('admin');
+function browse(s2, ideasOver, lanes, role) {
+  const f = fixture(role || 'admin');
+  f.D.ideaLanes = lanes || [];
   f.A = new Proxy({ ideaHistory: () => [], loadPreviews: () => {} }, { get: (t, k) => t[k] || (() => {}) });
   f.D.brands = [{ id: 'b', name: 'Brand', kind: 'channel' }];
   f.D.ideaRules = shared().normalizeIdeasRules(null);
   const base = { brand: 'Brand', brandId: 'b', type: 'Idea', by: 'T', byId: 'user', date: '', hook: 'Hook', body: [], tags: [], refs: [], findings: [], at: '2026-11-01T00:00:00Z', updatedAt: '2026-11-02T00:00:00Z', format: '', pillar: '', audience: '', promise: '', platforms: [], ice: [null, null, null], priority: 3, effort: '', ownerId: 'user', owner: 'T', window: '', sponsorId: '', source: 'manual', researchRunId: '', projectId: '', script: null, coverMode: 'hook', coverPath: '', coverUrl: '', focal: [50, 50], highlight: '#FFE14D', hookPos: 'bottom', comments: [], hist: [], converted: [], run: null, research: null };
   f.D.ideas = ideasOver.map((x) => ({ ...base, stage: x.status, ...x }));
   Object.assign(f.s, { nav: 'ideas', iLayout: 'list' }, s2);
-  return loader()('lib/studio/vals.js').computeVals(f).ids;
+  const writes = [];
+  f.A = new Proxy({ ideaHistory: () => [], loadPreviews: () => {}, updateIdea: (i, p, text) => { writes.push({ id: i.id, p, text }); return Promise.resolve(true); } }, { get: (t, k) => t[k] || (() => {}) });
+  const ids = loader()('lib/studio/vals.js').computeVals(f).ids;
+  ids.writes = writes;
+  return ids;
 }
 const scoredResearch = (total) => ({ summary: 's', findings: [], next_steps: [], generated_at: '', sources: [{ title: 'A', url: 'https://a.com', snippet: '' }], score: { total, ai_total: total, overridden: false, by: {} } });
 const sample = [
@@ -110,20 +115,36 @@ const sample = [
   { id: 'c', title: 'C', status: 'Archived' },
 ];
 
-test('stage tabs count each stage and archived ideas stay out of them', () => {
+test('status tabs count each stage and archived ideas stay out of them', () => {
   const ids = browse({}, sample);
-  assert.deepEqual(ids.tabs.map((t) => [t.label, t.count]), [['All', '2'], ['Inbox', '1'], ['Research', '0'], ['Ready', '1'], ['Approved', '0']]);
-  assert.deepEqual(ids.stats.slice(0, 4).map((c) => c.value), ['1', '0', '1', '0']);
-  assert.ok(!ids.views.some((v) => v.label === 'Archived'));
+  assert.deepEqual(ids.tb.status.options.map((t) => [t.label, t.count]), [['All', '2'], ['Inbox', '1'], ['Development', '0'], ['Review', '1'], ['Approved', '0']]);
+  assert.equal(ids.tb.views.rows.find((v) => v.label === 'Archived').count, '1');
+  assert.equal(ids.tb.views.rows.find((v) => v.label === 'Parked').count, '0');
 });
 
-test('platform, owner, score and recommendation filters narrow the list', () => {
+test('origin, owner, score and run filters narrow the list, and Parked lists archived ideas', () => {
   const titles = (s2) => browse(s2, sample).cards.map((c) => c.title);
-  assert.deepEqual(titles({ iPlatform: 'TikTok' }), ['A']);
-  assert.deepEqual(titles({ iOwner: 'u1' }), ['A']);
-  assert.deepEqual(titles({ iScore: 'high' }), ['B']);
-  assert.deepEqual(titles({ iScore: 'none' }), ['A']);
-  assert.deepEqual(titles({ iRec: 'pursue' }), ['B']);
+  assert.deepEqual(titles({ iF: { owner: ['u1'] } }), ['A']);
+  assert.deepEqual(titles({ iF: { score: ['high'] } }), ['B']);
+  assert.deepEqual(titles({ iF: { score: ['none'] } }), ['A']);
+  assert.deepEqual(titles({ iF: { score: ['high', 'none'] }, iSort: 'title' }), ['A', 'B']);
+  assert.deepEqual(titles({ iF: { origin: ['ai'] } }), []);
+  assert.deepEqual(titles({ iF: { run: ['none'] }, iSort: 'title' }), ['A', 'B']);
+  assert.deepEqual(titles({ iView: 'archived' }), ['C']);
+  assert.deepEqual(titles({ iView: 'parked' }), []);
+  const tb = browse({ iF: { score: ['high'] } }, sample).tb;
+  assert.equal(tb.filters.count, 1);
+  assert.deepEqual(tb.filters.chips.map((c) => [c.group, c.value]), [['Score', '70+']]);
+  assert.equal(tb.views.edited, true);
+});
+
+test('the board puts each idea in its workflow lane', () => {
+  const ids = browse({ iLayout: 'board' }, sample);
+  assert.deepEqual(ids.board.lanes.map((l) => [l.label, l.count]), [['Idea Inbox', '1'], ['In Development', '0'], ['Ready for Review', '1'], ['Approved', '0']]);
+  const review = ids.board.lanes[2].cards[0];
+  assert.equal(review.review, true);
+  assert.equal(review.score, '82 · Pursue');
+  assert.equal(ids.board.lanes[0].cards[0].moveLabel, 'Move A to In Development');
 });
 
 test('sort offers Newest and Stale first, and cards carry the recommendation', () => {
@@ -157,4 +178,47 @@ test('C captures, slash searches, and typing in a field is left alone', () => {
   assert.equal(ids.hotkey(ev('c', { tagName: 'INPUT' })), false);
   assert.equal(patch, null);
   delete global.document;
+});
+
+const lanes = [{ id: 'h', kind: 'hold', label: 'On Hold', color: 'blue', position: 0 }, { id: 'k', kind: 'custom', label: 'Shoot list', color: 'violet', position: 1 }];
+const laned = sample.concat([
+  { id: 'd', title: 'D', status: 'Research', boardColumnId: 'h' },
+  { id: 'e', title: 'E', status: 'Inbox', parkedAt: '2026-11-18T00:00:00Z' },
+]);
+
+test('side lanes follow the stages, On Hold starts collapsed, and an idea in one leaves its stage lane', () => {
+  const ids = browse({ iLayout: 'board' }, laned, lanes);
+  assert.deepEqual(ids.board.lanes.map((l) => [l.label, l.count, l.shut]), [['Idea Inbox', '1', false], ['In Development', '0', false], ['Ready for Review', '1', false], ['Approved', '0', false], ['On Hold', '1', true], ['Shoot list', '0', false]]);
+  assert.deepEqual(ids.tb.status.options.map((t) => t.count), ['3', '1', '0', '1', '0']);
+  assert.equal(ids.tb.views.rows.find((v) => v.label === 'Parked').count, '1');
+  assert.ok(ids.board.addCol, 'a Super Admin can add a column');
+  assert.equal(ids.board.lanes[5].note, 'Deleting moves its cards to On Hold.');
+  assert.equal(ids.board.lanes[4].note, 'Deleting moves its cards to their stage lanes.');
+  assert.equal(browse({ iLayout: 'board' }, laned, lanes, 'editor').board.addCol, null);
+});
+
+test('moves place ideas in side lanes, Parked, or back on a stage, each with an Undo', () => {
+  const ids = browse({ iLayout: 'board' }, laned, lanes);
+  ids.board.lanes[0].onDrop({ preventDefault() {}, dataTransfer: { getData: () => 'a' } });
+  ids.board.lanes[5].onDrop({ preventDefault() {}, dataTransfer: { getData: () => 'a' } });
+  ids.board.lanes[1].onDrop({ preventDefault() {}, dataTransfer: { getData: () => 'd' } });
+  ids.board.lanes[2].cards[0].park();
+  assert.deepEqual(ids.writes.map((w) => [w.id, w.p]), [
+    ['a', { boardColumnId: 'k', parkedAt: '' }],
+    ['d', { boardColumnId: '' }],
+    ['b', { parkedAt: ids.writes[2].p.parkedAt, boardColumnId: '' }],
+  ]);
+  assert.ok(ids.writes[2].p.parkedAt, 'parking stamps the time');
+});
+
+test('a parked idea moves back to In Development, and an idea on hold resumes from the dialog', () => {
+  const parked = browse({ iLayout: 'board', iView: 'parked' }, laned, lanes);
+  assert.deepEqual(parked.board.lanes.map((l) => [l.label, l.count]), [['Parked', '1']]);
+  parked.board.lanes[0].cards[0].unpark();
+  assert.deepEqual(parked.writes[0].p, { parkedAt: '', boardColumnId: '', status: 'Research' });
+  const held = browse({ iLayout: 'board', ideaOpen: 'd' }, laned, lanes);
+  assert.equal(held.sel.laneLabel, 'On Hold');
+  assert.equal(held.sel.extraChip, 'On Hold');
+  assert.deepEqual(held.sel.foot.map((b) => b.label), ['Resume development']);
+  assert.deepEqual(held.sel.actions.map((a) => a.label), ['Edit', 'Duplicate', 'Park', 'Archive']);
 });

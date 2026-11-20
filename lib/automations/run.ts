@@ -7,7 +7,8 @@ import { postSlackAlert } from '@/lib/integrations/providers/slack';
 import { postN8n } from '@/lib/integrations/providers/n8n';
 import { publishProjectToBuffer, PublishSetupError } from '@/lib/integrations/buffer-publish';
 import { actionById, actionsOf, scopeOf, triggerOf, triggerText } from './catalog';
-import { isGraph, graphOf, fillTokens, delayText, FIELDS, type Node, type Crit } from './graph';
+import { isGraph, graphOf, fillTokens, delayText, cannotRunYet, matchPath, matchFilters, type Node, type RuleValues } from './graph';
+import { lastSlot } from './schedule';
 
 // The automation runner. Database triggers queue automation_runs rows when a live workflow's trigger fires; each tick
 // (the board after a change, and a scheduler with CRON_SECRET) queues scheduled triggers, claims due runs, performs
@@ -32,9 +33,28 @@ type Run = {
   payload: Record<string, unknown> | null; output: Output | null; attempts: number; is_test: boolean;
 };
 // waitClaims: claims spent resuming from delays since the last manual retry; tries leave them out.
-type Output = { done?: string[]; steps?: Step[]; waited?: string[]; waitClaims?: number; paths?: Record<string, string>; waiting?: boolean };
-type Step = { id?: string; action: string; ok: boolean; detail: string };
-type Automation = { id: string; workspace_id: string; name: string; enabled: boolean; is_draft: boolean; trigger: Record<string, string>; actions: unknown; flow: unknown; run_count: number };
+// log: what happened, in order, with times (the run detail page's Run log).
+type Output = { done?: string[]; steps?: Step[]; waited?: string[]; waitClaims?: number; paths?: Record<string, string>; waiting?: boolean; log?: LogLine[];
+  approval?: PendingApproval | null; approvals?: Record<string, Decision>; overrides?: Record<string, string> };
+// at and ms: when the step finished and how long it took. received: what it was given, as label and value pairs.
+type Step = { id?: string; action: string; ok: boolean; detail: string; at?: string; ms?: number; received?: [string, string][] };
+type LogLine = { at: string; text: string; level?: 'error' };
+// An approval step waiting on a Super Admin (output.approval), and the decisions made (output.approvals by step id).
+// draft: what the step after the approval will send; an edited body is kept in output.overrides by that step's id.
+export type PendingApproval = {
+  stepId: string; title: string; askedAt: string; expiresAt: string | null; reason: string; after: string;
+  draft: { stepId: string; to: string; subject: string; body: string } | null; context: [string, string][];
+};
+type Decision = { decision: 'approved' | 'rejected'; by: string; byId: string; at: string };
+const RECIPIENT: Record<string, string> = {
+  slack_admin: 'Super Admin Slack channel', todo_admin: 'Super Admins, in their Inbox', webhook_n8n: 'Your n8n workflow', buffer_publish: 'The Buffer channels chosen on the project',
+  idea_email_owner: 'The idea owner', idea_todo_owner: 'The idea owner, in their Inbox',
+};
+type Automation = { id: string; workspace_id: string; name: string; enabled: boolean; is_draft: boolean; trigger: Record<string, string>; actions: unknown; flow: unknown; run_count: number; updated_at?: string };
+// Per-workflow run settings (the builder's Workflow settings, stored in the graph). A workflow without them keeps
+// the workspace rules: three tries 5 and 10 minutes apart, then an alert to the Super Admins.
+type FlowSettings = { retries?: number; retryWait?: string; alert?: string[]; autoOffAfter?: number; oneAtATime?: boolean; perHour?: number };
+const WAIT_MIN: Record<string, number> = { '1m': 1, '5m': 5, '15m': 15 };
 type Settings = { workspace_id: string; automation: { paused?: boolean; retry?: boolean; failAlert?: boolean } | null; timezone: string };
 type Project = {
   id: string; workspace_id: string; title: string; job_code: string; status_id: string; publish_date: string | null; archived_at: string | null;
@@ -70,6 +90,8 @@ export async function runAutomations(opts: { workspaceId: string | null; baseUrl
   if (ideaSched.error && ideaSched.error.code !== 'PGRST202') throw new Error(ideaSched.error.message);
   out.scheduled += Number(ideaSched.data) || 0;
 
+  out.scheduled += await queueSchedules(opts.workspaceId);
+
   const claim = await admin.rpc('claim_automation_runs', { p_ws: opts.workspaceId, p_limit: opts.limit ?? 25 });
   if (claim.error) throw new Error(claim.error.message);
   const runs = (claim.data || []) as Run[];
@@ -80,6 +102,59 @@ export async function runAutomations(opts: { workspaceId: string | null; baseUrl
   const pr = await admin.rpc('prune_automation_runs', { p_ws: opts.workspaceId });
   if (!pr.error) out.pruned = Number(pr.data) || 0;
   return out;
+}
+
+// Schedule triggers (schedule.ts): one run for the latest slot that has passed since the workflow last changed, once
+// (the dedupe key is the slot). Nothing queues while Pause all automations is on.
+async function queueSchedules(workspaceId: string | null) {
+  const admin = supabaseAdmin();
+  let q = admin.from('automations').select('id, workspace_id, trigger, updated_at').eq('enabled', true).eq('is_draft', false).eq('trigger->>key', 'schedule');
+  if (workspaceId) q = q.eq('workspace_id', workspaceId);
+  const list = await q;
+  if (list.error || !list.data || !list.data.length) return 0;
+  const wsIds = Array.from(new Set(list.data.map((a) => a.workspace_id as string)));
+  const st = await admin.from('workspace_settings').select('workspace_id, automation, timezone').in('workspace_id', wsIds);
+  const byWs: Record<string, Settings> = {};
+  ((st.data || []) as Settings[]).forEach((x) => { byWs[x.workspace_id] = x; });
+  let n = 0;
+  for (const a of list.data) {
+    const set = byWs[a.workspace_id as string];
+    if (set && set.automation && set.automation.paused) continue;
+    const trig = (a.trigger || {}) as Record<string, string>;
+    const slot = lastSlot(trig.value || '', trig.tz || (set && set.timezone) || 'America/Chicago');
+    // Only slots since the workflow was last saved or turned on, and no older than a day.
+    if (!slot || slot <= new Date(a.updated_at as string).getTime() || Date.now() - slot > 86400000) continue;
+    const ins = await admin.from('automation_runs').insert({
+      automation_id: a.id, workspace_id: a.workspace_id, trigger_key: 'schedule', status: 'queued',
+      payload: { value: trig.value, slot: new Date(slot).toISOString() }, dedupe_key: a.id + ':sched:' + slot,
+    });
+    if (!ins.error) n++;
+    else if (ins.error.code !== '23505') console.warn('schedule', ins.error.message);
+  }
+  return n;
+}
+
+// Webhook triggers (app/api/webhooks/automations/[token]): queues one run for the live workflow with this address.
+// project: an optional job code or project id from the request body, so project steps have something to act on.
+export async function queueWebhookRun(token: string, key: string | null, body: Record<string, unknown>) {
+  const admin = supabaseAdmin();
+  const found = await admin.from('automations').select('id, workspace_id, name, enabled, is_draft, trigger').eq('trigger->>key', 'webhook').eq('trigger->>value', token).maybeSingle();
+  if (found.error || !found.data) return { status: 404 as const, error: 'No workflow uses this address. Save the trigger, then try again.' };
+  const a = found.data;
+  const secret = ((a.trigger || {}) as Record<string, string>).secret || '';
+  if (secret && key !== secret) return { status: 401 as const, error: 'This workflow needs its secret key in the x-workflow-key header.' };
+  const live = a.enabled && !a.is_draft;
+  if (body.test === true || !live) return { status: 200 as const, workflow: a.name as string, live, queued: false, workspaceId: a.workspace_id as string };
+  let projectId: string | null = null;
+  const ref = typeof body.project === 'string' ? body.project.trim() : '';
+  if (ref) {
+    const isId = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(ref);
+    const pr = await admin.from('projects').select('id').eq('workspace_id', a.workspace_id).eq(isId ? 'id' : 'job_code', ref).maybeSingle();
+    projectId = pr.data ? (pr.data.id as string) : null;
+  }
+  const ins = await admin.from('automation_runs').insert({ automation_id: a.id, workspace_id: a.workspace_id, project_id: projectId, trigger_key: 'webhook', status: 'queued', payload: { body: JSON.parse(JSON.stringify(body).slice(0, 8000) || '{}') } });
+  if (ins.error) return { status: 500 as const, error: 'The run could not be queued.' };
+  return { status: 200 as const, workflow: a.name as string, live, queued: true, workspaceId: a.workspace_id as string };
 }
 
 // A Test run: the workflow's actions on a sample project (the most recently created), described but not performed.
@@ -135,12 +210,26 @@ async function executeRun(r: Run, baseUrl: string, draft?: ReturnType<typeof gra
   const graph = draft || (isGraph(a.flow) ? graphOf(a) : null);
   if (graph && graph.kind !== 'automation') { await finish('skipped', { error: 'Processes and ideas do not run.' }); return 'skipped'; }
 
+  const fs: FlowSettings | null = graph && graph.settings ? (graph.settings as FlowSettings) : null;
+  // Run limits (Workflow settings): wait in line behind a run of the same workflow, or for the hour's allowance.
+  if (!r.is_test && fs && (fs.oneAtATime || (fs.perHour || 0) > 0)) {
+    const hold = async (minutes: number) => { await finish('retry', { next_attempt_at: new Date(Date.now() + minutes * 60000).toISOString(), attempts: Math.max(0, r.attempts - 1), error: null }); return 'waiting' as const; };
+    if (fs.oneAtATime) {
+      const busy = await admin.from('automation_runs').select('id', { count: 'exact', head: true }).eq('automation_id', a.id).eq('status', 'running').eq('is_test', false).neq('id', r.id);
+      if ((busy.count || 0) > 0) return hold(1);
+    }
+    if ((fs.perHour || 0) > 0) {
+      const hour = await admin.from('automation_runs').select('id', { count: 'exact', head: true }).eq('automation_id', a.id).eq('is_test', false).in('status', ['done', 'failed']).gte('finished_at', new Date(Date.now() - 3600000).toISOString());
+      if ((hour.count || 0) >= (fs.perHour || 0)) return hold(10);
+    }
+  }
+
   const idea = r.idea_id ? ((await admin.from('ideas').select('id, workspace_id, title, stage, owner_id, author_id, archived_at, research').eq('id', r.idea_id).maybeSingle()).data as Idea | null) : null;
   const p = r.project_id ? ((await admin.from('projects').select('id, workspace_id, title, job_code, status_id, publish_date, archived_at, channel_id, content_type_id').eq('id', r.project_id).maybeSingle()).data as Project | null) : null;
   const statuses = ((await admin.from('project_statuses').select('id, label, sort').eq('workspace_id', r.workspace_id).order('sort')).data || []) as { id: string; label: string; sort: number }[];
   const statusName = (id: string | null | undefined) => (statuses.find((x) => x.id === id) || { label: '' }).label;
   const trig = graph && r.is_test ? { key: graph.trigger.key, value: graph.trigger.value } : triggerOf(a.trigger);
-  const why = triggerText(trig.key, trig.value);
+  const why = triggerText(trig.key, trig.value, statusName);
   const base = baseUrl.replace(/\/+$/, '');
   const onIdea = scopeOf(trig.key) === 'idea';
   const link = idea ? base + '/ideas?idea=' + encodeURIComponent(idea.id) : onIdea ? base + '/ideas' : p ? base + '/projects?project=' + encodeURIComponent(p.job_code) : base + '/projects';
@@ -156,6 +245,13 @@ async function executeRun(r: Run, baseUrl: string, draft?: ReturnType<typeof gra
     'idea.title': idea ? idea.title : '', 'idea.stage': idea ? STAGE_LABEL[idea.stage] || idea.stage : '', 'idea.score': score, 'idea.link': idea ? link : '',
   };
   const ctx: Ctx = { r, a, p, idea, onIdea, statuses, statusName, why, link, base, subject, workspace, test: r.is_test, tokens };
+  const values = valuesOf(p, facts, statusName);
+  // The trigger's "Only when" rules: a run whose project does not fit them stops before any step.
+  const filters = graph ? graph.trigger.filters : undefined;
+  if (!r.is_test && filters && filters.length && !matchFilters(filters, values)) {
+    await finish('skipped', { error: 'The trigger’s Only when rules did not match' + (p ? ' ' + p.title : '') + '.', output: { trigger: why, project: p ? { id: p.id, job: p.job_code, title: p.title } : null } });
+    return 'skipped';
+  }
 
   const prev = r.output || {};
   const prior = prev.done || [];
@@ -165,9 +261,18 @@ async function executeRun(r: Run, baseUrl: string, draft?: ReturnType<typeof gra
   const paths = { ...(prev.paths || {}) };
   let failure: Error | null = null;
   let waitMs = 0;
+  let ask: PendingApproval | null = null; // an approval step the run stops at
+  let rejected = '';                      // why the run stops for good at an approval step
+  const decisions = prev.approvals || {};
+  const overrides = prev.overrides || {};
+  const log: LogLine[] = (prev.log || []).slice(-150);
+  const note = (text: string, level?: 'error') => { log.push({ at: new Date().toISOString(), text, ...(level ? { level } : {}) }); };
+  note((r.is_test ? 'Test started' : r.attempts > 1 ? 'Try ' + r.attempts + ' started' : 'Run started') + ': ' + why + (p || idea ? ' on ' + subject : ''));
   // One step: runs once, recorded under id (node id for flows, action key for older workflows).
-  const step = async (id: string, action: string, fn: () => Promise<string>) => {
+  const step = async (id: string, action: string, fn: () => Promise<string>, received?: [string, string][]) => {
     if (done.includes(id)) return true;
+    const t0 = Date.now();
+    const stamp = () => ({ at: new Date().toISOString(), ms: Date.now() - t0, ...(received && received.length ? { received } : {}) });
     try {
       if (!r.is_test) {
         const claim = await admin.from('automation_effects').insert({ run_id: r.id, step_id: id, status: 'started' });
@@ -175,7 +280,7 @@ async function executeRun(r: Run, baseUrl: string, draft?: ReturnType<typeof gra
           if (claim.error.code !== '23505') throw new Permanent('Could not reserve this step: ' + claim.error.message);
           const priorEffect = await admin.from('automation_effects').select('status,detail').eq('run_id', r.id).eq('step_id', id).single();
           if (priorEffect.error || priorEffect.data?.status !== 'done') throw new Uncertain('This step may already have taken effect. Check the destination before creating a new run; automatic replay is held to prevent duplicates.');
-          steps.push({ id, action, ok: true, detail: priorEffect.data.detail || 'Completed previously.' });
+          steps.push({ id, action, ok: true, detail: priorEffect.data.detail || 'Completed previously.', ...stamp() });
           done.push(id);
           return true;
         }
@@ -185,9 +290,10 @@ async function executeRun(r: Run, baseUrl: string, draft?: ReturnType<typeof gra
         const saved = await admin.from('automation_effects').update({ status: 'done', detail, updated_at: new Date().toISOString() }).eq('run_id', r.id).eq('step_id', id);
         if (saved.error) throw new Uncertain('The action ran, but its confirmation could not be saved. Check the destination before retrying.');
       }
-      steps.push({ id, action, ok: true, detail });
+      steps.push({ id, action, ok: true, detail, ...stamp() });
+      note(detail);
       done.push(id);
-      const checkpoint = await admin.from('automation_runs').update({ output: { ...prev, done, steps, waited, paths } }).eq('id', r.id);
+      const checkpoint = await admin.from('automation_runs').update({ output: { ...prev, done, steps, waited, paths, log } }).eq('id', r.id);
       if (checkpoint.error) throw new Uncertain('The action completed but the run checkpoint could not be saved.');
       return true;
     } catch (err) {
@@ -199,23 +305,47 @@ async function executeRun(r: Run, baseUrl: string, draft?: ReturnType<typeof gra
         await admin.from('automation_effects').update({ status: 'uncertain', detail: failure.message, updated_at: new Date().toISOString() }).eq('run_id', r.id).eq('step_id', id).eq('status', 'started');
         failure = new Permanent(failure.message + ' Check this step’s destination before starting a replacement run.');
       }
-      steps.push({ id, action, ok: false, detail: failure.message });
+      steps.push({ id, action, ok: false, detail: failure.message, ...stamp() });
+      note(failure.message, 'error');
       return false;
     }
   };
   const walkSteps = async (list: Node[]): Promise<boolean> => {
-    for (const n of list) {
+    for (const [i, n] of list.entries()) {
       if (n.type === 'note') continue;
+      // An approval step parks the run until a Super Admin decides (app/api/automations/approvals/[id]). Approved:
+      // carry on. Rejected, or nobody decided in time: the run stops and nothing after it happens.
+      if (n.type === 'approval') {
+        if (done.includes(n.id)) continue;
+        if (r.is_test) { if (!(await step(n.id, 'approval', async () => 'Would pause here until a Super Admin approves.'))) return false; continue; }
+        const dec = decisions[n.id];
+        if (dec && dec.decision === 'approved') { if (!(await step(n.id, 'approval', async () => 'Approved by ' + dec.by + '.'))) return false; continue; }
+        const pending = prev.approval && prev.approval.stepId === n.id ? prev.approval : null;
+        if (dec && dec.decision === 'rejected') rejected = 'Rejected by ' + dec.by + ', so the run stopped.';
+        else if (pending && pending.expiresAt && Date.parse(pending.expiresAt) <= Date.now()) rejected = 'Nobody approved "' + (n.title || 'Approval') + '" in time, so the run stopped.';
+        else ask = pending || approvalFor(n, list.slice(i + 1), ctx, facts);
+        if (rejected) { steps.push({ id: n.id, action: 'approval', ok: false, detail: rejected, at: new Date().toISOString(), ms: 0 }); note(rejected, 'error'); }
+        return false;
+      }
+      if (cannotRunYet(n)) {
+        if (!(await step(n.id, n.type, async () => { throw new Permanent((n.title || 'This step') + ' cannot run yet. Remove it or keep the workflow as a draft.'); }))) return false;
+        continue;
+      }
+      if (n.type === 'data') {
+        if (!(await step(n.id, 'data', async () => (p ? (r.is_test ? 'Would load ' : 'Loaded ') + p.title + ' (' + p.job_code + ').' : 'There is no project on this run.')))) return false;
+        continue;
+      }
       if (n.type === 'split') {
         const all = n.paths || [];
         let pick = all.find((x) => x.id === paths[n.id]);
         if (!pick) {
-          pick = all.find((x, i) => i < all.length - 1 && x.when.length > 0 && x.when.every((c) => matches(c, p, facts, statusName))) || all[all.length - 1];
+          pick = all.find((x, i) => i < all.length - 1 && matchPath(x, values)) || all[all.length - 1];
           if (!pick) continue;
           paths[n.id] = pick.id;
-          steps.push({ id: n.id, action: 'split', ok: true, detail: (n.name || 'Split') + ': took ' + pick.name + '.' });
+          steps.push({ id: n.id, action: 'split', ok: true, detail: (n.name || 'Branch') + ': took ' + pick.name + '.', at: new Date().toISOString(), ms: 0 });
+          note((n.name || 'Branch') + ': took ' + pick.name + '.');
           done.push(n.id);
-          const saved = await admin.from('automation_runs').update({ output: { ...prev, done, steps, waited, paths } }).eq('id', r.id);
+          const saved = await admin.from('automation_runs').update({ output: { ...prev, done, steps, waited, paths, log } }).eq('id', r.id);
           if (saved.error) throw new Permanent('Could not save the chosen workflow branch.');
         }
         if (!(await walkSteps(pick.steps))) return false;
@@ -225,26 +355,43 @@ async function executeRun(r: Run, baseUrl: string, draft?: ReturnType<typeof gra
         if (done.includes(n.id)) continue;
         const ms = (Number(n.amount) || 0) * (n.unit === 'minutes' ? 60000 : n.unit === 'hours' ? 3600000 : 86400000);
         const text = delayText(n);
-        if (!r.is_test && ms > 0 && !waited.includes(n.id)) { waited.push(n.id); waitMs = ms; return false; }
+        if (!r.is_test && ms > 0 && !waited.includes(n.id)) { waited.push(n.id); waitMs = ms; note('Waiting: ' + text.replace(/^Wait /, '') + '.'); return false; }
         await step(n.id, 'delay', async () => (r.is_test ? 'Would ' + text.toLowerCase() + '.' : text.replace(/^Wait/, 'Waited') + '.'));
         continue;
       }
       if (n.type === 'task') {
-        if (!(await step(n.id, 'task', () => addTask(n, ctx)))) return false;
+        if (!(await step(n.id, 'task', () => addTask(n, ctx), [['Task', fillTokens(n.title || a.name, tokens)], ...(n.note ? [['Notes', fillTokens(n.note, tokens)] as [string, string]] : [])]))) return false;
         continue;
       }
       if (n.type === 'action' && n.key) {
         const key = n.key;
-        if (!(await step(n.id, key, () => perform(key, n.message || '', ctx)))) return false;
+        // An approver may have edited what this step sends (output.overrides).
+        const message = overrides[n.id] != null ? overrides[n.id] : n.message || '';
+        if (!(await step(n.id, key, () => perform(key, message, ctx), [[onIdea ? 'Idea' : 'Project', subject], ...(message ? [['Message', fillTokens(message, tokens)] as [string, string]] : [])]))) return false;
       }
     }
     return true;
   };
+  if (graph && r.is_test && filters && filters.length) steps.push({ id: 'trigger', action: 'filter', ok: true, detail: matchFilters(filters, values) ? 'The Only when rules match this project.' : 'The Only when rules do not match this project, so a real run would stop here. The steps below show what would happen if they did.' });
   if (graph) await walkSteps(graph.steps);
   else for (const act of actionsOf(a.actions)) if (!(await step(act.key, act.key, () => perform(act.key, act.message, ctx)))) break;
   const waitClaims = prev.waitClaims || 0;
-  const output: Output & Record<string, unknown> = { done, steps, waited, waitClaims, paths, trigger: why, project: p ? { id: p.id, job: p.job_code, title: p.title } : null,
+  const output: Output & Record<string, unknown> = { done, steps, waited, waitClaims, paths, log, approvals: decisions, overrides, trigger: why, project: p ? { id: p.id, job: p.job_code, title: p.title } : null,
     ...(onIdea ? { idea: idea ? { id: idea.id, title: idea.title } : null } : {}) };
+
+  // An approval: park the run until someone decides, or until it times out. Super Admins are told once.
+  if (ask && !failure) {
+    const asked: PendingApproval = ask;
+    const fresh = !prev.approval || prev.approval.stepId !== asked.stepId;
+    if (fresh) note('Waiting for approval: ' + asked.title + '.');
+    await finish('retry', { output: { ...output, waiting: true, approval: asked, waitClaims: waitClaims + 1 }, error: null, next_attempt_at: asked.expiresAt || new Date(Date.now() + 14 * 86400000).toISOString() });
+    if (fresh) await notifyApproval(ctx, asked);
+    return 'waiting';
+  }
+  if (rejected && !failure) {
+    await finish('skipped', { output: { ...output, approval: null }, error: rejected, next_attempt_at: null });
+    return 'skipped';
+  }
 
   // A delay: park the run until it is due. The claim counts it as a try, so tries below leave delays out.
   if (waitMs && !failure) {
@@ -253,20 +400,94 @@ async function executeRun(r: Run, baseUrl: string, draft?: ReturnType<typeof gra
   }
 
   if (!failure) {
+    note(r.is_test ? 'Test finished. Nothing was sent.' : 'Run finished.');
     await finish(r.is_test ? 'test' : 'done', { output, error: null, next_attempt_at: null });
     if (!r.is_test) await admin.from('automations').update({ run_count: (a.run_count || 0) + 1, last_run_at: new Date().toISOString() }).eq('id', a.id);
     return r.is_test ? 'test' : 'done';
   }
   const fail: Error = failure;
   const tries = r.attempts - waitClaims;
-  const retry = !r.is_test && auto.retry !== false && !(fail instanceof Permanent) && tries < MAX_TRIES;
+  const maxTries = fs && fs.retries != null ? 1 + Math.max(0, Math.min(5, Number(fs.retries) || 0)) : MAX_TRIES;
+  const waitMin = fs && fs.retryWait ? WAIT_MIN[fs.retryWait] || RETRY_MIN : RETRY_MIN * Math.max(1, tries);
+  const retry = !r.is_test && auto.retry !== false && !(fail instanceof Permanent) && tries < maxTries;
   if (retry) {
-    await finish('retry', { output, error: fail.message, next_attempt_at: new Date(Date.now() + RETRY_MIN * Math.max(1, tries) * 60000).toISOString() });
+    note('Will try again in ' + waitMin + (waitMin === 1 ? ' minute.' : ' minutes.'));
+    await finish('retry', { output, error: fail.message, next_attempt_at: new Date(Date.now() + waitMin * 60000).toISOString() });
     return 'retry';
   }
+  note(r.is_test ? 'Test stopped.' : 'Run failed' + (tries > 1 ? ' after ' + tries + ' tries.' : '.'), 'error');
   await finish('failed', { output, error: fail.message, next_attempt_at: null });
-  if (!r.is_test && auto.failAlert !== false) await alertFailure(ctx, fail.message);
+  if (r.is_test) return 'failed';
+  // Auto-pause: this many failed runs in a row turns the workflow off.
+  const limit = fs ? Math.max(0, Number(fs.autoOffAfter) || 0) : 0;
+  let turnedOff = false;
+  if (limit > 0) {
+    const recent = await admin.from('automation_runs').select('status').eq('automation_id', a.id).eq('is_test', false).in('status', ['done', 'failed']).order('created_at', { ascending: false }).limit(limit);
+    if (!recent.error && (recent.data || []).length >= limit && (recent.data || []).every((x) => x.status === 'failed')) {
+      const off = await admin.from('automations').update({ enabled: false }).eq('id', a.id);
+      turnedOff = !off.error;
+      if (turnedOff) await logAutomation(ctx, 'turned off "' + a.name + '" after ' + limit + ' failed runs in a row');
+    }
+  }
+  if (auto.failAlert !== false) {
+    await alertFailure(ctx, fail.message + (turnedOff ? ' The workflow was turned off after ' + limit + ' failed runs in a row.' : ''), fs && fs.alert ? fs.alert : null, graph && graph.owner ? graph.owner : null);
+    note('Failure alert sent.');
+    await admin.from('automation_runs').update({ output }).eq('id', r.id);
+  }
   return 'failed';
+}
+
+// What a Super Admin is asked to approve: the step after the approval, with its message filled in for this run.
+function approvalFor(n: Node, rest: Node[], ctx: Ctx, facts: Facts | null): PendingApproval {
+  const next = rest.find((x) => x.type === 'action' || x.type === 'task') || null;
+  const def = next && next.type === 'action' && next.key ? actionById(next.key) : null;
+  const hours = n.timeoutHours == null ? 24 : Math.max(0, Number(n.timeoutHours) || 0);
+  const label = next ? (next.title || (def ? def.label : next.type === 'task' ? 'Add a task' : 'the next step')) : '';
+  const to = !next ? '' : next.type === 'task' ? 'The task owner, on their Daily page'
+    : next.key === 'email_editor' ? (facts && facts.editor) || 'The assigned editor' : next.key === 'email_designer' ? (facts && facts.designer) || 'The assigned designer' : RECIPIENT[next.key || ''] || (def ? def.app : '');
+  const t = ctx.tokens;
+  const context = ([['Project', t['project.title']], ['Job', t['project.job']], ['Stage', t['project.status']], ['Sponsor', t['project.sponsor']], ['Editor', t['project.editor']], ['Designer', t['project.designer']],
+    ['Channel', t['project.channel']], ['Publish date', t['project.publish_date']], ['Idea', t['idea.title']], ['Idea stage', t['idea.stage']]] as [string, string][]).filter((x) => !!x[1]);
+  return {
+    stepId: n.id, title: n.title || 'Approval', askedAt: new Date().toISOString(), expiresAt: hours ? new Date(Date.now() + hours * 3600000).toISOString() : null,
+    reason: n.note || (def && def.key === 'buffer_publish' ? 'The next step posts publicly. Anything that leaves the studio waits for a Super Admin.' : 'This workflow pauses here until a Super Admin signs off.'),
+    after: next ? label + (def && def.app ? ' through ' + def.app : '') : 'The workflow carries on',
+    draft: next ? { stepId: next.id, to, subject: label + (ctx.p ? ': ' + ctx.p.title : ctx.idea ? ': ' + ctx.idea.title : ''), body: fillTokens(next.type === 'task' ? next.note || next.title || '' : next.message || '', t) } : null,
+    context,
+  };
+}
+
+async function notifyApproval(ctx: Ctx, ask: PendingApproval) {
+  const admin = supabaseAdmin();
+  const people = await admins(ctx.r.workspace_id);
+  if (!people.length) return;
+  const ins = await admin.from('notifications').insert(people.map((x) => ({
+    workspace_id: ctx.r.workspace_id, user_id: x.id, event: 'automation', actor_label: 'Automation', text: 'automation "' + ctx.a.name + '" is waiting for your approval on',
+    target_label: ctx.p ? ctx.p.title : ctx.idea ? ctx.idea.title : ctx.a.name, quote: ask.title + (ask.after ? '. After you approve: ' + ask.after + '.' : ''), project_id: ctx.p ? ctx.p.id : null,
+  })));
+  if (ins.error) console.warn('notifications', ins.error.message);
+}
+
+// A Super Admin's decision on a waiting approval. The run is queued again and the runner carries on (approved) or
+// stops it (rejected). body: an edited message for the step the approval covers.
+export async function decideApproval(workspaceId: string, runId: string, who: { id: string; name: string }, decision: 'approve' | 'reject', body?: string) {
+  const admin = supabaseAdmin();
+  const cur = await admin.from('automation_runs').select('id, status, output').eq('id', runId).eq('workspace_id', workspaceId).maybeSingle();
+  if (cur.error || !cur.data) return { status: 404 as const, error: 'That approval was not found.' };
+  const out = (cur.data.output || {}) as Output;
+  const ask = out.approval;
+  if (cur.data.status !== 'retry' || !ask) return { status: 409 as const, error: 'This approval was already decided, or the run has moved on.' };
+  const next: Output = {
+    ...out, waiting: false, approval: null,
+    approvals: { ...(out.approvals || {}), [ask.stepId]: { decision: decision === 'approve' ? 'approved' : 'rejected', by: who.name, byId: who.id, at: new Date().toISOString() } },
+    overrides: decision === 'approve' && ask.draft && typeof body === 'string' && body !== ask.draft.body ? { ...(out.overrides || {}), [ask.draft.stepId]: body } : out.overrides,
+    log: (out.log || []).concat([{ at: new Date().toISOString(), text: (decision === 'approve' ? 'Approved by ' : 'Rejected by ') + who.name + '.' }]),
+  };
+  // Only a run still waiting on this approval moves: two Super Admins deciding at once cannot both win.
+  const res = await admin.from('automation_runs').update({ status: 'queued', next_attempt_at: null, output: next }).eq('id', runId).eq('workspace_id', workspaceId).eq('status', 'retry').select('id');
+  if (res.error) return { status: 500 as const, error: res.error.message };
+  if (!(res.data || []).length) return { status: 409 as const, error: 'This approval was already decided.' };
+  return { status: 200 as const };
 }
 
 type Ctx = {
@@ -301,18 +522,14 @@ async function factsOf(p: Project): Promise<Facts> {
   };
 }
 
-// One split criterion against the project. Without a project nothing matches, so the run takes Everyone else.
-function matches(c: Crit, p: Project | null, f: Facts | null, statusName: (id: string | null | undefined) => string) {
-  if (!p || !f || !FIELDS.some((x) => x.key === c.field)) return false;
-  const v: Record<string, string | null> = {
+// What rules check on the run's project (graph.ts matchCrit). Without a project nothing matches, so a branch takes
+// its last path and a filtered trigger does not run.
+function valuesOf(p: Project | null, f: Facts | null, statusName: (id: string | null | undefined) => string): RuleValues | null {
+  if (!p || !f) return null;
+  return {
     status: statusName(p.status_id), channel: p.channel_id, type: p.content_type_id, sponsor: f.sponsorId, approval: f.approval || null,
     editor: f.editorId, edit_status: f.editStatus || null, designer: f.designerId, publish_date: p.publish_date,
   };
-  const have = v[c.field];
-  if (c.op === 'set') return !!have;
-  if (c.op === 'empty') return !have;
-  const same = (have || '').toLowerCase() === (c.value || '').toLowerCase();
-  return c.op === 'is' ? same : !same;
 }
 
 // A task step: a To-Do for its owner, or for every Super Admin when it has none.
@@ -522,9 +739,16 @@ async function performIdea(key: string, note: string, ctx: Ctx): Promise<string>
 }
 
 // Alert on failures: an in-app notification for each Super Admin, an email, and Slack when it is connected.
-async function alertFailure(ctx: Ctx, error: string) {
+// alert: the workflow's "Then alert" choices ('admins', 'owner', 'slack'); null keeps the workspace rule (the Super
+// Admins, plus Slack when it is connected).
+async function alertFailure(ctx: Ctx, error: string, alert: string[] | null = null, ownerId: string | null = null) {
   const admin = supabaseAdmin();
-  const people = await admins(ctx.r.workspace_id);
+  const want = (k: string) => !alert || alert.includes(k);
+  let people = want('admins') ? await admins(ctx.r.workspace_id) : [];
+  if (alert && alert.includes('owner') && ownerId && !people.some((x) => x.id === ownerId)) {
+    const o = await admin.from('profiles').select('id, full_name, email').eq('id', ownerId).maybeSingle();
+    if (o.data) people = people.concat([o.data as { id: string; full_name: string; email: string }]);
+  }
   const text = 'automation "' + ctx.a.name + '" failed on';
   if (people.length) {
     const ins = await admin.from('notifications').insert(people.map((x) => ({
@@ -543,7 +767,7 @@ async function alertFailure(ctx: Ctx, error: string) {
     const res = await sendEmail({ to: x.email, subject: tpl.subject, html: tpl.html, text: tpl.text });
     if (!res.sent) console.warn('automation alert email', res.error);
   }
-  if (await getIntegration(ctx.r.workspace_id, 'slack').catch(() => null)) {
+  if (want('slack') && await getIntegration(ctx.r.workspace_id, 'slack').catch(() => null)) {
     await postSlackAlert(ctx.r.workspace_id, ':warning: Automation *' + ctx.a.name + '* failed' + (ctx.p ? ' on ' + ctx.subject : '') + ': ' + error).catch((e) => console.warn('slack alert', e));
   }
 }

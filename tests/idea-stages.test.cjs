@@ -21,14 +21,23 @@ function ideas(open, layout) {
   Object.assign(f.s, { nav: 'ideas', iLayout: layout || 'board', ideaOpen: open || '' });
   const { computeVals } = loader()('lib/studio/vals.js');
   const view = computeVals(f);
-  const ids = Object.values(view).find((v) => v && v.cols && v.views) || view.ids;
+  const ids = view.ids;
   return { ids, writes, detail: ids.sel };
 }
 
 test('the board has the four stages in order and archived ideas leave it', () => {
   const { ids } = ideas();
-  assert.deepEqual(ids.cols.map((c) => c.label), ['Inbox', 'Research', 'Ready', 'Approved']);
-  assert.deepEqual(ids.cols.map((c) => c.items.length), [1, 1, 1, 2]);
+  assert.deepEqual(ids.board.lanes.map((c) => c.label), ['Idea Inbox', 'In Development', 'Ready for Review', 'Approved']);
+  assert.deepEqual(ids.board.lanes.map((c) => c.cards.length), [1, 1, 1, 2]);
+});
+
+test('the detail footer offers the lane\'s next step first', () => {
+  assert.deepEqual(ideas('in').detail.foot.map((b) => b.label), ['Start development', 'Send to review']);
+  assert.deepEqual(ideas('re').detail.foot.map((b) => b.label), ['Send to review']);
+  assert.deepEqual(ideas('rd').detail.foot.map((b) => [b.label, b.primary]), [['Approve', true], ['Return to development', false], ['Park', false]]);
+  assert.deepEqual(ideas('li').detail.foot.map((b) => b.label), ['Open project']);
+  assert.deepEqual(ideas('ar').detail.foot.map((b) => b.label), ['Restore to In Development']);
+  assert.equal(ideas('re').detail.laneLabel, 'In Development');
 });
 
 test('each stage offers the next step, and Approve only appears at Ready', () => {

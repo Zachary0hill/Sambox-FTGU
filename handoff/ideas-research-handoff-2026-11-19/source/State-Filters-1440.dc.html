@@ -1,0 +1,1347 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Ideas and Research board, compact filters</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@500;600;700;800&family=Unbounded:wght@600;700;800&display=swap">
+<style>
+body{margin:0;background:#0C0D10}
+a{color:#F2F3F5}a:hover{color:#19E6D0}
+button{font-family:inherit;cursor:pointer}
+button:disabled{cursor:default;opacity:.45}
+input::placeholder{color:#A3A8B3}
+button:focus-visible,a:focus-visible{outline:2px solid #19E6D0;outline-offset:2px}
+[data-search]:focus-within{border-color:#19E6D0 !important}
+[data-tb-status],[data-tb-more],[data-kbd]{display:none}
+@media (min-width: 1600px){[data-kbd]{display:inline-block}}
+[data-more-status],[data-more-scope],[data-more-view],[data-more-sort],[data-more-fields]{display:none !important}
+@media (max-width: 1399px){[data-tb-tabs]{display:none !important}[data-tb-status]{display:block}}
+@media (max-width: 1153px){[data-tb-sort],[data-tb-display]{display:none !important}[data-tb-more]{display:block}[data-more-sort],[data-more-fields]{display:flex !important}}
+@media (min-width: 808px) and (max-width: 989px),(max-width: 741px){[data-tb-status],[data-tb-scope],[data-tb-view]{display:none !important}[data-more-status],[data-more-scope],[data-more-view]{display:flex !important}}
+@media (max-width: 640px){#main{padding:20px 16px 32px !important}}
+@media (max-width: 820px){[data-pop]{position:fixed !important;left:12px !important;right:12px !important;top:auto !important;bottom:12px !important;width:auto !important;max-width:none !important;max-height:72vh !important;overflow-y:auto !important}}
+@media (pointer: coarse) and (max-width: 820px){[data-ctl]{height:44px !important;min-width:44px}[data-pop] button{min-height:44px}}
+[data-clamp]{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+[data-card]{transition:border-color .12s}
+[data-card]:hover{border-color:#33363F !important}
+[data-card] [data-secondary]{opacity:0;transition:opacity .12s}
+[data-card]:hover [data-secondary],[data-card]:focus-within [data-secondary]{opacity:1}
+@media (hover: none){[data-card] [data-secondary]{opacity:1}}
+@media (pointer: coarse){[data-card] button{min-width:44px;min-height:44px}}
+[data-list]{scrollbar-width:thin;scrollbar-color:#2A2C34 transparent}
+[data-lane-ctl]{opacity:0;transition:opacity .12s}
+[data-lane]:hover [data-lane-ctl],[data-lane]:focus-within [data-lane-ctl],[data-lane-ctl][data-open="true"]{opacity:1}
+@media (hover: none){[data-lane-ctl]{opacity:1}[data-lane-collapse]{display:none}}
+[data-addcol] > button:hover,[data-addcol] button:hover{color:#F2F3F5}
+[data-open-id]:hover span{text-decoration:underline;text-decoration-color:#5C616D;text-underline-offset:3px}
+[data-modal] input::placeholder{color:#6B7180}
+[data-modal] label:focus-within{border-color:#19E6D0 !important}
+@media (max-width: 640px){[data-modal]{padding:0 !important}[data-modal] [role="dialog"]{border-radius:0 !important;min-height:100%}[data-modal] [data-fields]{grid-template-columns:minmax(0,1fr) !important}[data-crumb]{display:none}}
+@keyframes zzpulse{0%,100%{opacity:1}50%{opacity:.3}}
+[data-pulse]{animation:zzpulse 1.4s ease-in-out infinite}
+@media (prefers-reduced-motion: reduce){[data-pulse]{animation:none}}
+</style>
+</helmet>
+<div style="display: flex; flex-wrap: wrap; min-height: 1800px; background: #0C0D10; color: #F2F3F5; font-family: Inter, system-ui, sans-serif; font-size: 14px; font-weight: 500">
+
+<nav aria-label="Main" style="flex: 1 1 248px; max-width: 100%; box-sizing: border-box; background: #101115; border-right: 1px solid #22242B; padding: 20px 14px; display: flex; flex-direction: column; gap: 20px">
+<div style="display: flex; align-items: center; gap: 12px; padding: 0 8px 16px; border-bottom: 1px solid #22242B">
+<div style="width: 36px; height: 36px; border-radius: 9px; background: #F2F3F5; color: #0C0D10; display: flex; align-items: center; justify-content: center; font-family: Unbounded, sans-serif; font-weight: 800; font-size: 11px">FTGU</div>
+<div style="display: flex; flex-direction: column; gap: 2px">
+<div style="font-family: Unbounded, sans-serif; font-weight: 700; font-size: 13px">SantosStudios</div>
+<div style="font-size: 12px; color: #A3A8B3">Production board</div>
+</div>
+</div>
+<div style="display: flex; flex-direction: column; gap: 2px">
+<sc-for list="{{nav}}" as="item" hint-placeholder-count="7">
+<a href="#main" style="display: flex; align-items: center; gap: 12px; min-height: 44px; padding: 0 12px; border-radius: 10px; text-decoration: none; font-weight: 600; font-size: 14px; color: {{item.fg}}; background: {{item.bg}}">
+<svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="{{item.d}}"></path></svg>
+<span style="flex-grow: 1">{{item.label}}</span>
+<sc-if value="{{item.badge}}" hint-placeholder-val="{{false}}"><span style="min-width: 24px; padding: 2px 7px; box-sizing: border-box; border-radius: 999px; text-align: center; font-size: 12px; font-weight: 700; background: #22242B; color: #F2F3F5">{{item.badge}}</span></sc-if>
+</a>
+</sc-for>
+</div>
+<div style="display: flex; flex-direction: column; gap: 2px">
+<div style="padding: 0 12px 6px; font-size: 12px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #A3A8B3">Admin</div>
+<sc-for list="{{admin}}" as="item" hint-placeholder-count="9">
+<a href="#main" style="display: flex; align-items: center; gap: 12px; min-height: 44px; padding: 0 12px; border-radius: 10px; text-decoration: none; font-weight: 600; font-size: 14px; color: #C9CDD4">
+<svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="{{item.d}}"></path></svg>
+<span style="flex-grow: 1">{{item.label}}</span>
+<sc-if value="{{item.badge}}" hint-placeholder-val="{{false}}"><span style="min-width: 24px; padding: 2px 7px; box-sizing: border-box; border-radius: 999px; text-align: center; font-size: 12px; font-weight: 700; background: {{accent}}; color: #06211E">{{item.badge}}</span></sc-if>
+</a>
+</sc-for>
+</div>
+</nav>
+
+<main id="main" style="flex: 999 1 560px; min-width: 0; box-sizing: border-box; padding: 28px 32px 48px; display: flex; flex-direction: column; gap: 20px">
+
+<header style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px">
+<div style="display: flex; flex-direction: column; gap: 8px">
+<button type="button" style="align-self: flex-start; display: flex; align-items: center; gap: 6px; min-height: 32px; padding: 0 10px; border-radius: 8px; border: 1px solid #262830; background: #14151A; color: #C9CDD4; font-size: 13px; font-weight: 600">All brands
+<svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"></path></svg>
+</button>
+<h1 style="margin: 0; font-family: Unbounded, sans-serif; font-weight: 800; font-size: 28px; letter-spacing: -0.01em">Ideas &amp; Research</h1>
+<p style="margin: 0; color: #A3A8B3">Capture manual and AI ideas, sharpen the pitch, approve the keepers.</p>
+</div>
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px">
+<div style="display: flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 14px; border-radius: 10px; background: #14151A; border: 1px solid #262830; color: #A3A8B3; font-size: 13px; font-weight: 600">
+<span style="width: 8px; height: 8px; border-radius: 50%; background: #6B7180"></span>
+<span>Auto research off</span>
+<span style="color: #6B7180">·</span>
+<span>{{runsActive}}</span>
+</div>
+<button type="button" style="min-height: 44px; padding: 0 16px; border-radius: 10px; border: 1px solid #262830; background: #14151A; color: #F2F3F5; font-weight: 700; font-size: 14px">Automate</button>
+<button type="button" style="min-height: 44px; padding: 0 16px; border-radius: 10px; border: 1px solid #262830; background: #14151A; color: #F2F3F5; font-weight: 700; font-size: 14px">Rules</button>
+<button type="button" style="min-height: 44px; padding: 0 16px; border-radius: 10px; border: 1px solid #262830; background: #14151A; color: #F2F3F5; font-weight: 700; font-size: 14px">Run research</button>
+<button type="button" style="display: flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 16px; border-radius: 10px; border: 0; background: {{accent}}; color: #06211E; font-weight: 700; font-size: 14px">
+<svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg>
+Capture idea
+<span style="padding: 2px 7px; border-radius: 6px; background: #06211E; color: #F2F3F5; font-size: 12px">C</span>
+</button>
+</div>
+</header>
+
+<section data-filters aria-label="Browse ideas" onKeyDown="{{onKey}}" style="display: flex; flex-direction: column; gap: 12px">
+<sc-if value="{{menuOpen}}" hint-placeholder-val="{{false}}"><div aria-hidden="true" onClick="{{closeMenu}}" style="position: fixed; inset: 0; z-index: 15"></div></sc-if>
+
+<div style="display: flex; flex-wrap: nowrap; align-items: center; gap: 8px; min-width: 0">
+
+<div style="display: flex; flex-wrap: nowrap; align-items: center; gap: 8px; flex: 1 1 auto; min-width: 0">
+
+<div data-tb-tabs role="group" aria-label="Status" style="flex-shrink: 0; display: flex; align-items: center; gap: 2px; height: 36px; box-sizing: border-box; padding: 3px; border-radius: 8px; background: #14151A; border: 1px solid #262830">
+<sc-for list="{{stages}}" as="s" hint-placeholder-count="5">
+<button type="button" aria-pressed="{{s.pressed}}" onClick="{{s.pick}}" style="display: flex; align-items: center; gap: 4px; height: 28px; padding: 0 8px; border-radius: 6px; border: 0; background: {{s.bg}}; color: {{s.fg}}; font-weight: 700; font-size: 13px; white-space: nowrap">{{s.label}}<span style="font-weight: 600; color: {{s.countFg}}">{{s.count}}</span></button>
+</sc-for>
+</div>
+
+<div data-tb-status style="position: relative; flex-shrink: 0">
+<button data-ctl data-trigger="status" type="button" aria-haspopup="menu" aria-expanded="{{statusOpen}}" aria-label="{{statusAria}}" onClick="{{toggleStatus}}" style="display: flex; align-items: center; gap: 6px; height: 36px; padding: 0 10px; box-sizing: border-box; border-radius: 8px; border: 1px solid #262830; background: #14151A; color: #F2F3F5; font-weight: 700; font-size: 13px; white-space: nowrap">
+<span>{{statusLabel}}</span>
+<span style="font-weight: 600; color: #A3A8B3">{{statusCount}}</span>
+<svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="color: #A3A8B3"><path d="M6 9l6 6 6-6"></path></svg>
+</button>
+<sc-if value="{{statusOpen}}" hint-placeholder-val="{{false}}">
+<div data-pop role="menu" aria-label="Status" style="position: absolute; z-index: 20; top: calc(100% + 6px); left: 0; width: 240px; box-sizing: border-box; padding: 6px; border-radius: 12px; background: #16171C; border: 1px solid #2E3039; box-shadow: 0 18px 48px rgba(0, 0, 0, 0.55); display: flex; flex-direction: column; gap: 2px">
+<sc-for list="{{stages}}" as="s" hint-placeholder-count="5">
+<button type="button" role="menuitemradio" aria-checked="{{s.pressed}}" onClick="{{s.pickClose}}" style="display: flex; align-items: center; gap: 10px; width: 100%; min-height: 36px; padding: 0 10px; box-sizing: border-box; border-radius: 7px; border: 0; background: {{s.menuBg}}; color: #F2F3F5; font-weight: 600; font-size: 13px; text-align: left; white-space: nowrap">
+<span style="flex-grow: 1">{{s.label}}</span>
+<span style="color: #A3A8B3">{{s.count}}</span>
+<span style="width: 16px; display: flex; color: {{accent}}"><sc-if value="{{s.pressed}}" hint-placeholder-val="{{false}}"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-10"></path></svg></sc-if></span>
+</button>
+</sc-for>
+</div>
+</sc-if>
+</div>
+
+<div data-tb-scope style="position: relative; flex-shrink: 0">
+<button data-ctl data-trigger="views" type="button" aria-haspopup="menu" aria-expanded="{{viewsOpen}}" onClick="{{toggleViews}}" style="display: flex; align-items: center; gap: 6px; height: 36px; padding: 0 10px; box-sizing: border-box; border-radius: 8px; border: 1px solid #262830; background: #14151A; color: #F2F3F5; font-weight: 700; font-size: 13px; white-space: nowrap">
+<span style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Saved view:</span>
+<span style="width: 8px; height: 8px; border-radius: 50%; background: {{viewDot}}"></span>
+<span>{{viewLabel}}</span>
+<sc-if value="{{dirty}}" hint-placeholder-val="{{false}}"><span style="width: 6px; height: 6px; border-radius: 50%; background: {{accent}}"></span><span style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">edited</span></sc-if>
+<svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="color: #A3A8B3"><path d="M6 9l6 6 6-6"></path></svg>
+</button>
+<sc-if value="{{viewsOpen}}" hint-placeholder-val="{{false}}">
+<div data-pop role="menu" aria-label="Saved views" style="position: absolute; z-index: 20; top: calc(100% + 6px); left: 0; width: 272px; box-sizing: border-box; padding: 6px; border-radius: 12px; background: #16171C; border: 1px solid #2E3039; box-shadow: 0 18px 48px rgba(0, 0, 0, 0.55); display: flex; flex-direction: column; gap: 2px">
+<div style="padding: 8px 10px 6px; font-size: 12px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #A3A8B3">Saved views</div>
+<sc-for list="{{views}}" as="v" hint-placeholder-count="7">
+<button type="button" role="menuitemradio" aria-checked="{{v.checked}}" onClick="{{v.pick}}" style="display: flex; align-items: center; gap: 10px; width: 100%; min-height: 36px; padding: 0 10px; box-sizing: border-box; border-radius: 7px; border: 0; background: {{v.bg}}; color: #F2F3F5; font-weight: 600; font-size: 13px; text-align: left; white-space: nowrap">
+<span style="width: 8px; height: 8px; border-radius: 50%; background: {{v.dot}}"></span>
+<span style="flex-grow: 1">{{v.label}}</span>
+<span style="color: #A3A8B3">{{v.count}}</span>
+<span style="width: 16px; display: flex; color: {{accent}}"><sc-if value="{{v.checked}}" hint-placeholder-val="{{false}}"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-10"></path></svg></sc-if></span>
+</button>
+</sc-for>
+<div style="height: 1px; margin: 4px 6px; background: #262830"></div>
+<button type="button" style="display: flex; align-items: center; gap: 10px; width: 100%; min-height: 36px; padding: 0 10px; box-sizing: border-box; border-radius: 7px; border: 0; background: transparent; color: #C9CDD4; font-weight: 600; font-size: 13px; text-align: left">
+<svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM12 3v3M12 18v3M3 12h3M18 12h3"></path></svg>
+Manage views
+</button>
+</div>
+</sc-if>
+</div>
+
+<label data-ctl data-search style="flex: 1 1 160px; min-width: 120px; display: flex; align-items: center; gap: 8px; height: 36px; padding: 0 8px 0 10px; box-sizing: border-box; border-radius: 8px; background: #14151A; border: 1px solid #262830; color: #A3A8B3">
+<svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14zM20 20l-4-4"></path></svg>
+<span style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Search ideas by title or hook</span>
+<input type="search" value="{{q}}" onChange="{{onSearch}}" placeholder="Search ideas" style="flex: 1 1 auto; min-width: 0; height: 100%; border: 0; outline: 0; background: transparent; color: #F2F3F5; font: inherit; font-size: 13px; font-weight: 600">
+<kbd data-kbd aria-hidden="true" style="flex-shrink: 0; padding: 1px 7px; border-radius: 5px; border: 1px solid #3A3D47; color: #C9CDD4; font-family: Inter, sans-serif; font-size: 12px; font-weight: 700">/</kbd>
+</label>
+
+<div style="position: relative; flex-shrink: 0">
+<button data-ctl data-trigger="filter" type="button" aria-haspopup="dialog" aria-expanded="{{filterOpen}}" aria-label="{{filterAria}}" onClick="{{toggleFilter}}" style="display: flex; align-items: center; gap: 6px; height: 36px; padding: 0 10px; box-sizing: border-box; border-radius: 8px; border: 1px solid {{filterBorder}}; background: #14151A; color: #F2F3F5; font-weight: 700; font-size: 13px; white-space: nowrap">
+<svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16l-6 7.5V18l-4 2v-7.5z"></path></svg>
+Filters
+<sc-if value="{{hasFilters}}" hint-placeholder-val="{{false}}"><span style="min-width: 20px; padding: 1px 6px; box-sizing: border-box; border-radius: 999px; text-align: center; background: {{accent}}; color: #06211E; font-size: 12px; font-weight: 800">{{filterCount}}</span></sc-if>
+</button>
+<sc-if value="{{filterOpen}}" hint-placeholder-val="{{false}}">
+<div data-pop role="dialog" aria-label="Filters" style="position: absolute; z-index: 20; top: calc(100% + 6px); right: 0; width: 400px; max-width: 86vw; box-sizing: border-box; border-radius: 12px; background: #16171C; border: 1px solid #2E3039; box-shadow: 0 18px 48px rgba(0, 0, 0, 0.55); display: flex; flex-direction: column">
+<div style="display: flex; align-items: center; gap: 8px; padding: 14px 16px 10px">
+<h2 style="margin: 0; flex-grow: 1; font-size: 14px; font-weight: 700">Filters</h2>
+<span style="font-size: 12px; font-weight: 600; color: #A3A8B3">{{filterSummary}}</span>
+</div>
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 6px; min-height: 30px; padding: 0 16px 12px">
+<sc-if value="{{hasFilters}}" hint-placeholder-val="{{false}}">
+<sc-for list="{{chips}}" as="c" hint-placeholder-count="2">
+<span style="display: flex; align-items: center; gap: 6px; height: 28px; padding: 0 2px 0 10px; box-sizing: border-box; border-radius: 7px; background: #0F2A27; border: 1px solid {{accent}}; font-size: 12px; font-weight: 600; white-space: nowrap">
+<span style="color: #A3A8B3">{{c.group}}</span>
+<span style="color: #F2F3F5; font-weight: 700">{{c.value}}</span>
+<button type="button" aria-label="{{c.removeLabel}}" onClick="{{c.remove}}" style="width: 24px; height: 24px; border-radius: 5px; border: 0; background: transparent; color: #C9CDD4; display: flex; align-items: center; justify-content: center"><svg aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"></path></svg></button>
+</span>
+</sc-for>
+</sc-if>
+<sc-if value="{{noFilters}}" hint-placeholder-val="{{true}}"><span style="font-size: 13px; font-weight: 600; color: #A3A8B3">No filters applied</span></sc-if>
+</div>
+<div style="max-height: 400px; overflow-y: auto">
+<sc-for list="{{groups}}" as="g" hint-placeholder-count="5">
+<div role="group" aria-label="{{g.label}}" style="display: flex; flex-direction: column; gap: 8px; padding: 12px 16px; border-top: 1px solid #22242B">
+<div style="display: flex; align-items: baseline; justify-content: space-between; gap: 8px">
+<span style="font-size: 12px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #C9CDD4">{{g.label}}</span>
+<span style="font-size: 12px; font-weight: 600; color: #A3A8B3">{{g.hint}}</span>
+</div>
+<div style="display: flex; flex-wrap: wrap; gap: 6px">
+<sc-for list="{{g.options}}" as="o" hint-placeholder-count="3">
+<button type="button" aria-pressed="{{o.on}}" onClick="{{o.toggle}}" style="display: flex; align-items: center; gap: 6px; height: 32px; padding: 0 10px; box-sizing: border-box; border-radius: 7px; border: 1px solid {{o.border}}; background: {{o.bg}}; color: {{o.fg}}; font-weight: 600; font-size: 13px; white-space: nowrap">
+<sc-if value="{{o.on}}" hint-placeholder-val="{{false}}"><svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="color: {{accent}}"><path d="M5 12l5 5 9-10"></path></svg></sc-if>
+<sc-if value="{{o.dot}}" hint-placeholder-val="{{false}}"><span style="width: 7px; height: 7px; border-radius: 50%; background: {{o.dot}}"></span></sc-if>
+{{o.label}}
+</button>
+</sc-for>
+</div>
+</div>
+</sc-for>
+</div>
+<div style="display: flex; align-items: center; gap: 8px; padding: 12px 12px 12px 10px; border-top: 1px solid #22242B">
+<button type="button" onClick="{{clearAll}}" style="height: 36px; padding: 0 10px; border-radius: 8px; border: 0; background: transparent; color: #C9CDD4; font-weight: 700; font-size: 13px; white-space: nowrap">Clear all</button>
+<div style="flex-grow: 1"></div>
+<button type="button" disabled="{{saveDisabled}}" style="height: 36px; padding: 0 12px; border-radius: 8px; border: 1px solid {{saveBorder}}; background: transparent; color: {{saveFg}}; font-weight: 700; font-size: 13px; white-space: nowrap">Save as view</button>
+<button type="button" onClick="{{closeMenu}}" style="height: 36px; padding: 0 14px; border-radius: 8px; border: 0; background: #F2F3F5; color: #0C0D10; font-weight: 700; font-size: 13px; white-space: nowrap">Done</button>
+</div>
+</div>
+</sc-if>
+</div>
+
+</div>
+
+<div style="display: flex; flex-wrap: nowrap; align-items: center; gap: 8px; flex-shrink: 0">
+
+<div data-tb-sort style="position: relative; flex-shrink: 0">
+<button data-ctl data-trigger="sort" type="button" aria-haspopup="dialog" aria-expanded="{{sortOpen}}" aria-label="{{sortAria}}" onClick="{{toggleSort}}" style="display: flex; align-items: center; gap: 5px; height: 36px; padding: 0 10px; box-sizing: border-box; border-radius: 8px; border: 1px solid #262830; background: #14151A; color: #F2F3F5; font-weight: 700; font-size: 13px; white-space: nowrap">
+<span style="font-weight: 600; color: #A3A8B3">Sort:</span>
+<span>{{sortLabel}}</span>
+<svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="{{orderIcon}}"></path></svg>
+</button>
+<sc-if value="{{sortOpen}}" hint-placeholder-val="{{false}}">
+<div data-pop role="dialog" aria-label="Sort" style="position: absolute; z-index: 20; top: calc(100% + 6px); right: 0; width: 240px; box-sizing: border-box; padding: 6px; border-radius: 12px; background: #16171C; border: 1px solid #2E3039; box-shadow: 0 18px 48px rgba(0, 0, 0, 0.55); display: flex; flex-direction: column; gap: 2px">
+<div style="padding: 8px 10px 6px; font-size: 12px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #A3A8B3">Sort by</div>
+<sc-for list="{{sorts}}" as="o" hint-placeholder-count="4">
+<button type="button" aria-pressed="{{o.pressed}}" onClick="{{o.pick}}" style="display: flex; align-items: center; gap: 10px; width: 100%; min-height: 36px; padding: 0 10px; box-sizing: border-box; border-radius: 7px; border: 0; background: {{o.menuBg}}; color: #F2F3F5; font-weight: 600; font-size: 13px; text-align: left; white-space: nowrap">
+<span style="flex-grow: 1">{{o.label}}</span>
+<span style="width: 16px; display: flex; color: {{accent}}"><sc-if value="{{o.pressed}}" hint-placeholder-val="{{false}}"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-10"></path></svg></sc-if></span>
+</button>
+</sc-for>
+<div role="group" aria-label="Order" style="display: flex; gap: 2px; margin: 6px 4px 4px; padding: 3px; border-radius: 8px; background: #0C0D10; border: 1px solid #262830">
+<sc-for list="{{orders}}" as="o" hint-placeholder-count="2">
+<button type="button" aria-pressed="{{o.pressed}}" onClick="{{o.pick}}" style="flex: 1 1 0; height: 28px; padding: 0 8px; border-radius: 6px; border: 0; background: {{o.bg}}; color: {{o.fg}}; font-weight: 700; font-size: 12px; white-space: nowrap">{{o.label}}</button>
+</sc-for>
+</div>
+</div>
+</sc-if>
+</div>
+
+<div data-tb-display style="position: relative; flex-shrink: 0">
+<button data-ctl data-trigger="display" type="button" aria-haspopup="dialog" aria-expanded="{{displayOpen}}" onClick="{{toggleDisplay}}" style="display: flex; align-items: center; gap: 6px; height: 36px; padding: 0 10px; box-sizing: border-box; border-radius: 8px; border: 1px solid #262830; background: #14151A; color: #F2F3F5; font-weight: 700; font-size: 13px; white-space: nowrap">
+<svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 6h9M17 6h3M4 12h3M11 12h9M4 18h11M19 18h1M15 4v4M9 10v4M17 16v4"></path></svg>
+Display
+</button>
+<sc-if value="{{displayOpen}}" hint-placeholder-val="{{false}}">
+<div data-pop role="dialog" aria-label="Display options" style="position: absolute; z-index: 20; top: calc(100% + 6px); right: 0; width: 300px; box-sizing: border-box; padding: 14px 10px 10px 16px; border-radius: 12px; background: #16171C; border: 1px solid #2E3039; box-shadow: 0 18px 48px rgba(0, 0, 0, 0.55); display: flex; flex-direction: column; gap: 6px">
+<div style="display: flex; align-items: baseline; justify-content: space-between; gap: 8px; padding-right: 6px">
+<span style="font-size: 12px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #C9CDD4">Card fields</span>
+<span style="font-size: 12px; font-weight: 600; color: #A3A8B3">{{fieldsShown}} of 8 shown</span>
+</div>
+<sc-for list="{{fields}}" as="f" hint-placeholder-count="8">
+<button type="button" role="switch" aria-checked="{{f.on}}" onClick="{{f.toggle}}" style="display: flex; align-items: center; gap: 10px; width: 100%; min-height: 36px; padding: 0 6px 0 0; box-sizing: border-box; border-radius: 8px; border: 0; background: transparent; color: #F2F3F5; font-weight: 600; font-size: 13px; text-align: left">
+<span style="flex-grow: 1">{{f.label}}</span>
+<span aria-hidden="true" style="width: 32px; height: 18px; box-sizing: border-box; padding: 2px; border-radius: 999px; background: {{f.track}}; display: flex"><span style="width: 14px; height: 14px; border-radius: 50%; background: {{f.knob}}; transform: translateX({{f.knobX}})"></span></span>
+</button>
+</sc-for>
+</div>
+</sc-if>
+</div>
+
+<div data-tb-view role="group" aria-label="Layout" style="flex-shrink: 0; display: flex; align-items: center; gap: 2px; height: 36px; box-sizing: border-box; padding: 3px; border-radius: 8px; background: #14151A; border: 1px solid #262830">
+<sc-for list="{{layouts}}" as="l" hint-placeholder-count="3">
+<button type="button" aria-label="{{l.label}}" aria-pressed="{{l.pressed}}" onClick="{{l.pick}}" style="width: 28px; height: 28px; border-radius: 6px; border: 0; background: {{l.bg}}; color: {{l.fg}}; display: flex; align-items: center; justify-content: center"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="{{l.d}}"></path></svg></button>
+</sc-for>
+</div>
+
+<div data-tb-more style="position: relative; flex-shrink: 0">
+<button data-ctl data-trigger="more" type="button" aria-haspopup="dialog" aria-expanded="{{moreOpen}}" aria-label="More options" onClick="{{toggleMore}}" style="width: 36px; height: 36px; border-radius: 8px; border: 1px solid #262830; background: #14151A; color: #F2F3F5; display: flex; align-items: center; justify-content: center">
+<svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M5 10.5a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3zM12 10.5a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3zM19 10.5a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3z"></path></svg>
+</button>
+<sc-if value="{{moreOpen}}" hint-placeholder-val="{{false}}">
+<div data-pop role="dialog" aria-label="More options" style="position: absolute; z-index: 20; top: calc(100% + 6px); right: 0; width: 300px; max-height: 620px; overflow-y: auto; box-sizing: border-box; padding: 6px; border-radius: 12px; background: #16171C; border: 1px solid #2E3039; box-shadow: 0 18px 48px rgba(0, 0, 0, 0.55); display: flex; flex-direction: column; gap: 4px">
+<div data-more-status role="group" aria-label="Status" style="display: flex; flex-direction: column; gap: 2px; padding-bottom: 6px">
+<div style="padding: 8px 10px 6px; font-size: 12px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #A3A8B3">Status</div>
+<sc-for list="{{stages}}" as="s" hint-placeholder-count="5">
+<button type="button" aria-pressed="{{s.pressed}}" onClick="{{s.pick}}" style="display: flex; align-items: center; gap: 10px; width: 100%; min-height: 36px; padding: 0 10px; box-sizing: border-box; border-radius: 7px; border: 0; background: {{s.menuBg}}; color: #F2F3F5; font-weight: 600; font-size: 13px; text-align: left; white-space: nowrap"><span style="flex-grow: 1">{{s.label}}</span><span style="color: #A3A8B3">{{s.count}}</span></button>
+</sc-for>
+</div>
+<div data-more-scope role="group" aria-label="Saved view" style="display: flex; flex-direction: column; gap: 2px; padding-bottom: 6px">
+<div style="padding: 8px 10px 6px; font-size: 12px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #A3A8B3">Saved view</div>
+<sc-for list="{{views}}" as="v" hint-placeholder-count="7">
+<button type="button" aria-pressed="{{v.checked}}" onClick="{{v.pick}}" style="display: flex; align-items: center; gap: 10px; width: 100%; min-height: 36px; padding: 0 10px; box-sizing: border-box; border-radius: 7px; border: 0; background: {{v.bg}}; color: #F2F3F5; font-weight: 600; font-size: 13px; text-align: left; white-space: nowrap"><span style="width: 8px; height: 8px; border-radius: 50%; background: {{v.dot}}"></span><span style="flex-grow: 1">{{v.label}}</span><span style="color: #A3A8B3">{{v.count}}</span></button>
+</sc-for>
+</div>
+<div data-more-view role="group" aria-label="Layout" style="display: flex; flex-direction: column; gap: 6px; padding: 0 4px 10px">
+<div style="padding: 8px 6px 0; font-size: 12px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #A3A8B3">Layout</div>
+<div style="display: flex; gap: 2px; padding: 3px; border-radius: 8px; background: #0C0D10; border: 1px solid #262830">
+<sc-for list="{{layouts}}" as="l" hint-placeholder-count="3">
+<button type="button" aria-pressed="{{l.pressed}}" onClick="{{l.pick}}" style="flex: 1 1 0; display: flex; align-items: center; justify-content: center; gap: 6px; height: 30px; border-radius: 6px; border: 0; background: {{l.bg}}; color: {{l.fg}}; font-weight: 700; font-size: 12px"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="{{l.d}}"></path></svg>{{l.short}}</button>
+</sc-for>
+</div>
+</div>
+<div data-more-sort role="group" aria-label="Sort" style="display: flex; flex-direction: column; gap: 2px; padding-bottom: 6px">
+<div style="padding: 8px 10px 6px; font-size: 12px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #A3A8B3">Sort by</div>
+<sc-for list="{{sorts}}" as="o" hint-placeholder-count="4">
+<button type="button" aria-pressed="{{o.pressed}}" onClick="{{o.pick}}" style="display: flex; align-items: center; gap: 10px; width: 100%; min-height: 36px; padding: 0 10px; box-sizing: border-box; border-radius: 7px; border: 0; background: {{o.menuBg}}; color: #F2F3F5; font-weight: 600; font-size: 13px; text-align: left; white-space: nowrap"><span style="flex-grow: 1">{{o.label}}</span></button>
+</sc-for>
+<div role="group" aria-label="Order" style="display: flex; gap: 2px; margin: 6px 4px 0; padding: 3px; border-radius: 8px; background: #0C0D10; border: 1px solid #262830">
+<sc-for list="{{orders}}" as="o" hint-placeholder-count="2">
+<button type="button" aria-pressed="{{o.pressed}}" onClick="{{o.pick}}" style="flex: 1 1 0; height: 28px; padding: 0 8px; border-radius: 6px; border: 0; background: {{o.bg}}; color: {{o.fg}}; font-weight: 700; font-size: 12px; white-space: nowrap">{{o.label}}</button>
+</sc-for>
+</div>
+</div>
+<div data-more-fields role="group" aria-label="Card fields" style="display: flex; flex-direction: column; gap: 2px; padding: 0 4px 6px 10px">
+<div style="padding: 8px 0 6px; font-size: 12px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #A3A8B3">Card fields</div>
+<sc-for list="{{fields}}" as="f" hint-placeholder-count="8">
+<button type="button" role="switch" aria-checked="{{f.on}}" onClick="{{f.toggle}}" style="display: flex; align-items: center; gap: 10px; width: 100%; min-height: 36px; padding: 0 6px 0 0; box-sizing: border-box; border-radius: 8px; border: 0; background: transparent; color: #F2F3F5; font-weight: 600; font-size: 13px; text-align: left">
+<span style="flex-grow: 1">{{f.label}}</span>
+<span aria-hidden="true" style="width: 32px; height: 18px; box-sizing: border-box; padding: 2px; border-radius: 999px; background: {{f.track}}; display: flex"><span style="width: 14px; height: 14px; border-radius: 50%; background: {{f.knob}}; transform: translateX({{f.knobX}})"></span></span>
+</button>
+</sc-for>
+</div>
+</div>
+</sc-if>
+</div>
+
+</div>
+</div>
+
+<sc-if value="{{coverNotice}}" hint-placeholder-val="{{true}}">
+<div style="display: flex; align-items: center; gap: 10px; min-height: 40px; padding: 0 4px 0 12px; box-sizing: border-box; border-radius: 10px; background: #15140F; border: 1px solid #3A3320; color: #E9D9AE; font-size: 13px; font-weight: 600">
+<svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0; color: #FFB020"><path d="M4 5h16v14H4zM4 15l4-4 4 4 3-3 5 5M15.5 9.5h.01"></path></svg>
+<span style="flex: 1 1 auto; min-width: 0">{{coverText}}</span>
+<sc-if value="{{coversIdle}}" hint-placeholder-val="{{true}}"><button type="button" onClick="{{generateCovers}}" style="flex-shrink: 0; height: 32px; padding: 0 12px; border-radius: 7px; border: 1px solid #4A4128; background: #221F14; color: #F2F3F5; font-weight: 700; font-size: 13px; white-space: nowrap">Generate covers</button></sc-if>
+<sc-if value="{{coversBusy}}" hint-placeholder-val="{{false}}"><span data-pulse aria-hidden="true" style="flex-shrink: 0; width: 8px; height: 8px; margin-right: 10px; border-radius: 50%; background: #FFB020"></span></sc-if>
+</div>
+</sc-if>
+</section>
+
+<div onKeyDown="{{onKey}}" style="flex: 1 1 0; min-height: 560px; display: flex; gap: 10px; overflow-x: auto; overflow-y: hidden">
+<sc-for list="{{columns}}" as="col" hint-placeholder-count="5">
+<section data-lane aria-label="{{col.aria}}" onDragOver="{{col.dragOver}}" onDrop="{{col.drop}}" style="position: relative; display: flex; flex-direction: column; min-height: 0; box-sizing: border-box; flex: {{col.flex}}; min-width: {{col.minW}}; max-width: {{col.maxW}}; border-radius: 16px; background: #0A0B0D; border: 1px solid {{col.border}}">
+<sc-if value="{{col.collapsed}}" hint-placeholder-val="{{false}}">
+<button type="button" aria-label="{{col.expandLabel}}" aria-expanded="false" onClick="{{col.toggle}}" style="flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; align-items: center; gap: 12px; width: 100%; padding: 12px 0; box-sizing: border-box; border: 0; border-radius: 15px; background: {{col.listBg}}; color: #A3A8B3">
+<svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"></path></svg>
+<span style="font-family: Unbounded, sans-serif; font-weight: 700; font-size: 18px; line-height: 1; font-variant-numeric: tabular-nums; color: {{col.color}}">{{col.count}}</span>
+<span style="writing-mode: vertical-rl; text-orientation: mixed; white-space: nowrap; font-size: 11px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: #C9CDD4">{{col.name}}</span>
+</button>
+</sc-if>
+<sc-if value="{{col.expanded}}" hint-placeholder-val="{{true}}">
+<header style="flex-shrink: 0; display: flex; align-items: center; gap: 12px; min-height: 76px; box-sizing: border-box; padding: 14px 12px 14px 16px; border-bottom: 1px solid #1C1E24">
+<span aria-hidden="true" style="font-family: Unbounded, sans-serif; font-weight: 700; font-size: 40px; line-height: 1; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; color: {{col.color}}">{{col.count}}</span>
+<div style="flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 4px">
+<h2 style="margin: 0; font-size: 13px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: #F2F3F5; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{col.name}}</h2>
+<p style="margin: 0; font-size: 12px; font-weight: 500; color: #A3A8B3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{col.desc}}</p>
+</div>
+<sc-if value="{{col.canAdd}}" hint-placeholder-val="{{false}}"><button type="button" aria-label="{{col.addLabel}}" style="flex-shrink: 0; width: 32px; height: 32px; border-radius: 8px; border: 1px solid #262830; background: #14151A; color: #F2F3F5; display: flex; align-items: center; justify-content: center"><svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg></button></sc-if>
+</header>
+<sc-if value="{{col.canManage}}" hint-placeholder-val="{{true}}">
+<div data-lane-ctl data-open="{{col.menuOpenStr}}" style="position: absolute; top: 8px; right: {{col.ctlRight}}; z-index: 2; display: flex; align-items: center; gap: 2px; padding: 2px; border-radius: 8px; background: rgba(14, 15, 18, 0.94); border: 1px solid #23252C">
+<button data-lane-collapse type="button" aria-label="{{col.collapseLabel}}" aria-expanded="true" onClick="{{col.toggle}}" style="width: 28px; height: 28px; border-radius: 6px; border: 0; background: transparent; color: #C9CDD4; display: flex; align-items: center; justify-content: center"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"></path></svg></button>
+<button type="button" data-trigger="{{col.menuKey}}" aria-label="{{col.optionsLabel}}" aria-haspopup="dialog" aria-expanded="{{col.menuOpen}}" onClick="{{col.toggleMenu}}" style="width: 28px; height: 28px; border-radius: 6px; border: 0; background: transparent; color: #C9CDD4; display: flex; align-items: center; justify-content: center"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M5 10.5a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3zM12 10.5a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3zM19 10.5a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3z"></path></svg></button>
+</div>
+</sc-if>
+<sc-if value="{{col.menuOpen}}" hint-placeholder-val="{{false}}">
+<div data-pop role="dialog" aria-label="{{col.optionsLabel}}" style="position: absolute; z-index: 20; top: 46px; right: 8px; width: 232px; max-width: calc(100% - 16px); box-sizing: border-box; padding: 12px; border-radius: 12px; background: #16171C; border: 1px solid #2E3039; box-shadow: 0 18px 48px rgba(0, 0, 0, 0.55); display: flex; flex-direction: column; gap: 12px">
+<label style="display: flex; flex-direction: column; gap: 6px; font-size: 12px; font-weight: 700; color: #C9CDD4">Name
+<input type="text" value="{{col.draft}}" onChange="{{col.onDraft}}" onKeyDown="{{col.onDraftKey}}" maxlength="40" style="height: 34px; padding: 0 10px; box-sizing: border-box; border-radius: 8px; border: 1px solid #2E3039; background: #0C0D10; color: #F2F3F5; font: inherit; font-size: 13px; font-weight: 600; outline: 0">
+</label>
+<div role="group" aria-label="Column color" style="display: flex; flex-wrap: wrap; gap: 6px">
+<sc-for list="{{col.swatches}}" as="w" hint-placeholder-count="8">
+<button type="button" aria-label="{{w.label}}" aria-pressed="{{w.on}}" onClick="{{w.pick}}" style="width: 24px; height: 24px; padding: 0; box-sizing: border-box; border-radius: 50%; border: 2px solid {{w.ring}}; background: {{w.color}}"></button>
+</sc-for>
+</div>
+<div style="display: flex; align-items: center; gap: 6px">
+<button type="button" disabled="{{col.renameDisabled}}" onClick="{{col.rename}}" style="height: 32px; padding: 0 12px; border-radius: 8px; border: 1px solid #33363F; background: #14151A; color: #F2F3F5; font-weight: 700; font-size: 12px">Rename</button>
+<button type="button" onClick="{{col.toggle}}" style="height: 32px; padding: 0 12px; border-radius: 8px; border: 1px solid #33363F; background: #14151A; color: #F2F3F5; font-weight: 700; font-size: 12px">Collapse</button>
+<div style="flex-grow: 1"></div>
+<sc-if value="{{col.canDelete}}" hint-placeholder-val="{{false}}"><button type="button" onClick="{{col.remove}}" style="height: 32px; padding: 0 10px; border-radius: 8px; border: 1px solid {{col.delBorder}}; background: {{col.delBg}}; color: #FF8A7A; font-weight: 700; font-size: 12px; white-space: nowrap">{{col.delLabel}}</button></sc-if>
+</div>
+<p style="margin: 0; font-size: 12px; font-weight: 500; line-height: 1.4; color: #A3A8B3">{{col.menuNote}}</p>
+</div>
+</sc-if>
+<div data-list role="list" aria-label="{{col.listLabel}}" style="flex: 1 1 0; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; padding: 10px; border-radius: 0 0 15px 15px; background: {{col.listBg}}">
+<sc-if value="{{col.empty}}" hint-placeholder-val="{{false}}">
+<div style="flex-shrink: 0; height: 64px; box-sizing: border-box; border-radius: 12px; border: 1px dashed {{col.dropBorder}}; display: flex; align-items: center; justify-content: center; color: #A3A8B3; font-size: 13px; font-weight: 600">{{col.emptyText}}</div>
+</sc-if>
+<sc-for list="{{col.cards}}" as="card" hint-placeholder-count="2">
+<article data-card role="listitem" draggable="true" onDragStart="{{card.dragStart}}" onDragEnd="{{endDrag}}" onClick="{{card.cardClick}}" style="flex-shrink: 0; display: flex; flex-direction: column; border-radius: 12px; overflow: hidden; background: #101113; border: 1px solid {{card.border}}; cursor: pointer; opacity: {{card.opacity}}">
+<sc-if value="{{card.hasMedia}}" hint-placeholder-val="{{false}}">
+<div style="position: relative; flex-shrink: 0; aspect-ratio: 3 / 1">
+<div role="img" aria-label="{{card.thumbLabel}}" style="position: absolute; inset: 0; background: repeating-linear-gradient(135deg, #16171C 0 10px, #1A1B21 10px 20px); display: flex; align-items: center; justify-content: center; color: #5C616D">
+<svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v14H4zM4 15l4-4 4 4 3-3 5 5M15.5 9.5h.01"></path></svg>
+</div>
+<sc-if value="{{card.showOrigin}}" hint-placeholder-val="{{true}}"><span style="position: absolute; top: 8px; left: 8px; display: flex; align-items: center; gap: 5px; height: 22px; padding: 0 8px; border-radius: 6px; background: rgba(10, 11, 13, 0.86); color: {{card.originFg}}; font-size: 12px; font-weight: 700; white-space: nowrap"><svg aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="{{card.originIcon}}"></path></svg>{{card.origin}}</span></sc-if>
+<sc-if value="{{card.runPill}}" hint-placeholder-val="{{false}}"><span style="position: absolute; top: 9px; right: 8px; display: flex; align-items: center; gap: 5px; height: 20px; padding: 0 8px; border-radius: 999px; background: {{card.runBg}}; color: {{card.runFg}}; font-size: 11px; font-weight: 700; white-space: nowrap"><span style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Research run:</span><sc-if value="{{card.running}}" hint-placeholder-val="{{false}}"><span data-pulse style="width: 6px; height: 6px; border-radius: 50%; background: currentColor"></span></sc-if><sc-if value="{{card.notRunning}}" hint-placeholder-val="{{true}}"><svg aria-hidden="true" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="{{card.runIcon}}"></path></svg></sc-if>{{card.runLabel}}</span></sc-if>
+<sc-if value="{{card.playable}}" hint-placeholder-val="{{false}}"><button type="button" aria-label="{{card.playLabel}}" style="position: absolute; right: 8px; bottom: 8px; width: 32px; height: 32px; border-radius: 50%; border: 1px solid rgba(255, 255, 255, 0.22); background: rgba(10, 11, 13, 0.84); color: #F2F3F5; display: flex; align-items: center; justify-content: center"><svg aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M7 4.5v15l13-7.5z"></path></svg></button></sc-if>
+</div>
+</sc-if>
+<sc-if value="{{card.hasStrip}}" hint-placeholder-val="{{true}}">
+<div style="flex-shrink: 0; display: flex; align-items: center; gap: 8px; height: 30px; box-sizing: border-box; padding: 0 8px 0 14px; background: {{card.stripBg}}">
+<sc-if value="{{card.showOrigin}}" hint-placeholder-val="{{true}}"><span style="display: flex; align-items: center; gap: 6px; min-width: 0; color: {{card.originFg}}; font-size: 12px; font-weight: 700; white-space: nowrap"><svg aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="{{card.originIcon}}"></path></svg>{{card.origin}}</span></sc-if>
+<sc-if value="{{card.runPill}}" hint-placeholder-val="{{false}}"><span style="flex-shrink: 0; margin-left: auto; display: flex; align-items: center; gap: 5px; height: 20px; padding: 0 8px; border-radius: 999px; background: {{card.runBg}}; color: {{card.runFg}}; font-size: 11px; font-weight: 700; white-space: nowrap"><span style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Research run:</span><sc-if value="{{card.running}}" hint-placeholder-val="{{false}}"><span data-pulse style="width: 6px; height: 6px; border-radius: 50%; background: currentColor"></span></sc-if><sc-if value="{{card.notRunning}}" hint-placeholder-val="{{true}}"><svg aria-hidden="true" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="{{card.runIcon}}"></path></svg></sc-if>{{card.runLabel}}</span></sc-if>
+</div>
+</sc-if>
+<div style="display: flex; flex-direction: column; gap: 6px; padding: 14px">
+<sc-if value="{{card.hook}}" hint-placeholder-val="{{false}}"><div style="font-size: 12px; line-height: 16px; font-weight: 600; color: #A3A8B3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">“{{card.hook}}”</div></sc-if>
+<button type="button" data-open-id="{{card.id}}" aria-haspopup="dialog" onClick="{{card.open}}" style="padding: 0; border: 0; background: transparent; color: #F5F6F8; font: inherit; text-align: left"><span data-clamp style="font-size: 16px; line-height: 21px; font-weight: 600; letter-spacing: -0.01em">{{card.title}}</span></button>
+<sc-if value="{{card.context}}" hint-placeholder-val="{{false}}"><div style="font-size: 13px; line-height: 18px; font-weight: 500; color: #A3A8B3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{card.context}}</div></sc-if>
+<sc-if value="{{card.failed}}" hint-placeholder-val="{{false}}">
+<div style="display: flex; align-items: center; gap: 8px; margin-top: 4px; min-height: 34px; padding: 0 4px 0 10px; box-sizing: border-box; border-radius: 8px; background: #2A1412; border: 1px solid #4A211C; color: #FFB4A8; font-size: 12px; font-weight: 700">
+<svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4M12 17h.01M10.3 3.9L2.4 18a2 2 0 0 0 1.7 3h15.8a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"></path></svg>
+<span style="flex-grow: 1">Research run failed</span>
+<button type="button" aria-label="{{card.retryLabel}}" onClick="{{card.retry}}" style="min-height: 26px; padding: 0 10px; border-radius: 6px; border: 1px solid #6A2C24; background: #3A1714; color: #FFD3CB; font-weight: 700; font-size: 12px">Retry</button>
+</div>
+</sc-if>
+<div style="display: flex; align-items: center; gap: 6px; min-height: 28px; margin-top: 8px">
+<sc-if value="{{show.brand}}" hint-placeholder-val="{{true}}"><span style="display: flex; align-items: center; gap: 7px; min-width: 0; font-size: 12px; font-weight: 600; color: #C9CDD4"><span style="flex-shrink: 0; width: 8px; height: 8px; border-radius: 50%; background: {{card.brandColor}}"></span><span style="overflow: hidden; white-space: nowrap; text-overflow: ellipsis">{{card.brand}}</span></span></sc-if>
+<div style="flex-grow: 1"></div>
+<sc-if value="{{card.badge}}" hint-placeholder-val="{{false}}"><span style="flex-shrink: 0; padding: 3px 7px; border-radius: 6px; font-size: 12px; font-weight: 800; font-variant-numeric: tabular-nums; white-space: nowrap; color: {{card.badgeFg}}; background: {{card.badgeBg}}">{{card.badge}}</span></sc-if>
+<sc-if value="{{card.comments}}" hint-placeholder-val="{{false}}"><span role="img" aria-label="{{card.commentsLabel}}" style="flex-shrink: 0; display: flex; align-items: center; gap: 4px; color: #A3A8B3; font-size: 12px; font-weight: 700"><svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"><path d="M4 5h16v11H9l-5 4z"></path></svg>{{card.comments}}</span></sc-if>
+<sc-if value="{{show.owner}}" hint-placeholder-val="{{true}}"><span role="img" aria-label="{{card.ownerName}}" style="flex-shrink: 0; width: 24px; height: 24px; border-radius: 50%; background: #2B2D35; color: #F2F3F5; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700">{{card.owner}}</span></sc-if>
+<sc-if value="{{col.canAdvance}}" hint-placeholder-val="{{true}}"><button data-secondary type="button" aria-label="{{card.moveLabel}}" onClick="{{card.advance}}" style="flex-shrink: 0; width: 28px; height: 28px; border-radius: 8px; border: 1px solid #33363F; background: #14151A; color: #F2F3F5; display: flex; align-items: center; justify-content: center"><svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"></path></svg></button></sc-if>
+</div>
+<sc-if value="{{col.isReview}}" hint-placeholder-val="{{false}}">
+<div role="group" aria-label="{{card.reviewLabel}}" style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; margin-top: 6px">
+<button type="button" onClick="{{card.approve}}" style="min-height: 32px; padding: 0 6px; border-radius: 8px; border: 0; background: {{accent}}; color: #06211E; font-weight: 700; font-size: 12px">Approve</button>
+<button type="button" onClick="{{card.sendBack}}" style="min-height: 32px; padding: 0 6px; border-radius: 8px; border: 1px solid #33363F; background: #14151A; color: #F2F3F5; font-weight: 700; font-size: 12px">Return</button>
+<button type="button" onClick="{{card.park}}" style="min-height: 32px; padding: 0 6px; border-radius: 8px; border: 1px solid #33363F; background: #14151A; color: #F2F3F5; font-weight: 700; font-size: 12px">Park</button>
+</div>
+</sc-if>
+<sc-if value="{{col.isParked}}" hint-placeholder-val="{{false}}"><button type="button" onClick="{{card.restore}}" style="height: 32px; margin-top: 6px; border-radius: 8px; border: 1px solid #33363F; background: #14151A; color: #F2F3F5; font-weight: 700; font-size: 12px">Move back to In Development</button></sc-if>
+</div>
+</article>
+</sc-for>
+<sc-if value="{{col.more}}" hint-placeholder-val="{{false}}"><button type="button" style="flex-shrink: 0; min-height: 40px; border-radius: 10px; border: 1px solid #1E2026; background: transparent; color: #C9CDD4; font-weight: 700; font-size: 13px">{{col.more}}</button></sc-if>
+</div>
+</sc-if>
+</section>
+</sc-for>
+<sc-if value="{{showAddCol}}" hint-placeholder-val="{{true}}">
+<div data-addcol style="flex: 0 0 {{addColW}}; min-width: {{addColW}}; display: flex; flex-direction: column">
+<sc-if value="{{adding}}" hint-placeholder-val="{{false}}">
+<div style="display: flex; flex-direction: column; gap: 8px; padding: 10px; box-sizing: border-box; border-radius: 16px; border: 1px dashed #3A3D47; background: rgba(20, 21, 26, 0.6)">
+<input type="text" value="{{newName}}" onChange="{{onNewName}}" onKeyDown="{{onNewKey}}" maxlength="40" placeholder="Column name" aria-label="New column name" style="height: 34px; padding: 0 10px; box-sizing: border-box; border-radius: 8px; border: 1px solid #2E3039; background: #0C0D10; color: #F2F3F5; font: inherit; font-size: 13px; font-weight: 600; outline: 0">
+<div style="display: flex; align-items: center; gap: 6px">
+<button type="button" disabled="{{addDisabled}}" onClick="{{addColumn}}" style="flex: 1 1 auto; display: flex; align-items: center; justify-content: center; gap: 6px; height: 32px; border-radius: 8px; border: 1px solid #33363F; background: #14151A; color: #F2F3F5; font-weight: 700; font-size: 12px"><svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-10"></path></svg>Add</button>
+<button type="button" aria-label="Cancel adding a column" onClick="{{cancelAdd}}" style="width: 32px; height: 32px; border-radius: 8px; border: 0; background: transparent; color: #A3A8B3; display: flex; align-items: center; justify-content: center"><svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"></path></svg></button>
+</div>
+</div>
+</sc-if>
+<sc-if value="{{notAdding}}" hint-placeholder-val="{{true}}">
+<button type="button" onClick="{{startAdd}}" style="flex: 1 1 auto; display: flex; flex-direction: column; align-items: center; gap: 12px; width: 100%; padding: 14px 0; box-sizing: border-box; border-radius: 16px; border: 1px dashed #34363F; background: rgba(20, 21, 26, 0.4); color: #A3A8B3">
+<svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg>
+<span style="writing-mode: vertical-rl; text-orientation: mixed; white-space: nowrap; font-size: 11px; font-weight: 700; letter-spacing: 0.04em">Add column</span>
+</button>
+</sc-if>
+</div>
+</sc-if>
+</div>
+
+</main>
+<sc-if value="{{detailOpen}}" hint-placeholder-val="{{false}}">
+<div data-modal onKeyDown="{{onModalKey}}" style="position: fixed; inset: 0; z-index: 40; overflow-y: auto; box-sizing: border-box; padding: 40px 24px">
+<div aria-hidden="true" onClick="{{closeDetail}}" style="position: fixed; inset: 0; background: rgba(5, 6, 8, 0.74)"></div>
+<div role="dialog" aria-modal="true" aria-labelledby="idea-title" style="position: relative; margin: 0 auto; width: 100%; max-width: 1120px; display: flex; flex-wrap: wrap; border-radius: 18px; overflow: hidden; background: #111217; border: 1px solid #2A2C35; box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6)">
+
+<div style="flex: 999 1 560px; min-width: 0; display: flex; flex-direction: column">
+
+<div style="display: flex; align-items: center; gap: 8px; min-height: 60px; padding: 10px 12px 10px 24px; box-sizing: border-box; border-bottom: 1px solid #22242B">
+<span style="flex-shrink: 0; width: 8px; height: 8px; border-radius: 50%; background: {{detail.stageColor}}"></span>
+<span data-crumb style="font-size: 13px; font-weight: 600; color: #A3A8B3; white-space: nowrap">Ideas &amp; Research</span>
+<svg data-crumb aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0; color: #6B7180"><path d="M9 6l6 6-6 6"></path></svg>
+<span style="min-width: 0; font-size: 13px; font-weight: 700; color: #F2F3F5; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{detail.stageName}}</span>
+<div style="flex-grow: 1"></div>
+<span style="flex-shrink: 0; padding-right: 4px; font-size: 13px; font-weight: 600; color: #A3A8B3; white-space: nowrap">{{detail.position}}</span>
+<button type="button" aria-label="Previous idea" disabled="{{detail.prevDisabled}}" onClick="{{detail.prev}}" style="flex-shrink: 0; width: 36px; height: 36px; border-radius: 9px; border: 1px solid #2A2C35; background: transparent; color: #F2F3F5; display: flex; align-items: center; justify-content: center"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"></path></svg></button>
+<button type="button" aria-label="Next idea" disabled="{{detail.nextDisabled}}" onClick="{{detail.next}}" style="flex-shrink: 0; width: 36px; height: 36px; border-radius: 9px; border: 1px solid #2A2C35; background: transparent; color: #F2F3F5; display: flex; align-items: center; justify-content: center"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"></path></svg></button>
+<button type="button" aria-label="Open idea as a full page" style="flex-shrink: 0; width: 36px; height: 36px; border-radius: 9px; border: 1px solid #2A2C35; background: transparent; color: #F2F3F5; display: flex; align-items: center; justify-content: center"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4h6v6M20 4l-7 7M10 20H4v-6M4 20l7-7"></path></svg></button>
+<button data-autofocus type="button" aria-label="Close idea details" onClick="{{closeDetail}}" style="flex-shrink: 0; width: 36px; height: 36px; border-radius: 9px; border: 1px solid #2A2C35; background: transparent; color: #F2F3F5; display: flex; align-items: center; justify-content: center"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"></path></svg></button>
+</div>
+
+<sc-if value="{{detail.hasMedia}}" hint-placeholder-val="{{false}}">
+<div style="position: relative; flex-shrink: 0; aspect-ratio: 3 / 1; max-height: 240px">
+<div role="img" aria-label="{{detail.thumbLabel}}" style="position: absolute; inset: 0; background: repeating-linear-gradient(135deg, #16171C 0 12px, #1A1B21 12px 24px); display: flex; align-items: center; justify-content: center; color: #5C616D"><svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v14H4zM4 15l4-4 4 4 3-3 5 5M15.5 9.5h.01"></path></svg></div>
+<div style="position: absolute; right: 12px; bottom: 12px; display: flex; gap: 8px">
+<sc-if value="{{detail.playable}}" hint-placeholder-val="{{false}}"><button type="button" style="display: flex; align-items: center; gap: 6px; height: 34px; padding: 0 12px; border-radius: 9px; border: 1px solid rgba(255, 255, 255, 0.2); background: rgba(10, 11, 13, 0.86); color: #F2F3F5; font-weight: 700; font-size: 13px"><svg aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M7 4.5v15l13-7.5z"></path></svg>Play preview</button></sc-if>
+<button type="button" style="display: flex; align-items: center; gap: 6px; height: 34px; padding: 0 12px; border-radius: 9px; border: 1px solid rgba(255, 255, 255, 0.2); background: rgba(10, 11, 13, 0.86); color: #F2F3F5; font-weight: 700; font-size: 13px"><svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v14H4zM4 15l4-4 4 4 3-3 5 5"></path></svg>Replace cover</button>
+</div>
+</div>
+</sc-if>
+
+<div style="display: flex; flex-direction: column; gap: 12px; padding: 22px 24px 0">
+<sc-if value="{{detail.hook}}" hint-placeholder-val="{{false}}"><div style="font-size: 13px; font-weight: 600; color: #A3A8B3">“{{detail.hook}}”</div></sc-if>
+<h2 id="idea-title" style="margin: 0; font-family: Unbounded, sans-serif; font-weight: 700; font-size: 22px; line-height: 1.3; letter-spacing: -0.01em">{{detail.title}}</h2>
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px">
+<span style="display: flex; align-items: center; gap: 6px; height: 26px; padding: 0 10px; border-radius: 999px; background: {{detail.originBg}}; color: {{detail.originFg}}; font-size: 12px; font-weight: 700; white-space: nowrap"><svg aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="{{detail.originIcon}}"></path></svg>{{detail.origin}}</span>
+<sc-if value="{{detail.hasRun}}" hint-placeholder-val="{{true}}"><span style="display: flex; align-items: center; gap: 6px; height: 26px; padding: 0 10px; border-radius: 999px; background: {{detail.runBg}}; color: {{detail.runFg}}; font-size: 12px; font-weight: 700; white-space: nowrap"><sc-if value="{{detail.running}}" hint-placeholder-val="{{false}}"><span data-pulse style="width: 6px; height: 6px; border-radius: 50%; background: currentColor"></span></sc-if>{{detail.runChip}}</span></sc-if>
+<span style="display: flex; align-items: center; gap: 7px; height: 26px; padding: 0 10px; border-radius: 999px; background: #17181D; color: #C9CDD4; font-size: 12px; font-weight: 700; white-space: nowrap"><span style="width: 8px; height: 8px; border-radius: 50%; background: {{detail.brandColor}}"></span>{{detail.brand}}</span>
+<span style="display: flex; align-items: center; gap: 7px; height: 26px; padding: 0 10px 0 3px; border-radius: 999px; background: #17181D; color: #C9CDD4; font-size: 12px; font-weight: 700; white-space: nowrap"><span aria-hidden="true" style="width: 20px; height: 20px; border-radius: 50%; background: #2B2D35; color: #F2F3F5; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 800">{{detail.ownerInitial}}</span>{{detail.ownerName}}</span>
+</div>
+<div role="img" aria-label="{{detail.stepAria}}" style="display: flex; align-items: flex-end; gap: 6px; padding-top: 4px">
+<sc-for list="{{detail.steps}}" as="st" hint-placeholder-count="4">
+<div style="flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; gap: 6px">
+<span style="font-size: 11px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: {{st.fg}}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{st.label}}</span>
+<span style="height: 4px; border-radius: 2px; background: {{st.bar}}"></span>
+</div>
+</sc-for>
+<sc-if value="{{detail.offBoard}}" hint-placeholder-val="{{false}}"><span style="flex-shrink: 0; display: flex; align-items: center; height: 24px; padding: 0 10px; border-radius: 999px; background: #17181D; border: 1px solid {{detail.stageColor}}; color: #F2F3F5; font-size: 12px; font-weight: 700; white-space: nowrap">{{detail.stageName}}</span></sc-if>
+</div>
+<div role="tablist" aria-label="Idea sections" onKeyDown="{{detail.onTabKey}}" style="display: flex; gap: 4px; margin: 6px -24px 0; padding: 0 24px; border-bottom: 1px solid #22242B; overflow-x: auto">
+<sc-for list="{{detail.tabs}}" as="t" hint-placeholder-count="4">
+<button type="button" role="tab" id="{{t.tabId}}" aria-selected="{{t.on}}" aria-controls="idea-panel" onClick="{{t.pick}}" style="flex-shrink: 0; display: flex; align-items: center; gap: 6px; height: 44px; padding: 0 12px; border: 0; border-bottom: 2px solid {{t.line}}; background: transparent; color: {{t.fg}}; font-weight: 700; font-size: 14px; white-space: nowrap">{{t.label}}<sc-if value="{{t.count}}" hint-placeholder-val="{{false}}"><span style="font-size: 12px; font-weight: 600; color: #A3A8B3">{{t.count}}</span></sc-if></button>
+</sc-for>
+</div>
+</div>
+
+<div id="idea-panel" role="tabpanel" aria-labelledby="{{detail.tabLabelledBy}}" style="flex-grow: 1; display: flex; flex-direction: column; gap: 12px; padding: 20px 24px 24px">
+<sc-if value="{{detail.tabOverview}}" hint-placeholder-val="{{true}}">
+<div data-fields style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px">
+<label style="display: flex; flex-direction: column; gap: 8px; padding: 14px 16px; border-radius: 12px; background: #0C0D10; border: 1px solid {{detail.audienceBorder}}">
+<span style="font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #A3A8B3">Who it is for</span>
+<input data-field type="text" value="{{detail.audience}}" onChange="{{detail.onAudience}}" placeholder="Name the audience" style="min-width: 0; border: 0; outline: 0; padding: 0; background: transparent; color: #F2F3F5; font: inherit; font-size: 15px; font-weight: 700">
+</label>
+<label style="display: flex; flex-direction: column; gap: 8px; padding: 14px 16px; border-radius: 12px; background: #0C0D10; border: 1px solid {{detail.takeawayBorder}}">
+<span style="font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #A3A8B3">Viewer walks away with</span>
+<input data-field type="text" value="{{detail.takeaway}}" onChange="{{detail.onTakeaway}}" placeholder="Add the takeaway" style="min-width: 0; border: 0; outline: 0; padding: 0; background: transparent; color: #F2F3F5; font: inherit; font-size: 15px; font-weight: 700">
+</label>
+</div>
+<div style="display: flex; flex-direction: column; gap: 8px; padding: 14px 16px; border-radius: 12px; background: #0C0D10; border: 1px solid #2A2C35">
+<span style="font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #A3A8B3">Hook</span>
+<span style="font-size: 15px; font-weight: 600; line-height: 1.5; color: #F2F3F5">{{detail.hookFull}}</span>
+</div>
+<div style="display: flex; flex-direction: column; gap: 8px; min-height: 88px; padding: 14px 16px; box-sizing: border-box; border-radius: 12px; background: #0C0D10; border: 1px solid #2A2C35">
+<span style="font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #A3A8B3">Concept</span>
+<span style="font-size: 15px; line-height: 1.5; color: {{detail.conceptFg}}">{{detail.concept}}</span>
+</div>
+</sc-if>
+<sc-if value="{{detail.tabResearch}}" hint-placeholder-val="{{false}}">
+<div style="display: flex; align-items: center; gap: 10px; min-height: 52px; padding: 8px 8px 8px 16px; box-sizing: border-box; border-radius: 12px; background: {{detail.runPanelBg}}; border: 1px solid {{detail.runPanelBorder}}">
+<span style="display: flex; align-items: center; gap: 8px; flex-grow: 1; color: {{detail.runFg}}; font-size: 14px; font-weight: 700"><sc-if value="{{detail.running}}" hint-placeholder-val="{{false}}"><span data-pulse style="width: 8px; height: 8px; border-radius: 50%; background: currentColor"></span></sc-if>{{detail.runSentence}}</span>
+<sc-if value="{{detail.canRun}}" hint-placeholder-val="{{true}}"><button type="button" onClick="{{detail.runResearch}}" style="flex-shrink: 0; height: 36px; padding: 0 14px; border-radius: 9px; border: 1px solid #33363F; background: #14151A; color: #F2F3F5; font-weight: 700; font-size: 13px; white-space: nowrap">{{detail.runButton}}</button></sc-if>
+</div>
+<label style="display: flex; flex-direction: column; gap: 8px; padding: 14px 16px; border-radius: 12px; background: #0C0D10; border: 1px solid #2A2C35">
+<span style="font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #A3A8B3">Question for research</span>
+<input data-field type="text" value="{{detail.question}}" onChange="{{detail.onQuestion}}" placeholder="Ask one specific question, for example two documented examples" style="min-width: 0; border: 0; outline: 0; padding: 0; background: transparent; color: #F2F3F5; font: inherit; font-size: 15px; font-weight: 600">
+</label>
+<div data-fields style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px">
+<div style="display: flex; flex-direction: column; gap: 6px; padding: 14px 16px; border-radius: 12px; background: #0C0D10; border: 1px solid #2A2C35"><span style="font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #A3A8B3">Short-form views</span><span style="font-family: Unbounded, sans-serif; font-size: 22px; font-weight: 700; color: {{detail.viewsFg}}">{{detail.views}}</span></div>
+<div style="display: flex; flex-direction: column; gap: 6px; padding: 14px 16px; border-radius: 12px; background: #0C0D10; border: 1px solid #2A2C35"><span style="font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #A3A8B3">Sources attached</span><span style="font-family: Unbounded, sans-serif; font-size: 22px; font-weight: 700; color: {{detail.sourcesFg}}">{{detail.sources}}</span></div>
+</div>
+</sc-if>
+<sc-if value="{{detail.tabComments}}" hint-placeholder-val="{{false}}">
+<sc-for list="{{detail.comments}}" as="cm" hint-placeholder-count="1">
+<div style="display: flex; gap: 12px">
+<span aria-hidden="true" style="flex-shrink: 0; width: 32px; height: 32px; border-radius: 50%; background: {{cm.color}}; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700">{{cm.initial}}</span>
+<div style="display: flex; flex-direction: column; gap: 4px; min-width: 0">
+<div style="font-weight: 700">{{cm.who}}<span style="margin-left: 8px; font-size: 12px; font-weight: 500; color: #A3A8B3">{{cm.when}}</span></div>
+<div style="line-height: 1.5; color: #E3E5E9">{{cm.text}}</div>
+</div>
+</div>
+</sc-for>
+<sc-if value="{{detail.noComments}}" hint-placeholder-val="{{false}}"><p style="margin: 0; font-size: 14px; color: #A3A8B3">No comments yet. Ask a question or leave a note for the owner.</p></sc-if>
+<div style="display: flex; flex-wrap: wrap; gap: 8px; padding-top: 4px">
+<label style="flex: 1 1 240px; display: flex; align-items: center; min-height: 44px; padding: 0 14px; box-sizing: border-box; border-radius: 10px; background: #0C0D10; border: 1px solid #2A2C35">
+<span style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Add a comment</span>
+<input data-field type="text" value="{{detail.commentDraft}}" onChange="{{detail.onComment}}" onKeyDown="{{detail.onCommentKey}}" placeholder="Add a comment, Enter to post" style="flex-grow: 1; min-width: 0; border: 0; outline: 0; background: transparent; color: #F2F3F5; font: inherit">
+</label>
+<button type="button" disabled="{{detail.postDisabled}}" onClick="{{detail.post}}" style="height: 44px; padding: 0 18px; border-radius: 10px; border: 1px solid #33363F; background: #1E2027; color: #F2F3F5; font-weight: 700; font-size: 14px">Post</button>
+</div>
+</sc-if>
+<sc-if value="{{detail.tabHistory}}" hint-placeholder-val="{{false}}">
+<ol style="margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column">
+<sc-for list="{{detail.history}}" as="h" hint-placeholder-count="3">
+<li style="display: flex; align-items: center; gap: 12px; min-height: 44px; border-bottom: 1px solid #1E2027; font-size: 14px">
+<span aria-hidden="true" style="flex-shrink: 0; width: 8px; height: 8px; border-radius: 50%; background: {{h.dot}}"></span>
+<span style="flex-grow: 1; color: #E3E5E9">{{h.text}}</span>
+<span style="flex-shrink: 0; font-size: 12px; font-weight: 600; color: #A3A8B3">{{h.when}}</span>
+</li>
+</sc-for>
+</ol>
+</sc-if>
+</div>
+
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 14px 24px; border-top: 1px solid #22242B; background: #0E0F13">
+<sc-for list="{{detail.actions}}" as="ac" hint-placeholder-count="2">
+<button type="button" disabled="{{ac.disabled}}" onClick="{{ac.run}}" style="display: flex; align-items: center; gap: 8px; height: 40px; padding: 0 16px; border-radius: 10px; border: 1px solid {{ac.border}}; background: {{ac.bg}}; color: {{ac.fg}}; font-weight: 700; font-size: 14px; white-space: nowrap">{{ac.label}}</button>
+</sc-for>
+<sc-if value="{{detail.actionHint}}" hint-placeholder-val="{{false}}"><span style="font-size: 13px; font-weight: 600; color: #A3A8B3">{{detail.actionHint}}</span></sc-if>
+<div style="flex-grow: 1"></div>
+<button type="button" onClick="{{closeDetail}}" style="height: 40px; padding: 0 16px; border-radius: 10px; border: 0; background: transparent; color: #C9CDD4; font-weight: 700; font-size: 14px">Close</button>
+</div>
+</div>
+
+<aside aria-label="Idea status and details" style="flex: 1 1 300px; min-width: 0; box-sizing: border-box; display: flex; flex-direction: column; gap: 22px; padding: 20px; background: #0E0F13; border-left: 1px solid #22242B">
+<section aria-labelledby="next-step-h" style="display: flex; flex-direction: column; gap: 10px; padding: 14px; border-radius: 12px; background: #111217; border: 1px solid #2A2C35">
+<h3 id="next-step-h" style="margin: 0; font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #C9CDD4">Next step</h3>
+<p style="margin: 0; font-size: 13px; line-height: 1.5; color: #E3E5E9">{{detail.nextText}}</p>
+<sc-if value="{{detail.showChecklist}}" hint-placeholder-val="{{true}}">
+<div style="display: flex; align-items: center; justify-content: space-between; padding-top: 4px; border-top: 1px solid #22242B"><span style="padding-top: 8px; font-size: 12px; font-weight: 700; color: #C9CDD4">Ready for review</span><span style="padding-top: 8px; font-size: 12px; font-weight: 700; color: {{detail.checkColor}}">{{detail.checkCount}}</span></div>
+<ul style="margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 8px">
+<sc-for list="{{detail.checks}}" as="ck" hint-placeholder-count="3">
+<li style="display: flex; align-items: center; gap: 10px; font-size: 13px; font-weight: 600; color: {{ck.fg}}">
+<span aria-hidden="true" style="flex-shrink: 0; width: 18px; height: 18px; box-sizing: border-box; border-radius: 5px; border: 1px solid {{ck.boxBorder}}; background: {{ck.boxBg}}; color: #06211E; display: flex; align-items: center; justify-content: center"><sc-if value="{{ck.done}}" hint-placeholder-val="{{false}}"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-10"></path></svg></sc-if></span>
+{{ck.label}}<span style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">{{ck.state}}</span>
+</li>
+</sc-for>
+</ul>
+</sc-if>
+</section>
+<section aria-labelledby="score-h" style="display: flex; flex-direction: column; gap: 12px">
+<h3 id="score-h" style="margin: 0; font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #A3A8B3">Score</h3>
+<sc-if value="{{detail.scored}}" hint-placeholder-val="{{false}}">
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 8px">
+<div style="display: flex; align-items: baseline; gap: 8px"><span style="font-family: Unbounded, sans-serif; font-weight: 800; font-size: 30px">{{detail.score}}</span><span style="font-size: 13px; color: #A3A8B3">ICE score</span></div>
+<span style="padding: 4px 10px; border-radius: 999px; font-size: 12px; font-weight: 700; color: {{detail.scoreFg}}; background: {{detail.scoreBg}}">{{detail.scoreWord}}</span>
+</div>
+<sc-if value="{{detail.hasIce}}" hint-placeholder-val="{{false}}">
+<div style="display: grid; grid-template-columns: 92px minmax(0, 1fr) 24px; align-items: center; gap: 10px 12px; font-size: 13px">
+<sc-for list="{{detail.ice}}" as="ic" hint-placeholder-count="3">
+<span style="color: #C9CDD4">{{ic.label}}</span>
+<div role="img" aria-label="{{ic.aria}}" style="height: 5px; border-radius: 3px; background: #2A2C35"><div style="width: {{ic.pct}}; height: 5px; border-radius: 3px; background: #F2F3F5"></div></div>
+<span style="font-weight: 700; text-align: right">{{ic.value}}</span>
+</sc-for>
+</div>
+</sc-if>
+<sc-if value="{{detail.rec}}" hint-placeholder-val="{{false}}"><p style="margin: 0; font-size: 13px; color: #C9CDD4">Research recommends: <strong style="color: #FFD27A">{{detail.rec}}</strong></p></sc-if>
+</sc-if>
+<sc-if value="{{detail.unscored}}" hint-placeholder-val="{{true}}">
+<p style="margin: 0; font-size: 13px; color: #A3A8B3">Not scored yet. A complete research run scores it.</p>
+<button type="button" style="align-self: flex-start; height: 34px; padding: 0 12px; border-radius: 9px; border: 1px solid #2E3039; background: transparent; color: #F2F3F5; font-weight: 700; font-size: 13px">Score manually</button>
+</sc-if>
+</section>
+<section aria-labelledby="details-h" style="display: flex; flex-direction: column">
+<h3 id="details-h" style="margin: 0 0 6px; font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #A3A8B3">Details</h3>
+<dl style="margin: 0">
+<sc-for list="{{detail.rows}}" as="r" hint-placeholder-count="9">
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 36px; border-top: 1px solid #1E2027; font-size: 13px">
+<dt style="color: #A3A8B3">{{r.k}}</dt>
+<dd style="margin: 0; font-weight: 700; text-align: right; color: {{r.fg}}">{{r.v}}</dd>
+</div>
+</sc-for>
+</dl>
+</section>
+</aside>
+
+</div>
+</div>
+</sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#19E6D0"},"menuState":{"editor":"enum","options":["Idea detail open","Default","Filters applied","Filter menu open","Views menu open","Sort menu open","Display menu open"],"default":"Filter menu open"},"$preview":{"width":1440,"height":1800}}'>
+class Component extends DCLogic {
+componentDidUpdate(prev) {
+if (prev.menuState !== this.props.menuState) {
+this.setState({ menu: undefined, sel: undefined, view: undefined, openId: undefined, tab: undefined });
+}
+}
+renderVals() {
+var self = this;
+var s = this.state || {};
+var accent = this.props.accent ?? "#19E6D0";
+var preset = this.props.menuState ?? "Filter menu open";
+var presets = {
+"Idea detail open": { menu: "", sel: {}, detail: "c3" },
+"Default": { menu: "", sel: {} },
+"Filters applied": { menu: "", sel: { origin: ["AI-generated"], score: ["Unscored"] } },
+"Filter menu open": { menu: "filter", sel: { origin: ["AI-generated"], score: ["Unscored"] } },
+"Views menu open": { menu: "views", sel: {} },
+"Sort menu open": { menu: "sort", sel: {} },
+"Display menu open": { menu: "display", sel: {} }
+};
+var p = presets[preset] || presets["Default"];
+var menu = s.menu !== undefined ? s.menu : p.menu;
+var sel = s.sel !== undefined ? s.sel : p.sel;
+var stage = s.stage || "all";
+var view = s.view || "all";
+var layout = s.layout || "board";
+var sort = s.sort || "score";
+var order = s.order || "desc";
+var hidden = s.hidden || {};
+var q = s.q || "";
+var openId = s.openId !== undefined ? s.openId : (p.detail || "");
+var tab = s.tab || "overview";
+var editsMap = s.edits || {};
+var converted = s.converted || {};
+function openDetail(id) {
+self.setState({ openId: id, tab: "overview", menu: "", commentDraft: "" });
+setTimeout(function () { var f = document.querySelector("[data-modal] [data-autofocus]"); if (f) { try { f.focus(); } catch (x) {} } }, 40);
+}
+function closeDetail() {
+var id = openId;
+self.setState({ openId: "", menu: "" });
+setTimeout(function () { var f = document.querySelector("[data-open-id=\"" + id + "\"]"); if (f) { try { f.focus(); } catch (x) {} } }, 40);
+}
+var qn = q.trim().toLowerCase();
+var covers = s.covers || "idle";
+
+function focusLater(host, selector) {
+setTimeout(function () { var f = host && host.querySelector(selector); if (f) { try { f.focus(); } catch (x) {} } }, 30);
+}
+function setMenu(name) {
+return function (e) {
+var opening = menu !== name;
+var host = e && e.currentTarget ? e.currentTarget.parentElement : null;
+self.setState({ menu: opening ? name : "" });
+if (opening) { focusLater(host, "[data-pop] button:not([disabled]), [data-pop] input"); }
+};
+}
+function copySel() { var o = {}; for (var k in sel) { o[k] = (sel[k] || []).slice(); } return o; }
+function norm(o) {
+return Object.keys(o).filter(function (k) { return o[k] && o[k].length; }).sort().map(function (k) { return k + ":" + o[k].slice().sort().join("|"); }).join(";");
+}
+function plain(t) { return String(t || "").toLowerCase().replace(/[^a-z0-9 ]+/g, "").replace(/\s+/g, " ").trim(); }
+
+var STAGES = [
+{ key: "inbox", name: "Idea Inbox", tab: "Inbox", desc: "Pick ideas to develop", color: "#8A8F9A", extra: 0, canAdd: true, addLabel: "Capture idea in Idea Inbox" },
+{ key: "develop", name: "In Development", tab: "Development", desc: "Sharpen the pitch", color: "#9B7BFF", extra: 10, canAdd: false, addLabel: "" },
+{ key: "review", name: "Ready for Review", tab: "Review", desc: "Approve, return or park", color: "#FFB020", extra: 0, canAdd: true, addLabel: "Add a finished pitch to Ready for Review" },
+{ key: "approved", name: "Approved", tab: "Approved", desc: "Hand off to scripting", color: "#3DDC84", extra: 0, canAdd: false, addLabel: "" }
+];
+var PALETTE = [["#8A8F9A", "Gray"], ["#9B7BFF", "Violet"], ["#FFB020", "Amber"], ["#3DDC84", "Green"], ["#5EB1EF", "Sky"], ["#F0503C", "Red"], ["#FF5A1F", "Orange"], ["#C084FC", "Lilac"]];
+var extraCols = s.extraCols || [{ key: "hold", name: "On Hold", desc: "Paused until unblocked", color: "#5EB1EF" }];
+var nameOver = s.names || {};
+var colorOver = s.colors || {};
+var collapsedMap = s.collapsed || { hold: true };
+var ALL = STAGES.concat(extraCols.map(function (c) { return { key: c.key, name: c.name, tab: c.name, desc: c.desc, color: c.color, extra: 0, canAdd: false, addLabel: "", extraCol: true }; }));
+function colName(st) { return nameOver[st.key] || st.name; }
+function colColor(st) { return colorOver[st.key] || st.color; }
+function copyObj(o) { var m = {}; for (var k in o) { m[k] = o[k]; } return m; }
+var BRANDS = { JohnXSantos: "#C084FC", Completeful: "#3DDC84", ZZMEDIA: "#FF5A1F" };
+var ORIGINS = {
+"Manual": { fg: "#C9CDD4", strip: "#16171C", icon: "M4 20h4L19 9l-4-4L4 16zM14 6l4 4" },
+"AI-generated": { fg: "#C4B1FF", strip: "#1B1630", icon: "M12 3l2 5 5 2-5 2-2 5-2-5-5-2 5-2zM19 15l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z" }
+};
+var RUNS = {
+Queued: { label: "Queued", fg: "#C9CDD4", bg: "#22242B", icon: "M12 7v5l3 2M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z" },
+Running: { label: "Running", fg: "#8EC5FF", bg: "#12233A", icon: "" },
+Complete: { label: "Complete", fg: "#7CF0A8", bg: "#123222", icon: "M5 12l5 5 9-10" },
+Failed: { label: "Failed", fg: "#FF8A7A", bg: "#3A1714", icon: "" }
+};
+var CARDS = {
+c1: { hook: "Test", title: "test", origin: "Manual", run: "Complete", brand: "Completeful", score: 58, rec: "Park", sources: 5, owner: "Z", ownerName: "You" },
+c2: { hook: "Brands Decoded- Influencer", title: "Brands Decoded- Influencer Merch Owned By Cartels?", origin: "Manual", run: "Queued" },
+c3: { hook: "Cool to Cringe", title: "Why Streetwear Brands Go From Cool to Cringe, Decoded", origin: "Manual", run: "Running", views: "1.8M", sources: 3, question: "Find two documented examples of audiences turning away from a streetwear brand." },
+c4: { hook: "Prompt Won’t Work", title: "AI Can’t Build Your Brand Strategy. Here’s What It Can Do", origin: "AI-generated", run: "Complete", views: "1.3M", sources: 3 },
+c5: { hook: "One Photo, One Ad", title: "I Turned One Tee Photo Into a Video Ad With AI, $0", origin: "AI-generated", run: "Failed", views: "1.7M", sources: 3 },
+c6: { hook: "Packaging Is Marketing", title: "Packaging Is Marketing: 3 Setups, Real Cost Per Order", origin: "AI-generated", run: "Complete", views: "71M", media: { playable: true } },
+c7: { hook: "Is Mark Whalbergs", title: "Is Mark Whalbergs Municipal The Next Gym Shark?", origin: "Manual", brand: "ZZMEDIA", score: 83, ice: [7, 8, 10], audience: "Existing Brand Owners", concept: "Brands Decoded- Municipal The Next Gymshark?", priority: "P3", created: "Nov 3", updated: "Nov 6", ownerName: "John", commentList: [{ who: "John", initial: "J", when: "Nov 3", text: "do we have reference videos? test", color: "#B8245C" }], media: { playable: false } },
+c8: { hook: "Vibe Manufacturing", title: "The Complete Guide to Vibe Manufacturing (What Nobody’s Talking About)", origin: "AI-generated" }
+};
+var base = { inbox: ["c1"], develop: ["c2", "c3", "c4", "c5", "c6"], review: [], approved: ["c7", "c8"], hold: [] };
+var board = s.board || base;
+function idsOf(k) { return board[k] || []; }
+var parked = s.parked || [];
+var runOver = s.runs || {};
+var commentsMap = s.comments || {};
+function commentCount(id) { return (CARDS[id].commentList || []).length + (commentsMap[id] || []).length; }
+function runOf(id) { return runOver[id] || CARDS[id].run || ""; }
+var dragId = s.drag || "";
+var overKey = s.over || "";
+function without(id) {
+var nb = {};
+ALL.forEach(function (st) { nb[st.key] = idsOf(st.key).filter(function (x) { return x !== id; }); });
+return nb;
+}
+function moveCard(id, to) { var nb = without(id); nb[to] = [id].concat(nb[to]); return nb; }
+
+var groupDefs = [
+{ key: "origin", label: "Idea origin", hint: "Any of", options: [["Manual", ""], ["AI-generated", "#C4B1FF"]] },
+{ key: "run", label: "Research run", hint: "Any of", options: [["Queued", "#C9CDD4"], ["Running", "#8EC5FF"], ["Complete", "#7CF0A8"], ["Failed", "#FF8A7A"], ["No run", ""]] },
+{ key: "owner", label: "Owner", hint: "Any of", options: [["You", ""], ["John Santos", ""]] },
+{ key: "score", label: "Score", hint: "Any of", options: [["75+", "#7CF0A8"], ["50 to 74", "#FFD27A"], ["Under 50", "#F0503C"], ["Unscored", "#8A8F9A"]] },
+{ key: "flags", label: "Flags", hint: "All of", options: [["Missing cover", ""], ["Has comments", ""], ["Stale 14d+", ""]] }
+];
+var activeGroups = 0;
+var chips = [];
+var groups = groupDefs.map(function (g) {
+var cur = sel[g.key] || [];
+if (cur.length) {
+activeGroups++;
+chips.push({
+group: g.label,
+value: cur.length > 2 ? cur[0] + " +" + (cur.length - 1) : cur.join(", "),
+removeLabel: "Remove " + g.label + " filter",
+remove: function () { var n = copySel(); n[g.key] = []; self.setState({ sel: n }); }
+});
+}
+return {
+label: g.label, hint: g.hint,
+options: g.options.map(function (o) {
+var on = cur.indexOf(o[0]) >= 0;
+return {
+label: o[0], dot: o[1], on: on,
+bg: on ? "#0F2A27" : "#0C0D10", border: on ? accent : "#2E3039", fg: on ? "#F2F3F5" : "#C9CDD4",
+toggle: function () {
+var n = copySel();
+var list = n[g.key] || [];
+var i = list.indexOf(o[0]);
+if (i >= 0) { list.splice(i, 1); } else { if (g.single) { list = []; } list.push(o[0]); }
+n[g.key] = list;
+self.setState({ sel: n });
+}
+};
+})
+};
+});
+var hasFilters = activeGroups > 0;
+var narrowing = hasFilters || !!qn;
+
+function scoreBand(c) {
+if (typeof c.score !== "number") { return "Unscored"; }
+if (c.score >= 75) { return "75+"; }
+if (c.score >= 50) { return "50 to 74"; }
+return "Under 50";
+}
+function inGroup(key, val) { var l = sel[key] || []; return !l.length || l.indexOf(val) >= 0; }
+function matches(id) {
+var c = CARDS[id];
+if (!inGroup("origin", c.origin)) { return false; }
+if (!inGroup("run", runOf(id) || "No run")) { return false; }
+if (!inGroup("owner", c.ownerName === "You" ? "You" : "John Santos")) { return false; }
+if (!inGroup("score", scoreBand(c))) { return false; }
+var fl = sel.flags || [];
+for (var i = 0; i < fl.length; i++) {
+if (fl[i] === "Missing cover" && c.media) { return false; }
+if (fl[i] === "Has comments" && !(commentCount(id) > 0)) { return false; }
+if (fl[i] === "Stale 14d+") { return false; }
+}
+if (qn && (c.title + " " + c.hook).toLowerCase().indexOf(qn) < 0) { return false; }
+return true;
+}
+
+var sortDefs = [["score", "Score"], ["created", "Created"], ["updated", "Last updated"], ["title", "Title"]];
+var orderNames = { score: ["High to low", "Low to high"], created: ["Newest first", "Oldest first"], updated: ["Recent first", "Oldest first"], title: ["A to Z", "Z to A"] };
+function sortIds(ids) {
+var arr = ids.slice();
+if (sort === "score") {
+arr.sort(function (a, b) {
+var sa = CARDS[a].score, sb = CARDS[b].score;
+var na = typeof sa === "number", nb = typeof sb === "number";
+if (na && nb) { return order === "desc" ? sb - sa : sa - sb; }
+if (na) { return -1; }
+if (nb) { return 1; }
+return 0;
+});
+} else if (sort === "title") {
+arr.sort(function (a, b) { var r = CARDS[a].title.localeCompare(CARDS[b].title); return order === "desc" ? r : -r; });
+} else if (order === "asc") {
+arr.reverse();
+}
+return arr;
+}
+
+var shownIds = {};
+var counts = {};
+var total = 0;
+var activeTotal = 0;
+ALL.forEach(function (st) {
+var ids = sortIds(idsOf(st.key).filter(matches));
+shownIds[st.key] = ids;
+counts[st.key] = narrowing ? ids.length : idsOf(st.key).length + st.extra;
+total += counts[st.key];
+activeTotal += idsOf(st.key).length + st.extra;
+});
+var runsActive = 0;
+ALL.forEach(function (st) { idsOf(st.key).forEach(function (id) { var r = runOf(id); if (r === "Running" || r === "Queued") { runsActive++; } }); });
+
+var stageList = [["all", "All", total]].concat(STAGES.map(function (st) { return [st.key, nameOver[st.key] || st.tab, counts[st.key]]; }));
+var curStage = stageList.filter(function (d) { return d[0] === stage; })[0] || stageList[0];
+var stages = stageList.map(function (d) {
+var on = d[0] === stage;
+return {
+label: d[1], count: String(d[2]), pressed: on,
+bg: on ? "#F2F3F5" : "transparent", fg: on ? "#0C0D10" : "#C9CDD4", countFg: on ? "#4A4F5A" : "#A3A8B3", menuBg: on ? "#1E2027" : "transparent",
+pick: function () { self.setState({ stage: d[0] }); },
+pickClose: function () { self.setState({ stage: d[0], menu: "" }); }
+};
+});
+
+var viewDefs = [
+{ id: "all", label: "All ideas", count: String(activeTotal), dot: "#8A8F9A", sel: {} },
+{ id: "mine", label: "My ideas", count: "1", dot: "#F2F3F5", sel: { owner: ["You"] } },
+{ id: "ai", label: "AI-generated", count: "", dot: "#C4B1FF", sel: { origin: ["AI-generated"] } },
+{ id: "failed", label: "Runs needing attention", count: "", dot: "#FF8A7A", sel: { run: ["Failed"] } },
+{ id: "top", label: "Top scored", count: "1", dot: "#C99A2E", sel: { score: ["75+"] } },
+{ id: "stale", label: "Stale 14d+", count: "0", dot: "#F0503C", sel: { flags: ["Stale 14d+"] } },
+{ id: "parked", label: "Parked", count: String(parked.length), dot: "#6B7180", sel: {} }
+];
+var curView = viewDefs.filter(function (v) { return v.id === view; })[0] || viewDefs[0];
+var dirty = norm(sel) !== norm(curView.sel);
+var views = viewDefs.map(function (v) {
+var on = v.id === curView.id;
+return { label: v.label, count: v.count, dot: v.dot, checked: on, bg: on ? "#1E2027" : "transparent", pick: function () { self.setState({ view: v.id, sel: v.sel, menu: "" }); } };
+});
+
+var sorts = sortDefs.map(function (d) {
+var on = d[0] === sort;
+return { label: d[1], pressed: on, menuBg: on ? "#1E2027" : "transparent", pick: function () { self.setState({ sort: d[0] }); } };
+});
+var names = orderNames[sort];
+var orders = [["desc", names[0]], ["asc", names[1]]].map(function (d) {
+var on = d[0] === order;
+return { label: d[1], pressed: on, bg: on ? "#F2F3F5" : "transparent", fg: on ? "#0C0D10" : "#A3A8B3", pick: function () { self.setState({ order: d[0] }); } };
+});
+var sortLabel = sortDefs.filter(function (d) { return d[0] === sort; })[0][1];
+var orderLabel = order === "desc" ? names[0] : names[1];
+
+var fieldDefs = [["cover", "Thumbnail"], ["origin", "Idea origin"], ["run", "Research run"], ["brand", "Brand"], ["signal", "Research context"], ["score", "Score and recommendation"], ["comments", "Comments"], ["owner", "Owner"]];
+var show = {};
+var shown = 0;
+var fields = fieldDefs.map(function (d) {
+var on = !hidden[d[0]];
+show[d[0]] = on;
+if (on) { shown++; }
+return {
+label: d[1], on: on,
+track: on ? accent : "#3A3D47", knob: on ? "#06211E" : "#C9CDD4", knobX: on ? "14px" : "0px",
+toggle: function () { var h = {}; for (var k in hidden) { h[k] = hidden[k]; } h[d[0]] = on; self.setState({ hidden: h }); }
+};
+});
+
+var layouts = [
+["grid", "Grid view", "Grid", "M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z"],
+["board", "Board view", "Board", "M4 4h4v16H4zM10 4h4v10h-4zM16 4h4v13h-4z"],
+["list", "List view", "List", "M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01"]
+].map(function (d) {
+var on = d[0] === layout;
+return { label: d[1], short: d[2], d: d[3], pressed: on, bg: on ? "#F2F3F5" : "transparent", fg: on ? "#0C0D10" : "#A3A8B3", pick: function () { self.setState({ layout: d[0] }); } };
+});
+
+function buildCard(id, colKey) {
+var c = CARDS[id];
+var o = ORIGINS[c.origin];
+var stKey = colKey;
+var ci = STAGES.map(function (x) { return x.key; }).indexOf(colKey);
+var next = colKey === "inbox" || colKey === "develop" ? STAGES[ci + 1] : null;
+var brand = c.brand || "JohnXSantos";
+var hasMedia = !!c.media && show.cover;
+var run = show.run ? runOf(id) : "";
+var r = RUNS[run];
+var pill = !!r && run !== "Failed";
+var hookPlain = plain(c.hook);
+var hook = hookPlain && plain(c.title).indexOf(hookPlain) < 0 ? c.hook : "";
+var ctx = [];
+if (c.views) { ctx.push(c.views + " views"); }
+if (c.sources) { ctx.push(c.sources + (c.sources === 1 ? " source" : " sources")); }
+var context = show.signal ? ctx.join(" · ") : "";
+if (context && plain(context) === plain(c.title)) { context = ""; }
+var scored = typeof c.score === "number";
+var recShown = show.score && !!c.rec && stKey !== "approved";
+var badgeParts = [];
+if (show.score && scored) { badgeParts.push(String(c.score)); }
+if (recShown) { badgeParts.push(c.rec); }
+var high = scored && c.score >= 75 && !recShown;
+var comments = commentCount(id);
+function setRun(v) { var m = {}; for (var k in runOver) { m[k] = runOver[k]; } m[id] = v; return m; }
+return {
+id: id, border: openId === id ? accent : "#23252C",
+open: function () { openDetail(id); },
+cardClick: function (e) { var t = e && e.target; if (t && t.closest && t.closest("button, a, input")) { return; } openDetail(id); },
+title: c.title,
+origin: c.origin, originFg: o.fg, originIcon: o.icon, stripBg: o.strip, showOrigin: show.origin,
+runPill: pill, runLabel: pill ? r.label : "", runFg: pill ? r.fg : "", runBg: pill ? r.bg : "", runIcon: pill ? r.icon : "",
+running: run === "Running", notRunning: run !== "Running", failed: run === "Failed",
+hasMedia: hasMedia, hasStrip: !hasMedia && (show.origin || pill), playable: hasMedia && !!c.media.playable,
+thumbLabel: "Thumbnail placeholder for " + c.title, playLabel: "Play preview of " + c.title,
+retryLabel: "Retry research run for " + c.title,
+hook: hook, context: context,
+brand: brand, brandColor: BRANDS[brand] || "#8A8F9A",
+badge: badgeParts.join(" · "), badgeFg: high ? "#7CF0A8" : "#FFD27A", badgeBg: high ? "#123222" : "#33290F",
+comments: show.comments && comments ? String(comments) : "", commentsLabel: comments === 1 ? "1 comment" : comments + " comments",
+owner: c.owner || "J", ownerName: "Owner: " + (c.ownerName || "John Santos"),
+moveLabel: next ? "Move " + c.title + " to " + colName(next) : "",
+reviewLabel: "Review decision for " + c.title,
+opacity: dragId === id ? "0.4" : "1",
+dragStart: function (e) {
+try { e.dataTransfer.setData("text/plain", id); e.dataTransfer.effectAllowed = "move"; } catch (x) {}
+setTimeout(function () { self.setState({ drag: id }); }, 0);
+},
+advance: function () { if (next) { self.setState({ board: moveCard(id, next.key) }); } },
+retry: function () { self.setState({ runs: setRun("Queued") }); },
+approve: function () { self.setState({ board: moveCard(id, "approved") }); },
+sendBack: function () { self.setState({ board: moveCard(id, "develop") }); },
+park: function () { self.setState({ board: without(id), parked: parked.concat([id]) }); },
+restore: function () { var nb = moveCard(id, "develop"); self.setState({ board: nb, parked: parked.filter(function (x) { return x !== id; }) }); }
+};
+}
+function dropTo(key) {
+return function (e) {
+e.preventDefault();
+var id = "";
+try { id = e.dataTransfer.getData("text/plain"); } catch (x) {}
+id = id || dragId;
+var upd = { over: "", drag: "" };
+if (id && CARDS[id]) {
+if (key === "parked") {
+upd.board = without(id);
+if (parked.indexOf(id) < 0) { upd.parked = parked.concat([id]); }
+} else {
+upd.board = moveCard(id, key);
+if (parked.indexOf(id) >= 0) { upd.parked = parked.filter(function (x) { return x !== id; }); }
+}
+}
+self.setState(upd);
+};
+}
+function overTo(key) {
+return function (e) {
+e.preventDefault();
+try { e.dataTransfer.dropEffect = "move"; } catch (x) {}
+if (overKey !== key) { self.setState({ over: key }); }
+};
+}
+function colStyle(key) {
+var isOver = overKey === key;
+return { border: isOver ? accent : "#1C1E24", listBg: isOver ? "rgba(25, 230, 208, 0.04)" : "transparent", dropBorder: isOver ? accent : "#34363F" };
+}
+
+function laneBase(key, name, color, n, collapsible) {
+var isCollapsed = collapsible && !!collapsedMap[key];
+var cs = colStyle(key);
+var menuKey = "lane:" + key;
+var ideas = n === 1 ? " idea" : " ideas";
+return {
+key: key, name: name, color: color, count: String(n),
+aria: name + ", " + n + ideas, listLabel: name + " cards",
+collapsed: isCollapsed, expanded: !isCollapsed,
+flex: isCollapsed ? "0 0 44px" : "1 1 0", minW: isCollapsed ? "44px" : "240px", maxW: isCollapsed ? "44px" : "380px",
+border: cs.border, listBg: cs.listBg, dropBorder: cs.dropBorder,
+expandLabel: "Expand " + name + ", " + n + ideas, collapseLabel: "Collapse " + name, optionsLabel: "Column options for " + name,
+menuKey: menuKey, menuOpen: menu === menuKey, menuOpenStr: menu === menuKey ? "true" : "false",
+toggle: function () { var m = copyObj(collapsedMap); m[key] = !isCollapsed; self.setState({ collapsed: m, menu: "" }); },
+dragOver: overTo(key), drop: dropTo(key)
+};
+}
+var columns;
+if (curView.id === "parked") {
+var pIds = sortIds(parked.filter(matches));
+var pl = laneBase("parked", "Parked", "#8A8F9A", pIds.length, false);
+pl.desc = "Maybe later ideas"; pl.canAdd = false; pl.addLabel = ""; pl.canManage = false; pl.ctlRight = "8px";
+pl.canAdvance = false; pl.isReview = false; pl.isParked = true;
+pl.empty = pIds.length === 0; pl.emptyText = narrowing ? "No matching ideas" : "Drop ideas here to park them"; pl.more = "";
+pl.cards = pIds.map(function (id) { return buildCard(id, "parked"); });
+columns = [pl];
+} else {
+columns = ALL.map(function (st, i) {
+var n = counts[st.key];
+var ids = shownIds[st.key];
+var name = colName(st);
+var b = laneBase(st.key, name, colColor(st), n, true);
+var left = ALL[i - 1];
+var draft = b.menuOpen && s.draft !== undefined ? s.draft : name;
+b.desc = st.desc; b.canAdd = st.canAdd; b.addLabel = st.addLabel; b.ctlRight = st.canAdd ? "52px" : "8px";
+b.canAdvance = st.key === "inbox" || st.key === "develop"; b.isReview = st.key === "review"; b.isParked = false;
+b.canManage = true; b.canDelete = !!st.extraCol;
+b.menuNote = st.extraCol ? "Deleting moves its cards to " + (left ? colName(left) : "the column on its left") + "." : "Workflow stage. Rename or recolor it here.";
+b.empty = ids.length === 0 && (narrowing || st.extra === 0);
+b.emptyText = narrowing ? "No matching ideas" : (st.key === "hold" ? "Drop paused ideas here" : "Drop ideas here");
+b.more = st.extra && !narrowing ? "Show " + st.extra + " more" : "";
+b.cards = ids.map(function (id) { return buildCard(id, st.key); });
+b.draft = draft;
+b.onDraft = function (e) { self.setState({ draft: e.target.value }); };
+b.renameDisabled = !(String(draft).trim() && String(draft).trim() !== name);
+b.rename = function () { var v = String(draft).trim(); if (!v || v === name) { return; } var m = copyObj(nameOver); m[st.key] = v; self.setState({ names: m, menu: "", draft: undefined }); };
+b.onDraftKey = function (e) { if (e.key === "Enter") { e.preventDefault(); b.rename(); } };
+b.swatches = PALETTE.map(function (pc) {
+var on = pc[0] === colColor(st);
+return { color: pc[0], on: on, ring: on ? "#F2F3F5" : "transparent", label: pc[1] + " for " + name, pick: function () { var m = copyObj(colorOver); m[st.key] = pc[0]; self.setState({ colors: m }); } };
+});
+b.toggleMenu = function (e) {
+var opening = menu !== b.menuKey;
+var host = e && e.currentTarget && e.currentTarget.closest ? e.currentTarget.closest("[data-lane]") : null;
+self.setState({ menu: opening ? b.menuKey : "", draft: opening ? name : undefined, confirmDel: "" });
+if (opening) { focusLater(host, "[data-pop] input"); }
+};
+var confirming = s.confirmDel === st.key;
+b.delLabel = confirming ? "Confirm delete" : "Delete";
+b.delBorder = confirming ? "#6A2C24" : "#33363F";
+b.delBg = confirming ? "#3A1714" : "transparent";
+b.remove = function () {
+if (!confirming) { self.setState({ confirmDel: st.key }); return; }
+var nb = {};
+ALL.forEach(function (x) { if (x.key !== st.key) { nb[x.key] = idsOf(x.key).slice(); } });
+if (left) { nb[left.key] = nb[left.key].concat(idsOf(st.key)); }
+var m = copyObj(collapsedMap); delete m[st.key];
+self.setState({ board: nb, extraCols: extraCols.filter(function (c) { return c.key !== st.key; }), collapsed: m, menu: "", confirmDel: "" });
+};
+return b;
+}).filter(function (col) { return stage === "all" || col.key === stage; });
+}
+
+var adding = !!s.adding;
+var newName = s.newName || "";
+function locate(id) {
+for (var i = 0; i < ALL.length; i++) { if (idsOf(ALL[i].key).indexOf(id) >= 0) { return ALL[i]; } }
+if (parked.indexOf(id) >= 0) { return { key: "parked", name: "Parked", color: "#8A8F9A", extraCol: true }; }
+return null;
+}
+var visibleOrder = [];
+columns.forEach(function (col) { col.cards.forEach(function (cd) { visibleOrder.push(cd.id); }); });
+var detail = null;
+if (openId && CARDS[openId]) {
+var dc = CARDS[openId];
+var loc = locate(openId) || STAGES[0];
+var locKey = loc.key;
+var locName = loc.key === "parked" ? "Parked" : colName(loc);
+var locColor = loc.key === "parked" ? "#8A8F9A" : colColor(loc);
+var ed = editsMap[openId] || {};
+var audience = ed.audience !== undefined ? ed.audience : (dc.audience || "");
+var takeaway = ed.takeaway !== undefined ? ed.takeaway : (dc.takeaway || "");
+var question = ed.question !== undefined ? ed.question : (dc.question || "");
+var dRun = runOf(openId);
+var dR = RUNS[dRun];
+var dOrigin = ORIGINS[dc.origin];
+var hookPlainD = plain(dc.hook);
+var hookD = hookPlainD && plain(dc.title).indexOf(hookPlainD) < 0 ? dc.hook : "";
+var checks = [
+{ label: "Clear hook", need: "a hook", done: !!String(dc.hook || "").trim() },
+{ label: "Audience named", need: "an audience", done: !!String(audience).trim() },
+{ label: "Sources back the premise", need: "sources", done: (dc.sources || 0) > 0 }
+];
+var doneCount = checks.filter(function (k) { return k.done; }).length;
+var ready = doneCount === checks.length;
+var missing = checks.filter(function (k) { return !k.done; }).map(function (k) { return k.need; });
+var pos = visibleOrder.indexOf(openId);
+var coreIdx = STAGES.map(function (x) { return x.key; }).indexOf(locKey);
+function setEdit(field) {
+return function (e) { var m = copyObj(editsMap); var cur = copyObj(m[openId] || {}); cur[field] = e.target.value; m[openId] = cur; self.setState({ edits: m }); };
+}
+function moveTo(key) { return function () { self.setState({ board: moveCard(openId, key), parked: parked.filter(function (x) { return x !== openId; }) }); }; }
+function act(label, run, kind, disabled) {
+var primary = kind === "primary";
+return { label: label, run: run, disabled: !!disabled, bg: primary ? accent : "#14151A", fg: primary ? "#06211E" : "#F2F3F5", border: primary ? accent : "#2E3039" };
+}
+var hasHold = !!ALL.filter(function (x) { return x.key === "hold"; })[0];
+var actions = [];
+var hint = "";
+if (locKey === "inbox") {
+actions.push(act("Start development", moveTo("develop"), "primary"));
+actions.push(act("Send to review", moveTo("review"), "secondary", !ready));
+} else if (locKey === "develop") {
+actions.push(act("Send to review", moveTo("review"), "primary", !ready));
+if (!ready) { hint = "Add " + missing.join(" and ") + " to send"; }
+} else if (locKey === "review") {
+actions.push(act("Approve", moveTo("approved"), "primary"));
+actions.push(act("Return to development", moveTo("develop"), "secondary"));
+actions.push(act("Park", function () { self.setState({ board: without(openId), parked: parked.indexOf(openId) >= 0 ? parked : parked.concat([openId]) }); }, "secondary"));
+} else if (locKey === "approved") {
+var conv = !!converted[openId];
+actions.push(act(conv ? "Converted to project" : "Convert to project", function () { var m = copyObj(converted); m[openId] = true; self.setState({ converted: m }); }, "primary", conv));
+if (hasHold) { actions.push(act("Put on hold", moveTo("hold"), "secondary")); }
+} else if (locKey === "parked") {
+actions.push(act("Move back to In Development", moveTo("develop"), "primary"));
+} else {
+actions.push(act("Resume development", moveTo("develop"), "primary"));
+}
+var busyRun = dRun === "Running" || dRun === "Queued";
+var nextTexts = {
+inbox: "Choose to develop it, request research, or send a clear pitch straight to review.",
+develop: "Sharpen the hook and audience, or give research one specific question. Send it to review when the pitch is ready.",
+review: "Approve it, return it to development with a question, or park it for later.",
+approved: "Hand the pitch and its research to scripting or production.",
+hold: "Paused. Resume development once it is unblocked.",
+parked: "Parked for later. Move it back to development to pick it up."
+};
+var dComments = (dc.commentList || []).concat(commentsMap[openId] || []);
+var draftC = s.commentDraft || "";
+function postComment() {
+var t = String(draftC).trim(); if (!t) { return; }
+var m = copyObj(commentsMap); m[openId] = (m[openId] || []).concat([{ who: "You", initial: "Z", when: "Just now", text: t, color: "#2B6F68" }]);
+self.setState({ comments: m, commentDraft: "" });
+}
+var tabDefs = [["overview", "Overview", ""], ["research", "Research", dRun ? dRun.toLowerCase() : ""], ["comments", "Comments", dComments.length ? String(dComments.length) : ""], ["history", "History", ""]];
+var tabKeys = tabDefs.map(function (t) { return t[0]; });
+var scored = typeof dc.score === "number";
+var history = [{ text: "Created as " + (dc.origin === "Manual" ? "a manual" : "an AI-generated") + " idea" + (dc.ownerName === "John" ? " by John" : ""), when: dc.created || "", dot: "#8A8F9A" }];
+if (dRun) { history.push({ text: "Research " + dRun.toLowerCase(), when: "", dot: RUNS[dRun].fg }); }
+dComments.forEach(function (cm) { history.push({ text: "Comment from " + cm.who, when: cm.when, dot: "#C9CDD4" }); });
+if (dc.updated) { history.push({ text: "Last updated", when: dc.updated, dot: "#8A8F9A" }); }
+history.push({ text: "Now in " + locName, when: "", dot: locColor });
+function row(k, v, unset) { return { k: k, v: v, fg: unset ? "#A3A8B3" : "#F2F3F5" }; }
+detail = {
+title: dc.title, hook: hookD, hookFull: dc.hook || "Add a hook",
+stageName: locName, stageColor: locColor, offBoard: coreIdx < 0,
+position: pos >= 0 ? (pos + 1) + " of " + visibleOrder.length : "",
+prevDisabled: pos <= 0, nextDisabled: pos < 0 || pos >= visibleOrder.length - 1,
+prev: function () { if (pos > 0) { self.setState({ openId: visibleOrder[pos - 1], tab: "overview", commentDraft: "" }); } },
+next: function () { if (pos >= 0 && pos < visibleOrder.length - 1) { self.setState({ openId: visibleOrder[pos + 1], tab: "overview", commentDraft: "" }); } },
+hasMedia: !!dc.media, playable: !!(dc.media && dc.media.playable), thumbLabel: "Cover placeholder for " + dc.title,
+origin: dc.origin, originFg: dOrigin.fg, originBg: dOrigin.strip, originIcon: dOrigin.icon,
+hasRun: !!dR, running: dRun === "Running", runFg: dR ? dR.fg : "#C9CDD4", runBg: dR ? dR.bg : "#22242B",
+runChip: dR ? "Research " + dR.label.toLowerCase() : "",
+brand: dc.brand || "JohnXSantos", brandColor: BRANDS[dc.brand || "JohnXSantos"] || "#8A8F9A",
+ownerInitial: dc.owner || "J", ownerName: dc.ownerName === "You" ? "You" : (dc.ownerName || "John Santos"),
+steps: STAGES.map(function (st, i) {
+var on = coreIdx >= 0 && i <= coreIdx;
+return { label: nameOver[st.key] || st.tab, bar: on ? colColor(STAGES[coreIdx]) : "#2A2C35", fg: i === coreIdx ? "#F2F3F5" : (on ? "#C9CDD4" : "#8A8F9A") };
+}),
+stepAria: coreIdx >= 0 ? "Stage " + (coreIdx + 1) + " of 4: " + locName : locName + ", outside the four workflow stages",
+tabs: tabDefs.map(function (t) {
+var on = t[0] === tab;
+return { tabId: "idea-tab-" + t[0], label: t[1], count: t[2], on: on, line: on ? accent : "transparent", fg: on ? "#F2F3F5" : "#A3A8B3", pick: function () { self.setState({ tab: t[0] }); } };
+}),
+tabLabelledBy: "idea-tab-" + tab,
+onTabKey: function (e) {
+var i = tabKeys.indexOf(tab);
+var n = e.key === "ArrowRight" ? i + 1 : e.key === "ArrowLeft" ? i - 1 : null;
+if (n === null) { return; }
+e.preventDefault();
+n = (n + tabKeys.length) % tabKeys.length;
+self.setState({ tab: tabKeys[n] });
+setTimeout(function () { var f = document.getElementById("idea-tab-" + tabKeys[n]); if (f) { try { f.focus(); } catch (x) {} } }, 30);
+},
+tabOverview: tab === "overview", tabResearch: tab === "research", tabComments: tab === "comments", tabHistory: tab === "history",
+audience: audience, onAudience: setEdit("audience"), audienceBorder: String(audience).trim() ? "#2A2C35" : "#4A4128",
+takeaway: takeaway, onTakeaway: setEdit("takeaway"), takeawayBorder: "#2A2C35",
+concept: dc.concept || "No concept notes yet. Add the angle, the format and what makes it worth making.", conceptFg: dc.concept ? "#F2F3F5" : "#A3A8B3",
+question: question, onQuestion: setEdit("question"),
+runSentence: dR ? (dRun === "Failed" ? "The last research run failed" : dRun === "Complete" ? "Research run complete" : dRun === "Running" ? "Research is running" : "Research run queued") : "No research run yet",
+runPanelBg: dRun === "Failed" ? "#2A1412" : "#0C0D10", runPanelBorder: dRun === "Failed" ? "#4A211C" : "#2A2C35",
+canRun: !busyRun, runButton: dRun === "Failed" ? "Retry run" : dRun === "Complete" ? "Run again" : "Run research",
+runResearch: function () { var m = copyObj(runOver); m[openId] = "Queued"; self.setState({ runs: m }); },
+views: dc.views || "No data", viewsFg: dc.views ? "#F2F3F5" : "#A3A8B3",
+sources: dc.sources ? String(dc.sources) : "None", sourcesFg: dc.sources ? "#F2F3F5" : "#A3A8B3",
+comments: dComments, noComments: dComments.length === 0,
+commentDraft: draftC, onComment: function (e) { self.setState({ commentDraft: e.target.value }); },
+onCommentKey: function (e) { if (e.key === "Enter") { e.preventDefault(); postComment(); } },
+post: postComment, postDisabled: !String(draftC).trim(),
+history: history,
+actions: actions, actionHint: hint,
+nextText: nextTexts[locKey] || "Custom column. Move it back into the workflow when it is ready.",
+showChecklist: locKey === "inbox" || locKey === "develop" || locKey === "review",
+checks: checks.map(function (k) { return { label: k.label, done: k.done, state: k.done ? ", done" : ", missing", fg: k.done ? "#F2F3F5" : "#A3A8B3", boxBg: k.done ? "#3DDC84" : "transparent", boxBorder: k.done ? "#3DDC84" : "#4A4D58" }; }),
+checkCount: doneCount + " of " + checks.length, checkColor: ready ? "#7CF0A8" : "#FFD27A",
+scored: scored, unscored: !scored, score: scored ? String(dc.score) : "",
+scoreWord: scored ? (dc.score >= 75 ? "Strong" : dc.score >= 50 ? "Fair" : "Weak") : "",
+scoreFg: scored && dc.score >= 75 ? "#7CF0A8" : "#FFD27A", scoreBg: scored && dc.score >= 75 ? "#143524" : "#3A2E12",
+hasIce: !!dc.ice, ice: (dc.ice || []).map(function (v, i) { var l = ["Impact", "Confidence", "Ease"][i]; return { label: l, value: String(v), pct: (v * 10) + "%", aria: l + " " + v + " of 10" }; }),
+rec: dc.rec || "",
+rows: [
+row("Stage", locName), row("Idea origin", dc.origin), row("Research run", dRun || "No run", !dRun),
+row("Brand", dc.brand || "JohnXSantos"), row("Owner", dc.ownerName === "You" ? "You" : (dc.ownerName || "John Santos")),
+row("Priority", dc.priority || "Not set", !dc.priority), row("Platforms", "None picked", true), row("Target window", "No window yet", true),
+row("Cover", dc.media ? "Attached" : "Missing", !dc.media),
+row("Converted to", converted[openId] ? "Project created" : "Not yet", !converted[openId])
+]
+};
+}
+
+function addColumn() {
+var v = newName.trim();
+if (!v) { return; }
+var key = "col" + Date.now().toString(36);
+var nb = copyObj(board); nb[key] = [];
+var color = PALETTE[(extraCols.length + 4) % PALETTE.length][0];
+self.setState({ extraCols: extraCols.concat([{ key: key, name: v, desc: "Custom column", color: color }]), board: nb, adding: false, newName: "" });
+}
+
+function nv(label, d, badge, active) {
+return { label: label, d: d, badge: badge || "", fg: active ? "#F2F3F5" : "#C9CDD4", bg: active ? "#1E2027" : "transparent" };
+}
+var nav = [
+nv("Daily", "M3 11l9-8 9 8v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"),
+nv("Projects", "M3 6a1 1 0 0 1 1-1h5l2 3h9a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z", "11"),
+nv("Ideas & Research", "M9 18h6M10 21h4M12 3a6 6 0 0 0-4 10.5c.7.7 1 1.5 1 2.5h6c0-1 .3-1.8 1-2.5A6 6 0 0 0 12 3z", "", true),
+nv("Brand", "M12 3a9 9 0 1 0 0 18c1.5 0 2-1 2-2s-.5-2 1-2h2a4 4 0 0 0 4-4c0-4.5-4-8-9-8z"),
+nv("Inbox", "M6 16v-5a6 6 0 1 1 12 0v5l2 2H4zM10 21h4", "87"),
+nv("Content", "M3 9h18v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1zM3 9l1-4 16-2 1 4"),
+nv("Performance", "M4 4v16h16M8 15l4-5 3 3 5-6")
+];
+var admin = [
+nv("Users", "M16 20v-1a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v1M9.5 11a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7zM21 20v-1a4 4 0 0 0-3-3.8"),
+nv("Roles & Permissions", "M12 3l8 3v6c0 4.5-3.4 8-8 9-4.6-1-8-4.5-8-9V6z"),
+nv("Workload", "M4 4h16v16H4zM8 9v6M12 9v3M16 9v8", "11"),
+nv("Clients & Sponsors", "M3 8h18v12H3zM9 8V5h6v3"),
+nv("Finance", "M12 3v18M16 7h-6a2.5 2.5 0 0 0 0 5h4a2.5 2.5 0 0 1 0 5H8"),
+nv("Automations", "M13 3L5 14h6l-1 7 8-11h-6z"),
+nv("Activity Log", "M12 21a9 9 0 1 0-9-9M3 12V7M12 7v5l3 2"),
+nv("What’s New", "M12 4l2 5 5 2-5 2-2 5-2-5-5-2 5-2z"),
+nv("Workspace Settings", "M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M5.6 18.4l2.1-2.1M16.3 7.7l2.1-2.1")
+];
+
+var missingCovers = 11;
+return {
+accent: accent, nav: nav, admin: admin, columns: columns, show: show,
+detailOpen: !!detail, detail: detail || {}, closeDetail: closeDetail,
+onModalKey: function (e) {
+if (e.key !== "Escape") { return; }
+e.preventDefault(); e.stopPropagation();
+closeDetail();
+},
+showAddCol: stage === "all" && curView.id !== "parked",
+adding: adding, notAdding: !adding, addColW: adding ? "200px" : "44px",
+newName: newName, addDisabled: !newName.trim(), addColumn: addColumn,
+startAdd: function (e) { var host = e && e.currentTarget && e.currentTarget.closest ? e.currentTarget.closest("[data-addcol]") : null; self.setState({ adding: true, newName: "" }); focusLater(host, "input"); },
+onNewName: function (e) { self.setState({ newName: e.target.value }); },
+onNewKey: function (e) {
+if (e.key === "Enter") { e.preventDefault(); addColumn(); }
+else if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); self.setState({ adding: false, newName: "" }); }
+},
+cancelAdd: function () { self.setState({ adding: false, newName: "" }); },
+runsActive: runsActive === 1 ? "1 run active" : runsActive + " runs active",
+endDrag: function () { self.setState({ drag: "", over: "" }); },
+onKey: function (e) {
+if (e.key === "Escape" && menu) {
+e.preventDefault();
+var root = e.currentTarget;
+var trig = root ? root.querySelector("[data-trigger=\"" + menu + "\"]") : null;
+self.setState({ menu: "" });
+setTimeout(function () { if (trig) { try { trig.focus(); } catch (x) {} } }, 0);
+}
+},
+q: q, onSearch: function (e) { self.setState({ q: e.target.value }); },
+stages: stages, statusLabel: curStage[1], statusCount: String(curStage[2]),
+statusAria: "Status: " + curStage[1] + ", " + curStage[2] + " ideas",
+views: views, viewLabel: curView.label, viewDot: curView.dot, dirty: dirty,
+statusOpen: menu === "status", viewsOpen: menu === "views", filterOpen: menu === "filter", sortOpen: menu === "sort", displayOpen: menu === "display", moreOpen: menu === "more", menuOpen: !!menu,
+toggleStatus: setMenu("status"), toggleViews: setMenu("views"), toggleFilter: setMenu("filter"), toggleSort: setMenu("sort"), toggleDisplay: setMenu("display"), toggleMore: setMenu("more"),
+closeMenu: function () { self.setState({ menu: "" }); },
+groups: groups, chips: chips, hasFilters: hasFilters, noFilters: !hasFilters,
+filterCount: String(activeGroups), filterBorder: hasFilters ? accent : "#262830",
+filterAria: hasFilters ? "Filters, " + activeGroups + " active" : "Filters",
+filterSummary: hasFilters ? activeGroups + " active" : "",
+saveDisabled: !(hasFilters && dirty), saveBorder: hasFilters && dirty ? accent : "#2E3039", saveFg: hasFilters && dirty ? accent : "#A3A8B3",
+clearAll: function () { self.setState({ sel: {}, view: curView.id === "parked" ? "parked" : "all" }); },
+sorts: sorts, orders: orders, sortLabel: sortLabel, orderLabel: orderLabel,
+orderIcon: order === "desc" ? "M12 5v14M6 13l6 6 6-6" : "M12 19V5M6 11l6-6 6 6",
+sortAria: "Sort: " + sortLabel + ", " + orderLabel,
+fields: fields, fieldsShown: String(shown), layouts: layouts,
+coverNotice: covers !== "done" && missingCovers > 0,
+coversIdle: covers === "idle", coversBusy: covers === "busy",
+coverText: covers === "busy" ? "Generating covers for " + missingCovers + " ideas" : missingCovers + " ideas have no cover",
+generateCovers: function () { self.setState({ covers: "busy" }); }
+};
+}
+}
+</script>
+</body>
+</html>

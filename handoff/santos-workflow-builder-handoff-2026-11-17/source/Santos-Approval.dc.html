@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>SantosStudios approval detail</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Montserrat:wght@800;900&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#EBEBEB}
+a{color:#2F5BEA}a:hover{color:#1E3FB0}
+.ss *{box-sizing:border-box}
+.ss button{font-family:inherit;cursor:pointer}
+.ss button:disabled{cursor:not-allowed}
+.ss button:focus-visible,.ss a:focus-visible,.ss input:focus-visible,.ss textarea:focus-visible{outline:2px solid #2F5BEA;outline-offset:2px}
+.ss input::placeholder,.ss textarea::placeholder{color:#8a8a8a}
+.ss-h:hover{background:#F0F0F0 !important}
+.ss-k:hover{background:#2b2b2b !important}
+@media (max-width:900px){.ss-two{grid-template-columns:1fr !important}.ss-pad{padding:16px !important}}
+</style>
+</helmet>
+<div class="ss" style="min-height:900px;position:relative;background:#EBEBEB;color:#111;font-family:Inter,system-ui,sans-serif;padding:14px">
+<div class="ss-pad" style="min-height:872px;background:#fff;border-radius:20px;padding:28px 32px 32px;display:flex;flex-direction:column;gap:22px">
+<div style="display:flex;flex-wrap:wrap;align-items:center;gap:10px">
+<a href="Santos-Hub.dc.html" class="ss-h" style="height:42px;display:flex;align-items:center;gap:6px;padding:0 12px 0 8px;border-radius:10px;color:#111;text-decoration:none;font-weight:600;font-size:14px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>Automations</a>
+<span style="font-size:14px;color:#555">Approvals</span>
+<span style="background:#F1F1F1;border-radius:999px;padding:3px 10px;font-size:13px;font-weight:600;color:#333">{{posTxt}}</span>
+<div style="flex:1"></div>
+<a href="Santos-Builder.dc.html" class="ss-h" style="height:42px;display:flex;align-items:center;padding:0 14px;border-radius:12px;background:#fff;border:1px solid #E0E0E0;color:#111;text-decoration:none;font-size:14px;font-weight:600">Open workflow</a>
+</div>
+<sc-if value="{{hasLast}}" hint-placeholder-val="{{false}}"><div role="status" style="display:flex;align-items:center;gap:10px;padding:12px 16px;border-radius:12px;background:{{lastBg}};font-size:14px;color:#111"><span style="width:8px;height:8px;flex:none;border-radius:999px;background:{{lastDot}}" aria-hidden="true"></span>{{lastTxt}}</div></sc-if>
+
+<sc-if value="{{empty}}" hint-placeholder-val="{{false}}">
+<div style="border:1.5px dashed #D6D6D6;border-radius:20px;padding:80px 24px;display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center">
+<span style="width:56px;height:56px;border-radius:999px;background:#E6F5EC;display:flex;align-items:center;justify-content:center"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#1F7A45" stroke-width="2.6" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></span>
+<h1 style="margin:0;font-family:Montserrat,sans-serif;font-weight:900;font-size:32px;letter-spacing:-.02em">All clear</h1>
+<div style="font-size:15px;color:#555">{{doneTxt}}</div>
+<a href="Santos-Hub.dc.html" class="ss-h" style="margin-top:8px;height:44px;display:flex;align-items:center;padding:0 16px;border-radius:12px;border:1px solid #E0E0E0;color:#111;text-decoration:none;font-weight:600;font-size:14px">Back to automations</a>
+</div>
+</sc-if>
+
+<sc-if value="{{has}}" hint-placeholder-val="{{true}}">
+<div style="display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:16px">
+<div style="display:flex;flex-direction:column;gap:10px">
+<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"><span style="background:#FFF4D6;color:#7A5300;border-radius:999px;padding:4px 11px;font-size:13px;font-weight:600">Waiting on you</span><span style="font-size:14px;color:#555">{{it.wf}} · waiting {{it.waited}} · auto-rejects in 23 hours</span></div>
+<h1 style="margin:0;font-family:Montserrat,sans-serif;font-weight:900;font-size:34px;letter-spacing:-.02em">{{it.title}}</h1>
+</div>
+<div role="radiogroup" aria-label="View" style="display:flex;background:#F2F2F2;border-radius:12px;padding:4px">
+<sc-for list="{{modes}}" as="m" hint-placeholder-count="2"><button role="radio" aria-checked="{{m.on}}" onClick="{{m.pick}}" style="height:38px;padding:0 14px;border-radius:9px;background:{{m.bg}};color:{{m.fg}};box-shadow:{{m.sh}};border:0;font-size:14px;font-weight:600">{{m.l}}</button></sc-for>
+</div>
+</div>
+
+<div class="ss-two" style="display:grid;grid-template-columns:minmax(0,1fr) 380px;gap:16px;align-items:start">
+<section aria-label="Draft" style="border:1px solid #E6E6E6;border-radius:16px;overflow:hidden">
+<div style="display:flex;align-items:center;gap:10px;padding:14px 20px;border-bottom:1px solid #EDEDED;flex-wrap:wrap">
+<span style="display:flex;align-items:center;gap:6px;background:#F0EBFF;color:#5B3FC4;border-radius:999px;padding:4px 10px;font-size:12px;font-weight:600"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9L12 3z"/></svg>Drafted by Studio Assistant</span>
+<sc-if value="{{edited}}" hint-placeholder-val="{{false}}"><span style="background:#EAF0FF;color:#2449C7;border-radius:999px;padding:4px 10px;font-size:12px;font-weight:600">Edited by you</span></sc-if>
+</div>
+<div style="padding:4px 20px 20px">
+<div style="display:grid;grid-template-columns:80px minmax(0,1fr);gap:12px;align-items:center;padding:12px 0;border-bottom:1px solid #EDEDED;font-size:14px"><span style="color:#666">{{it.toLabel}}</span><span><span style="display:inline-flex;align-items:center;height:28px;padding:0 11px;border-radius:999px;background:#EAF0FF;color:#2449C7;font-weight:600">{{it.to}}</span></span></div>
+<sc-if value="{{preview}}" hint-placeholder-val="{{true}}">
+<div style="display:grid;grid-template-columns:80px minmax(0,1fr);gap:12px;padding:12px 0;border-bottom:1px solid #EDEDED;font-size:14px"><span style="color:#666">Subject</span><span style="font-weight:600">{{subject}}</span></div>
+<div style="padding:18px 0 4px;font-size:16px;line-height:1.7;color:#222;white-space:pre-line">{{body}}</div>
+</sc-if>
+<sc-if value="{{editing}}" hint-placeholder-val="{{false}}">
+<label for="sa-sub" style="display:block;font-size:14px;font-weight:600;margin-top:14px">Subject</label>
+<input id="sa-sub" value="{{subject}}" onChange="{{onSub}}" style="margin-top:6px;width:100%;height:44px;border-radius:12px;background:#fff;border:1.5px solid #E3E3E3;color:#111;padding:0 12px;font-family:inherit;font-size:15px">
+<label for="sa-body" style="display:block;font-size:14px;font-weight:600;margin-top:14px">Message</label>
+<textarea id="sa-body" value="{{body}}" onChange="{{onBody}}" rows="9" style="margin-top:6px;width:100%;border-radius:12px;background:#fff;border:1.5px solid #E3E3E3;color:#111;padding:12px;font-family:inherit;font-size:15px;line-height:1.6;resize:vertical"></textarea>
+</sc-if>
+</div>
+</section>
+
+<aside style="display:flex;flex-direction:column;gap:16px">
+<section style="border:1px solid #E6E6E6;border-radius:16px;padding:18px 20px">
+<div style="font-size:15px;font-weight:700;margin-bottom:6px">{{it.ctxHead}}</div>
+<sc-for list="{{it.ctx}}" as="c" hint-placeholder-count="5"><div style="display:flex;justify-content:space-between;gap:12px;padding:9px 0;border-bottom:1px solid #EDEDED;font-size:14px"><span style="color:#666">{{c.k}}</span><span style="font-weight:600;text-align:right">{{c.v}}</span></div></sc-for>
+</section>
+<section style="background:#F7F7F7;border-radius:16px;padding:18px 20px;display:flex;flex-direction:column;gap:8px">
+<div style="font-size:15px;font-weight:700">Why this needs you</div>
+<div style="font-size:14px;line-height:1.55;color:#333">{{it.why}}</div>
+<div style="font-size:13px;color:#555;margin-top:4px">After you approve: {{it.after}}</div>
+</section>
+</aside>
+</div>
+
+<sc-if value="{{rejecting}}" hint-placeholder-val="{{false}}">
+<section aria-label="Reject" style="background:#FDECEC;border-radius:16px;padding:18px 20px;display:flex;flex-direction:column;gap:12px">
+<div style="font-size:15px;font-weight:700;color:#3A1010">Why are you rejecting it?</div>
+<div style="display:flex;gap:8px;flex-wrap:wrap"><sc-for list="{{reasons}}" as="r" hint-placeholder-count="4"><button onClick="{{r.pick}}" aria-pressed="{{r.on}}" style="height:42px;padding:0 14px;border-radius:999px;background:{{r.bg}};border:1.5px solid {{r.bd}};color:{{r.fg}};font-size:14px;font-weight:600">{{r.l}}</button></sc-for></div>
+<input id="sa-note" aria-label="Note for Studio Assistant" value="{{note}}" onChange="{{onNote}}" placeholder="Note for Studio Assistant (it learns from this)" style="height:44px;border-radius:12px;background:#fff;border:1.5px solid #F1C4C4;color:#111;padding:0 12px;font-family:inherit;font-size:14px">
+</section>
+</sc-if>
+
+<div style="position:sticky;bottom:24px;display:flex;align-items:center;gap:10px;padding:12px;border-radius:16px;background:#fff;border:1px solid #E6E6E6;box-shadow:0 12px 32px rgba(0,0,0,.1);flex-wrap:wrap">
+<span style="font-size:14px;color:#555;margin-left:6px;margin-right:auto">{{barTxt}}</span>
+<sc-if value="{{notRejecting}}" hint-placeholder-val="{{true}}">
+<button onClick="{{startReject}}" class="ss-h" style="height:46px;padding:0 18px;border-radius:12px;background:#fff;border:1px solid #F1C4C4;color:#B42318;font-weight:600;font-size:15px">Reject</button>
+<button onClick="{{approve}}" class="ss-k" style="height:46px;padding:0 20px;border-radius:12px;background:#111;color:#fff;border:0;font-weight:600;font-size:15px">{{approveTxt}}</button>
+</sc-if>
+<sc-if value="{{rejecting}}" hint-placeholder-val="{{false}}">
+<button onClick="{{cancelReject}}" class="ss-h" style="height:46px;padding:0 18px;border-radius:12px;background:#fff;border:1px solid #E0E0E0;color:#111;font-weight:600;font-size:15px">Back</button>
+<button onClick="{{confirmReject}}" disabled="{{noReason}}" style="height:46px;padding:0 20px;border-radius:12px;background:{{rjBg}};color:{{rjFg}};border:0;font-weight:600;font-size:15px">Reject and stop run</button>
+</sc-if>
+</div>
+</sc-if>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+const Q=[
+{wf:'Sponsor follow-up',title:'Reply to the sponsor on Kitchen remodel',waited:'8 min',toLabel:'To',to:'Sponsor contact · partnerships@example.com',subject:'Kitchen remodel: your notes are in',body:'Thanks for the notes on the first cut.\n\nWe moved the product shot into the first minute and kept the code on screen for 5 seconds. The new cut is in review today and you will see it by tomorrow morning.\n\nSantosStudios',ctxHead:'The project',ctx:[['Project','Kitchen remodel'],['Stage','Post Production'],['Sponsor status','Changes requested'],['Editor','Dani'],['Publish date','Nov 14']],why:'This step emails a sponsor. Anything that leaves the studio waits for a Super Admin.',after:'Send email through Gmail'},
+{wf:'Edit needs changes',title:'Fix list for Shop tour v2',waited:'40 min',toLabel:'Send to',to:'Dani · editor',subject:'Fixes for Shop tour v2',body:'1. Trim the intro to 20 seconds.\n2. Fix the lower third spelling.\n3. Swap the end card for the new one.\n4. Lift the music under the sponsor read.\n5. Add the chapter markers.',ctxHead:'The project',ctx:[['Project','Shop tour v2'],['Review comments','7'],['Sponsor','Yes'],['Due','Nov 9']],why:'Sponsored edits get a Super Admin check before the fix list goes to the editor.',after:'Add the fix list to the editor Inbox'}];
+const REASONS=['Wrong tone','Wrong info','Not needed','Other'];
+const LT={approved:['Approved. The run continues.','#1F7A45','#E6F5EC'],rejected:['Rejected. The run stopped and Studio Assistant has your reason.','#B42318','#FDECEC']};
+class Component extends DCLogic {
+constructor(p){super(p);this.state={q:Q.map(x=>({...x})),mode:'preview',edited:false,rej:false,reason:-1,note:'',done:0};}
+patch(p){const s=this.state;this.setState({q:[{...s.q[0],...p}].concat(s.q.slice(1)),edited:true});}
+renderVals(){
+const s=this.state,it=s.q[0];
+const next=(msg)=>this.setState({q:s.q.slice(1),mode:'preview',edited:false,rej:false,reason:-1,note:'',done:s.done+1,last:msg});
+const lt=LT[s.last]||['','#B0B0B0','transparent'];const lastV={hasLast:!!s.last,lastTxt:lt[0],lastDot:lt[1],lastBg:lt[2]};
+if(!it)return {...lastV,empty:true,has:false,doneTxt:'You cleared '+s.done+(s.done===1?' approval.':' approvals.')+' New ones show here and in your Inbox.',posTxt:'0 waiting',it:{ctx:[]},modes:[],reasons:[],preview:false,editing:false,rejecting:false,notRejecting:false};
+return {...lastV,empty:false,has:true,posTxt:'1 of '+s.q.length+' waiting',
+it:{...it,ctx:it.ctx.map(c=>({k:c[0],v:c[1]}))},subject:it.subject,body:it.body,
+modes:[['preview','Preview'],['edit','Edit']].map(m=>({l:m[1],on:s.mode===m[0],bg:s.mode===m[0]?'#fff':'transparent',fg:s.mode===m[0]?'#111':'#555',sh:s.mode===m[0]?'0 1px 2px rgba(0,0,0,.08)':'none',pick:()=>this.setState({mode:m[0]})})),
+preview:s.mode==='preview',editing:s.mode==='edit',edited:s.edited,
+onSub:e=>this.patch({subject:e.target.value}),onBody:e=>this.patch({body:e.target.value}),
+rejecting:s.rej,notRejecting:!s.rej,startReject:()=>this.setState({rej:true}),cancelReject:()=>this.setState({rej:false}),
+reasons:REASONS.map((l,i)=>({l,on:s.reason===i,bg:s.reason===i?'#B42318':'#fff',bd:s.reason===i?'#B42318':'#F1C4C4',fg:s.reason===i?'#fff':'#3A1010',pick:()=>this.setState({reason:i})})),
+note:s.note,onNote:e=>this.setState({note:e.target.value}),noReason:s.reason<0,rjBg:s.reason<0?'#F1F1F1':'#B42318',rjFg:s.reason<0?'#8a8a8a':'#fff',
+confirmReject:()=>{if(s.reason>=0)next('rejected');},
+approveTxt:s.edited?'Save edits and approve':'Approve and send',approve:()=>next('approved'),
+barTxt:s.rej?'The run stops and Studio Assistant gets your reason.':(s.edited?'Your edits go out instead of the draft.':'Nothing sends until you approve.')};
+}
+}
+</script>
+</body>
+</html>

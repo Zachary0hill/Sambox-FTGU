@@ -4,10 +4,14 @@
 // Idea triggers (scope 'idea') are queued by supabase/migrations/20261111010000_idea_automations.sql and run on the
 // idea, not a project. An action's scope says which triggers it fits: 'project', 'idea' or 'any' (both).
 
+import { scheduleText } from './schedule';
+
 export type Choice = [string, string];
 
 export type Scope = 'project' | 'idea' | 'any';
-export type TriggerDef = { key: string; label: string; values?: Choice[] | 'statuses'; valueLabel?: string; scope?: 'project' | 'idea' };
+// mode: how the trigger starts a run. 'event' (the default) is queued by the database when something changes;
+// 'schedule' is queued by the runner from a rule (schedule.ts); 'webhook' by app/api/webhooks/automations/[token].
+export type TriggerDef = { key: string; label: string; values?: Choice[] | 'statuses'; valueLabel?: string; scope?: 'project' | 'idea'; mode?: 'schedule' | 'webhook' };
 export type ActionDef = { key: string; label: string; app: string; needs?: 'slack' | 'n8n' | 'buffer'; message?: string; scope?: Scope };
 
 export const TRIGGERS: TriggerDef[] = [
@@ -21,6 +25,9 @@ export const TRIGGERS: TriggerDef[] = [
   { key: 'mention_admin', label: 'A comment mentions a Super Admin' },
   { key: 'publish_soon', label: 'Publishing date is', valueLabel: 'Days before',
     values: [['1', '1 day away'], ['2', '2 days away'], ['3', '3 days away'], ['7', '7 days away']] },
+  // Trigger setup > Schedule and Webhook. These run without a project, so only actions with scope 'any' fit them.
+  { key: 'schedule', label: 'On a schedule', mode: 'schedule' },
+  { key: 'webhook', label: 'A request arrives', mode: 'webhook' },
   // Ideas & Research
   { key: 'idea_created', label: 'An idea is captured', scope: 'idea' },
   { key: 'idea_stage', label: 'An idea moves to', valueLabel: 'Stage', scope: 'idea',
@@ -56,7 +63,9 @@ export const actionsFor = (triggerKey: string) => {
   const list = ACTIONS.filter((a) => fits(a, scope));
   return scope === 'idea' ? list.filter((a) => a.scope === 'idea').concat(list.filter((a) => a.scope !== 'idea')) : list;
 };
-export const projectTriggers = () => TRIGGERS.filter((t) => t.scope !== 'idea');
+export const projectTriggers = () => TRIGGERS.filter((t) => t.scope !== 'idea' && !t.mode);
+// Schedule and webhook runs have no project.
+export const hasNoProject = (triggerKey: string) => !!triggerById(triggerKey)?.mode;
 export const ideaTriggers = () => TRIGGERS.filter((t) => t.scope === 'idea');
 
 export const triggerById = (k: string) => TRIGGERS.find((t) => t.key === k);
@@ -66,6 +75,8 @@ export const actionById = (k: string) => ACTIONS.find((a) => a.key === k);
 export function triggerText(key: string, value: string | null | undefined, statusLabel?: (v: string) => string) {
   const t = triggerById(key);
   if (!t) return key;
+  if (t.mode === 'schedule') return scheduleText(value);
+  if (t.mode === 'webhook') return 'A request arrives at this workflow’s address';
   if (!t.values || !value) return t.label;
   const shown = t.values === 'statuses' ? (statusLabel ? statusLabel(value) : value) : (t.values.find((v) => v[0] === value) || [value, value])[1];
   return t.label + ' ' + shown;
