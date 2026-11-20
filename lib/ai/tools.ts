@@ -3,7 +3,7 @@ import { tool, type ToolSet } from 'ai';
 import { z } from 'zod';
 import type { Member } from '@/lib/integrations/auth';
 import { firecrawlSearch, firecrawlScrape } from '@/lib/integrations/providers/firecrawl';
-import { nextJob } from '@/lib/studio/job-code';
+import { smartJob } from '@/lib/studio/job-code';
 import { EDIT_L, THUMB_L, APPROVAL_L, DIST_L, IDEA_STAGE_L, STAGE_L } from '@/lib/studio/model';
 
 // Assistant tools. Every read runs on the member's own Supabase session, so RLS decides what the assistant can see.
@@ -287,7 +287,7 @@ export function assistantTools(env: ToolEnv): ToolSet {
         const [stR, chR, ctR, tpR, jobsR, acR] = await Promise.all([
           sb.from('project_statuses').select('label').eq('workspace_id', ws).order('sort'),
           sb.from('channels').select('name').eq('workspace_id', ws).order('sort'),
-          sb.from('content_types').select('label').eq('workspace_id', ws).order('sort'),
+          sb.from('content_types').select('key, label').eq('workspace_id', ws).order('sort'),
           sb.from('templates').select('name').eq('workspace_id', ws),
           sb.from('projects').select('job_code').eq('workspace_id', ws).limit(5000),
           a.sponsor ? sb.from('accounts').select('name').eq('workspace_id', ws) : Promise.resolve({ data: [] as Rec[] }),
@@ -307,7 +307,9 @@ export function assistantTools(env: ToolEnv): ToolSet {
         if (bad) return fail(bad.error);
         if (!st.value) return fail('The workspace has no statuses set up yet.');
         const codes = (jobsR.data || []).map((x) => str(x.job_code));
-        const job = (a.jobNumber || nextJob(codes)).trim().toUpperCase();
+        // Same numbering as the New project dialog: client and content type, then the next free number.
+        const type = (ctR.data || []).find((x) => str(x.label) === ct.value);
+        const job = (a.jobNumber || smartJob(ch.value || sp.value, type ? { key: str(type.key), label: str(type.label) } : null, codes)).trim().toUpperCase();
         if (!job) return fail('Ask the user for a job number.');
         if (codes.some((c) => lower(c) === lower(job))) return fail('Job number ' + job + ' is already in use.');
         return {
