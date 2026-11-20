@@ -34,7 +34,7 @@ once; Resend won't show it again.
 
 ```bash
 RESEND_API_KEY=re_...
-EMAIL_FROM="FTGU Studio <studio@mail.yourdomain.com>"
+EMAIL_FROM="SantosStudios <studio@mail.yourdomain.com>"
 SUPABASE_SECRET_KEY=sb_secret_...
 APP_BASE_URL=http://localhost:3000
 CRON_SECRET=any-long-random-string
