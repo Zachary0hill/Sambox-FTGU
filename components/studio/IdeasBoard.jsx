@@ -403,9 +403,11 @@ function OriginTag({ c, overlay }) {
 
 function Card({ c, dragEnd }) {
   const click = (e) => { if (e.target.closest('button, a, input, textarea')) return; c.open(); };
+  const key = (e) => { if (!c.canDrag || !e.altKey || (e.key !== 'ArrowUp' && e.key !== 'ArrowDown')) return; e.preventDefault(); c.nudge(e.key === 'ArrowUp' ? -1 : 1); };
   return (
-    <li style={css('list-style: none')}>
-      <article className={'ir-card' + (c.isOpen ? ' ir-card-open' : '')} draggable={c.canDrag ? 'true' : 'false'} onDragStart={c.dragStart} onDragEnd={dragEnd} onClick={click}
+    <li data-card-id={c.id} style={css('list-style: none; position: relative')}>
+      {c.slot ? <span aria-hidden="true" style={css('position: absolute; left: 2px; right: 2px; ' + (c.slot === 'before' ? 'top' : 'bottom') + ': -6px; height: 2px; border-radius: 2px; background: var(--link); pointer-events: none')}></span> : null}
+      <article className={'ir-card' + (c.isOpen ? ' ir-card-open' : '')} draggable={c.canDrag ? 'true' : 'false'} onDragStart={c.dragStart} onDragEnd={dragEnd} onClick={click} onKeyDown={key}
         style={css('position: relative; display: flex; flex-direction: column; border: 1px solid ' + (c.isOpen ? 'var(--link)' : 'var(--card-border)') + '; border-radius: 12px; background: var(--surface); overflow: hidden; cursor: ' + (c.canDrag ? 'grab' : 'pointer') + '; transition: border-color .12s ease, opacity .12s ease;' + (c.dragging ? ' opacity: 0.4;' : ''))}>
         {c.media ? (
           <div style={css('position: relative; aspect-ratio: 3 / 1; ' + c.mediaStyle)}>
