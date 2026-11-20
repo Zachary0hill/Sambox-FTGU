@@ -4,6 +4,7 @@ import FocusDialog from './FocusDialog';
 import ManagerClients from './ManagerClients';
 import IdeaPlanning from './IdeaPlanning';
 import IdeaImport from './IdeaImport';
+import IdeaMarquee from './IdeaMarquee';
 import NextImage from 'next/image';
 // Generated from the design canvas (YouTube Studio Unified Board, Main.dc.html) by a markup converter.
 // Hand edits are marked with "app:" comments.
@@ -3233,6 +3234,9 @@ export default function StudioView({ V }) {
                       </p>
                     ) : null}
                     {" "}
+                    {/* app: drag a box over the cards or rows to check them (IdeaMarquee) */}
+                    {V.ids.isGallery || V.ids.isList ? (
+                    <IdeaMarquee on={V.ids.selectable} selected={V.ids.selIds} onSelect={V.ids.setSel}>
                     {V.ids.isGallery ? (
                       <div className={V.ids.selecting ? "fb-selecting" : undefined} style={css("display: grid; grid-template-columns: repeat(auto-fill, minmax(min(300px, 100%), 1fr)); gap: 32px 24px")}>
                         {(V.ids.cards || []).map((ic2) => (
@@ -3266,14 +3270,13 @@ export default function StudioView({ V }) {
                         ))}
                       </div>
                     ) : null}
-                    {V.ids.isBoard ? <IdeasBoard b={V.ids.board} /> : null}
                     {V.ids.isList ? (
                       <div style={css("position: relative; overflow-x: auto; border: 1px solid var(--border); border-radius: 16px")}>
                         <table style={css("width: 100%; min-width: 860px; border-collapse: collapse; font-size: 14px; color: var(--ink)")}>
                           <thead>
                             <tr style={css("background: var(--surface-2); text-align: left")}>
-                              <th scope="col" style={css("width: 1px; padding: 12px 0 12px 16px; border-bottom: 1px solid var(--line)")}>
-                                <input type="checkbox" className="fb-lsel" checked={V.ids.allSel} ref={(el) => { if (el) el.indeterminate = V.ids.someSel; }} onChange={V.ids.toggleAll} aria-label="Select all ideas in this view" />
+                              <th scope="col" style={css("width: 1px; padding: 0; border-bottom: 1px solid var(--line)")}>
+                                <label className="fb-lsel-hit" title="Select all (⌘A)"><input type="checkbox" className="fb-lsel" checked={V.ids.allSel} ref={(el) => { if (el) el.indeterminate = V.ids.someSel; }} onChange={V.ids.toggleAll} aria-label="Select all ideas in this view" /></label>
                               </th>
                               {(V.ids.listHeads || []).map((h) => (
                                 <th key={h.label} scope="col" aria-sort={h.on ? 'other' : undefined} style={css("padding: 12px 16px; font-size: 12px; font-weight: 600; color: var(--muted); border-bottom: 1px solid var(--line); white-space: nowrap")}><button type="button" onClick={h.sort} style={css("padding: 0; border: 0; background: none; color: " + (h.on ? "var(--ink)" : "inherit") + "; font: inherit; cursor: pointer")}>{h.label}</button></th>
@@ -3288,6 +3291,9 @@ export default function StudioView({ V }) {
                         </table>
                       </div>
                     ) : null}
+                    </IdeaMarquee>
+                    ) : null}
+                    {V.ids.isBoard ? <IdeasBoard b={V.ids.board} /> : null}
                     {V.ids.isEmpty ? (
                       <div style={css("display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 64px 16px; border: 1px dashed var(--border-2); border-radius: 20px; text-align: center")}>
                         <p style={css("margin: 0; font-size: 16px; font-weight: 600; color: var(--ink)")}>{V.ids.tb.search.noMatches ? 'No ideas match this search' : 'Nothing in this view'}</p>
@@ -3296,20 +3302,7 @@ export default function StudioView({ V }) {
                       </div>
                     ) : null}
                     {/* app: bulk bar for checked ideas (Monday's "N selected" bar) */}
-                    {V.ids.bulk ? (
-                      <div role="region" aria-label="Bulk actions" className="fb-bulk" style={css("position: fixed; z-index: 80; left: 50%; bottom: 24px; transform: translateX(-50%); width: max-content; max-width: calc(100vw - 32px); box-sizing: border-box; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 8px; border: 1px solid var(--line-4); border-radius: 18px; background: var(--surface); color: var(--ink); box-shadow: 0 16px 48px rgba(0,0,0,0.22)")}>
-                        <span aria-live="polite" style={css("display: inline-flex; align-items: center; gap: 10px; padding-right: 6px; font-size: 14px; font-weight: 600")}>
-                          <span style={css("min-width: 34px; height: 34px; box-sizing: border-box; padding: 0 8px; display: inline-flex; align-items: center; justify-content: center; border-radius: 10px; background: var(--ink); color: var(--surface); font-variant-numeric: tabular-nums")}>{V.ids.bulk.count}</span>{V.ids.bulk.label}
-                        </span>
-                        <DD d={V.dd.ideaBulkStage} id="idea-bulk-stage" />
-                        <DD d={V.dd.ideaBulkOwner} id="idea-bulk-owner" />
-                        {V.ids.bulk.canResearch ? <button type="button" className="fb-ni" onClick={V.ids.bulk.research} style={css("min-height: 40px; padding: 0 14px; border: 1px solid " + (V.ids.bulk.researchAsking ? "var(--ink)" : "var(--border)") + "; border-radius: 12px; background: " + (V.ids.bulk.researchAsking ? "var(--ink)" : "var(--surface)") + "; color: " + (V.ids.bulk.researchAsking ? "var(--surface)" : "var(--ink)") + "; font-size: 14px; font-weight: 600; cursor: pointer")}>{V.ids.bulk.researchLabel}</button> : null}
-                        {V.ids.bulk.canArchive ? <button type="button" className="fb-ni" onClick={V.ids.bulk.archive} style={css("min-height: 40px; padding: 0 14px; border: 1px solid " + (V.ids.bulk.archiveAsking ? "var(--red-ink)" : "var(--border)") + "; border-radius: 12px; background: " + (V.ids.bulk.archiveAsking ? "var(--red-soft)" : "var(--surface)") + "; color: " + (V.ids.bulk.archiveAsking ? "var(--red-ink)" : "var(--ink)") + "; font-size: 14px; font-weight: 600; cursor: pointer")}>{V.ids.bulk.archiveLabel}</button> : null}
-                        <button type="button" className="fb-ni" aria-label="Clear selection" title="Clear selection (Esc)" onClick={V.ids.bulk.clear} style={css("width: 40px; height: 40px; display: inline-flex; align-items: center; justify-content: center; padding: 0; border: 0; border-radius: 12px; background: transparent; color: var(--ink-3); cursor: pointer")}>
-                          <svg aria-hidden="true" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><path d="M4 4l8 8M12 4l-8 8"></path></svg>
-                        </button>
-                      </div>
-                    ) : null}
+                    {V.ids.bulk ? <IdeaBulkBar b={V.ids.bulk} dd={V.dd} /> : null}
                     {V.ids.hasToast ? (
                       <div role="status" style={css("position: fixed; z-index: 81; left: 50%; bottom: 28px; transform: translateX(-50%); max-width: calc(100vw - 32px); box-sizing: border-box; display: flex; align-items: center; gap: 14px; padding: 10px 10px 10px 16px; border-radius: 14px; background: var(--inv); color: var(--inv-ink); font-size: 14px; box-shadow: 0 12px 32px rgba(0,0,0,0.24)")}>
                         <span style={css("min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap")}>{V.ids.toast}</span>
@@ -5541,12 +5534,62 @@ function DD({ d, id, className }) {
   );
 }
 
+// The bar that rises once ideas are checked. It sticks to the bottom of the ideas column (not the window, so it never
+// sits over the sidebar) and comes to rest under the last row. Archive and Run research swap the bar for a question.
+const IB_BTN = "display: inline-flex; align-items: center; gap: 8px; height: 40px; padding: 0 12px; border: 0; border-radius: 10px; background: transparent; color: var(--ink); font-size: 14px; font-weight: 600; letter-spacing: normal; white-space: nowrap; cursor: pointer;";
+const IB_SEP = "width: 1px; height: 24px; flex: none; margin: 0 4px; background: var(--border);";
+function IdeaBulkBar({ b, dd }) {
+  const ico = (path) => <svg aria-hidden="true" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" style={css("flex: none")}>{path}</svg>;
+  return (
+    <div className="fb-bulk-dock">
+      <div role="region" aria-label="Bulk actions" className="fb-bulk">
+        <span aria-live="polite" style={css("display: inline-flex; align-items: center; gap: 10px; padding: 0 6px 0 2px; font-size: 14px; font-weight: 600; white-space: nowrap")}>
+          <span key={b.count} className="fb-bulk-n">{b.count}</span>{b.label}
+        </span>
+        {b.asking ? (
+          <>
+            <span aria-hidden="true" style={css(IB_SEP)}></span>
+            <span role="alert" style={css("display: grid; gap: 1px; padding: 0 8px 0 4px; min-width: 0")}>
+              <span style={css("font-size: 14px; font-weight: 700")}>{b.askText}</span>
+              <span style={css("font-size: 12px; color: var(--muted)")}>{b.askNote}</span>
+            </span>
+            <button type="button" className="fb-bulk-btn" onClick={b.cancelAsk} style={css(IB_BTN + " border: 1px solid var(--border);")}>Cancel</button>
+            <button type="button" autoFocus onClick={b.askDanger ? b.archive : b.research} style={css(IB_BTN + " padding: 0 16px; font-weight: 700; " + (b.askDanger ? "background: #D93025; color: #FFFFFF;" : "background: var(--inv); color: var(--inv-ink);"))}>{b.askGo}</button>
+          </>
+        ) : (
+          <>
+            {b.canSelectAll ? <button type="button" className="fb-bulk-btn" onClick={b.selectAll} title="Select every idea in this view (⌘A)" style={css(IB_BTN + " height: 32px; padding: 0 10px; font-size: 13px; color: var(--link);")}>{b.selectAllLabel}</button> : null}
+            <span aria-hidden="true" style={css(IB_SEP)}></span>
+            <DD d={dd.ideaBulkStage} id="idea-bulk-stage" className="fb-bulk-dd" />
+            <DD d={dd.ideaBulkOwner} id="idea-bulk-owner" className="fb-bulk-dd" />
+            {b.canResearch || b.canArchive ? <span aria-hidden="true" style={css(IB_SEP)}></span> : null}
+            {b.canResearch ? <button type="button" className="fb-bulk-btn" onClick={b.research} style={css(IB_BTN)}>{ico(<><circle cx="7" cy="7" r="4.5"></circle><path d="M13.5 13.5l-3.2-3.2"></path></>)}Run research</button> : null}
+            {b.canArchive ? <button type="button" className="fb-bulk-btn fb-bulk-red" onClick={b.archive} style={css(IB_BTN)}>{ico(<><rect x="2" y="2.5" width="12" height="3.5" rx="1"></rect><path d="M3 6v6.5a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V6M6.5 9h3"></path></>)}Archive</button> : null}
+          </>
+        )}
+        <span aria-hidden="true" style={css(IB_SEP)}></span>
+        <button type="button" className="fb-bulk-btn" aria-label="Clear selection" title="Clear selection (Esc)" onClick={b.clear} style={css(IB_BTN + " padding: 0 10px; color: var(--ink-3);")}>
+          {ico(<path d="M4 4l8 8M12 4l-8 8"></path>)}
+          <kbd className="fb-bulk-kbd">Esc</kbd>
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // One idea in the Ideas list. edge paints the group's color down the left side when the list is grouped.
 function IdeaRow({ r, dd, edge }) {
   return (
-    <tr data-idea-id={r.id} className="fb-row" style={css(r.selected || r.isOpen ? "background: var(--hover)" : "")}>
-      <td style={css("width: 1px; padding: 10px 0 10px 16px; border-bottom: 1px solid var(--line);" + (edge ? " " + edge : ""))}>
-        <input type="checkbox" className="fb-lsel" checked={r.selected} onChange={r.toggleSel} aria-label={r.selLabel} />
+    <tr data-idea-id={r.id} className={"fb-row" + (r.selected ? " fb-row-on" : "")} aria-selected={r.selected ? 'true' : undefined} style={css(r.isOpen && !r.selected ? "background: var(--hover)" : "")}
+      onMouseDown={(e) => { if (e.shiftKey && !e.target.closest('input, textarea')) e.preventDefault(); }}
+      onClickCapture={(e) => {
+        // app: Shift+click anywhere on a row takes the run of rows up to it; Cmd/Ctrl+click toggles just this one.
+        if (!(e.shiftKey || e.metaKey || e.ctrlKey) || e.target.closest('.fb-lsel-hit')) return;
+        e.preventDefault(); e.stopPropagation();
+        r.toggleSel(e);
+      }}>
+      <td style={css("width: 1px; padding: 0; border-bottom: 1px solid var(--line);" + (edge ? " " + edge : ""))}>
+        <label className="fb-lsel-hit"><input type="checkbox" className="fb-lsel" checked={r.selected} onChange={r.toggleSel} aria-label={r.selLabel} /></label>
       </td>
       <td style={css("padding: 10px 16px; border-bottom: 1px solid var(--line)")}>
         <button type="button" onClick={r.open} aria-label={r.aria} style={css("display: flex; align-items: center; gap: 12px; padding: 0; border: 0; background: transparent; text-align: left; letter-spacing: normal; color: var(--ink); cursor: pointer")}>
@@ -5574,9 +5617,9 @@ function IdeaGroup({ g, dd, colSpan, f }) {
   return (
     <tbody>
       <tr>
-        <th scope="rowgroup" colSpan={colSpan} style={css("padding: 18px 16px 8px; border-bottom: 1px solid var(--line); text-align: left; background: var(--surface)")}>
-          <span style={css("display: flex; align-items: center; gap: 10px")}>
-            <input type="checkbox" className="fb-lsel" checked={g.allSel} ref={(el) => { if (el) el.indeterminate = g.someSel; }} onChange={g.toggleSel} aria-label={g.selLabel} />
+        <th scope="rowgroup" colSpan={colSpan} style={css("padding: 14px 16px 4px 0; border-bottom: 1px solid var(--line); text-align: left; background: var(--surface)")}>
+          <span style={css("display: flex; align-items: center; gap: 0")}>
+            <label className="fb-lsel-hit fb-lsel-hit-g" title={g.selLabel}><input type="checkbox" className="fb-lsel" checked={g.allSel} ref={(el) => { if (el) el.indeterminate = g.someSel; }} onChange={g.toggleSel} aria-label={g.selLabel} /></label>
             <button type="button" aria-expanded={g.collapsed ? 'false' : 'true'} aria-label={g.toggleLabel} onClick={g.toggle} style={css("display: inline-flex; align-items: center; gap: 10px; padding: 4px 6px; border: 0; border-radius: 8px; background: transparent; color: var(--ink); font: inherit; font-size: 15px; font-weight: 700; letter-spacing: normal; cursor: pointer")}>
               <svg aria-hidden="true" width="14" height="14" viewBox="0 0 16 16" style={css("flex: none; color: var(--muted); transition: transform .15s ease; transform: rotate(" + (g.collapsed ? "-90" : "0") + "deg)")}><path d="M4 6l4 4 4-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"></path></svg>
               <span aria-hidden="true" style={css(g.bar)}></span>
