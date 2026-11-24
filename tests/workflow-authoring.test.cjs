@@ -61,3 +61,36 @@ test('unknown actions, conditions, negation and unrecognized triggers remain blo
   const webhook = draftWorkflow('When a webhook arrives, create a task for the super admin', workspace);
   assert.match(webhook.trigger.value, /^[0-9a-f]{32}$/);
 });
+
+test('ambiguous readiness and recipients resolve independently into active studio choices', () => {
+  const {clarificationChoices, applyClarification} = load('lib/workflow/review.js');
+  const graph = draftWorkflow('Notify the team when a video is ready',workspace);
+  const [trigger,action] = clarificationChoices(graph,workspace);
+  assert.ok(trigger.options.some(o => o.label === 'Project status · Filming'));
+  applyClarification(graph,trigger,trigger.options.find(o=>o.label==='Editor status · In Review'));
+  assert.deepEqual(clarificationChoices(graph,workspace).map(c=>c.id),[action.id]);
+  assert.ok(warnings(graph).length > 0);
+  applyClarification(graph,action,action.options.find(o=>o.patch.key==='email_editor'));
+  assert.deepEqual(warnings(graph),[]);
+  assert.deepEqual(compile(graph).actions.map(a=>a.key),['email_editor']);
+  assert.equal(graph.trigger.value,'in_review');
+});
+
+test('comparison explains stage/status, filter mismatch, and the studio calendar date', () => {
+  const {previewMatch} = load('lib/workflow/review.js');
+  const trigger = {key:'publishing_scheduled',filters:[{field:'editor',op:'set',value:''}]};
+  assert.deepEqual(previewMatch(trigger,{status:'Scheduled',editor:null},'publishing','UTC').map(c=>c.matches),[true,false]);
+  assert.deepEqual(previewMatch(trigger,{status:'Scheduled',editor:'E'},'in_production','UTC').map(c=>c.matches),[false,true]);
+  const due = previewMatch({key:'publish_soon',value:'1'},{status:'Editing',publish_date:'2026-11-24'},'in_production','America/Chicago',new Date('2026-11-24T01:00:00Z'));
+  assert.equal(due[0].matches,true);
+});
+
+test('revision review exposes draft-to-publish escalation, recipients, timing and trigger changes', () => {
+  const {revisionReview} = load('lib/workflow/review.js');
+  const old = draftWorkflow(request,workspace);
+  const edited = draftWorkflow('When a project reaches Filming, wait 2 hours then publish to Buffer',workspace);
+  const diff = revisionReview({flow:old},edited,workspace);
+  assert.equal(diff.publicChange,true);
+  assert.deepEqual(diff.rows.filter(r=>r.changed).map(r=>r.label),['Trigger','Timing','Recipients','Actions']);
+  assert.match(diff.rows.find(r=>r.label==='Recipients').after,/Public posts/);
+});

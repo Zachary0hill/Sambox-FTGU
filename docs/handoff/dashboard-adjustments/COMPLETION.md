@@ -78,3 +78,94 @@ The integration owner reviewed all six handoffs against the November 23 plan and
 | Finance and Dev Notes | Reviewed the traced $125.50 synthetic payout and invoice comparison, and verified the payout remained pending approval. The six-note decision record identifies what the team verified locally and what John still needs to decide. |
 
 Production acceptance requires John's digest settings and billing rules, Gerald's confirmation in Buffer, and a real invoice reconciliation. John also owns the historical archive decision and acceptance of the six original Dev Notes. No production migration, real Slack send, Buffer draft, payment or Dev Note closure was performed during this build.
+
+## Enhancement implementation and verification
+
+The enhancement round starts from local commit `cea33ba`. The six briefs below cover the 18 requested changes.
+
+### 01 · Daily Slack digest enhancements
+
+[Handoff](enhancements/01-slack-digest.md)
+
+The digest step now previews a selected workday in its configured timezone. The preview shows the outgoing Slack blocks, expandable project lists and the earliest available edit history. New deliveries retain a snapshot of the message and project lists. Older deliveries show a reconstruction notice. The preview uses a read-only Super Admin endpoint scoped to the signed-in studio.
+
+The channel picker searches joined channels by name across Slack API pages and saves the channel ID. It shows the next local cutoff, retains older IDs and identifies inaccessible destinations or disconnected Slack. Review and revision queues show the timestamp of the current queue entry, ordered oldest first. A reassignment retains the original entry time. Items already waiting when tracking started appear first with their age marked unknown.
+
+- PostgreSQL 17 applied `20261125000100_digest_preview.sql` to a clone of the completed first-round schema. Both `tests/production-digest-preview-db.sql` and `tests/production-digest-db.sql` passed. They cover reassignment, re-entry, sorting, unknown baseline ages, historical coverage, workspace isolation and privileges.
+- Node 22 passed 25 checks with `node --test tests/production-digest.test.cjs tests/automation-status.test.cjs`. The tests compare the actual worker payload with the preview and confirmed snapshot, exercise retries, enforce member scope, and check legacy schedule timezone and date selection. Focused ESLint and TypeScript passed.
+- Chrome opened the digest inspector in a local authenticated studio. It searched a two-page simulated Slack channel list, saved and reloaded the second channel, expanded both completed projects at the selected UTC cutoff and displayed a warning for a pre-tracking date. Additional browser checks preserved the saved ID when the bot could no longer see the channel or Slack was disconnected. Live Slack and John's workday reconciliation remain pending.
+
+### 02 · Buffer draft operations enhancements
+
+[Handoff](enhancements/02-buffer-drafts.md)
+
+- **Readiness.** Projects table and Kanban cards show readiness before the move to Scheduled. The worker and dashboard share the database checks for the project brand, approved edit and selected Final. The board also identifies missing or unusable destinations, a disconnected connector and an inactive workflow. Each reason opens its project control or the relevant workspace setting.
+- **Gerald’s queue.** Projects → Buffer draft queue shows visible projects, clients, original Final versions, destinations, draft IDs and per-channel outcomes. Needs attention includes partial failures, held requests and newer approved Finals. Each project opens directly from its row.
+- **Version review.** The first reservation captures the submitted Final. An operator may keep it, explicitly replace its media, or acknowledge a manual update in Buffer. Older handoffs display “Version not recorded”. The guided path handles those records. An update reads the remote post and checks its draft status, channel and expected media before sending only the post ID and ordered video asset. Replays reuse the recorded decision. An uncertain reply holds the reservation. Buffer exposes no atomic draft-status condition, so a concurrent remote change between reading and editing remains possible. A changed response requires verification. [Buffer GraphQL reference](https://developers.buffer.com/reference.md) · [Media contract](https://developers.buffer.com/guides/hosting-media.html)
+- **Checks.** Fresh PostgreSQL 17 passed `tests/buffer-draft-db.sql` and `tests/buffer-draft-operations-db.sql` after migration `20261125000200_buffer_draft_operations.sql`. These cover shared-client isolation, assigned/unassigned membership, snapshots, concurrent claims, definite and ambiguous outcomes, version decisions and media retention. Node 22 passed 23 tests across `tests/buffer-media-update.test.cjs` and `tests/buffer-drafts.test.cjs`, including the shared harness. Focused ESLint and TypeScript passed.
+- **Browser.** Chrome verified the legacy version label, manual acknowledgement, Needs attention and project Final-control focus. A second fixture drove a confirmed V1 → V2 replacement through the queue, authenticated PostgREST and simulated Buffer/storage. The edit preserved post ID, caption and draft status. Both original and verified versions survived reload. The integration owner independently verified the same behavior on the production build. Live acceptance with Gerald and the actual Buffer account remains open.
+
+### 03 · Idea handoff and archive enhancements
+
+[Handoff](enhancements/03-idea-archiving.md)
+
+1. Project approval now previews the destination, full production brief, shoot notes, script beats, research summary and reference links. The preview and commit share the database package builder. Confirmation checks that the reviewed material and destination still match before it allocates a job number. Existing cover-transfer retries continue to use the linked project.
+2. Archived ideas can be found by the linked job number, project title and client in Board, Grid and List. Each result links to the project the current user can access. Existing stage, view and brand filters apply.
+3. Super Admins can open **Review historical handoffs** on Ideas & Research to inspect eligible approvals, missing project links and mismatched snapshots. Selection and confirmation are separate steps. The database locks and rechecks each selected idea and project, commits the batch together and logs each archive once with the actor and both record IDs.
+
+On a disposable PostgreSQL 17 database, `tests/idea-handoff-review-db.sql` verified read-only preview, stale confirmation, snapshot parity, idempotent approval, access restrictions, historical classification, rollback and audit. The original production handoff and job-code SQL suites also passed. Node 22 passed all 44 tests across `idea-stages.test.cjs` and `idea-research.test.cjs`. Scoped ESLint and TypeScript passed.
+
+Authenticated Chrome checks on the local disposable workspace verified a preview cancellation with zero new projects, confirmation with one linked project, explicit historical confirmation with the orphan preserved, and archived search by job, client and title. Both the source idea and linked project opened. Historical production records still require the studio’s selection.
+
+### 04 · Editor reconciliation enhancements
+
+[Handoff](enhancements/04-editor-payments.md)
+
+Implemented and verified all three enhancements in Finance → Contractor payouts.
+
+1. Monthly terms prefill from the immediately preceding calendar month. The form shows the prior and proposed values side by side, highlights changed fields, and requires confirmation for the selected month. A missing prior contract leaves the inputs empty.
+2. The billing exception queue includes reapprovals, editor reassignments and approvals awaiting contract terms. A Super Admin can keep the existing credit, credit one event to one covered editor, or exclude the job. The ledger retains the actor, date and reason. The report enforces a single credited event per job across editors and months.
+3. Month-end statements capture the job-level ledger, effective terms, totals and linked payout/invoice as approved. Corrections record a new version, affected jobs, reason, actor, date and amount change. Each version has its own CSV. A stale preview prompts a fresh review.
+
+Seven Node 22 finance tests, both PostgreSQL 17 finance suites, scoped ESLint and the 34 desktop/mobile studio page checks passed. The SQL tests exercised transfers, missing terms, retries, stale decisions, forged totals, immutable versions and Finance permissions. In the local authenticated browser, December inherited November’s terms, a retainer edit was highlighted, and January inherited the explicitly confirmed December amount. A synthetic November statement saved at $125.50. An operator excluded QA-2 with a reason, then approved version 2 at $100.00. The CSV identified QA-2 and the −$25.50 change. The original CSV downloaded identically after the correction. Reopening the month showed both saved versions and suppressed an unchanged correction. The linked synthetic payout remained pending approval at $125.50. Production invoice reconciliation and billing decisions remain with the studio.
+
+
+### 05 · Workflow authoring enhancements
+
+[Handoff](enhancements/05-workflow-authoring.md)
+
+The builder now asks separate trigger and recipient questions for ambiguous readiness notifications. Project statuses come from the studio. Recipient choices include supported role actions, active members and the connected Slack destination. Selecting an answer edits the graph immediately. Other unresolved clauses remain visible and block activation.
+
+**Compare samples** runs two selected, active projects through the server preview. It explains status, publishing stage, due date or sponsor approval as applicable, checks trigger filters and reports the actual brand and channel for a matching Buffer handoff. An expected skip stops before actions and counts as a successful preview operation. At least one matching, successful sample is still required for activation. Schedule, webhook, idea and comment triggers retain their existing test paths because project state alone cannot establish those events.
+
+Live workflows now offer **Create revision**. Assistant drafts created from a live workflow also retain its identity and baseline. Activation review compares triggers, timing, recipients and actions, and calls out proposed public publishing. Applying the revision keeps the original workflow ID and run history. The transaction rejects stale originals and unfinished live runs, and repeat application returns the same ID. Draft revisions cannot become a second live trigger.
+
+- Node 22 passed all 39 checks across the workflow-authoring, automation-status and production-digest suites. Scoped ESLint, TypeScript and whitespace checks passed.
+- PostgreSQL 17 applied the migration on the disposable first-round schema. `tests/workflow-revisions-db.sql` passed for origin capture, role isolation, bypass prevention, retry, stale sibling and single live identity.
+- Chrome on the local Next.js app and PostgREST resolved “Notify the team when a video is ready” to Editor status · In Review and Email the assigned editor, then reloaded the saved choices. The two-project preview showed a brand-routed editable Buffer draft for a matched Scheduled project and a trigger skip for a Scripting project. Both run rows had test status, zero Buffer publications and zero recorded external effects. Chrome also applied a revision, showed the draft-to-public warning and disabled activation after the original changed. A local webhook probe with a draft revision sharing the live address reached its original workflow and queued zero runs.
+
+### 06 · Dev Note decisions and acceptance enhancements
+
+[Handoff](enhancements/06-dev-notes.md)
+
+1. **Decision inbox.** Open Dev Notes → Decision inbox to review the six questions, supporting evidence and suggested answers. A Super Admin explicitly links each topic to a real workspace note and assigns an active reviewer who can already read it. A unique text match preselects the original note. Ambiguous matches require selection. The reviewer can choose a suggested answer or write one. Every saved decision records the actor, time and revision.
+2. **Try it.** Each question names the intended role and opens the relevant dashboard screen. Project decisions can link to a specific workspace project. Links use the viewer's current role, permissions and visible projects. Missing or inaccessible projects fall back to the permitted screen. A viewer without the required action permission sees why the link is unavailable.
+3. **Delivery and acceptance.** An assigned review starts at Needs decision. The reviewer answers, a Super Admin marks it Ready to try, and the reviewer records an example or comment to mark it Accepted. Reopening requires a reason and preserves the earlier answer and sign-off. Legacy Open and Resolved remain independent. Existing notes receive no automatic decision or acceptance.
+
+PostgreSQL 17 passed `tests/dev-note-decisions-db.sql` on an isolated migrated database, covering eligibility, reviewer-only actions, concurrent revision checks, idempotent request IDs, required acceptance text, retained history, restricted reads and legacy resolution. Node 22 passed all nine checks in the decision-target suite and its shared harness. Scoped ESLint passed.
+
+In Chromium at 1440px and 390px, all six decision topics were available to a Super Admin. A synthetic editor-authored note went through assignment, free-text answer, admin readiness and editor acceptance in separate sessions. The editor saw only their decision and could not invoke the Super Admin column action. Four attributed history entries persisted while the source stayed open. A second test saved a suggested answer and opened the selected project's drawer from the mobile Try it link. Production assignment to John and actual owner acceptance remain open.
+
+### Combined enhancement verification
+
+All six handoffs were exercised together on the local dashboard with synthetic studio data. Six agents worked in overlapping batches of up to three.
+
+| Check | Result |
+| --- | --- |
+| Automated regression | All 283 Node tests passed. Chrome rendered 17 studio pages at both 1440 px and 390 px, with zero reported errors or horizontal overflow across the 34 checks. Repository-wide ESLint, TypeScript and the Next.js production build passed. |
+| Database upgrade | All six enhancement migrations applied in order on fresh PostgreSQL 17 using the repository’s Supabase bootstrap. All 18 selected SQL suites passed with the final schema, including one suite per enhancement section and the cross-section regression. |
+| One project across six sections | The [integration test](../../../tests/dashboard-handoff-integration-db.sql) previewed and approved the same editor package, linked the resulting project to an open Dev Note, applied a workflow revision to its existing live ID, and checked Buffer readiness against that project’s brand and Final. A historical Slack cutoff retained the original review state. The approved job appeared once in the digest and earned one editor credit. Reapproval preserved the saved $120 statement. |
+| Authenticated production-build checks | Chrome reopened the historical idea review, the saved editor statement and its correction, a named Slack channel and its workday preview, Gerald’s submitted and replacement video versions, and the six Dev Note topics on desktop and mobile. A Manager’s mobile view kept private Finance and Slack administration restricted. The workflow builder preserved a clarified recipient and blocked activation of a stale draft that would have changed draft creation to public publishing. |
+| Provider and concurrency checks | A confirmed Buffer media edit preserved the remote fixture’s caption, destination, post ID and draft state. The dashboard verifies the returned media source and holds an ambiguous response for manual review. Two concurrent PostgreSQL transactions trying to apply sibling workflow revisions produced one successful update, one stale rejection and one live workflow. |
+
+Slack, Buffer and storage responses were simulated locally. Deployment, production migrations, Gerald’s live Buffer check, real invoice reconciliation and John’s acceptance remain pending.

@@ -10,13 +10,13 @@ import { Svg, ICON, btn } from './ui';
 
 // A row's state on screen: rows before `shown` have their result, the row at `shown` is running, the rest wait.
 export const rowState = (test, i) => (!test ? '' : i < test.shown ? test.rows[i].final || 'wait' : i === test.shown && test.phase !== 'done' ? 'run' : 'wait');
-const LABEL = { ok: 'Passed', fail: 'Failed', run: 'Running', wait: 'Waiting' };
-const TONE = { ok: T.live, fail: T.error, run: T.varInk, wait: T.muted };
+const LABEL = { skip:'Skipped', ok: 'Passed', fail: 'Failed', run: 'Running', wait: 'Waiting' };
+const TONE = { skip:T.muted, ok: T.live, fail: T.error, run: T.varInk, wait: T.muted };
 
 export default function TestDrawer({ test, onFix, onAgain, onClose }) {
   const failed = test.rows.findIndex((r, i) => rowState(test, i) === 'fail');
   const done = test.phase === 'done';
-  const head = !done ? 'Running test…' : failed >= 0 ? 'Stopped at ' + (test.rows[failed].n === 'T' ? 'the trigger' : 'step ' + test.rows[failed].n) : test.error ? 'Test could not finish' : 'Test passed';
+  const head = !done ? 'Running test…' : failed >= 0 ? 'Stopped at ' + (test.rows[failed].n === 'T' ? 'the trigger' : 'step ' + test.rows[failed].n) : test.error ? 'Test could not finish' : test.skipped ? 'Sample skipped' : 'Test passed';
   const dot = !done ? T.varInk : failed >= 0 || test.error ? T.error : T.live;
   return (
     <section aria-label="Test run" className="wf-drawer" style={css('position: absolute; left: 12px; right: 64px; bottom: 12px; z-index: 8; background: ' + T.surface + '; border: 1px solid ' + T.inputLine + '; border-radius: ' + R.card + 'px; box-shadow: 0 12px 32px rgba(0,0,0,.12); max-height: 300px; display: flex; flex-direction: column; overflow: hidden;')}>
@@ -36,7 +36,7 @@ export default function TestDrawer({ test, onFix, onAgain, onClose }) {
           return (
             <div key={r.id} style={css('display: grid; grid-template-columns: 28px minmax(0, 1fr) 80px; gap: 10px; align-items: center; padding: 8px 14px; border-bottom: 1px solid ' + T.line + '; font-size: 13px;')}>
               <span style={css('font-weight: 600; color: ' + T.muted + ';')}>{r.n}</span>
-              <span style={css('min-width: 0; overflow-wrap: anywhere;')}><span style={css('font-weight: 600;')}>{r.title}</span>{' '}<span style={css('font-size: 12px; color: ' + (st === 'fail' ? T.error : T.muted) + ';')}>{st === 'ok' || st === 'fail' ? r.out : ''}</span></span>
+              <span style={css('min-width: 0; overflow-wrap: anywhere;')}><span style={css('font-weight: 600;')}>{r.title}</span>{' '}<span style={css('font-size: 12px; color: ' + (st === 'fail' ? T.error : T.muted) + ';')}>{['ok','fail','skip'].includes(st) ? r.out : ''}</span></span>
               <span className={st === 'run' ? 'wf-pulse' : ''} style={css('font-weight: 600; font-size: 12px; text-align: right; color: ' + TONE[st] + ';')}>{LABEL[st]}</span>
             </div>
           );

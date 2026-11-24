@@ -3,12 +3,12 @@ import { supabaseAdmin } from '@/lib/supabase/admin';
 import { getIntegration } from '@/lib/integrations/secrets';
 import { postSlackDigest, SlackError, type DigestBlock } from '@/lib/integrations/providers/slack';
 import { validDigestChannel } from './catalog';
-import { lastSlot } from './schedule';
+import { lastSlot, slotOnDate } from './schedule';
 
 export class DigestSetupError extends Error {}
 export class DigestRetryError extends Error {}
 
-type Row = { bucket: string; job: string; title: string; editor: string };
+type Row = { bucket: string; job: string; title: string; editor: string; queue_since?: string | null };
 const GROUPS = [['completed', 'Completed'], ['in_review', 'Ready for review'], ['needs_revision', 'Needs revision']] as const;
 const escapeSlack = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/[\r\n]/g, ' ');
 
@@ -25,7 +25,8 @@ export function digestMessage(rows: Row[], baseUrl: string, start: number, cutof
     let body = '*' + label + ' (' + items.length + ')*';
     for (const row of items) {
       const url = baseUrl + '/projects?project=' + encodeURIComponent(row.job);
-      const line = '• <' + url + '|Open> ' + escapeSlack(row.title) + ' — ' + escapeSlack(row.editor);
+      const age = key === 'completed' ? '' : row.queue_since ? ' · In queue since ' + local.format(new Date(row.queue_since)) : ' · In queue before tracking began';
+      const line = '• <' + url + '|Open> ' + escapeSlack(row.title) + ' — ' + escapeSlack(row.editor) + age;
       if (line.length > 3000) throw new DigestSetupError('A project title or editor name exceeds the Slack section limit.');
       if (body.length + line.length + 1 > 3000) { section(body); body = line; }
       else body += '\n' + line;
@@ -36,6 +37,35 @@ export function digestMessage(rows: Row[], baseUrl: string, start: number, cutof
   return { text: header + '. ' + counts.join(', ') + '.', blocks };
 }
 
+async function readDigest(workspaceId: string, baseUrl: string, rule: string, timezone: string, cutoff: number) {
+  const start = lastSlot(rule, timezone, cutoff - 1);
+  if (!start) throw new DigestSetupError('Choose a valid reporting schedule.');
+  const result = await supabaseAdmin().rpc('production_digest_snapshot', {
+    p_ws: workspaceId, p_start: new Date(start).toISOString(), p_cutoff: new Date(cutoff).toISOString(),
+  });
+  if (result.error) throw new DigestRetryError('Could not load production queues: ' + result.error.message);
+  const data = result.data as { rows: Row[]; history_start: string | null };
+  const message = digestMessage(data.rows, baseUrl, start, cutoff, timezone);
+  return { start, cutoff, timezone, historyStart: data.history_start, message,
+    groups: GROUPS.map(([key, label]) => ({ key, label, items: data.rows.filter(r => r.bucket === key) })),
+  };
+}
+
+export async function previewDigest(workspaceId: string, baseUrl: string, rule: string, timezone: string, date: string, channel: string) {
+  const cutoff = slotOnDate(rule, timezone, date);
+  if (!cutoff) throw new DigestSetupError('Choose a reporting date on the configured schedule.');
+  if (cutoff > Date.now()) throw new DigestSetupError('Choose a cutoff that has already passed.');
+  let delivery = '';
+  if (validDigestChannel(channel)) {
+    const receipt = await supabaseAdmin().from('production_digest_deliveries').select('status,snapshot')
+      .match({ workspace_id: workspaceId, channel, reporting_date: date }).maybeSingle();
+    if (receipt.error) throw new DigestRetryError('Could not read digest delivery history.');
+    if (receipt.data?.snapshot) return { ...receipt.data.snapshot, delivery: receipt.data.status === 'sent' ? 'Confirmed Slack message' : 'Prepared message with unconfirmed delivery' };
+    if (receipt.data) delivery = 'Reconstructed from edit history. This older delivery has no saved message.';
+  }
+  return { ...await readDigest(workspaceId, baseUrl, rule, timezone, cutoff), delivery };
+}
+
 type Options = {
   workspaceId: string; runId: string; channel: string; rule: string; timezone: string; slot: unknown; baseUrl: string; preview: boolean;
 };
@@ -44,8 +74,6 @@ export async function deliverProductionDigest({ workspaceId, runId, channel, rul
   if (!validDigestChannel(channel)) throw new DigestSetupError('Enter the Slack channel ID from channel details.');
   const cutoff = preview ? lastSlot(rule, timezone) : Date.parse(String(slot || ''));
   if (!cutoff || !Number.isFinite(cutoff)) throw new DigestSetupError('The digest needs a scheduled reporting cutoff.');
-  const start = lastSlot(rule, timezone, cutoff - 1);
-  if (!start) throw new DigestSetupError('Choose a valid reporting schedule.');
   const reportingDate = new Intl.DateTimeFormat('en-CA', { timeZone: timezone, year: 'numeric', month: '2-digit', day: '2-digit' }).format(cutoff);
   const db = supabaseAdmin();
   const identity = { workspace_id: workspaceId, channel, reporting_date: reportingDate };
@@ -60,17 +88,14 @@ export async function deliverProductionDigest({ workspaceId, runId, channel, rul
     const previous = await priorDelivery();
     if (previous) return previous;
   }
-  const snapshot = await db.rpc('production_digest_rows', {
-    p_ws: workspaceId, p_start: new Date(start).toISOString(), p_cutoff: new Date(cutoff).toISOString(),
-  });
-  if (snapshot.error) throw new DigestRetryError('Could not load production queues: ' + snapshot.error.message);
-  const message = digestMessage(snapshot.data || [], baseUrl, start, cutoff, timezone);
+  const snapshot = await readDigest(workspaceId, baseUrl, rule, timezone, cutoff);
+  const { message } = snapshot;
   const slack = await getIntegration(workspaceId, 'slack').catch((error: Error) => {
     throw new DigestRetryError('Could not read the Slack connection: ' + error.message);
   });
   if (preview) return 'Would send to ' + channel + '. ' + message.text + (slack ? '' : ' Connect Slack in Workspace Settings first.');
   if (!slack) throw new DigestSetupError('Reconnect Slack in Workspace Settings to send the production digest.');
-  const reserved = await db.from('production_digest_deliveries').insert({ ...identity, cutoff: new Date(cutoff).toISOString(), run_id: runId, status: 'sending' });
+  const reserved = await db.from('production_digest_deliveries').insert({ ...identity, cutoff: new Date(cutoff).toISOString(), run_id: runId, status: 'sending', snapshot });
   if (reserved.error) {
     if (reserved.error.code === '23505') {
       const previous = await priorDelivery();

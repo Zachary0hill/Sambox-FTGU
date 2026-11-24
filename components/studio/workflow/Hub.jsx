@@ -83,10 +83,10 @@ function WorkflowCard({ w, now, open, onToggle, onDelete }) {
   const [menu, setMenu] = useState(false);
   const [ask, setAsk] = useState(false);
   const tone = w.status === 'live' ? T.live : w.status === 'draft' ? T.warn : T.off;
-  const meta = !w.runs ? (w.mapKind === 'process' ? 'Process map, never runs' : 'Idea sketch, never runs')
+  const meta = w.raw?.revision_applied_at ? 'Revision applied to the live workflow' : !w.runs ? (w.mapKind === 'process' ? 'Process map, never runs' : 'Idea sketch, never runs')
     : w.status === 'live' ? (w.lastRunAt ? 'Last run ' + whenText(w.lastRunAt, now) : 'Has not run yet')
       : w.status === 'off' ? (w.updatedAt ? 'Off since ' + dayOf(new Date(w.updatedAt)) : 'Turned off') : reasonOf(w.fixes);
-  const href = '/admin/automations?flow=' + encodeURIComponent(w.id);
+  const href = '/admin/automations?flow=' + encodeURIComponent(w.raw?.revision_applied_at ? w.raw.revision_source_id : w.id);
   const go = (e) => { if (e.metaKey || e.ctrlKey || e.shiftKey) return; e.preventDefault(); open(w.id); };
   return (
     <article className="wf-c" style={css('border: 1px solid ' + T.border + '; border-radius: ' + R.card + 'px; background: ' + T.surface + '; display: flex; flex-direction: column; min-width: 0;')}>
@@ -118,7 +118,7 @@ function WorkflowCard({ w, now, open, onToggle, onDelete }) {
         </div>
         {!w.runs ? null : w.status === 'draft' ? (
           <a href={href} onClick={go} className="wf-k" style={css('height: ' + H.touch + 'px; flex: none; margin-right: 6px; border-radius: ' + R.small + 'px; padding: 0 14px; display: flex; align-items: center; background: ' + T.accent + '; color: ' + T.accentInk + '; text-decoration: none; font-weight: 600; font-size: 13px;')}>{HUB.setUp}</a>
-        ) : <Switch on={w.status === 'live'} label={w.name + ' on or off'} onToggle={() => onToggle(w)} />}
+        ) : w.raw?.revision_applied_at ? null : <Switch on={w.status === 'live'} label={w.name + ' on or off'} onToggle={() => onToggle(w)} />}
       </div>
     </article>
   );
@@ -201,13 +201,17 @@ export default function WorkflowHub({ D, A, s, set }) {
   const alertFails = realRuns.filter((r) => alertIds.has(r.automation_id) && r.status === 'failed' && now - new Date(r.created_at) < 86400000);
   const alert = alertHit ? { ...alertHit, failed: alertFails.length, failedRun: alertFails.length ? alertFails[0].id : '' } : null;
 
-  const open = (id) => set({ flowOpen: id });
+  const open = (id) => {
+    const row = (D.automations || []).find(a => a.id === id);
+    set({ flowOpen:row?.revision_applied_at ? row.revision_source_id : id });
+  };
   const pickTab = (k, more) => set({ autoTab: k, ...(more || {}) });
   const toggle = async (w) => {
+    if (w.raw.revision_applied_at) { open(w.id); return; }
     const on = w.status === 'live';
     // Turning on a workflow that is not ready goes to the builder's Review and turn on instead (handoff Rule 3).
     // The same goes for one with no passing test since its last edit (Rule 4), or one that sends outside the team (Rule 5).
-    if (!on && (w.fixes.length || !(w.lastTest && w.lastTest.ok) || w.sendsOut)) { set({ flowOpen: w.id, flowReview: true }); return; }
+    if (!on && (w.raw.revision_source_id || w.fixes.length || !(w.lastTest && w.lastTest.ok) || w.sendsOut)) { set({ flowOpen: w.id, flowReview: true }); return; }
     const ok = await A.updateAutomation(w.raw, { enabled: !on, is_draft: false, updated_at: new Date().toISOString() }, (on ? 'turned off' : 'turned on') + ' the automation');
     if (ok) say(w.name + (on ? ' is off' : ' is live'));
   };

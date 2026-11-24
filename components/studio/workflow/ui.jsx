@@ -87,7 +87,7 @@ export function useModal(ref, focusSel) {
 // A centered dialog over the dimmed builder: eyebrow and display title, close x, a scrolling body, and a footer with
 // the change state on the left ("No changes", "Unsaved changes", "Saved"), then Cancel (Back to builder once there is
 // nothing unsaved) and the primary Save.
-export function Dialog({ id, eyebrow, title, width = 720, headerExtra, state, saveLabel, onSave, saveOff, onClose, children, bodyStyle }) {
+export function Dialog({ id, eyebrow, title, width = 720, headerExtra, state, saveLabel, onSave, saveOff, onClose, children, bodyStyle, actionOnly }) {
   const layer = useRef(null);
   useModal(layer);
   const dirty = state === 'dirty';
@@ -107,8 +107,8 @@ export function Dialog({ id, eyebrow, title, width = 720, headerExtra, state, sa
         </div>
         <div className="wf-sc" style={css('flex: 1; min-height: 0; overflow: auto;' + (bodyStyle || ''))}>{children}</div>
         <div style={css('display: flex; align-items: center; flex-wrap: wrap; gap: 8px; padding: 16px 24px; border-top: 1px solid ' + T.line + '; background: ' + T.ground + ';')}>
-          <span aria-live="polite" style={css('font-size: 13px; color: ' + T.muted + '; margin-right: auto; font-weight: 500;')}>{state === 'saved' ? 'Saved' : dirty ? 'Unsaved changes' : 'No changes'}</span>
-          <button type="button" className="wf-h" onClick={onClose} style={css(btn('ghost', 44) + ' padding: 0 16px;')}>{dirty ? 'Cancel' : 'Back to builder'}</button>
+          <span aria-live="polite" style={css('font-size: 13px; color: ' + T.muted + '; margin-right: auto; font-weight: 500;')}>{actionOnly ? '' : state === 'saved' ? 'Saved' : dirty ? 'Unsaved changes' : 'No changes'}</span>
+          <button type="button" className="wf-h" onClick={onClose} style={css(btn('ghost', 44) + ' padding: 0 16px;')}>{actionOnly ? 'Back to workflow' : dirty ? 'Cancel' : 'Back to builder'}</button>
           <button type="button" className="wf-k" disabled={!dirty || saveOff} onClick={onSave} style={css(btn('primary', 44) + ' padding: 0 18px;' + (!dirty || saveOff ? ' opacity: .45; cursor: default;' : ''))}>{saveLabel}</button>
         </div>
       </div>

@@ -249,3 +249,20 @@ const provider: ProviderModule = {
 };
 
 export default provider;
+
+// Inspect immediately before an operator-approved edit. editPost has no draft-only or version precondition.
+export async function inspectBufferDraft(key: string, id: string) {
+  const { data } = await gql<{ post: { id: string; channelId: string; status: string; assets: { source: string }[] } }>(key,
+    'query DraftMedia($input: PostInput!) { post(input:$input) { id channelId status assets { source } } }', { input: { id } });
+  return data.post;
+}
+
+export async function replaceBufferDraftMedia(key: string, id: string, url: string) {
+  const { data } = await gql<{ editPost: { __typename: string; message?: string; post?: { id: string; channelId: string; status: string; assets: { source: string }[] } } }>(key,
+    'mutation DraftMedia($input: EditPostInput!) { editPost(input:$input) { __typename ... on PostActionSuccess { post { id channelId status assets { source } } } ... on MutationError { message } } }',
+    { input: { id, assets: [{ video: { url } }] } });
+  const result = data.editPost;
+  if (result?.message && result.__typename !== 'PostActionSuccess') throw new BufferPostRejected(result.message);
+  if (!result?.post) throw new Error('Buffer did not confirm the media change.');
+  return result.post;
+}

@@ -75,6 +75,15 @@ function slots(r: Rule, tzIn: string, now: number, ahead: number) {
   }
   return out;
 }
+// Resolve a picked calendar date without interpreting it as UTC midnight or rolling it into another day.
+export function slotOnDate(value: string, timezone: string, date: string) {
+  const rule = parseRule(value);
+  if (!rule || !/^\d{4}-\d{2}-\d{2}$/.test(date)) return null;
+  const day = new Date(date + 'T00:00:00Z');
+  if (!Number.isFinite(day.getTime()) || day.toISOString().slice(0, 10) !== date || !rule.days.includes(day.getUTCDay())) return null;
+  return instant(day.getUTCFullYear(), day.getUTCMonth() + 1, day.getUTCDate(), rule.hour, rule.minute, timezone);
+}
+
 // The most recent slot at or before now, or null.
 export function lastSlot(value: string, tz: string, now = Date.now()) {
   const r = parseRule(value);

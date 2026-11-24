@@ -22,6 +22,7 @@ import { FilterBy, SortEditor, FilterChips, NoMatch } from './FilterBar';
 import { PropertiesPanel, GroupPanel, LayoutPanel } from './ViewPanels';
 import { AddColumnStep2, QuickAdd } from './AddColumn';
 import RecordDialog from './RecordDialog';
+import BufferDraftQueue, { DraftReadiness } from './BufferDraftQueue';
 import ProjectModal from './ProjectModal';
 import InlineAdd from './InlineAdd';
 import { PickBox } from './Prims';
@@ -33,6 +34,7 @@ import AiUsage from './AiUsage';
 import IdeaRules from './IdeaRules';
 import IdeaAutomations from './IdeaAutomations';
 import IdeaConvert from './IdeaConvert';
+import { ArchiveProjectLink, HandoffPreview, HistoricalHandoffs } from './IdeaHandoffs';
 import IdeaResearch from './IdeaResearch';
 import { IdeasToolbar, CoverNotice, IdeasBoard, IdeaDialog, IDEA_SCRIM, IDEA_DLG, IDEA_MAIN, IDEA_TOP, IDEA_SCROLL, IDEA_FOOT, IDEA_SIDE, IDEA_CRUMB, IDEA_LABEL, IDEA_PILL, IDEA_BTN, IDEA_ICONB } from './IdeasBoard';
 
@@ -3165,6 +3167,7 @@ export default function StudioView({ V }) {
                 {" "}
                 {V.pg.isIdeas ? (
                   <>
+                    {V.ids.handoff && <HandoffPreview {...V.ids.handoff} />}
                     {V.ids.convert ? <IdeaConvert {...V.ids.convert} /> : null}
                     {/* app: research run strip (Super Admin), live through the research_runs realtime subscription */}
                     {V.ids.rs.hasPanel ? (
@@ -3220,6 +3223,7 @@ export default function StudioView({ V }) {
                     {/* app: browsing toolbar and cover notice (handoff/ideas-research-handoff-2026-11-19 § IdeasToolbar, CoverNotice) */}
                     <div style={css("display: flex; flex-direction: column; gap: 12px")}>
                       <IdeasToolbar t={V.ids.tb} />
+                      {V.ids.historicalReview && <HistoricalHandoffs {...V.ids.historicalReview} />}
                       {V.ids.isBoard && V.ids.tb.search.noMatches ? (
                         <p style={css("margin: 0; font-size: 13px; color: var(--muted)")}>No ideas match this search. Try fewer keywords or adjust your filters.</p>
                       ) : null}
@@ -3264,6 +3268,7 @@ export default function StudioView({ V }) {
                               {ic2.showRec ? <span style={css(ic2.recStyle)}>{ic2.rec}</span> : ic2.showScore ? <span style={css(ic2.scoreStyle)} title="Score"><span style={css("position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)")}>Score </span>{ic2.score}</span> : null}
                             </span>
                           </button>
+                          <ArchiveProjectLink project={ic2.archiveProject} />
                           <label className="fb-ysel" title={ic2.selLabel}>
                             <input type="checkbox" checked={ic2.selected} onChange={ic2.toggleSel} aria-label={ic2.selLabel} />
                           </label>
@@ -4250,6 +4255,7 @@ export default function StudioView({ V }) {
                   </div>
                 </header>
                 {" "}
+                {V.bufferQueue && <BufferDraftQueue queue={V.bufferQueue} />}
                 <div style={css("display: flex; flex-direction: column; gap: 16px; padding-bottom: 20px; border-bottom: 1px solid var(--line)")}>
                   {V.menuOpen ? (
                     <>
@@ -4631,6 +4637,10 @@ export default function StudioView({ V }) {
                                                           <span style={css(c.titleTextStyle)}>{c.text}</span>
                                                         </button>
                                                         {" "}
+                                                        {c.draftReasons && <button type="button" onClick={() => c.openDraft(c.draftReasons[0]?.control || 'asset')}
+                                                          title={c.draftReasons.map(r => r.label).join(' · ') || 'Buffer draft ready'}
+                                                          style={{background:'var(--chip)',border:0,borderRadius:6,padding:4,fontSize:11,flexShrink:0}}>
+                                                          {c.draftReasons.length ? 'Buffer · ' + c.draftReasons.length : 'Buffer ready'}</button>}
                                                         {c.hasUpdates ? (
                                                           <>
                                                             <span style={css("display: inline-flex; align-items: center; gap: 4px; flex: none; height: 22px; padding: 0 8px; border-radius: 999px; background: var(--chip-2); font-size: var(--text-caption); font-weight: 600; color: var(--ink-3)")}>
@@ -4836,6 +4846,7 @@ export default function StudioView({ V }) {
                                               <span>{k.title}</span>
                                             </button>
                                           </h3>
+                                          <DraftReadiness reasons={k.draftReasons} open={k.openDraft} />
                                           {k.hasFlags ? (
                                             <div style={css("display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px")}>
                                               {k.hasType ? <span title={k.typeText} style={css(k.typeTag)}><TextLogo text={k.typeText} size={11} /><span style={css("min-width: 0; overflow: hidden; text-overflow: ellipsis")}>{k.typeText}</span></span> : null}
@@ -5597,6 +5608,7 @@ function IdeaRow({ r, dd, edge }) {
         <button type="button" onClick={r.open} aria-label={r.aria} style={css("display: flex; align-items: center; gap: 12px; padding: 0; border: 0; background: transparent; text-align: left; letter-spacing: normal; color: var(--ink); cursor: pointer")}>
           <span aria-hidden="true" style={css(r.miniThumb)}></span><span style={css("display: grid; gap: 2px")}><span style={css("font-weight: 600; line-height: 1.35")}>{r.title}</span>{r.hookLine ? <span style={css("font-size: 12px; color: var(--muted)")}>{r.hookLine}</span> : null}</span>
         </button>
+        <ArchiveProjectLink project={r.archiveProject} />
       </td>
       {r.f.brand ? <td style={css("padding: 10px 16px; border-bottom: 1px solid var(--line); color: var(--ink-3); white-space: nowrap")}>{r.brand}</td> : null}
       {r.f.type ? <td style={css("padding: 6px 10px; border-bottom: 1px solid var(--line); white-space: nowrap")}>{r.canCell ? <span style={css("display: inline-flex; align-items: center; gap: 2px")}><span aria-hidden="true" style={css(r.typeDot)}></span><DD d={dd[r.cellType]} className="fb-cell" /></span> : <span style={css(r.typeStyle)}>{r.type}</span>}</td> : null}

@@ -3,6 +3,7 @@
 // Built from handoff/ideas-research-handoff-2026-11-19 (HANDOFF.md, screenshots/State-Board-1440.png, MainCompact.png).
 // Values come from lib/studio/vals-ideas.js (V.ids.tb, V.ids.board, V.ids.sel); hover, focus and narrow-screen rules
 // live in the .ir-* block of app/globals.css.
+import { ArchiveProjectLink } from './IdeaHandoffs';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { css } from '@/lib/studio/css';
 import FocusDialog from './FocusDialog';
@@ -426,6 +427,7 @@ function Card({ c, dragEnd }) {
             <button type="button" data-open-id={c.id} onClick={c.open} className="ir-title"
               style={css('display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; width: 100%; padding: 0; border: 0; background: transparent; font: inherit; line-height: inherit; letter-spacing: inherit; text-align: left; color: var(--ink); cursor: pointer')}>{c.title}</button>
           </h3>
+          <ArchiveProjectLink project={c.archiveProject} />
           {c.context ? <p style={css('margin: 0; font-size: 13px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap')}>{c.context}</p> : null}
           {c.failed ? (
             <div style={css('display: flex; align-items: center; gap: 8px; margin-top: 4px; padding: 6px 6px 6px 10px; border: 1px solid color-mix(in srgb, var(--red-ink) 30%, transparent); border-radius: 8px; background: var(--red-soft); color: var(--red-ink); font-size: 12px; font-weight: 700')}>

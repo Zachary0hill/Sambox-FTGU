@@ -15,7 +15,7 @@ export default function IdeaConvert({ title, options, close }) {
     <div style={{ display: 'grid', gap: 16 }}>
       <div>
         <h2 id="idea-convert-title" style={{ margin: 0, fontSize: 20 }}>Approve this idea</h2>
-        <p style={{ margin: '4px 0 0', fontSize: 14, color: 'var(--muted)' }}>Choose what “{title}” becomes. The idea stays here, linked to it.</p>
+        <p style={{ margin: '4px 0 0', fontSize: 14, color: 'var(--muted)' }}>Choose what “{title}” becomes. You can preview the editor package before creating a project.</p>
       </div>
       <div style={{ display: 'grid', gap: 8 }}>
         {options.map((o) => <button key={o.label} type="button" style={option} onClick={o.pick}>

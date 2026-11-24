@@ -7,6 +7,7 @@ import { postSlackAlert } from '@/lib/integrations/providers/slack';
 import { postN8n } from '@/lib/integrations/providers/n8n';
 import { publishProjectToBuffer, PublishSetupError } from '@/lib/integrations/buffer-publish';
 import { actionById, actionsOf, scopeOf, triggerOf, triggerText } from './catalog';
+import { comparableTrigger, previewMatch } from '@/lib/workflow/review';
 import { isGraph, graphOf, fillTokens, delayText, cannotRunYet, matchPath, matchFilters, type Node, type RuleValues } from './graph';
 import { lastSlot } from './schedule';
 import { deliverProductionDigest, DigestSetupError, DigestRetryError } from './production-digest';
@@ -68,7 +69,7 @@ const NEXT_STAGE: Record<string, string> = { inbox: 'research', research: 'ready
 // What splits check and tokens fill: the project's people, sponsor and channel.
 type Facts = {
   channel: string; sponsorId: string | null; sponsor: string; approval: string; editorId: string | null; editor: string; editStatus: string;
-  designerId: string | null; designer: string;
+  designerId: string | null; designer: string; thumbStatus: string;
 };
 
 const MAX_TRIES = 3;
@@ -141,7 +142,7 @@ async function queueSchedules(workspaceId: string | null) {
 // project: an optional job code or project id from the request body, so project steps have something to act on.
 export async function queueWebhookRun(token: string, key: string | null, body: Record<string, unknown>) {
   const admin = supabaseAdmin();
-  const found = await admin.from('automations').select('id, workspace_id, name, enabled, is_draft, trigger').eq('trigger->>key', 'webhook').eq('trigger->>value', token).maybeSingle();
+  const found = await admin.from('automations').select('id, workspace_id, name, enabled, is_draft, trigger').eq('trigger->>key', 'webhook').eq('trigger->>value', token).is('revision_source_id',null).maybeSingle();
   if (found.error || !found.data) return { status: 404 as const, error: 'No workflow uses this address. Save the trigger, then try again.' };
   const a = found.data;
   const secret = ((a.trigger || {}) as Record<string, string>).secret || '';
@@ -176,14 +177,19 @@ export async function testAutomation(workspaceId: string, automationId: string, 
     ? await admin.from('ideas').select('id').eq('workspace_id', workspaceId).is('archived_at', null).order('updated_at', { ascending: false }).limit(1).maybeSingle()
     : await projects.order('created_at', { ascending: false }).limit(1).maybeSingle();
   if (sample.error) throw new Error('Could not load the preview sample: ' + sample.error.message);
-  if (!onIdea && projectId && !sample.data) throw new Error('Choose an active preview project in this workspace.');
+  if (!onIdea && (projectId || comparableTrigger(t.key)) && !sample.data) throw new Error('Choose an active preview project in this workspace.');
   const ins = await admin.from('automation_runs').insert({
     automation_id: automationId, workspace_id: workspaceId, project_id: !onIdea && sample.data ? sample.data.id : null,
     ...(onIdea ? { idea_id: sample.data ? sample.data.id : null } : {}), trigger_key: t.key,
-    status: 'running', is_test: true, attempts: 1, payload: { value: t.value, sample: true },
+    status: 'running', is_test: true, attempts: 1, payload: { value: t.value, sample: true, checkProject: !onIdea && comparableTrigger(t.key) },
   }).select('*').single();
   if (ins.error) throw new SafeRetry(ins.error.message);
-  await executeRun(ins.data as Run, baseUrl, draft);
+  try {
+    await executeRun(ins.data as Run, baseUrl, draft);
+  } catch (error) {
+    await admin.from('automation_runs').update({status:'failed',finished_at:new Date().toISOString(),error:error instanceof Error ? error.message : String(error)}).eq('id',ins.data.id);
+    throw error;
+  }
   const done = await admin.from('automation_runs').select('*').eq('id', ins.data.id).single();
   return done.data;
 }
@@ -233,7 +239,7 @@ async function executeRun(r: Run, baseUrl: string, draft?: ReturnType<typeof gra
 
   const idea = r.idea_id ? ((await admin.from('ideas').select('id, workspace_id, title, stage, owner_id, author_id, archived_at, approved_at, project_id, research').eq('id', r.idea_id).maybeSingle()).data as Idea | null) : null;
   const p = r.project_id ? ((await admin.from('projects').select('id, workspace_id, title, job_code, status_id, publish_date, archived_at, channel_id, content_type_id').eq('id', r.project_id).maybeSingle()).data as Project | null) : null;
-  const statuses = ((await admin.from('project_statuses').select('id, label, sort').eq('workspace_id', r.workspace_id).order('sort')).data || []) as { id: string; label: string; sort: number }[];
+  const statuses = ((await admin.from('project_statuses').select('id, label, sort, stage').eq('workspace_id', r.workspace_id).order('sort')).data || []) as { id: string; label: string; sort: number; stage?: string }[];
   const statusName = (id: string | null | undefined) => (statuses.find((x) => x.id === id) || { label: '' }).label;
   const trig = graph && r.is_test ? { key: graph.trigger.key, value: graph.trigger.value } : triggerOf(a.trigger);
   const why = triggerText(trig.key, trig.value, statusName);
@@ -258,6 +264,16 @@ async function executeRun(r: Run, baseUrl: string, draft?: ReturnType<typeof gra
   const values = valuesOf(p, facts, statusName);
   // The trigger's "Only when" rules: a run whose project does not fit them stops before any step.
   const filters = graph ? graph.trigger.filters : undefined;
+  const strictSample = r.is_test && r.payload?.checkProject && graph;
+  const sponsorStates = strictSample && p && trig.key === 'approval' ? await admin.from('sponsorships').select('approval_status').eq('project_id',p.id) : null;
+  if (sponsorStates?.error) throw new Error('Could not load the sample’s sponsor approvals.');
+  const checks = strictSample ? previewMatch(graph!.trigger, values,
+    statuses.find(s => s.id === p?.status_id)?.stage, st.timezone || 'America/Chicago', new Date(), sponsorStates?.data?.map(s=>String(s.approval_status))) : null;
+  if (checks && (!p || p.archived_at || p.workspace_id!==r.workspace_id)) throw new Error('The preview project is no longer available.');
+  if (checks && checks.some(check => !check.matches)) {
+    await finish('test', { error: null, output: { sampleSkipped:true, checks, steps:[], project:p && { id:p.id,job:p.job_code,title:p.title } } });
+    return 'test';
+  }
   if (!r.is_test && filters && filters.length && !matchFilters(filters, values)) {
     await finish('skipped', { error: 'The trigger’s Only when rules did not match' + (p ? ' ' + p.title : '') + '.', output: { trigger: why, project: p ? { id: p.id, job: p.job_code, title: p.title } : null } });
     return 'skipped';
@@ -386,7 +402,7 @@ async function executeRun(r: Run, baseUrl: string, draft?: ReturnType<typeof gra
   if (graph) await walkSteps(graph.steps);
   else for (const act of actionsOf(a.actions)) if (!(await step(act.key, act.key, () => perform(act.key, act.message, ctx)))) break;
   const waitClaims = prev.waitClaims || 0;
-  const output: Output & Record<string, unknown> = { done, steps, waited, waitClaims, paths, log, approvals: decisions, overrides, trigger: why, project: p ? { id: p.id, job: p.job_code, title: p.title } : null,
+  const output: Output & Record<string, unknown> = { ...(checks ? {checks} : {}), done, steps, waited, waitClaims, paths, log, approvals: decisions, overrides, trigger: why, project: p ? { id: p.id, job: p.job_code, title: p.title } : null,
     ...(onIdea ? { idea: idea ? { id: idea.id, title: idea.title } : null } : {}) };
 
   // An approval: park the run until someone decides, or until it times out. Super Admins are told once.
@@ -512,11 +528,11 @@ async function factsOf(p: Project): Promise<Facts> {
     p.channel_id ? admin.from('channels').select('name').eq('id', p.channel_id).maybeSingle() : Promise.resolve({ data: null }),
     admin.from('sponsorships').select('account_id, approval_status').eq('project_id', p.id).limit(1).maybeSingle(),
     admin.from('project_edits').select('editor_id, edit_status').eq('project_id', p.id).maybeSingle(),
-    admin.from('project_thumbnails').select('designer_id').eq('project_id', p.id).maybeSingle(),
+    admin.from('project_thumbnails').select('designer_id, thumb_status').eq('project_id', p.id).maybeSingle(),
   ]);
   const s = sp.data as { account_id: string; approval_status: string } | null;
   const e = ed.data as { editor_id: string | null; edit_status: string | null } | null;
-  const t = th.data as { designer_id: string | null } | null;
+  const t = th.data as { designer_id: string | null; thumb_status: string | null } | null;
   const ids = [e && e.editor_id, t && t.designer_id].filter(Boolean) as string[];
   const [acct, people] = await Promise.all([
     s ? admin.from('accounts').select('name').eq('id', s.account_id).maybeSingle() : Promise.resolve({ data: null }),
@@ -529,7 +545,7 @@ async function factsOf(p: Project): Promise<Facts> {
   return {
     channel: ((ch.data || {}) as { name?: string }).name || '', sponsorId: s ? s.account_id : null, sponsor: ((acct.data || {}) as { name?: string }).name || '',
     approval: s ? s.approval_status : '', editorId: e ? e.editor_id : null, editor: nameOf(e && e.editor_id), editStatus: (e && e.edit_status) || '',
-    designerId: t ? t.designer_id : null, designer: nameOf(t && t.designer_id),
+    designerId: t ? t.designer_id : null, designer: nameOf(t && t.designer_id), thumbStatus:t?.thumb_status || '',
   };
 }
 
@@ -539,7 +555,7 @@ function valuesOf(p: Project | null, f: Facts | null, statusName: (id: string | 
   if (!p || !f) return null;
   return {
     status: statusName(p.status_id), channel: p.channel_id, type: p.content_type_id, sponsor: f.sponsorId, approval: f.approval || null,
-    editor: f.editorId, edit_status: f.editStatus || null, designer: f.designerId, publish_date: p.publish_date,
+    editor: f.editorId, edit_status: f.editStatus || null, thumb_status:f.thumbStatus || null, designer: f.designerId, publish_date: p.publish_date,
   };
 }
 

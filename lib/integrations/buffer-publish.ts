@@ -132,6 +132,15 @@ export async function cleanupBufferMedia(ws: string): Promise<number> {
       if (!marked.error) draftCount = delivered.length;
     }
   }
+  const edited = await admin.rpc('sent_buffer_edit_media', { p_workspace: ws });
+  for (const row of edited.data || []) {
+    const rm = await admin.storage.from(MEDIA_BUCKET).remove(row.paths);
+    if (!rm.error) {
+      const marked = await admin.from('buffer_publications').update({ draft_update_media_paths: [] }).eq('id', row.id)
+        .eq('draft_update_media_paths', '{' + row.paths.join(',') + '}');
+      if (!marked.error) draftCount += row.paths.length;
+    }
+  }
   if (error || !data || !data.length) return draftCount;
   const ids = data.map((x) => x.buffer_post_id).filter(Boolean) as string[];
   const sent = ids.length ? await admin.from('buffer_posts').select('post_id').eq('workspace_id', ws).in('post_id', ids).not('sent_at', 'is', null) : { data: [] };

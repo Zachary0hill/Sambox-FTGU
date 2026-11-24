@@ -396,3 +396,36 @@ textarea:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px }
 .fb-recon-panel a { color: var(--link); }
 .fb-recon-notice { font-size: 14px; color: var(--muted); }
 .fb-recon-error { color: var(--red-ink); }
+
+.fb-recon-changed { margin-inline-start: 8px; color: var(--amber-ink); font-size: 12px; }
+
+.idea-handoff-dialog { width:min(620px,calc(100vw - 32px)); max-height:85dvh; overflow:auto; padding:24px; border:1px solid var(--border); border-radius:16px; background:var(--surface); color:var(--ink); overflow-wrap:anywhere; }
+.idea-handoff-dialog::backdrop { background:rgb(0 0 0 / 38%); }
+.idea-handoff-dialog header { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+.idea-handoff-dialog h2 { margin:0; font-size:20px; }
+.idea-handoff-dialog h3 { margin:20px 0 6px; font-size:16px; }
+.idea-handoff-dialog dl div,.idea-handoff-dialog article { display:flex; align-items:baseline; gap:12px; padding:6px 0; }
+.idea-handoff-dialog dt { min-width:92px; color:var(--muted); }
+.idea-handoff-dialog dd { margin:0; }
+.idea-handoff-dialog summary { cursor:pointer; }
+.idea-handoff-dialog button { padding:8px 12px; border:1px solid var(--border); border-radius:8px; background:var(--surface-2); color:var(--ink); cursor:pointer; }
+.idea-handoff-dialog button:disabled { opacity:.5; cursor:default; }
+.idea-handoff-dialog footer { margin-top:18px; }
+.idea-handoff-text { white-space:pre-wrap; }
+.idea-archive-project { width:fit-content; border:0; padding:4px 0; background:transparent; color:var(--link); font:inherit; font-size:13px; text-align:left; cursor:pointer; }
+
+.fb-dev-modes {display:flex; gap:6px; padding:8px 12px; border-bottom:1px solid var(--line-3)}
+.fb-dev-modes button, .fb-decisions button {padding:6px 10px; font:inherit; font-size:12px; border:1px solid var(--border); border-radius:8px; background:var(--surface); color:var(--ink); cursor:pointer}
+.fb-dev-modes button[aria-pressed=true] {background:var(--inv);color:var(--inv-ink)}
+.fb-decisions {padding:10px 12px; overflow:auto; min-height:130px; font-size:13px; color:var(--ink); overflow-wrap:anywhere}
+.fb-decisions select,.fb-decisions textarea {display:block;box-sizing:border-box;width:100%;margin:4px 0;padding:6px;color:var(--ink);background:var(--surface);border:1px solid var(--border);border-radius:6px;font:inherit}
+.fb-decisions label {display:block;margin:6px 0}
+.fb-decision {margin:6px 0;padding:8px;border:1px solid var(--line-3);border-radius:8px;background:var(--surface-2)}
+.fb-decision summary {cursor:pointer;font-weight:600}
+.fb-decision small {display:block;color:var(--muted);font-weight:400}
+.fb-decision p,.fb-decision h3 {margin:8px 0}
+.fb-decision ol {padding-left:20px}
+.fb-decision li {margin:8px 0}
+.fb-decision button {margin:3px 4px 3px 0}
+.fb-decision button:disabled {opacity:.5;cursor:default}
+.fb-decision a {color:var(--ink);text-decoration:underline}

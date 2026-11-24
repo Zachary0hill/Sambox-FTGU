@@ -1,4 +1,6 @@
 'use client';
+import DevDecisionInbox from './DevDecisionInbox';
+import { readAll } from '@/lib/studio/paging';
 import NextImage from 'next/image';
 // Dev Notes: the floating "press N anywhere" dock (also opened from Dev notes in the sidebar). A development backlog
 // for the workspace: jot down an idea, enhancement or bug while browsing and it is tagged with the page you were on.
@@ -228,7 +230,7 @@ const OPEN_EVENT = 'ftgu:dev-notes-open';
 export const openDevNotes = () => { if (typeof window !== 'undefined') window.dispatchEvent(new Event(OPEN_EVENT)); };
 
 // ── Hotkey owner: bare "n" toggles the dock. Cmd/Ctrl/Alt+N stay with the browser, typing never triggers it. ──
-export default function DevNotes({ sb, me, workspaceId, admin }) {
+export default function DevNotes({ sb, me, workspaceId, admin, people, projects, navigation }) {
   const [open, setOpen] = useState(false);
   useEffect(() => {
     const onOpen = () => setOpen(true);
@@ -248,7 +250,7 @@ export default function DevNotes({ sb, me, workspaceId, admin }) {
     return () => document.removeEventListener('keydown', onKey);
   }, []);
   if (!open) return null;
-  return <DevNotesCard sb={sb} me={me} workspaceId={workspaceId} admin={!!admin} onClose={() => setOpen(false)} />;
+  return <DevNotesCard people={people} projects={projects.filter(row => !row.archived)} sections={navigation.map(item => item.id)} sb={sb} me={me} workspaceId={workspaceId} admin={!!admin} onClose={() => setOpen(false)} />;
 }
 
 // A saved note's text: keeps its line breaks, collapses past CLAMP_LINES with a Show more toggle. The toggle only
@@ -274,9 +276,10 @@ function NoteText({ text, resolved }) {
   );
 }
 
-function DevNotesCard({ sb, me, workspaceId, admin, onClose }) {
+function DevNotesCard({ sb, me, workspaceId, admin, onClose, people, projects, sections }) {
   // Super Admins can change any note; everyone else only their own open ones (RLS enforces the same).
   const canEdit = (n) => admin || (!n.is_resolved && n.created_by === me.id);
+  const [decisions, setDecisions] = useState(false);
   const [notes, setNotes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
@@ -395,7 +398,7 @@ function DevNotesCard({ sb, me, workspaceId, admin, onClose }) {
 
   const fetchNotes = useCallback(async (quiet) => {
     if (!quiet) { setLoading(true); setLoadError(''); }
-    const res = await sb.from('dev_notes').select('*').eq('workspace_id', workspaceId).order('sort_order').order('created_at', { ascending: false }).limit(1000);
+    const res = await readAll(() => sb.from('dev_notes').select('*').eq('workspace_id', workspaceId).order('sort_order').order('created_at', { ascending: false }).order('id'));
     if (res.error) { if (!quiet) { setNotes([]); setLoadError(res.error.message); } }
     else { setNotes(sortNotes(res.data || [])); setFading(new Set()); }
     setLoading(false);
@@ -537,10 +540,17 @@ function DevNotesCard({ sb, me, workspaceId, admin, onClose }) {
               <h2 style={css('margin: 0; font-size: 14px; font-weight: 700; line-height: 1.2; letter-spacing: -0.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;')}>Dev Notes</h2>
               <p style={css('margin: 0; font-size: 11px; line-height: 1.3; color: var(--muted);')}>{openCount === 0 ? 'All clear' : openCount + ' open'}</p>
             </div>
-            <button type="button" className="fb-ni" onClick={() => setShowDone((v) => { if (!v) fetchNotes(true); return !v; })} style={css('min-height: 32px; padding: 0 10px; border: 0; border-radius: 8px; font-size: 11.5px; font-weight: 600; cursor: pointer; ' + (showDone ? 'background: var(--chip); color: var(--ink);' : 'background: transparent; color: var(--muted);'))}>{showDone ? 'Hide done' : 'Show done'}</button>
+            {!decisions && <button type="button" className="fb-ni" onClick={() => setShowDone((v) => { if (!v) fetchNotes(true); return !v; })} style={css('min-height: 32px; padding: 0 10px; border: 0; border-radius: 8px; font-size: 11.5px; font-weight: 600; cursor: pointer; ' + (showDone ? 'background: var(--chip); color: var(--ink);' : 'background: transparent; color: var(--muted);'))}>{showDone ? 'Hide done' : 'Show done'}</button>}
             <button type="button" className="fb-ni" aria-label="Close dev notes" onClick={onClose} style={css(iconBtn)}>{P(I.close)}</button>
           </div>
 
+          <div className="fb-dev-modes" role="group" aria-label="Dev Notes view">
+            <button type="button" aria-pressed={!decisions} onClick={() => setDecisions(false)}>Notes</button>
+            <button type="button" aria-pressed={decisions} onClick={() => { setDecisions(true); fetchNotes(true); }}>Decision inbox</button>
+          </div>
+          {decisions ? (loadError
+            ? <p role="alert">Could not load original notes. {loadError} <button type="button" onClick={() => fetchNotes(false)}>Retry</button></p>
+            : <DevDecisionInbox {...{sb, workspaceId, notes, people, projects, sections, me, admin}} />) : <>
           {/* Category chips */}
           <div style={css('display: flex; align-items: center; gap: 6px; padding: 12px 12px 6px;')}>
             {CAT_ORDER.map((c) => (
@@ -647,6 +657,7 @@ function DevNotesCard({ sb, me, workspaceId, admin, onClose }) {
               );
             })}
           </div>
+          </>}
         </div>
       </div>
 

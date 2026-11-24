@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { ContractTerms, BillingExceptions, MonthStatements } from './EditorBillingControls';
 import { billingMonth, editorStatement } from '../../lib/studio/editor-reconciliation';
 
 const dollars = (cents) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(cents / 100);
@@ -73,21 +74,8 @@ function MonthlyReport({ report, month, editor, setEditor }) {
     <button type="button" disabled={saving} onClick={refresh}>Refresh approvals</button>
     {unassigned && selected && <p className="fb-recon-notice">This month includes approvals without a credited editor. Select Unassigned approvals to review them.</p>}
     {partial && <p className="fb-recon-notice">Approval tracking {startedAt ? 'started ' + dateTime(startedAt, timezone) : 'has an unconfirmed start date'}. Reconcile earlier work manually before accepting this month’s total.</p>}
-    {selected && !terms && <details key={selected} open>
-      <summary>Missing monthly contract terms</summary>
-      <form onSubmit={saveTerms}>
-        <div className="fb-recon-group">
-          <label>Covered content<select aria-label="Covered content" name="content" required defaultValue=""><option value="" disabled>Choose coverage</option>
-            <option value="*">All project types</option>{types.map(type => <option key={type.id} value={type.key}>{type.label}</option>)}
-          </select></label>
-          <label>Included units<input required name="allowance" type="number" min="0" max="2147483647" step="1" /></label>
-          <label>Retainer (USD)<input required name="retainer" type="number" min="0" max="21474836.47" step="0.01" /></label>
-          <label>Per overage unit (USD)<input required name="overage" type="number" min="0" max="21474836.47" step="0.01" /></label>
-        </div>
-        <label className="fb-recon-confirm"><input type="checkbox" required />I confirm these terms for {month}. Credit the editor on the first recorded approval once per project. Reapprovals and later reassignments require manual review.</label>
-        <button disabled={saving}>Confirm monthly terms</button>
-      </form>
-    </details>}
+    {selected && !terms && <ContractTerms key={selected} month={month} prior={data.previousTerms.find(term => term.editor_id === selected)} types={types} saveTerms={saveTerms} saving={saving} />}
+    <BillingExceptions key={selected || 'unassigned'} data={data} selected={selected} editors={editors} report={report} save={save} saving={saving} />
     {amounts && <>
       <p>Confirmed contract for {terms.content_type_key === '*' ? 'all project types' : types.find(type => type.key === terms.content_type_key)?.label || terms.content_type_key}, {terms.included_units} included at {dollars(terms.retainer_cents)} per month and {dollars(terms.overage_cents)} per additional unit.</p>
       <dl>{[['Counted videos',amounts.units],['Included units used',amounts.included],['Overage units',amounts.overage],['Retainer',dollars(terms.retainer_cents)],['Overage amount',dollars(amounts.overageAmount)],[partial ? 'Tracked subtotal' : 'Total owed',dollars(amounts.total)]].map(([label,value]) => <div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}</dl>
@@ -106,6 +94,7 @@ function MonthlyReport({ report, month, editor, setEditor }) {
         </div><button disabled={saving}>Save invoice and payout link</button>
       </form> : <p>Add an editor payout in Contractor payouts to link this report.</p>}
     </details>}
+    {terms && <MonthStatements key={selected + ':statements'} report={report} month={month} selected={selected} statements={data.statements.filter(item => item.editor_id === selected)} save={save} saving={saving} />}
     {saveError && <p role="alert" className="fb-recon-error">{saveError}</p>}
   </div>;
 }

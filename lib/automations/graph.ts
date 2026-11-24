@@ -119,10 +119,11 @@ export function graphOf(row: { flow?: unknown; trigger?: unknown; actions?: unkn
   }
   // Converted steps keep their action key as id, the same key older runs list in output.done, so a run waiting to
   // retry when the workflow is first saved in the builder does not repeat a step that already worked.
-  const t = triggerOf((row && row.trigger) as { key?: string; value?: string; label?: string });
+  const storedTrigger = (row?.trigger || {}) as { key?: string; value?: string; label?: string; tz?: string };
+  const t = triggerOf(storedTrigger);
   const seen: Record<string, number> = {};
   return {
-    v: 2, kind: 'automation', tags: [], trigger: { key: t.key, value: t.value, text: '', tags: [] },
+    v: 2, kind: 'automation', tags: [], trigger: { key: t.key, value: t.value, text: '', tags: [], ...(t.key === 'schedule' && storedTrigger.tz ? { tz: storedTrigger.tz } : {}) },
     steps: actionsOf(row && row.actions).map((a) => {
       seen[a.key] = (seen[a.key] || 0) + 1;
       return { id: seen[a.key] === 1 ? a.key : a.key + ':' + seen[a.key], type: 'action' as const, key: a.key, message: a.message, tags: [] };
@@ -207,7 +208,7 @@ export function issuesOf(g: Graph, connected: Record<string, boolean>) {
       const def = n.key ? actionById(n.key) : null;
       if (runs && n.key === 'slack_production_digest') {
         if (g.trigger.key !== 'schedule') out.push({ id: 'trigger', level: warn, title: 'Schedule the production digest', body: 'Choose a schedule and its reporting cutoff.' });
-        if (!validDigestChannel(n.message || '')) out.push({ id: n.id, level: warn, title: 'Choose a Slack channel', body: 'Copy the destination channel ID from Slack channel details.' });
+        if (!validDigestChannel(n.message || '')) out.push({ id: n.id, level: warn, title: 'Choose a Slack channel', body: 'Search the Slack channels the bot has joined and choose a destination.' });
       }
       if (runs && n.key === 'buffer_draft' && connected.bufferDraftMapping === false) out.push({ id: n.id, level: warn, title: 'Map a Buffer channel', body: 'In the project’s Social post, map a Buffer channel to its brand and choose the approved Final video.' });
       if (!def) out.push({ id: n.id, level: warn, title: n.note ? 'Manual setup required' : 'Choose an action', body: n.note ? 'Choose an action for “' + n.note + '” or remove this step.' : 'This step has no action yet.' });

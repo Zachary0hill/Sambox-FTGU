@@ -7,7 +7,7 @@ import { css } from '@/lib/studio/css';
 import { T, FONT, SHADOW } from '@/lib/workflow/theme';
 import { Svg, ICON, btn, useModal } from './ui';
 
-export default function ReviewModal({ name, checks, paused, busy, onTurnOn, onClose }) {
+export default function ReviewModal({ name, checks, paused, busy, onTurnOn, onClose, children, revision }) {
   const layer = useRef(null);
   useModal(layer, 'button[data-first]');
   const left = checks.filter((c) => !c.ok).length;
@@ -23,6 +23,7 @@ export default function ReviewModal({ name, checks, paused, busy, onTurnOn, onCl
           </div>
           <button type="button" className="wf-h" aria-label="Close" onClick={onClose} style={css('width: 40px; height: 40px; flex: none; border: 0; border-radius: 10px; background: transparent; color: ' + T.ink + '; display: flex; align-items: center; justify-content: center;')}><Svg d={ICON.close} size={18} /></button>
         </div>
+        {children}
         <ul style={css('margin: 0; padding: 6px 20px; list-style: none;')}>
           {checks.map((c, i) => (
             <li key={i} style={css('display: flex; gap: 12px; align-items: center; flex-wrap: wrap; padding: 12px 0; border-bottom: 1px solid ' + T.line + ';')}>
@@ -44,7 +45,7 @@ export default function ReviewModal({ name, checks, paused, busy, onTurnOn, onCl
           <span style={css('flex: 1 1 200px; font-size: 13px; line-height: 1.45; color: ' + (paused ? T.warnInk : T.muted) + ';')}>{paused ? 'Pause all automations is on, so nothing runs until you resume.' : ready ? 'Once it is on, it runs each time its trigger fires.' : 'Finish the items above to turn it on.'}</span>
           <button type="button" data-first="" className="wf-h" onClick={onClose} style={css(btn('ghost', 44) + ' padding: 0 16px;')}>Keep editing</button>
           <button type="button" className={ready ? 'wf-k' : ''} disabled={!ready || busy} aria-disabled={!ready} onClick={onTurnOn}
-            style={css('height: 44px; padding: 0 16px; border-radius: 12px; font-weight: 600; font-size: 14px; ' + (ready ? 'background: ' + T.accent + '; color: ' + T.accentInk + '; border: 1px solid ' + T.accent + ';' : 'background: ' + T.count + '; color: ' + T.muted + '; border: 1px solid ' + T.line + '; cursor: not-allowed;'))}>{busy ? 'Turning on…' : 'Turn on'}</button>
+            style={css('height: 44px; padding: 0 16px; border-radius: 12px; font-weight: 600; font-size: 14px; ' + (ready ? 'background: ' + T.accent + '; color: ' + T.accentInk + '; border: 1px solid ' + T.accent + ';' : 'background: ' + T.count + '; color: ' + T.muted + '; border: 1px solid ' + T.line + '; cursor: not-allowed;'))}>{busy ? 'Saving…' : revision ? 'Apply to live workflow' : 'Turn on'}</button>
         </div>
       </div>
     </div>

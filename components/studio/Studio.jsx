@@ -340,7 +340,7 @@ export default function Studio({ initialPath, initialProject }) {
   // managers, editors and designers see and manage only their own open notes (RLS: 20261112000100_dev_notes_team).
   // Rendered inside the board root so it picks up the theme tokens.
   const notesRole = DEV_NOTE_ROLES.includes(me.uiRole);
-  V.devNotes = notesRole ? <DevNotes sb={sb} me={me} workspaceId={ctx.workspace_id} admin={me.uiRole === 'admin'} /> : null;
+  V.devNotes = notesRole ? <DevNotes people={D.directory} projects={D.rows} navigation={V.navItems} sb={sb} me={me} workspaceId={ctx.workspace_id} admin={me.uiRole === 'admin'} /> : null;
   V.devNotesOpen = notesRole ? openDevNotes : null;
   V.bannerLayer = <NotificationBanners items={V.inbox.banners} onMore={V.inbox.bannersMore} />;
   // Automations > New flow and the flow builder canvas (s.flowOpen: 'new' or a workflow id).

@@ -131,7 +131,7 @@ function DetailRow({ f, V, CellPop }) {
   const icon = ICON[f.key] || ICON.tag;
   const gutter = <span style={css(GUT)}><I d={icon} /><span style={css('overflow: hidden; text-overflow: ellipsis')}>{SHORT[f.key] || f.label}</span></span>;
   return (
-    <div style={css('position: relative; border-bottom: 1px solid var(--line)')}>
+    <div data-draft-control={f.key === 'editStatus' ? 'edit' : undefined} tabIndex={f.key === 'editStatus' ? -1 : undefined} style={css('position: relative; border-bottom: 1px solid var(--line)')}>
       {f.isLink && !f.isOpen ? (
         <div style={css(ROW)}>
           {gutter}
@@ -444,22 +444,25 @@ function Overview({ V }) {
               {dr.publish.isDate ? <p style={css('margin: 0; font-size: 12px; color: var(--muted-2)')}>{dr.publish.dateNote}</p> : null}
             </div>
             <p style={css('margin: 0; font-size: 12.5px; color: var(--ink-3)')}>{dr.publish.fileText}</p>
-            <fieldset style={css('border: 1px solid var(--border); border-radius: 12px; padding: 12px; display: grid; gap: 8px')}>
+            <fieldset data-draft-control="fallback" tabIndex={-1} style={css('border: 1px solid var(--border); border-radius: 12px; padding: 12px; display: grid; gap: 8px')}>
               <legend>Buffer drafts</legend>
               <label>Project brand
-                <select value={dr.publish.drafts.brandId} disabled={dr.publish.readOnly} onChange={e => dr.publish.drafts.chooseBrand(e.target.value)} style={css(V.fieldInput)}>
+                <select data-draft-control="brand" value={dr.publish.drafts.brandId} disabled={dr.publish.readOnly} onChange={e => dr.publish.drafts.chooseBrand(e.target.value)} style={css(V.fieldInput)}>
                   <option value="">Choose a linked brand</option>
                   {dr.publish.drafts.brands.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
                 </select>
               </label>
               <label>Approved Final video
-                <select value={dr.publish.drafts.assetId} disabled={dr.publish.readOnly} onChange={e => dr.publish.drafts.chooseAsset(e.target.value)} style={css(V.fieldInput)}>
+                <select data-draft-control="asset" value={dr.publish.drafts.assetId} disabled={dr.publish.readOnly} onChange={e => dr.publish.drafts.chooseAsset(e.target.value)} style={css(V.fieldInput)}>
                   <option value="">Choose the approved file</option>
                   {dr.publish.drafts.files.map(f => <option key={f.id} value={f.id}>{f.name} · V{f.version || 1}</option>)}
                 </select>
               </label>
               {!dr.publish.drafts.approved && <small>The edit must reach Approved before handoff.</small>}
-              {dr.publish.drafts.brandId && <div role="group" aria-label="Brand draft destinations">
+              {!dr.publish.drafts.brandId && <small data-draft-control="destinations" tabIndex={-1}>Choose the project brand to see its draft destinations.</small>}
+              {dr.publish.focus === 'connection' && <small data-draft-control="connection" tabIndex={-1}>A Super Admin can connect Buffer in Workspace Settings → Integrations.</small>}
+              {dr.publish.focus === 'workflow' && <small data-draft-control="workflow" tabIndex={-1}>A Super Admin can enable the Scheduled draft workflow in Automations.</small>}
+              {dr.publish.drafts.brandId && <div data-draft-control="destinations" tabIndex={-1} role="group" aria-label="Brand draft destinations">
                 <p>Draft channels for this brand across all projects</p>
                 {dr.publish.drafts.channels.filter(c => dr.publish.drafts.canMap || c.on).map(c =>
                   <label key={c.id} style={{display:'block'}}><input type="checkbox" checked={c.on} disabled={!dr.publish.drafts.canMap} onChange={c.toggle} /> {c.label}</label>)}
@@ -704,6 +707,12 @@ export default function ProjectModal({ V, CellPop }) {
   const ref = useRef(null);
   useDialogFocus(ref);
   const dr = V.dr;
+  useEffect(() => {
+    if (!dr.publish?.focus) return;
+    const target = Array.from(ref.current?.querySelectorAll('[data-draft-control]') || []).find(el => el.dataset.draftControl === dr.publish.focus)
+      || ref.current?.querySelector('[data-draft-control="fallback"]');
+    if (target) { target.scrollIntoView({block:'center'}); target.focus({preventScroll:true}); }
+  }, [dr.job, dr.publish?.focus]);
   const IB = V.dIconBtn + ' width: 34px; height: 34px; border-radius: 10px;';
   return (
     <>

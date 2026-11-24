@@ -23,3 +23,25 @@ test('missing terms or editor leave the total unresolved', () => {
   assert.equal(report([entry('a')], null).amounts, null);
   assert.equal(editorStatement([entry('a', { editor_id: null })], null, null).lines[0].reason, 'Missing editor');
 });
+
+test('contract reuse uses the immediately previous calendar month across years', () => {
+  const { priorBillingMonth } = require('../lib/studio/editor-reconciliation.js');
+  assert.equal(priorBillingMonth('2027-01'), '2026-12');
+  assert.equal(priorBillingMonth('2026-11'), '2026-10');
+});
+test('a Finance transfer credits only the selected editor and uses the server billing decision', () => {
+  const lines = [entry('a', { statement_editor_id: 'Himanshu', billing_reason: 'No credit · Finance decision' }),
+    entry('b', { kind: 'repeat', project_id: 'a', statement_editor_id: 'other', billing_reason: 'Counted' })];
+  assert.equal(report(lines).amounts.units, 0);
+  assert.equal(editorStatement(lines, 'other', terms).amounts.units, 1);
+});
+test('statement CSV preserves saved cents, version, invoice, and text-safe project titles', () => {
+  const { statementCsv } = require('../lib/studio/editor-reconciliation.js');
+  const rows = statementCsv({ billing_month:'2026-11-01',editor_id:'editor',version:2,reason:'reassigned',affected_jobs:['QA-1'],delta_cents:-1250,
+    document: { terms,units:1,included:1,overage:0,overage_cents:0,total_cents:10000,payout:{invoice_url:'https://example.test/reference'},
+      items:[{ job_code:'QA-1',project_title:'=unsafe()' }] } });
+  assert.equal(rows.find(r=>r[0]==='Version')[1],2);
+  assert.equal(rows.find(r=>r[0]==='Version delta (USD cents)')[1],-1250);
+  assert.equal(rows.find(r=>r[0]==='Invoice')[1],'https://example.test/reference');
+  assert.equal(rows.at(-1)[2],"'=unsafe()");
+});

@@ -134,16 +134,26 @@ type Chan = { id: string; name: string; label: string };
 
 // Channels the bot is a member of (public and private).
 async function myChannels(token: string): Promise<Chan[]> {
-  const out: Chan[] = [];
+  const out = new Map<string, Chan>();
+  const visited = new Set<string>();
   let cursor: string | undefined;
   do {
     const r = await call<{ channels: { id: string; name?: string }[]; response_metadata?: { next_cursor?: string } }>(token, 'users.conversations', {
       types: 'public_channel,private_channel', exclude_archived: true, limit: 200, cursor,
     });
-    r.channels.forEach((c) => out.push({ id: c.id, name: c.name || c.id, label: '#' + (c.name || c.id) }));
-    cursor = (r.response_metadata && r.response_metadata.next_cursor) || undefined;
+    r.channels.forEach((c) => out.set(c.id, { id: c.id, name: c.name || c.id, label: '#' + (c.name || c.id) }));
+    cursor = r.response_metadata?.next_cursor?.trim() || undefined;
+    if (cursor && visited.has(cursor)) throw new Error('Slack returned a repeated channel page. Try loading the channels again.');
+    if (cursor) visited.add(cursor);
   } while (cursor);
-  return out;
+  return Array.from(out.values());
+}
+
+export async function digestChannels(workspaceId: string) {
+  const slack = await getIntegration(workspaceId, 'slack');
+  if (!slack) return { connected: false, channels: [] };
+  const channels = await myChannels(slack.secret.botToken);
+  return { connected: true, channels: channels.sort((a, b) => a.name.localeCompare(b.name)) };
 }
 
 const watchList = (config: Config) => String(config.channels || '').split(/[\s,]+/).map((x) => x.replace(/^#/, '')).filter(Boolean);

@@ -48,6 +48,8 @@ test('preview has no effects and retry sends only the definitively rejected chan
     assert.match(query, /post \{ id status/);
     assert.equal(input.saveToDraft, true); assert.equal(input.mode, 'addToQueue');
     assert.equal(input.dueAt, undefined); assert.equal(input.assets.length, 1);
+    assert.deepEqual(Object.keys(input.assets[0]), ['video']);
+    assert.match(input.assets[0].video.url, /^https:\/\/media[.]example\/studio\/project\//);
     f.calls.push(input.channelId);
     const post = input.channelId === 'A2' && f.calls.length === 2
       ? { __typename: 'InvalidInputError', message: 'Temporarily rejected' }

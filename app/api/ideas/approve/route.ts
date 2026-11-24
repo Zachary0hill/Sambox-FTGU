@@ -9,7 +9,9 @@ export async function POST(request: Request) {
   const body = await request.json().catch(() => null);
   if (!body || !/^[0-9a-f-]{36}$/i.test(body.ideaId || '')) return deny('Choose an idea.', 400);
   if (body.kind && body.kind !== 'project') return convertOther(m, body.ideaId, body.kind);
-  const { data: project, error } = await m.supabase.rpc('approve_idea_project', { p_idea: body.ideaId });
+  const { data: project, error } = body.reviewKey === undefined
+    ? await m.supabase.rpc('approve_idea_project', { p_idea: body.ideaId })
+    : await m.supabase.rpc('confirm_idea_project', { p_idea: body.ideaId, p_review: body.reviewKey });
   if (error) return deny(error.message, error.code === '42501' ? 403 : 400);
   // The RPC has authorized and atomically linked this exact project. Copy only
   // its frozen cover, never a caller-supplied object or destination.

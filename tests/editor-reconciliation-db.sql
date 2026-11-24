@@ -16,7 +16,7 @@ update public.project_edits set edit_status='needs_revision', editor_id=:'other'
 update public.project_edits set edit_status='approved' where project_id=:'proj';
 select pg_temp.ok(count(*)=2 and count(*) filter (where kind='first' and editor_id=:'editor')=1
   and count(*) filter (where kind='repeat' and editor_id=:'other')=1,'single credit before reassignment, reapproval and retry')
-  from public.editor_approval_entries where project_id=:'proj' and billing_month=:'month';
+  from public.editor_approval_entries where project_id=:'proj' and billing_month=:'month' and kind in ('first','repeat');
 insert into public.payouts(id,workspace_id,user_id,role,description) values(:'payout',:'ws',:'editor','editor','Invoice');
 set local role authenticated;
 set local request.jwt.claims='{"role":"authenticated","aal":"aal1"}';

@@ -23,7 +23,7 @@ function ideas(open, layout, setup = () => {}) {
   const { computeVals } = loader()('lib/studio/vals.js');
   const view = computeVals(f);
   const ids = view.ids;
-  return { ids, writes, detail: ids.sel };
+  return { ids, writes, detail: ids.sel, refresh: () => computeVals(f).ids };
 }
 
 test('the board has the four stages in order and archived ideas leave it', () => {
@@ -60,17 +60,21 @@ test('Request changes moves back one stage, not to the start', () => {
 test('Approve hands off to In Production and opens the project only from the confirmation', async () => {
   const calls = [];
   let state, notice;
-  const { detail } = ideas('rd', 'board', (f) => {
+  const { detail, refresh } = ideas('rd', 'board', (f) => {
     f.D.ideas.find((i) => i.id === 'rd').body = ['Ready to film'];
     state = f.s;
     f.set = (patch) => Object.assign(state, typeof patch === 'function' ? patch(state) : patch);
-    f.A.approveIdea = async (i) => {
+    f.A.previewIdea = async () => ({reviewKey: 'reviewed-package'});
+    f.A.approveIdea = async (i, key) => {
+      assert.equal(key, 'reviewed-package');
       calls.push(i.id);
       return { project: { created: true, job: 'IDEA-1', canOpen: true } };
     };
     f.A.toast = (message, action) => { notice = { message, action }; };
   });
   await detail.foot[0].pick();
+  assert.deepEqual(calls, []);
+  await refresh().handoff.confirm();
   assert.deepEqual(calls, ['rd']);
   assert.equal(state.nav, 'ideas');
   assert.equal(state.ideaOpen, '');
@@ -89,6 +93,25 @@ test('an archived handoff keeps the project and cover recovery action available'
   });
   assert.equal(detail.cta, 'Open project');
   assert.ok(detail.actions.some(a => a.label === 'Retry asset transfer'));
+});
+
+test('archived job and client search use only accessible linked projects across layouts', () => {
+  for (const layout of ['board','gallery','list']) {
+    const view = (query, hidden) => ideas('', layout, f => {
+      Object.assign(f.D.ideas.find(i => i.id === 'li'), {status: 'Archived', stage: 'Approved'});
+      f.D.channels = [{id: 'channel', owner_account_id: 'account'}];
+      f.D.accounts = [{id: 'account', name: 'Editorial Client'}];
+      f.D.rows = hidden ? [] : [{id: 'proj', job: 'CMP-RLS8', title: 'Renamed project', channelId: 'channel', approval: 'Pending', sponsorshipId: null}];
+      Object.assign(f.s, {iView: 'archived', iStage: 'Approved', iq: query});
+    }).ids;
+    for (const query of ['CMP-RLS8','Editorial Client','Renamed project']) {
+      const ids = view(query, false);
+      const cards = layout === 'board' ? ids.board.lanes.flatMap(l => l.cards) : ids.cards;
+      assert.deepEqual(cards.map(c => c.id), ['li']);
+      assert.equal(cards[0].archiveProject.job, 'CMP-RLS8');
+    }
+    assert.equal(view('CMP-RLS8', true).cards.length, 0);
+  }
 });
 
 function actions(update) {
