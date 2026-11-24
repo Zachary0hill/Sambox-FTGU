@@ -40,6 +40,8 @@ class BufferError extends Error {
   constructor(message: string, readonly code = '') { super(message); }
 }
 
+export class BufferPostRejected extends Error {}
+
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 function explain(status: number, body: Json | null, retryAfter: number): BufferError {
@@ -121,10 +123,16 @@ export type CreatedPost = { id: string; status: string; dueAt: string | null; ex
 
 // Creates one post. A MutationError comes back as a thrown BufferError with Buffer's own message.
 export async function createBufferPost(key: string, input: Json): Promise<CreatedPost> {
-  const { data } = await gql<{ createPost: Json }>(key, CREATE_POST, { input });
+  const { data } = await gql<{ createPost: Json }>(key, CREATE_POST, { input }).catch((e: unknown) => {
+    if (e instanceof BufferError && ['RATE_LIMIT_EXCEEDED', 'UNAUTHORIZED', 'FORBIDDEN', 'QUERY_LIMIT'].includes(e.code)) {
+      throw new BufferPostRejected(e.message);
+    }
+    throw e;
+  });
   const r = (data && data.createPost) || {};
   const post = r.post as Json | undefined;
   if (r.__typename !== 'PostActionSuccess' || !post || !post.id) {
+    if (typeof r.message === 'string' && r.__typename !== 'PostActionSuccess') throw new BufferPostRejected('Buffer rejected the post: ' + r.message);
     throw new BufferError('Buffer did not create the post: ' + String(r.message || r.__typename || 'no answer') + '.', String(r.__typename || ''));
   }
   return { id: String(post.id), status: String(post.status || ''), dueAt: (post.dueAt as string) || null, externalLink: (post.externalLink as string) || null };

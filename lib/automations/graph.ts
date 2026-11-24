@@ -13,7 +13,8 @@
 //
 // Messages can carry data tokens, {{project.title}} and friends, filled in when the step runs (fillTokens).
 
-import { actionById, actionsOf, triggerOf, triggerText, hasNoProject, ACTIONS } from './catalog';
+import { parseRule } from './schedule';
+import { actionById, actionsOf, triggerOf, triggerText, hasNoProject, validDigestChannel, ACTIONS } from './catalog';
 
 export type Kind = 'automation' | 'process' | 'idea';
 export type TagType = 'project' | 'idea' | 'client' | 'person' | 'status' | 'channel' | 'brand' | 'connector' | 'video' | 'buffer';
@@ -95,6 +96,7 @@ export function fillTokens(text: string, data: Record<string, string | null | un
 }
 
 let seq = 0;
+export const webhookToken = (n = 16) => Array.from(crypto.getRandomValues(new Uint8Array(n)), (b) => b.toString(16).padStart(2, '0')).join('');
 export const newId = (p = 'n') => p + Date.now().toString(36) + (seq++).toString(36) + Math.random().toString(36).slice(2, 5);
 
 // Run settings a new workflow starts with (handoff assumption 5): 1 retry, 5 minutes apart, alert the Super Admins,
@@ -191,7 +193,8 @@ export function issuesOf(g: Graph, connected: Record<string, boolean>) {
   const out: { id: string; level: 'warn' | 'info'; title: string; body: string }[] = [];
   const runs = g.kind === 'automation';
   const warn = runs ? 'warn' as const : 'info' as const;
-  if (runs && !g.trigger.key) out.push({ id: 'trigger', level: 'warn', title: 'Pick a trigger', body: 'An automation needs a trigger before it can turn on.' });
+  if (runs && !g.trigger.key) out.push({ id: 'trigger', level: 'warn', title: 'Pick a trigger', body: g.trigger.text ? 'Set up this trigger: ' + g.trigger.text : 'An automation needs a trigger before it can turn on.' });
+  if (runs && g.trigger.key === 'schedule' && !parseRule(g.trigger.value)) out.push({ id: 'trigger', level: warn, title: 'Choose a delivery time', body: 'Set the schedule in Trigger setup.' });
   if (runs && (g.trigger.filters || []).some((c) => !critDone(c))) out.push({ id: 'trigger', level: 'warn', title: 'Finish the trigger filter', body: 'An Only when rule has no value picked.' });
   if (runs && hasNoProject(g.trigger.key) && (g.trigger.filters || []).length) out.push({ id: 'trigger', level: 'warn', title: 'Remove the trigger filters', body: 'Schedules and webhooks run without a project, so Only when rules can never match.' });
   const noProject = runs && hasNoProject(g.trigger.key);
@@ -202,7 +205,12 @@ export function issuesOf(g: Graph, connected: Record<string, boolean>) {
     if (runs && cannotRunYet(n)) out.push({ id: n.id, level: 'warn', title: (n.title || STEP_NAME[n.type]) + ' is not available yet', body: STEP_NAME[n.type] + ' steps cannot run yet. Remove the step or keep this workflow as a draft.' });
     if (n.type === 'action') {
       const def = n.key ? actionById(n.key) : null;
-      if (!def) out.push({ id: n.id, level: warn, title: 'Choose an action', body: 'This step has no action yet.' });
+      if (runs && n.key === 'slack_production_digest') {
+        if (g.trigger.key !== 'schedule') out.push({ id: 'trigger', level: warn, title: 'Schedule the production digest', body: 'Choose a schedule and its reporting cutoff.' });
+        if (!validDigestChannel(n.message || '')) out.push({ id: n.id, level: warn, title: 'Choose a Slack channel', body: 'Copy the destination channel ID from Slack channel details.' });
+      }
+      if (runs && n.key === 'buffer_draft' && connected.bufferDraftMapping === false) out.push({ id: n.id, level: warn, title: 'Map a Buffer channel', body: 'In the project’s Social post, map a Buffer channel to its brand and choose the approved Final video.' });
+      if (!def) out.push({ id: n.id, level: warn, title: n.note ? 'Manual setup required' : 'Choose an action', body: n.note ? 'Choose an action for “' + n.note + '” or remove this step.' : 'This step has no action yet.' });
       else if (noProject && def.scope !== 'any') out.push({ id: n.id, level: 'warn', title: '"' + def.label + '" needs a project', body: 'A schedule or webhook starts a run with no project, so this step has nothing to act on. Use a step that does not need one, such as a Slack message or a To-Do.' });
       else if (runs && def.needs && !connected[def.needs]) out.push({ id: n.id, level: 'warn', title: 'Connect ' + def.app, body: '"' + def.label + '" needs ' + def.app + ' connected in Workspace Settings > Integrations.' });
     }
@@ -218,7 +226,7 @@ export function issuesOf(g: Graph, connected: Record<string, boolean>) {
 }
 
 export const ACTION_GROUPS: { label: string; keys: string[] }[] = [
-  { label: 'Messages', keys: ['slack_admin', 'email_editor', 'email_designer'] },
+  { label: 'Messages', keys: ['slack_admin', 'slack_production_digest', 'email_editor', 'email_designer'] },
   { label: 'Board', keys: ['status_next', 'todo_admin'] },
-  { label: 'Connectors', keys: ACTIONS.filter((a) => a.key === 'webhook_n8n' || a.key === 'buffer_publish').map((a) => a.key) },
+  { label: 'Connectors', keys: ACTIONS.filter((a) => a.key === 'webhook_n8n' || a.needs === 'buffer').map((a) => a.key) },
 ];

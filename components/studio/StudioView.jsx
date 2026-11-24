@@ -9,7 +9,7 @@ import NextImage from 'next/image';
 // Generated from the design canvas (YouTube Studio Unified Board, Main.dc.html) by a markup converter.
 // Hand edits are marked with "app:" comments.
 // User and external media stays unoptimized to preserve signed URLs, referrers, and cover fallbacks.
-import { Fragment, useEffect, useRef } from 'react';
+import { Fragment, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { css } from '@/lib/studio/css';
 import DateField from './DateField';
@@ -28,6 +28,7 @@ import { PickBox } from './Prims';
 import SyncPicker from './SyncPicker';
 import Performance from './Performance';
 import Workload from './Workload';
+import EditorReconciliation from './EditorReconciliation';
 import AiUsage from './AiUsage';
 import IdeaRules from './IdeaRules';
 import IdeaAutomations from './IdeaAutomations';
@@ -948,6 +949,7 @@ export default function StudioView({ V }) {
                       ))}
                     </div>
                     {" "}
+                    {V.adm.editorReport && <EditorReconciliation report={V.adm.editorReport} />}
                     {/* app: focusable so the table can be scrolled by keyboard when it has no rows (QA a11y: scrollable-region-focusable) */}
                     <div tabIndex={0} role="region" aria-label={V.adm.fin.label} style={css("position: relative; overflow-x: auto; padding-bottom: 8px")}>
                       <div role="table" aria-label={V.adm.fin.label} style={css(V.adm.fin.wrapStyle)}>

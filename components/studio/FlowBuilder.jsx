@@ -17,7 +17,7 @@ import { KINDS, TAG_TYPES, FIELDS, OPS, TOKENS, emptyGraph, graphOf, issuesOf, n
 import { T, KIND, R, H, SHADOW, FONT, WF_CSS } from '@/lib/workflow/theme';
 import { AGENT, AGENT_SHORT, STATUS, STEP_COPY, NODE_COPY, TRIGGER_COPY, VAR_LABEL } from '@/lib/workflow/copy';
 import { stepOf, fieldOf } from '@/lib/workflow/graph';
-import { Svg, ICON, KindTile, Seg, btn, inputStyle, labelStyle, srOnly, useModal } from './workflow/ui';
+import { Svg, ICON, KindTile, Seg, btn, inputStyle, labelStyle, srOnly, useModal, Dialog } from './workflow/ui';
 import RichField, { RICH_CSS } from './workflow/RichField';
 import StepFinder from './workflow/StepFinder';
 import SettingsModal from './workflow/SettingsModal';
@@ -25,6 +25,7 @@ import TriggerModal from './workflow/TriggerModal';
 import ConditionModal from './workflow/ConditionModal';
 import TestDrawer, { rowState } from './workflow/TestDrawer';
 import ReviewModal from './workflow/ReviewModal';
+import { draftWorkflow, workflowConnections } from '@/lib/workflow/authoring';
 
 // Unsaved changes in the open builder. Studio.jsx checks it on browser Back and asks instead of closing the builder.
 export const flowGuard = { dirty: false, url: '', ask: null };
@@ -257,9 +258,19 @@ function reId(n) {
 }
 
 // ---------- Create flow dialog ----------
+const promptExample = 'Create a Buffer draft when a project reaches Scheduled in Publishing';
+function WorkflowPrompt({ value, onChange, optional }) {
+  return <label style={css('display: grid; gap: 6px; font-size: 14px; font-weight: 600;')}>
+    {optional ? 'Describe the workflow (optional)' : 'Describe the workflow'}
+    <textarea rows={3} maxLength={2000} value={value} onChange={e => onChange(e.target.value)} placeholder={promptExample}
+      style={css(inputStyle + ' padding: 10px 12px; line-height: 1.5; resize: vertical;')} />
+  </label>;
+}
+
 export function CreateFlowDialog({ D, A, onCreated, onClose }) {
   const [name, setName] = useState('');
   const [kind, setKind] = useState('automation');
+  const [prompt, setPrompt] = useState('');
   const [tags, setTags] = useState([]);
   const [busy, setBusy] = useState(false);
   const sources = useMemo(() => tagSources(D).list, [D]);
@@ -269,7 +280,9 @@ export function CreateFlowDialog({ D, A, onCreated, onClose }) {
     e.preventDefault();
     if (!name.trim() || busy) return;
     setBusy(true);
-    const row = await A.saveFlow(null, emptyGraph(kind, tags), { name: name.trim() });
+    const graph = kind === 'automation' && prompt.trim() ? draftWorkflow(prompt, D) : emptyGraph(kind);
+    graph.tags = tags;
+    const row = await A.saveFlow(null, graph, { name: name.trim() });
     setBusy(false);
     if (row) onCreated(row);
   };
@@ -299,6 +312,7 @@ export function CreateFlowDialog({ D, A, onCreated, onClose }) {
             ))}
           </div>
         </fieldset>
+        {kind === 'automation' ? <WorkflowPrompt optional value={prompt} onChange={setPrompt} /> : null}
         <TagSelect id="cf-tags" value={tags} onChange={setTags} sources={sources} />
         <div style={css('display: flex; justify-content: flex-end; gap: 10px; padding-top: 4px;')}>
           <button type="button" onClick={onClose} style={css(S.btn + S.ghost + ' min-height: 44px;')}>Cancel</button>
@@ -323,7 +337,7 @@ function TopBtn({ cls, icon, label, onClick, off }) {
   return <button type="button" className={'wf-h fbx-btn ' + cls} aria-label={label} title={label} disabled={off} onClick={onClick} style={css(btn('ghost') + (off ? ' opacity: .55;' : ''))}><Svg d={icon} size={16} /><span className="fbx-lbl">{label}</span></button>;
 }
 
-export default function FlowBuilder({ D, A, row, onClose, goConnect, goHub, review }) {
+export default function FlowBuilder({ D, A, row, onClose, onOpenDraft, goConnect, goHub, review }) {
   const [g, setG] = useState(() => graphOf(row));
   const [name, setName] = useState(row.name);
   const [category, setCategory] = useState(row.category || 'custom');
@@ -341,6 +355,8 @@ export default function FlowBuilder({ D, A, row, onClose, goConnect, goHub, revi
   const [confirm, setConfirm] = useState(review ? 'review' : '');
   // The test run in the drawer: { phase: 'wait' | 'play' | 'done', rows, shown, stop, error, token } (workflow/TestDrawer.jsx).
   const [test, setTest] = useState(null);
+  const [sampleProjectId, setSampleProjectId] = useState('');
+  const [prompt, setPrompt] = useState(null);
   const [ack, setAck] = useState(false); // Review: "I have checked what this sends" for steps that send outside
   const [focusField, setFocusField] = useState('');
   const [peek, setPeek] = useState(false);
@@ -362,7 +378,7 @@ export default function FlowBuilder({ D, A, row, onClose, goConnect, goHub, revi
   useModal(root, 'button[data-back]');
 
   const sources = useMemo(() => tagSources(D).list, [D]);
-  const connected = useMemo(() => Object.fromEntries((D.integrations || []).map((x) => [x.provider, x.status === 'connected'])), [D.integrations]);
+  const connected = useMemo(() => workflowConnections(D), [D.integrations, D.buffer]);
   const issues = useMemo(() => issuesOf(g, connected), [g, connected]);
   const warns = issues.filter((x) => x.level === 'warn');
   const paused = !!((D.settings || {}).automation || {}).paused;
@@ -377,6 +393,25 @@ export default function FlowBuilder({ D, A, row, onClose, goConnect, goHub, revi
   // Any edit clears the last test result (handoff Rule 4) and marks the flow unsaved.
   const touch = () => { setVer((v) => v + 1); setAutoFail(false); };
   const edit = (fn) => { setG((prev) => { const next = clone(prev); fn(next); if (next.lastTest) next.lastTest = null; return next; }); setTest(null); touch(); };
+  const blankDraft = row.is_draft && !g.trigger.key && !g.steps.length && !g.description;
+  const generateDraft = async () => {
+    if (!prompt?.trim() || busy || dirty) return;
+    const generated = draftWorkflow(prompt, D);
+    setBusy('assistant');
+    try {
+      if (blankDraft) {
+        const next = { ...g, ...generated, tags: g.tags, settings: g.settings, lastTest: null };
+        const saved = await A.saveFlow(row, next, { name, category, status: 'draft' });
+        if (!saved) return;
+        setG(next); setTest(null); setSel(next.steps[0]?.id || 'trigger');
+      } else {
+        const saved = await A.saveFlow(null, generated, { name: name + ' · Assistant draft', status: 'draft' });
+        if (!saved) return;
+        onOpenDraft(saved);
+      }
+      setPrompt(null);
+    } finally { setBusy(''); }
+  };
   const editNode = (id, patch) => edit((x) => { const at = locate(x, id); if (at && at.node) Object.assign(at.node, patch); });
   const add = (pathId, index, spec) => {
     const node = makeNode(spec);
@@ -459,7 +494,7 @@ export default function FlowBuilder({ D, A, row, onClose, goConnect, goHub, revi
     setConfirm(''); setBusy('test');
     setTest({ token, phase: 'wait', shown: 0, stop: plan.length, error: '', rows: plan.map((c) => ({ id: c.id, n: c.n, title: c.title, out: '', final: '' })) });
     let run = null, error = '';
-    try { run = await A.testAutomation(row.id, g); } catch (err) { error = err.message || String(err); }
+    try { run = await A.testAutomation(row.id, g, hasDraftAction ? sampleRow?.id : undefined); } catch (err) { error = err.message || String(err); }
     setBusy('');
     const out = (run && run.output) || {};
     const done = {};
@@ -663,7 +698,15 @@ export default function FlowBuilder({ D, A, row, onClose, goConnect, goHub, revi
   // ---------- Inspector (right panel) ----------
   const at = sel && sel !== 'trigger' ? locate(g, sel) : null;
   const tokens = scope === 'idea' ? ['idea.title', 'idea.stage', 'idea.score', 'idea.link', 'trigger', 'flow.name'] : TOKENS.map((t) => t[0]);
-  const sampleRow = (D.rows || []).find((r) => !r.archived) || null;
+  const sampleProjects = (D.rows || []).filter(r => !r.archived);
+  let hasDraftAction = false;
+  walk(g.steps, n => { if (n.type === 'action' && n.key === 'buffer_draft') hasDraftAction = true; });
+  const mappedBrands = new Set((D.buffer?.channels || []).filter(c => !c.is_locked && !c.is_disconnected).map(c => c.draft_brand_id));
+  const draftSample = hasDraftAction && (sampleProjects.find(r => r.id === sampleProjectId) || sampleProjects.find(r => {
+    const setup = D.publish?.[r.id];
+    return r.editStatus === 'Approved' && setup?.draft_asset_id && setup.draft_brand_id && mappedBrands.has(setup.draft_brand_id);
+  }));
+  const sampleRow = draftSample || sampleProjects[0] || null;
   const sample = sampleRow ? [['Project', sampleRow.title], ['Job', sampleRow.job], ['Stage', sampleRow.status], ['Channel', sampleRow.channel], ['Editor', sampleRow.editor], ['Designer', sampleRow.designer]].filter((x) => x[1]) : [];
   const text = (id, label, value, onChange, placeholder, required) => (
     <div style={css('display: flex; flex-direction: column; gap: 6px;')}>
@@ -753,11 +796,15 @@ export default function FlowBuilder({ D, A, row, onClose, goConnect, goHub, revi
     );
   };
 
+  const mappedChannels = (D.buffer?.channels || []).filter(c => c.draft_brand_id).map(c => {
+    const brand = (D.brands || []).find(b => b.id === c.draft_brand_id);
+    return (brand?.name || 'Mapped brand') + ' → ' + (c.display_name || c.name || c.channel_id);
+  });
   const nodeBody = (n) => {
     const def = n.type === 'action' ? actionById(n.key) : null;
     const delAsk = confirm === 'delete:' + n.id;
     const inner = n.type === 'split' ? (n.paths || []).reduce((c, p) => { let k = 0; walk(p.steps, () => { k++; }); return c + k; }, 0) : 0;
-    const richLabel = n.type === 'action' && def && def.message ? def.message : n.type === 'task' ? 'Notes' : '';
+    const richLabel = n.type === 'action' && n.key !== 'slack_production_digest' && def && def.message ? def.message : n.type === 'task' ? 'Notes' : '';
     return (
       <>
         {def && def.needs && runs && !connected[def.needs] ? (
@@ -770,9 +817,14 @@ export default function FlowBuilder({ D, A, row, onClose, goConnect, goHub, revi
         {fixNote(n.id)}
         {n.type === 'action' ? (
           <>
-            <Pick id="fb-act" label="Action" value={n.key || ''} placeholder={n.key ? undefined : 'Choose an action'} onChange={(v) => editNode(n.id, { key: v })} options={ACTIONS.filter((a) => fits(a, scope)).map((a) => [a.key, (STEP_COPY[a.key] || {}).title || a.label])} />
-            {def && def.message ? <RichField key={n.id} id="fb-msg" label={def.message} value={n.message} onChange={(v) => editNode(n.id, { message: v })} onFocus={() => setFocusField(def.message)} focused={focusField === def.message} insert={ins} rows={3} placeholder="Leave empty to send the standard message" /> : null}
-            {def && !def.message ? help(def.key === 'status_next' || def.key === 'idea_stage_next' ? 'Moves it to the stage after its current one, with the board’s approval and lock rules.' : def.key === 'buffer_publish' ? 'Posts the project’s Social post to the Buffer channels chosen in the project drawer.' : def.key === 'idea_research' ? 'Scores the idea and gathers sources, the same as Research in Ideas.' : 'Sends the run and its project to your n8n workflow.') : null}
+            <Pick id="fb-act" label="Action" value={n.key || ''} placeholder={n.key ? undefined : 'Choose an action'} onChange={(v) => editNode(n.id, { key: v, ...(n.title === 'Manual setup' ? { title: '', note: '' } : {}) })} options={ACTIONS.filter((a) => fits(a, scope)).map((a) => [a.key, (STEP_COPY[a.key] || {}).title || a.label])} />
+            {n.key === 'buffer_draft' && sampleProjects.length > 0 ? <Pick id="fb-buffer-sample" label="Preview project" value={sampleRow?.id || ''} options={sampleProjects.map(r => [r.id, r.job + ' · ' + r.title])}
+              onChange={id => { setSampleProjectId(id); setTest(null); setG(prev => ({ ...prev, lastTest: null })); if (!live) touch(); }} /> : null}
+            {n.key === 'slack_production_digest' ? <>
+              {text('fb-digest-channel', 'Slack channel ID', n.message, (v) => editNode(n.id, { message: v.trim() }), 'C0123456789', true)}
+              {help('Copy the channel ID from Slack channel details. Each digest lists approvals since the previous scheduled cutoff and the review and revision queues at this cutoff.')}
+            </> : def && def.message ? <RichField key={n.id} id="fb-msg" label={def.message} value={n.message} onChange={(v) => editNode(n.id, { message: v })} onFocus={() => setFocusField(def.message)} focused={focusField === def.message} insert={ins} rows={3} placeholder="Leave empty to send the standard message" /> : null}
+            {def && !def.message ? help(def.key === 'status_next' || def.key === 'idea_stage_next' ? 'Moves it to the stage after its current one, with the board’s approval and lock rules.' : def.key === 'buffer_draft' ? 'Uses the approved Final video and brand channels configured under Social post → Buffer drafts.' + (mappedChannels.length ? ' Current mappings: ' + mappedChannels.join(', ') + '.' : '') : def.key === 'buffer_publish' ? 'Posts the project’s Social post to the Buffer channels chosen in the project drawer.' : def.key === 'idea_research' ? 'Scores the idea and gathers sources, the same as Research in Ideas.' : 'Sends the run and its project to your n8n workflow.') : null}
           </>
         ) : null}
         {n.type === 'task' ? (
@@ -837,7 +889,7 @@ export default function FlowBuilder({ D, A, row, onClose, goConnect, goHub, revi
           {peek ? (
             <div style={css('padding: 0 12px 12px; display: flex; flex-direction: column; gap: 6px; font-size: 13px;')}>
               {sample.length ? sample.map((ln) => <div key={ln[0]} style={css('display: flex; justify-content: space-between; gap: 12px;')}><span style={css('color: ' + T.muted + ';')}>{ln[0]}</span><span style={css('color: ' + T.ink + '; font-weight: 500; text-align: right; overflow-wrap: anywhere;')}>{ln[1]}</span></div>) : <span style={css('color: ' + T.muted + ';')}>No project to sample yet.</span>}
-              {sample.length ? <span style={css('color: ' + T.muted + ';')}>From the newest project. Test run uses the same one.</span> : null}
+              {sample.length ? <span style={css('color: ' + T.muted + ';')}>{hasDraftAction ? 'Test run uses the preview project selected in the Buffer draft step.' : 'From the newest project. Test run uses the same one.'}</span> : null}
             </div>
           ) : null}
         </div>
@@ -956,18 +1008,40 @@ export default function FlowBuilder({ D, A, row, onClose, goConnect, goHub, revi
   const passed = !!(g.lastTest && g.lastTest.ok);
   const loose = []; // steps that send outside the team with no approval step above them
   let outN = 0, looseId = '';
-  const scan = (list, covered) => { let c = covered; list.forEach((n) => { if (n.type === 'approval') c = true; const v = stepOf(n); if (v.outward) { outN += 1; if (!c) { loose.push(v.title); if (!looseId) looseId = n.id; } } if (n.type === 'split') (n.paths || []).forEach((p) => scan(p.steps, c)); }); };
+  const handoffs = new Set();
+  const scan = (list, covered) => {
+    let hasApproval = covered;
+    for (const n of list) {
+      if (n.type === 'approval') hasApproval = true;
+      if (n.key === 'buffer_draft') handoffs.add('The approved Final video goes to Buffer as an editable draft on channels mapped to the project’s brand. Scheduling stays in Buffer.');
+      if (n.key === 'slack_production_digest') handoffs.add('The production digest posts to ' + (n.message || 'the selected channel') + ' in Slack.');
+      const step = stepOf(n);
+      if (step.outward) {
+        outN += 1;
+        if (!hasApproval) { loose.push(step.title); if (!looseId) looseId = n.id; }
+      }
+      if (n.type === 'split') for (const path of n.paths || []) scan(path.steps, hasApproval);
+    }
+  };
   scan(g.steps, false);
+  const handoffText = Array.from(handoffs).join(' ');
   // Until approval steps can run, the Super Admin turning the workflow on signs off on what it sends instead.
   const canApprove = !cannotRunYet({ type: 'approval' });
+  let approvalSummary = '';
+  if (outN) {
+    if (!loose.length) approvalSummary = 'A Super Admin approves the external steps.';
+    else if (canApprove) approvalSummary = 'Add an Approval step above ' + loose.join(', ') + '.';
+    else approvalSummary = 'Confirm that you have checked ' + loose.join(', ') + '.';
+  }
+  const destinationSummary = [approvalSummary, handoffText].filter(Boolean).join(' ') || 'Nobody outside the team sees anything from this workflow.';
   const trigOk = !!g.trigger.key && !warns.some((x) => x.id === 'trigger');
   const closeReview = (then) => () => { setConfirm(''); then(); };
   const checks = [
     { ok: trigOk, label: trigOk ? 'Trigger is set' : g.trigger.key ? 'The trigger needs a fix' : 'Pick a trigger', detail: trigOk ? trig.detail : (warns.find((x) => x.id === 'trigger') || {}).body || '', fixLabel: 'Set trigger', fix: closeReview(() => setPanel({ name: 'trigger' })) },
     { ok: !stepFixes.length, label: stepFixes.length ? plural(stepFixes.length, 'step') + (stepFixes.length === 1 ? ' needs' : ' need') + ' setup' : 'Every step is set up', detail: stepFixes.length ? stepFixes.map((x) => x.title).join(', ') : plural(steps, 'step') + ', nothing missing', fixLabel: 'Go to step', fix: closeReview(() => setSel(stepFixes[0].id === 'end' ? '' : stepFixes[0].id)) },
     { ok: passed, label: passed ? 'Test run passed' : g.lastTest ? 'The last test failed' : 'Run a test first', detail: passed ? 'Every step ran on sample data' : 'Runs every step on sample data. Nothing is sent.', fixLabel: 'Test run', fix: () => runTest(testPlan) },
-    { ok: !loose.length || (!canApprove && ack), label: outN ? plural(outN, 'step') + (outN === 1 ? ' sends' : ' send') + ' outside' + (loose.length ? (canApprove ? ', no approval' : '') : ', approval covers it') : 'Nothing leaves the team',
-      detail: !outN ? 'Nobody outside the team sees anything from this workflow' : !loose.length ? 'A Super Admin signs off before anything leaves' : canApprove ? 'Add an Approval step above ' + loose.join(', ') : loose.join(', ') + ' reaches people outside the team. Approval steps are not available yet, so confirm you have checked it.',
+    { ok: !loose.length || (!canApprove && ack), label: outN ? plural(outN, 'step') + (outN === 1 ? ' sends' : ' send') + ' outside' + (loose.length ? (canApprove ? ', no approval' : '') : ', approval covers it') : handoffs.size ? 'Connected app destinations' : 'Nothing leaves the team',
+      detail: destinationSummary,
       fixLabel: 'Add approval', fix: canApprove && loose.length ? closeReview(() => { const at2 = locate(g, looseId); if (at2) { const before = at2.index ? stepOf(at2.list[at2.index - 1]) : null; setFinder({ pathId: at2.pathId, index: at2.index, afterTitle: before ? before.title : at2.pathId ? 'the path starts' : trig.title, afterKind: before ? before.kind : 'trigger' }); } }) : null,
       ack: loose.length && !canApprove ? { on: ack, set: setAck, label: 'I have checked what this sends' } : null },
   ];
@@ -1016,7 +1090,7 @@ export default function FlowBuilder({ D, A, row, onClose, goConnect, goHub, revi
         <span style={css('flex: 1; min-width: 0;')} />
         {runs ? <TopBtn cls="fbx-opt" icon={ICON.history} label="Run history" onClick={() => exitTo(() => goHub('runs'))} /> : null}
         <TopBtn cls="fbx-opt" icon={ICON.settings} label="Settings" onClick={() => setPanel({ name: 'settings' })} />
-        {runs ? <button type="button" className="fbx-btn fbx-opt2" aria-label={'Ask ' + AGENT_SHORT} title={'Ask ' + AGENT} onClick={() => say(AGENT + ' cannot draft steps yet. It arrives in a later phase of this build.')} style={css(btn('ghost') + ' background: ' + KIND.ai.bg + '; border-color: transparent; color: ' + KIND.ai.ink + ';')}><Svg d={KIND.ai.icon} size={16} /><span className="fbx-lbl">Ask {AGENT_SHORT}</span></button> : null}
+        {runs ? <button type="button" className="fbx-btn fbx-opt2" aria-label={'Ask ' + AGENT_SHORT} title={'Ask ' + AGENT} disabled={!!busy} onClick={() => dirty ? say('Save your current changes before opening the assistant.') : setPrompt('')} style={css(btn('ghost') + ' background: ' + KIND.ai.bg + '; border-color: transparent; color: ' + KIND.ai.ink + ';')}><Svg d={KIND.ai.icon} size={16} /><span className="fbx-lbl">Ask {AGENT_SHORT}</span></button> : null}
         {runs ? <TopBtn cls="" icon={ICON.play} label={busy === 'test' ? 'Testing…' : 'Test run'} onClick={() => runTest(testPlan)} off={!!busy} /> : null}
         <button type="button" className="wf-h fbx-btn" onClick={() => (live ? setConfirm('update') : save())} disabled={!dirty || !!busy} style={css(btn('quiet') + (!dirty || busy ? ' opacity: .5; cursor: default;' : ''))}>Save</button>
         {runs && !live ? <button type="button" className="wf-k fbx-btn" onClick={() => setConfirm('review')} disabled={!!busy} style={css(btn('primary') + ' padding: 0 16px;')}>Review and turn on</button> : null}
@@ -1087,6 +1161,13 @@ export default function FlowBuilder({ D, A, row, onClose, goConnect, goHub, revi
 
       {finder ? <StepFinder items={lib.filter((it) => !it.trigger)} groupLabel={GROUP} afterTitle={finder.afterTitle} afterKind={finder.afterKind} onAdd={(spec) => add(finder.pathId, finder.index, spec)} onClose={() => setFinder(null)} /> : null}
 
+      {prompt !== null ? <Dialog id="wf-assistant" eyebrow={AGENT} title="Draft a workflow" state={prompt.trim() ? 'dirty' : ''}
+        saveLabel={busy === 'assistant' ? 'Creating…' : 'Create draft'} saveOff={!!busy} onSave={generateDraft} onClose={() => { if (!busy) setPrompt(null); }}>
+        <div style={css('padding: 20px 24px; display: grid; gap: 12px;')}>
+          <WorkflowPrompt value={prompt} onChange={setPrompt} />
+          <p style={css('margin: 0; font-size: 14px; color: ' + T.muted + ';')}>{blankDraft ? 'Review the generated steps here before testing and turning them on.' : 'The assistant opens a separate draft so you can review its steps.'}</p>
+        </div>
+      </Dialog> : null}
       {panel && panel.name === 'settings' ? <SettingsModal g={g} name={name} D={D} live={live} slackOn={!!connected.slack} onSave={saveSettings} onClose={() => setPanel(null)} goConnectors={() => exitTo(() => goHub('connectors'))} /> : null}
       {panel && panel.name === 'trigger' && runs ? <TriggerModal g={g} name={name} D={D} rowId={row.id} live={live} optionsFor={optionsFor} critText={critText} onSave={saveTrigger} onClose={() => setPanel(null)} /> : null}
       {panel && panel.name === 'condition' && branchAt ? (
@@ -1153,7 +1234,7 @@ export function FlowLayer({ D, A, open, review, back, set }) {
   }
   const row = (D.automations || []).find((a) => a.id === open);
   if (!row) return null;
-  return <FlowBuilder key={row.id} D={D} A={A} row={row} review={review} onClose={() => leaveTo({})}
+  return <FlowBuilder key={row.id} D={D} A={A} row={row} review={review} onOpenDraft={(saved) => set({ flowOpen: saved.id, flowReview: false })} onClose={() => leaveTo({})}
     goHub={(tab) => leaveTo(tab === 'connectors' ? { nav: 'auto', autoConn: true } : { nav: 'auto', autoTab: tab })}
     goConnect={(provider) => leaveTo({ flowReturn: row.id, nav: 'workspace', wsTab: 'integ', integFocus: provider, integExpanded: provider })} />;
 }

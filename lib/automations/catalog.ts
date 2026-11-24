@@ -23,6 +23,7 @@ export const TRIGGERS: TriggerDef[] = [
   { key: 'approval', label: 'Sponsor Approval becomes', valueLabel: 'Approval',
     values: [['pending', 'Pending'], ['approved', 'Approved'], ['changes_requested', 'Changes Requested']] },
   { key: 'mention_admin', label: 'A comment mentions a Super Admin' },
+  { key: 'publishing_scheduled', label: 'Project enters Scheduled in Publishing' },
   { key: 'publish_soon', label: 'Publishing date is', valueLabel: 'Days before',
     values: [['1', '1 day away'], ['2', '2 days away'], ['3', '3 days away'], ['7', '7 days away']] },
   // Trigger setup > Schedule and Webhook. These run without a project, so only actions with scope 'any' fit them.
@@ -40,12 +41,14 @@ export const TRIGGERS: TriggerDef[] = [
 
 export const ACTIONS: ActionDef[] = [
   { key: 'slack_admin', label: 'Notify Super Admin in Slack', app: 'Slack', needs: 'slack', message: 'Slack message', scope: 'any' },
+  { key: 'slack_production_digest', label: 'Send production digest to Slack', app: 'Slack', needs: 'slack', message: 'Slack channel ID', scope: 'any' },
   { key: 'email_editor', label: 'Email the assigned editor', app: 'Email', message: 'Email note' },
   { key: 'email_designer', label: 'Email the assigned designer', app: 'Email', message: 'Email note' },
   { key: 'status_next', label: 'Move Status to the next step', app: 'Board' },
   { key: 'todo_admin', label: 'Create a To-Do for Super Admin', app: 'In-app', message: 'To-Do text', scope: 'any' },
   { key: 'webhook_n8n', label: 'Send a webhook to n8n', app: 'n8n', needs: 'n8n', scope: 'any' },
   // Posts the project's Social post (caption, cut, chosen Buffer channels); see lib/integrations/buffer-publish.ts.
+  { key: 'buffer_draft', label: 'Create Buffer draft', app: 'Buffer', needs: 'buffer' },
   { key: 'buffer_publish', label: 'Publish to Buffer', app: 'Buffer', needs: 'buffer' },
   // Ideas & Research
   { key: 'idea_research', label: 'Run research on the idea', app: 'Research', scope: 'idea' },
@@ -54,13 +57,15 @@ export const ACTIONS: ActionDef[] = [
   { key: 'idea_todo_owner', label: 'Create a To-Do for the idea owner', app: 'In-app', message: 'To-Do text', scope: 'idea' },
 ];
 
+export const validDigestChannel = (id: string) => /^[CG][A-Z0-9]+$/.test(id.trim());
+
 // Which side a trigger runs on, and the actions that fit it.
 export const scopeOf = (triggerKey: string): 'project' | 'idea' => (triggerById(triggerKey)?.scope === 'idea' ? 'idea' : 'project');
 export const fits = (a: ActionDef, scope: 'project' | 'idea') => (a.scope || 'project') === scope || a.scope === 'any';
 // Idea triggers list the idea actions first; project triggers keep the original order (Slack stays the default).
 export const actionsFor = (triggerKey: string) => {
   const scope = scopeOf(triggerKey);
-  const list = ACTIONS.filter((a) => fits(a, scope));
+  const list = ACTIONS.filter((a) => fits(a, scope) && (a.key !== 'slack_production_digest' || triggerKey === 'schedule'));
   return scope === 'idea' ? list.filter((a) => a.scope === 'idea').concat(list.filter((a) => a.scope !== 'idea')) : list;
 };
 export const projectTriggers = () => TRIGGERS.filter((t) => t.scope !== 'idea' && !t.mode);

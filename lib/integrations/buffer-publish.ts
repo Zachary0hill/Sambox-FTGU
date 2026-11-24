@@ -120,8 +120,19 @@ export async function publishProjectToBuffer(p: Project, opts: { runId: string |
 export async function cleanupBufferMedia(ws: string): Promise<number> {
   const admin = supabaseAdmin();
   const { data, error } = await admin.from('buffer_publications').select('id, buffer_post_id, media_path, created_at')
-    .eq('workspace_id', ws).not('media_path', 'is', null).is('media_removed_at', null).limit(500);
-  if (error || !data || !data.length) return 0;
+    .eq('workspace_id', ws).not('media_path', 'is', null).is('media_removed_at', null).in('status', ['created', 'failed', 'cleared']).limit(500);
+  // A draft may wait for Gerald indefinitely. Release its unique media copy only after a sent post is synced.
+  const { data: delivered, error: draftError } = await admin.rpc('sent_buffer_draft_media', { p_workspace: ws });
+  let draftCount = 0;
+  if (!draftError && delivered?.length) {
+    const rm = await admin.storage.from(MEDIA_BUCKET).remove(delivered.map((row: { media_path: string }) => row.media_path));
+    if (!rm.error) {
+      const marked = await admin.from('buffer_publications').update({ media_removed_at: new Date().toISOString() })
+        .in('id', delivered.map((row: { id: string }) => row.id));
+      if (!marked.error) draftCount = delivered.length;
+    }
+  }
+  if (error || !data || !data.length) return draftCount;
   const ids = data.map((x) => x.buffer_post_id).filter(Boolean) as string[];
   const sent = ids.length ? await admin.from('buffer_posts').select('post_id').eq('workspace_id', ws).in('post_id', ids).not('sent_at', 'is', null) : { data: [] };
   const sentIds = new Set(((sent.data || []) as { post_id: string }[]).map((x) => x.post_id));
@@ -130,12 +141,12 @@ export async function cleanupBufferMedia(ws: string): Promise<number> {
   // Rows from one run share a file: remove a file only when every row using it is done.
   const pending = new Set(data.filter((x) => !rows.includes(x)).map((x) => x.media_path));
   const paths = [...new Set(rows.map((x) => x.media_path as string))].filter((x) => !pending.has(x));
-  if (!rows.length) return 0;
+  if (!rows.length) return draftCount;
   if (paths.length) {
     const rm = await admin.storage.from(MEDIA_BUCKET).remove(paths);
-    if (rm.error) { console.warn('buffer-media cleanup', rm.error.message); return 0; }
+    if (rm.error) { console.warn('buffer-media cleanup', rm.error.message); return draftCount; }
   }
   const done = rows.filter((x) => !pending.has(x.media_path)).map((x) => x.id);
   if (done.length) await admin.from('buffer_publications').update({ media_removed_at: new Date().toISOString() }).in('id', done);
-  return paths.length;
+  return paths.length + draftCount;
 }

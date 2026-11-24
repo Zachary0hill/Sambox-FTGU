@@ -373,3 +373,26 @@ textarea:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px }
   .ir-dlg-foot { order: 3; position: sticky; bottom: 0; z-index: 2; padding-left: 16px !important }
   .ir-dlg-side { order: 2; border-left: 0 !important; border-top: 1px solid var(--line); overflow: visible !important }
 }
+
+/* Finance > Contractor payouts */
+.fb-recon-panel { min-width: 0; padding: 20px; display: grid; gap: 16px; border: 1px solid var(--border); border-radius: 14px; background: var(--surface); color: var(--ink); }
+.fb-recon-panel h2, .fb-recon-panel h3, .fb-recon-panel p, .fb-recon-panel dl { margin: 0; }
+.fb-recon-panel h2 { font-size: 18px; }
+.fb-recon-panel h3 { font-size: 15px; }
+.fb-recon-group { display: flex; flex-wrap: wrap; gap: 12px; align-items: end; }
+.fb-recon-panel label, .fb-recon-panel form, .fb-recon-body { display: grid; gap: 6px; }
+.fb-recon-panel form, .fb-recon-body { min-width: 0; gap: 12px; }
+.fb-recon-panel label, .fb-recon-panel dt { font-size: 13px; color: var(--ink-3); }
+.fb-recon-panel input, .fb-recon-panel select, .fb-recon-panel button { min-height: 38px; max-width: 100%; padding: 6px 10px; color: var(--ink); background: var(--surface); border: 1px solid var(--border); border-radius: 8px; font: inherit; }
+.fb-recon-panel button { justify-self: start; cursor: pointer; }
+.fb-recon-panel input[type=checkbox] { min-height: auto; margin-right: 6px; }
+.fb-recon-panel .fb-recon-confirm { display: block; }
+.fb-recon-panel summary { cursor: pointer; font-weight: 600; padding: 8px 0; }
+.fb-recon-panel dd { margin: 4px 0 0; font-weight: 600; }
+.fb-recon-panel dl { display: flex; flex-wrap: wrap; gap: 12px 28px; }
+.fb-recon-scroll { overflow-x: auto; }
+.fb-recon-panel table { border-collapse: collapse; width: 100%; text-align: left; font-size: 14px; }
+.fb-recon-panel th, .fb-recon-panel td { border-bottom: 1px solid var(--border); padding: 8px; }
+.fb-recon-panel a { color: var(--link); }
+.fb-recon-notice { font-size: 14px; color: var(--muted); }
+.fb-recon-error { color: var(--red-ink); }

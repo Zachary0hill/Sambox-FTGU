@@ -10,8 +10,8 @@ export async function POST(request: Request, ctx: RouteContext<'/api/automations
   const m = await getMember();
   if (!isSuperAdmin(m)) return deny('Only a Super Admin can test automations.');
   try {
-    const body = (await request.json().catch(() => ({}))) as { flow?: unknown };
-    const run = await testAutomation(m.ctx.workspace_id, id, baseUrlFor(request), body.flow);
+    const body = (await request.json().catch(() => ({}))) as { flow?: unknown; projectId?: string };
+    const run = await testAutomation(m.ctx.workspace_id, id, baseUrlFor(request), body.flow, body.projectId);
     return NextResponse.json({ run });
   } catch (err) {
     return deny(err instanceof Error ? err.message : String(err), 400);

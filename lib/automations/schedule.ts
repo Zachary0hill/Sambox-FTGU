@@ -52,7 +52,14 @@ function wall(ts: number, tz: string) {
 function instant(y: number, m: number, d: number, hh: number, mm: number, tz: string) {
   const guess = Date.UTC(y, m - 1, d, hh, mm);
   const w = wall(guess, tz);
-  return guess - (Date.UTC(w.y, w.m - 1, w.d, w.hh, w.mm, w.ss) - guess);
+  const first = guess - (Date.UTC(w.y, w.m - 1, w.d, w.hh, w.mm, w.ss) - guess);
+  const check = wall(first, tz);
+  const delta = guess - Date.UTC(check.y, check.m - 1, check.d, check.hh, check.mm, check.ss);
+  if (!delta) return first;
+  const adjusted = first + delta;
+  const corrected = wall(adjusted, tz);
+  // A skipped spring-forward wall time runs after the gap.
+  return corrected.hh === hh && corrected.mm === mm ? adjusted : Math.max(first, adjusted);
 }
 const safeTz = (tz: string | null | undefined) => { try { new Intl.DateTimeFormat('en-US', { timeZone: tz || 'UTC' }); return tz || 'UTC'; } catch { return 'UTC'; } };
 

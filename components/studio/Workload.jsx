@@ -504,6 +504,7 @@ export default function Workload({ w }) {
       </div>
       <Pipeline w={w} />
       <Team w={w} />
+      <button type="button" className="fb-wl-act" style={css('align-self: start; min-height: 40px; padding: 0 14px; background: var(--surface); color: var(--ink); border: 1px solid var(--border); border-radius: 10px; cursor: pointer;')} onClick={w.openReconciliation}>Reconcile editor payments</button>
       <Assignments w={w} />
       <Workflow w={w} />
     </div>

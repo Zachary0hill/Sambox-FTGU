@@ -76,6 +76,17 @@ test('email to the idea owner links to the idea and shows its score', async () =
   assert.match(f.emails[0].text, /82 of 100/);
 });
 
+test('Approved owner notification survives auto-archive and respects a later manual archive', async () => {
+  for (const automatic of [true, false]) {
+    const f = ideaFixture({ action: 'idea_todo_owner', stage: 'approved' });
+    Object.assign(f.tables.ideas[0], { project_id: 'project', approved_at: '2026-11-22T12:00:00Z', archived_at: automatic ? '2026-11-22T12:00:00Z' : '2026-11-23T12:00:00Z' });
+    f.run.payload.to = 'approved';
+    await f.execute();
+    assert.equal(f.run.status, automatic ? 'done' : 'failed');
+    assert.equal(f.tables.tasks.length, automatic ? 1 : 0);
+  }
+});
+
 test('next stage moves Inbox to Research and logs it on the idea', async () => {
   const f = ideaFixture({ action: 'idea_stage_next' });
   await f.execute();

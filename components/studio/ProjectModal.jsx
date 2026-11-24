@@ -351,6 +351,15 @@ function Overview({ V }) {
           )}
         </Section>
       ) : null}
+      {dr.researchSummary || dr.sourceUrls?.length ? (
+        <details style={css(CARD)}>
+          <summary style={{cursor:'pointer'}}>Research and references at approval</summary>
+          {dr.researchSummary && <p style={{whiteSpace:'pre-wrap'}}>{dr.researchSummary}</p>}
+          {dr.sourceUrls.length > 0 && <ul>{dr.sourceUrls.map(url =>
+            <li key={url} style={{overflowWrap:'anywhere'}}><a href={url} target="_blank" rel="noreferrer">{url}</a></li>
+          )}</ul>}
+        </details>
+      ) : null}
       {dr.script && dr.script.show ? (
         <Section icon="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9zM14 3v6h6M8 13h8M8 17h5" title="Script" action={dr.script.open ? <button type="button" onClick={dr.script.open} style={css(LINK_ACT)}>{dr.script.openLabel}</button> : null}>
           {dr.script.open ? (
@@ -435,6 +444,30 @@ function Overview({ V }) {
               {dr.publish.isDate ? <p style={css('margin: 0; font-size: 12px; color: var(--muted-2)')}>{dr.publish.dateNote}</p> : null}
             </div>
             <p style={css('margin: 0; font-size: 12.5px; color: var(--ink-3)')}>{dr.publish.fileText}</p>
+            <fieldset style={css('border: 1px solid var(--border); border-radius: 12px; padding: 12px; display: grid; gap: 8px')}>
+              <legend>Buffer drafts</legend>
+              <label>Project brand
+                <select value={dr.publish.drafts.brandId} disabled={dr.publish.readOnly} onChange={e => dr.publish.drafts.chooseBrand(e.target.value)} style={css(V.fieldInput)}>
+                  <option value="">Choose a linked brand</option>
+                  {dr.publish.drafts.brands.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
+                </select>
+              </label>
+              <label>Approved Final video
+                <select value={dr.publish.drafts.assetId} disabled={dr.publish.readOnly} onChange={e => dr.publish.drafts.chooseAsset(e.target.value)} style={css(V.fieldInput)}>
+                  <option value="">Choose the approved file</option>
+                  {dr.publish.drafts.files.map(f => <option key={f.id} value={f.id}>{f.name} · V{f.version || 1}</option>)}
+                </select>
+              </label>
+              {!dr.publish.drafts.approved && <small>The edit must reach Approved before handoff.</small>}
+              {dr.publish.drafts.brandId && <div role="group" aria-label="Brand draft destinations">
+                <p>Draft channels for this brand across all projects</p>
+                {dr.publish.drafts.channels.filter(c => dr.publish.drafts.canMap || c.on).map(c =>
+                  <label key={c.id} style={{display:'block'}}><input type="checkbox" checked={c.on} disabled={!dr.publish.drafts.canMap} onChange={c.toggle} /> {c.label}</label>)}
+                {!dr.publish.drafts.channels.some(c => c.on) && <small>A Super Admin must map a synced channel for this brand.</small>}
+              </div>}
+              {dr.publish.drafts.history.length > 0 && <ul aria-label="Buffer draft handoffs">{dr.publish.drafts.history.map(h =>
+                <li key={h.id}>{h.text}{h.detail && <div>{h.detail}</div>}</li>)}</ul>}
+            </fieldset>
             {dr.publish.history.length ? (
               <ul aria-label="Sent to Buffer" style={css('margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column')}>
                 {dr.publish.history.map((h) => (

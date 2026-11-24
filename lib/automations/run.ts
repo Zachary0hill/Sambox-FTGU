@@ -9,6 +9,7 @@ import { publishProjectToBuffer, PublishSetupError } from '@/lib/integrations/bu
 import { actionById, actionsOf, scopeOf, triggerOf, triggerText } from './catalog';
 import { isGraph, graphOf, fillTokens, delayText, cannotRunYet, matchPath, matchFilters, type Node, type RuleValues } from './graph';
 import { lastSlot } from './schedule';
+import { deliverProductionDigest, DigestSetupError, DigestRetryError } from './production-digest';
 
 // The automation runner. Database triggers queue automation_runs rows when a live workflow's trigger fires; each tick
 // (the board after a change, and a scheduler with CRON_SECRET) queues scheduled triggers, claims due runs, performs
@@ -47,6 +48,7 @@ export type PendingApproval = {
 };
 type Decision = { decision: 'approved' | 'rejected'; by: string; byId: string; at: string };
 const RECIPIENT: Record<string, string> = {
+  buffer_draft: 'The Buffer draft channels mapped to the project’s brand',
   slack_admin: 'Super Admin Slack channel', todo_admin: 'Super Admins, in their Inbox', webhook_n8n: 'Your n8n workflow', buffer_publish: 'The Buffer channels chosen on the project',
   idea_email_owner: 'The idea owner', idea_todo_owner: 'The idea owner, in their Inbox',
 };
@@ -60,7 +62,7 @@ type Project = {
   id: string; workspace_id: string; title: string; job_code: string; status_id: string; publish_date: string | null; archived_at: string | null;
   channel_id: string | null; content_type_id: string | null;
 };
-type Idea = { id: string; workspace_id: string; title: string; stage: string; owner_id: string | null; author_id: string | null; archived_at: string | null; research: { score?: { total?: number } | null } | null };
+type Idea = { id: string; workspace_id: string; title: string; stage: string; owner_id: string | null; author_id: string | null; archived_at: string | null; approved_at: string | null; project_id: string | null; research: { score?: { total?: number } | null } | null };
 const STAGE_LABEL: Record<string, string> = { inbox: 'Inbox', research: 'Research', ready: 'Ready', approved: 'Approved' };
 const NEXT_STAGE: Record<string, string> = { inbox: 'research', research: 'ready' };
 // What splits check and tokens fill: the project's people, sponsor and channel.
@@ -121,12 +123,13 @@ async function queueSchedules(workspaceId: string | null) {
     const set = byWs[a.workspace_id as string];
     if (set && set.automation && set.automation.paused) continue;
     const trig = (a.trigger || {}) as Record<string, string>;
-    const slot = lastSlot(trig.value || '', trig.tz || (set && set.timezone) || 'America/Chicago');
+    const timezone = trig.tz || (set && set.timezone) || 'America/Chicago';
+    const slot = lastSlot(trig.value || '', timezone);
     // Only slots since the workflow was last saved or turned on, and no older than a day.
     if (!slot || slot <= new Date(a.updated_at as string).getTime() || Date.now() - slot > 86400000) continue;
     const ins = await admin.from('automation_runs').insert({
       automation_id: a.id, workspace_id: a.workspace_id, trigger_key: 'schedule', status: 'queued',
-      payload: { value: trig.value, slot: new Date(slot).toISOString() }, dedupe_key: a.id + ':sched:' + slot,
+      payload: { value: trig.value, timezone, slot: new Date(slot).toISOString() }, dedupe_key: a.id + ':sched:' + slot,
     });
     if (!ins.error) n++;
     else if (ins.error.code !== '23505') console.warn('schedule', ins.error.message);
@@ -159,7 +162,7 @@ export async function queueWebhookRun(token: string, key: string | null, body: R
 
 // A Test run: the workflow's actions on a sample project (the most recently created), described but not performed.
 // flow: the builder's unsaved graph, so testing never has to save (and change) a live automation first.
-export async function testAutomation(workspaceId: string, automationId: string, baseUrl: string, flow?: unknown) {
+export async function testAutomation(workspaceId: string, automationId: string, baseUrl: string, flow?: unknown, projectId?: string) {
   const admin = supabaseAdmin();
   const a = await admin.from('automations').select('*').eq('id', automationId).eq('workspace_id', workspaceId).maybeSingle();
   if (a.error || !a.data) throw new Error('That workflow was not found.');
@@ -167,9 +170,13 @@ export async function testAutomation(workspaceId: string, automationId: string, 
   const t = draft ? { key: draft.trigger.key, value: draft.trigger.value } : triggerOf(a.data.trigger as Record<string, string>);
   // Idea workflows test on the most recently changed live idea; project workflows on the newest project.
   const onIdea = scopeOf(t.key) === 'idea';
+  let projects = admin.from('projects').select('id').eq('workspace_id', workspaceId).is('archived_at', null);
+  if (projectId) projects = projects.eq('id', projectId);
   const sample = onIdea
     ? await admin.from('ideas').select('id').eq('workspace_id', workspaceId).is('archived_at', null).order('updated_at', { ascending: false }).limit(1).maybeSingle()
-    : await admin.from('projects').select('id').eq('workspace_id', workspaceId).is('archived_at', null).order('created_at', { ascending: false }).limit(1).maybeSingle();
+    : await projects.order('created_at', { ascending: false }).limit(1).maybeSingle();
+  if (sample.error) throw new Error('Could not load the preview sample: ' + sample.error.message);
+  if (!onIdea && projectId && !sample.data) throw new Error('Choose an active preview project in this workspace.');
   const ins = await admin.from('automation_runs').insert({
     automation_id: automationId, workspace_id: workspaceId, project_id: !onIdea && sample.data ? sample.data.id : null,
     ...(onIdea ? { idea_id: sample.data ? sample.data.id : null } : {}), trigger_key: t.key,
@@ -224,7 +231,7 @@ async function executeRun(r: Run, baseUrl: string, draft?: ReturnType<typeof gra
     }
   }
 
-  const idea = r.idea_id ? ((await admin.from('ideas').select('id, workspace_id, title, stage, owner_id, author_id, archived_at, research').eq('id', r.idea_id).maybeSingle()).data as Idea | null) : null;
+  const idea = r.idea_id ? ((await admin.from('ideas').select('id, workspace_id, title, stage, owner_id, author_id, archived_at, approved_at, project_id, research').eq('id', r.idea_id).maybeSingle()).data as Idea | null) : null;
   const p = r.project_id ? ((await admin.from('projects').select('id, workspace_id, title, job_code, status_id, publish_date, archived_at, channel_id, content_type_id').eq('id', r.project_id).maybeSingle()).data as Project | null) : null;
   const statuses = ((await admin.from('project_statuses').select('id, label, sort').eq('workspace_id', r.workspace_id).order('sort')).data || []) as { id: string; label: string; sort: number }[];
   const statusName = (id: string | null | undefined) => (statuses.find((x) => x.id === id) || { label: '' }).label;
@@ -244,7 +251,10 @@ async function executeRun(r: Run, baseUrl: string, draft?: ReturnType<typeof gra
     trigger: why, 'flow.name': a.name, 'workspace.name': workspace,
     'idea.title': idea ? idea.title : '', 'idea.stage': idea ? STAGE_LABEL[idea.stage] || idea.stage : '', 'idea.score': score, 'idea.link': idea ? link : '',
   };
-  const ctx: Ctx = { r, a, p, idea, onIdea, statuses, statusName, why, link, base, subject, workspace, test: r.is_test, tokens };
+  const ctx: Ctx = { r, a, p, idea, onIdea, statuses, statusName, why, link, base, subject, workspace, test: r.is_test, tokens,
+    scheduleRule: String(r.payload?.value || trig.value),
+    timezone: String(r.payload?.timezone || graph?.trigger.tz || a.trigger?.tz || st.timezone || 'America/Chicago'),
+  };
   const values = valuesOf(p, facts, statusName);
   // The trigger's "Only when" rules: a run whose project does not fit them stops before any step.
   const filters = graph ? graph.trigger.filters : undefined;
@@ -491,6 +501,7 @@ export async function decideApproval(workspaceId: string, runId: string, who: { 
 }
 
 type Ctx = {
+  scheduleRule: string; timezone: string;
   r: Run; a: Automation; p: Project | null; idea: Idea | null; onIdea: boolean; statuses: { id: string; label: string; sort: number }[]; statusName: (id: string | null | undefined) => string;
   why: string; link: string; base: string; subject: string; workspace: string; test: boolean; tokens: Record<string, string>;
 };
@@ -574,6 +585,20 @@ async function perform(key: string, message: string, ctx: Ctx): Promise<string> 
   if (!def) throw new Permanent('Unknown action ' + key + '.');
   const { p, a } = ctx;
   const note = fillTokens(message || '', ctx.tokens).trim();
+
+  if (key === 'slack_production_digest') {
+    if (ctx.r.trigger_key !== 'schedule') throw new Permanent('Choose a schedule for the production digest.');
+    try {
+      return await deliverProductionDigest({
+        workspaceId: ctx.r.workspace_id, runId: ctx.r.id, channel: message.trim(), rule: ctx.scheduleRule,
+        timezone: ctx.timezone, slot: ctx.r.payload?.slot, baseUrl: ctx.base, preview: ctx.test,
+      });
+    } catch (err) {
+      if (err instanceof DigestSetupError) throw new Permanent(err.message);
+      if (err instanceof DigestRetryError) throw new SafeRetry(err.message);
+      throw err;
+    }
+  }
 
   if (key === 'slack_admin') {
     const text = '*' + a.name + '*: ' + ctx.why + (p || ctx.idea ? ' on ' + ctx.subject : '') + (note ? '\n' + note : '') + '\n' + ctx.link;
@@ -659,6 +684,20 @@ async function perform(key: string, message: string, ctx: Ctx): Promise<string> 
     const res = await postN8n(conn.secret, conn.config, body);
     return 'n8n answered ' + res.status + (res.reply ? ': ' + res.reply.slice(0, 120) : '.');
   }
+  if (key === 'buffer_draft') {
+    if (!p || p.workspace_id !== ctx.r.workspace_id) throw new Permanent('Select a project in this workspace to create a Buffer draft.');
+    const { draftProjectToBuffer } = await import('@/lib/integrations/buffer-drafts');
+    let res;
+    try {
+      res = await draftProjectToBuffer(p, { runId: ctx.test ? null : ctx.r.id, test: ctx.test });
+    } catch (e) {
+      if (e instanceof PublishSetupError) throw new Permanent(e.message);
+      throw new SafeRetry(e instanceof Error ? e.message : String(e));
+    }
+    if (res.retry) throw new SafeRetry(res.detail);
+    if (res.failed) throw new Permanent(res.detail);
+    return res.detail;
+  }
   if (key === 'buffer_publish') {
     if (!p) throw new Permanent('This run has no project to publish.');
     let res;
@@ -682,7 +721,13 @@ async function performIdea(key: string, note: string, ctx: Ctx): Promise<string>
   const admin = supabaseAdmin();
   const i = ctx.idea;
   if (!i) throw new Permanent('This run has no idea' + (ctx.onIdea ? ' (it was deleted).' : '; idea actions only fit idea triggers.'));
-  if (i.archived_at && !ctx.test) throw new Permanent(ctx.subject + ' is archived.');
+  if (i.archived_at && !ctx.test) {
+    // Approval and auto-archive commit together. The queued Approved event may still notify its owner.
+    const approvalNotice = (key === 'idea_email_owner' || key === 'idea_todo_owner')
+      && ctx.r.trigger_key === 'idea_stage' && ctx.r.payload?.to === 'approved'
+      && i.stage === 'approved' && i.project_id && i.approved_at === i.archived_at;
+    if (!approvalNotice) throw new Permanent(ctx.subject + ' is archived.');
+  }
   const stage = STAGE_LABEL[i.stage] || i.stage;
 
   if (key === 'idea_research') {

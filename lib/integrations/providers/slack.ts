@@ -35,7 +35,7 @@ const HINT: Record<string, string> = {
   not_in_channel: 'the bot is not in that channel', channel_not_found: 'channel not found', ratelimited: 'Slack rate limit hit, try again in a minute',
 };
 
-class SlackError extends Error {
+export class SlackError extends Error {
   constructor(public code: string, needed?: string) {
     super(code === 'missing_scope' ? 'the Slack app is missing the ' + (needed || 'required') + ' scope; add it and reinstall the app' : (HINT[code] || code));
   }
@@ -45,13 +45,13 @@ type Params = Record<string, string | number | boolean | undefined>;
 
 // One Web API call. Reads go as form-encoded POSTs, chat.postMessage as JSON; the token is always in the header.
 // On HTTP 429 waits Retry-After seconds and tries again, up to three times.
-async function call<T = Record<string, unknown>>(token: string, method: string, params: Params = {}, json = false): Promise<T> {
+async function call<T = Record<string, unknown>>(token: string, method: string, params: Params = {}, json = false, blocks?: DigestBlock[]): Promise<T> {
   const clean = Object.fromEntries(Object.entries(params).filter(([, v]) => v !== undefined && v !== '').map(([k, v]) => [k, String(v)]));
   for (let attempt = 0; ; attempt++) {
     const res = await fetch(API + method, {
       method: 'POST', cache: 'no-store', signal: AbortSignal.timeout(15000),
       headers: { Authorization: 'Bearer ' + token, 'Content-Type': json ? 'application/json; charset=utf-8' : 'application/x-www-form-urlencoded' },
-      body: json ? JSON.stringify(clean) : new URLSearchParams(clean).toString(),
+      body: json ? JSON.stringify(blocks ? { ...clean, blocks, unfurl_links: false, unfurl_media: false } : clean) : new URLSearchParams(clean).toString(),
     });
     if (res.status === 429) {
       if (attempt >= 3) throw new SlackError('ratelimited');
@@ -293,6 +293,13 @@ export async function postSlackMessage(ws: string, channel: string, text: string
   if (!conn) throw new Error('Slack is not connected.');
   const r = await call<{ channel: string; ts: string }>(conn.secret.botToken, 'chat.postMessage', { channel, text }, true);
   return { channel: r.channel, ts: r.ts };
+}
+
+export type DigestBlock = { type: 'section'; text: { type: 'mrkdwn'; text: string; verbatim: true } };
+export async function postSlackDigest(token: string, channel: string, text: string, blocks: DigestBlock[]) {
+  const sent = await call<{ channel: string; ts: string }>(token, 'chat.postMessage', { channel, text }, true, blocks);
+  if (sent.channel !== channel || !sent.ts) throw new Error('Slack did not confirm the digest in the selected channel.');
+  return sent.ts;
 }
 
 // Alerts (automations, notifications): to the Alerts channel from Settings, @mentioning the person when Slack finds

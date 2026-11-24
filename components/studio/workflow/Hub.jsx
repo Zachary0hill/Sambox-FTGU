@@ -12,6 +12,7 @@ import { isGraph, graphOf, stepCount } from '@/lib/automations/graph';
 import { T, KIND, R, H, SHADOW, FONT, WF_CSS, dotGrid } from '@/lib/workflow/theme';
 import { AGENT_SHORT, STATUS, RUN_STATUS, HUB, TEMPLATES } from '@/lib/workflow/copy';
 import { workflowOf, workflowOfTemplate, graphFromTemplate, previewOf, reasonOf } from '@/lib/workflow/graph';
+import { workflowConnections } from '@/lib/workflow/authoring';
 import { runState, runMs, tookText } from '@/lib/workflow/runs';
 import { approvalsOf, span } from '@/lib/workflow/approvals';
 
@@ -156,7 +157,7 @@ export default function WorkflowHub({ D, A, s, set }) {
   const q = (s.autoQ || '').trim().toLowerCase();
   const autoSet = (D.settings || {}).automation || {};
 
-  const connected = useMemo(() => Object.fromEntries((D.integrations || []).map((g) => [g.provider, g.status === 'connected'])), [D.integrations]);
+  const connected = useMemo(() => workflowConnections(D), [D]);
   const flows = useMemo(() => (D.automations || []).map((a) => ({ ...workflowOf(a, connected), raw: a })), [D.automations, connected]);
   const templates = useMemo(() => TEMPLATES.map((tp) => ({ ...tp, preview: workflowOfTemplate(tp) })), []);
   const inFilter = (w, f) => f === 'all' || (f === 'assistant' ? w.fromAgent : w.status === f);

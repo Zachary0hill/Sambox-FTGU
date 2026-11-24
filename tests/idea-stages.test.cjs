@@ -75,10 +75,20 @@ test('Approve hands off to In Production and opens the project only from the con
   assert.equal(state.nav, 'ideas');
   assert.equal(state.ideaOpen, '');
   assert.match(notice.message, /approved and added to In Production/);
+  assert.match(notice.message, /source idea is in Archived/);
   assert.equal(notice.action.label, 'Open project');
   notice.action.run();
   assert.equal(state.nav, 'projects');
   assert.equal(state.openJob, 'IDEA-1');
+});
+
+test('an archived handoff keeps the project and cover recovery action available', () => {
+  const { detail } = ideas('li', 'board', f => {
+    Object.assign(f.D.ideas.find(i => i.id === 'li'), { status: 'Archived', stage: 'Approved', coverPath: 'original.png' });
+    f.s.iView = 'archived';
+  });
+  assert.equal(detail.cta, 'Open project');
+  assert.ok(detail.actions.some(a => a.label === 'Retry asset transfer'));
 });
 
 function actions(update) {

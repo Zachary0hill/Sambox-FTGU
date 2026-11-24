@@ -8,7 +8,7 @@
 import { useState } from 'react';
 import { css } from '@/lib/studio/css';
 import { projectTriggers, triggerById, triggerText } from '@/lib/automations/catalog';
-import { matchFilters } from '@/lib/automations/graph';
+import { matchFilters, webhookToken } from '@/lib/automations/graph';
 import { parseRule, ruleString, scheduleText, nextSlots, timeText, DAY_NAMES, DEFAULT_RULE } from '@/lib/automations/schedule';
 import { T, FONT } from '@/lib/workflow/theme';
 import { TRIGGER_COPY } from '@/lib/workflow/copy';
@@ -17,7 +17,7 @@ import { Dialog, MiniSeg, Stepper, Switch, KindTile, ICON, btn } from './ui';
 import { RuleRow, AddRule, newRule } from './Rules';
 
 const lower = (x) => String(x || '').replace(/^./, (c) => c.toLowerCase());
-const token = (n = 16) => Array.from(crypto.getRandomValues(new Uint8Array(n)), (b) => b.toString(16).padStart(2, '0')).join('');
+
 const modeOf = (key) => (key === 'schedule' ? 'schedule' : key === 'webhook' ? 'webhook' : 'event');
 const when = (ts) => {
   const d = new Date(ts), now = new Date();
@@ -44,7 +44,7 @@ export default function TriggerModal({ g, name, D, rowId, live, optionsFor, crit
     if (m === mode) return;
     const keep = { ...mem, [mode]: t };
     const next = keep[m] || (m === 'schedule' ? { key: 'schedule', value: DEFAULT_RULE, filters: [], tz: wsTz, secret: '' }
-      : m === 'webhook' ? { key: 'webhook', value: token(), filters: [], tz: '', secret: '' } : { key: '', value: '', filters: [], tz: '', secret: '' });
+      : m === 'webhook' ? { key: 'webhook', value: webhookToken(), filters: [], tz: '', secret: '' } : { key: '', value: '', filters: [], tz: '', secret: '' });
     setMem(keep); setMode(m); setT(next); setSaved(false); setPing(null);
   };
 
@@ -176,7 +176,11 @@ export default function TriggerModal({ g, name, D, rowId, live, optionsFor, crit
                       <MiniSeg label="Minutes" h={38} value={String(rule.minute)} onChange={(x) => setRule({ minute: Number(x) })} options={[['0', ':00'], ['15', ':15'], ['30', ':30'], ['45', ':45']]} />
                       <MiniSeg label="AM or PM" h={38} value={pm ? 'pm' : 'am'} onChange={(x) => setRule({ hour: to24(h12, x === 'pm') })} options={[['am', 'AM'], ['pm', 'PM']]} />
                     </div>
-                    <p style={css('margin: 0; font-size: 13px; color: ' + T.muted + ';')}>In the workspace’s time ({(t.tz || wsTz).replace(/_/g, ' ')}). A scheduled run has no project, so use steps that do not need one.</p>
+                    <label>Timezone
+                      <select aria-label="Schedule timezone" value={t.tz || wsTz} onChange={(e) => set({ tz: e.target.value })}>
+                        {Array.from(new Set([wsTz, t.tz || wsTz, 'UTC', ...(Intl.supportedValuesOf?.('timeZone') || [])])).map((zone) => <option key={zone} value={zone}>{zone}</option>)}
+                      </select>
+                    </label>
                   </div>
                 </>
               )}
@@ -195,7 +199,7 @@ export default function TriggerModal({ g, name, D, rowId, live, optionsFor, crit
               </div>
               <div style={css('display: flex; align-items: center; justify-content: space-between; gap: 12px;')}>
                 <div><div style={css('font-size: 15px; font-weight: 600;')}>Require a secret key</div><div style={css('font-size: 13px; color: ' + T.muted + ';')}>Rejects requests that do not send it</div></div>
-                <Switch on={!!t.secret} label="Require a secret key" onChange={(on) => { set({ secret: on ? token(12) : '' }); setPing(null); }} />
+                <Switch on={!!t.secret} label="Require a secret key" onChange={(on) => { set({ secret: on ? webhookToken(12) : '' }); setPing(null); }} />
               </div>
               {t.secret ? (
                 <div style={css('display: flex; gap: 8px; align-items: center;')}>
