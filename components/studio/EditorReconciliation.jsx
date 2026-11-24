@@ -74,7 +74,7 @@ function MonthlyReport({ report, month, editor, setEditor }) {
     <button type="button" disabled={saving} onClick={refresh}>Refresh approvals</button>
     {unassigned && selected && <p className="fb-recon-notice">This month includes approvals without a credited editor. Select Unassigned approvals to review them.</p>}
     {partial && <p className="fb-recon-notice">Approval tracking {startedAt ? 'started ' + dateTime(startedAt, timezone) : 'has an unconfirmed start date'}. Reconcile earlier work manually before accepting this month’s total.</p>}
-    {selected && !terms && <ContractTerms key={selected} month={month} prior={data.previousTerms.find(term => term.editor_id === selected)} types={types} saveTerms={saveTerms} saving={saving} />}
+    {selected && !terms && <ContractTerms key={selected + ':terms'} month={month} prior={data.previousTerms.find(term => term.editor_id === selected)} types={types} saveTerms={saveTerms} saving={saving} />}
     <BillingExceptions key={selected || 'unassigned'} data={data} selected={selected} editors={editors} report={report} save={save} saving={saving} />
     {amounts && <>
       <p>Confirmed contract for {terms.content_type_key === '*' ? 'all project types' : types.find(type => type.key === terms.content_type_key)?.label || terms.content_type_key}, {terms.included_units} included at {dollars(terms.retainer_cents)} per month and {dollars(terms.overage_cents)} per additional unit.</p>
